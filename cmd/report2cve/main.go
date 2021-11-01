@@ -12,9 +12,9 @@ import (
 	"os"
 	"strings"
 
-	"golang.org/x/vulndb/internal/cveschema"
-	"golang.org/x/vulndb/internal/derrors"
-	"golang.org/x/vulndb/internal/report"
+	"golang.org/x/vuln/internal/cveschema"
+	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/report"
 	"gopkg.in/yaml.v2"
 )
 

@@ -16,7 +16,7 @@ import (
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
-	"golang.org/x/vulndb/internal/derrors"
+	"golang.org/x/vuln/internal/derrors"
 )
 
 // TODO: getting things from the proxy should all be cached so we

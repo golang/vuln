@@ -13,9 +13,9 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/vulndb/internal"
-	"golang.org/x/vulndb/internal/derrors"
-	"golang.org/x/vulndb/osv"
+	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/osv"
 )
 
 func loadDB(dbPath string) (_ osv.DBIndex, _ map[string][]osv.Entry, err error) {

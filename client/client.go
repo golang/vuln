@@ -44,9 +44,9 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/vulndb/internal"
-	"golang.org/x/vulndb/internal/derrors"
-	"golang.org/x/vulndb/osv"
+	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/osv"
 )
 
 // Client interface for fetching vulnerabilities based on module path or ID.

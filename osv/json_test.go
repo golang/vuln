@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/vulndb/internal/report"
+	"golang.org/x/vuln/internal/report"
 )
 
 func TestGenerate(t *testing.T) {

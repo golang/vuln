@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/vulndb/internal/report"
+	"golang.org/x/vuln/internal/report"
 	"gopkg.in/yaml.v2"
 )
 

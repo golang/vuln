@@ -20,9 +20,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/storage/memory"
-	"golang.org/x/vulndb/internal/cveschema"
-	"golang.org/x/vulndb/internal/derrors"
-	"golang.org/x/vulndb/internal/report"
+	"golang.org/x/vuln/internal/cveschema"
+	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/report"
 )
 
 // Run clones the CVEProject/cvelist repository and compares the files to the

@@ -1,4 +1,4 @@
-module golang.org/x/vulndb
+module golang.org/x/vuln
 
 go 1.17
 

@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Package derrors defines internal error values to categorize the different
-// types error semantics supported by the vulndb.
+// types error semantics supported by x/vuln.
 package derrors
 
 import "fmt"

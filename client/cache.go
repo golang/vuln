@@ -7,7 +7,7 @@ package client
 import (
 	"time"
 
-	"golang.org/x/vulndb/osv"
+	"golang.org/x/vuln/osv"
 )
 
 // Cache interface for vuln DB caching.

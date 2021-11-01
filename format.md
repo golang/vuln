@@ -1,6 +1,6 @@
 The main section of the YAML contains high level information about the vulnerability
 
-TODO(golang/vulndb#9): update to YAML format.
+TODO(golang/vuln#9): update to YAML format.
 ```
 package = "github.com/example/module"
 ```

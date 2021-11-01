@@ -21,9 +21,9 @@ import (
 	"log"
 	"strings"
 
-	"golang.org/x/vulndb/internal"
-	"golang.org/x/vulndb/internal/cvelist"
-	"golang.org/x/vulndb/internal/derrors"
+	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/cvelist"
+	"golang.org/x/vuln/internal/derrors"
 )
 
 func main() {

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package internal contains functionality for x/vulndb.
+// Package internal contains functionality for x/vuln.
 package internal
 
 import (
@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"golang.org/x/vulndb/internal/derrors"
+	"golang.org/x/vuln/internal/derrors"
 )
 
 // IDDirectory is the name of the directory that contains entries

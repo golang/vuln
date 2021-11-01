@@ -13,9 +13,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/vulndb/internal"
-	"golang.org/x/vulndb/internal/report"
-	"golang.org/x/vulndb/osv"
+	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/report"
+	"golang.org/x/vuln/osv"
 	"gopkg.in/yaml.v2"
 )
 
@@ -27,7 +27,7 @@ func failf(format string, args ...interface{}) {
 
 // TODO(rolandshoemaker): once we have the HTML representation ready this should
 // be the prefix for that.
-const dbURL = "https://go.googlesource.com/vulndb/+/refs/heads/master/reports/"
+const dbURL = "https://go.googlesource.com/vuln/+/refs/heads/master/reports/"
 
 func main() {
 	yamlDir := flag.String("reports", "reports", "Directory containing yaml reports")
