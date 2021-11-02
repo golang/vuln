@@ -180,20 +180,28 @@ const goGitHubRepo = "github.com/golang/go"
 
 // cveToIssue creates a GoVulnIssue from a c *cveschema.CVE.
 func cveToIssue(c *cveschema.CVE) (_ *GoVulnIssue, err error) {
-	defer derrors.Wrap(&err, "cveToIssue(c)")
+	defer derrors.Wrap(&err, "cveToIssue(%q)", c.CVEDataMeta.ID)
 	if isPendingCVE(c) {
 		return nil, nil
 	}
+	switch c.DataVersion {
+	case "4.0":
+		return cveToIssueV4(c)
+	default:
+		// TODO(https://golang.org/issue/49289): Add support for v5.0.
+		log.Printf("Unxpected data_version for CVE %q: %q (skipping)", c.CVEDataMeta.ID, c.DataVersion)
+		return nil, nil
+	}
+}
+
+func cveToIssueV4(c *cveschema.CVE) (_ *GoVulnIssue, err error) {
 	mp, err := modulePathFromCVE(c)
 	if err != nil {
-		return nil, fmt.Errorf("modulePathFromCVE: %v", err)
+		return nil, err
 	}
-
 	if mp == "" {
 		return nil, nil
 	}
-	// TODO: implement additional checks on description and vendor information.
-
 	var links report.Links
 	for _, r := range c.References.ReferenceData {
 		if links.Commit == "" && strings.Contains(r.URL, "/commit/") {
@@ -204,7 +212,6 @@ func cveToIssue(c *cveschema.CVE) (_ *GoVulnIssue, err error) {
 			links.Context = append(links.Context, r.URL)
 		}
 	}
-
 	var cwe string
 	for _, pt := range c.Problemtype.ProblemtypeData {
 		for _, d := range pt.Description {
