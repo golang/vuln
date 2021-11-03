@@ -27,10 +27,18 @@ import (
 
 // Run clones the CVEProject/cvelist repository and compares the files to the
 // existing triaged-cve-list.
-func Run(triaged map[string]bool) (err error) {
+func Run(dirpath string, triaged map[string]bool) (err error) {
 	defer derrors.Wrap(&err, "Run(triaged)")
-	log.Printf("Cloning %q...", cvelistRepoURL)
-	repo, root, err := cloneRepo(cvelistRepoURL)
+	var repo *git.Repository
+	if dirpath != "" {
+		repo, err = openRepo(dirpath)
+	} else {
+		repo, err = cloneRepo(cvelistRepoURL)
+	}
+	if err != nil {
+		return err
+	}
+	root, err := getRepoRoot(repo)
 	if err != nil {
 		return err
 	}
@@ -44,32 +52,43 @@ const cvelistRepoURL = "https://github.com/CVEProject/cvelist"
 
 // cloneRepo returns a repo and tree object for the repo at HEAD by
 // cloning the repo at repoURL.
-func cloneRepo(repoURL string) (repo *git.Repository, root *object.Tree, err error) {
+func cloneRepo(repoURL string) (repo *git.Repository, err error) {
 	defer derrors.Wrap(&err, "cloneRepo(%q)", repoURL)
-	repo, err = git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
+	log.Printf("Cloning %q...", cvelistRepoURL)
+	return git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
 		URL:           repoURL,
 		ReferenceName: plumbing.HEAD,
 		SingleBranch:  true,
 		Depth:         1,
 		Tags:          git.NoTags,
 	})
+}
+
+func openRepo(dirpath string) (repo *git.Repository, err error) {
+	defer derrors.Wrap(&err, "openRepo(%q)", dirpath)
+	log.Printf("Opening %q...", dirpath)
+	repo, err = git.PlainOpen(dirpath)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
+	return repo, nil
+}
+
+func getRepoRoot(repo *git.Repository) (root *object.Tree, err error) {
 	refName := plumbing.HEAD
 	ref, err := repo.Reference(refName, true)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	commit, err := repo.CommitObject(ref.Hash())
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	root, err = repo.TreeObject(commit.TreeHash)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return repo, root, nil
+	return root, nil
 }
 
 // createIssuesToTriage creates GitHub issues to be triaged by the Go security

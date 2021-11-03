@@ -17,6 +17,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"strings"
@@ -27,17 +28,28 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
+	flag.Parse()
+	args := flag.Args()
+
+	var repoPath string
+	switch len(args) {
+	case 0:
+	case 1:
+		repoPath = args[0]
+	default:
+		log.Fatalf("unexpected number of args: %v", args)
+	}
+	if err := run(repoPath); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run() (err error) {
+func run(repoPath string) (err error) {
 	triaged, err := readTriagedCVEList()
 	if err != nil {
 		return err
 	}
-	return worker.Run(triaged)
+	return worker.Run(repoPath, triaged)
 }
 
 const (
