@@ -26,7 +26,7 @@ var errCVEVersionUnsupported = errors.New("unsupported CVE version")
 
 // triageCVE triages the CVE and creates a cve record state.
 func triageCVE(c *cveschema.CVE) (_ *cve, err error) {
-	defer derrors.Wrap(&err, "cveToIssue(%q)", c.CVEDataMeta.ID)
+	defer derrors.Wrap(&err, "cveToIssue(%q)", c.ID)
 	if isReservedCVE(c) {
 		return createCVE(c, stateReserved, "", false), nil
 	}
@@ -42,7 +42,7 @@ func triageCVE(c *cveschema.CVE) (_ *cve, err error) {
 		return createCVE(c, statePublicGoVuln, mp, true), nil
 	default:
 		// TODO(https://golang.org/issue/49289): Add support for v5.0.
-		return nil, fmt.Errorf("CVE %q has DataVersion %q: %w", c.CVEDataMeta.ID, c.DataVersion, errCVEVersionUnsupported)
+		return nil, fmt.Errorf("CVE %q has DataVersion %q: %w", c.ID, c.DataVersion, errCVEVersionUnsupported)
 	}
 }
 
@@ -63,7 +63,7 @@ func createCVE(c *cveschema.CVE, state string, mp string, isGoVuln bool) *cve {
 // isPendingCVE reports if the CVE is still waiting on information and not
 // ready to be triaged.
 func isReservedCVE(c *cveschema.CVE) bool {
-	return c.CVEDataMeta.STATE == cveschema.StateReserved
+	return c.State == cveschema.StateReserved
 }
 
 var vcsHostsWithThreeElementRepoName = map[string]bool{
@@ -85,8 +85,8 @@ var stdlibKeywords = map[string]bool{
 // cveModulePath returns a Go module path for a CVE, if we can determine what
 // it is.
 func cveModulePath(c *cveschema.CVE) (_ string, err error) {
-	defer derrors.Wrap(&err, "cveModulePath(%q)", c.CVEDataMeta.ID)
-	for _, r := range c.References.ReferenceData {
+	defer derrors.Wrap(&err, "cveModulePath(%q)", c.ID)
+	for _, r := range c.References.Data {
 		if r.URL == "" {
 			continue
 		}
@@ -123,7 +123,7 @@ func cveModulePath(c *cveschema.CVE) (_ string, err error) {
 
 func cveLinks(c *cveschema.CVE) report.Links {
 	var links report.Links
-	for _, r := range c.References.ReferenceData {
+	for _, r := range c.References.Data {
 		if links.Commit == "" && strings.Contains(r.URL, "/commit/") {
 			links.Commit = r.URL
 		} else if links.PR == "" && strings.Contains(r.URL, "/pull/") {
@@ -137,7 +137,7 @@ func cveLinks(c *cveschema.CVE) report.Links {
 
 func cveCWE(c *cveschema.CVE) string {
 	var cwe string
-	for _, pt := range c.Problemtype.ProblemtypeData {
+	for _, pt := range c.ProblemType.Data {
 		for _, d := range pt.Description {
 			if strings.Contains(d.Value, "CWE") {
 				cwe = d.Value
@@ -149,7 +149,7 @@ func cveCWE(c *cveschema.CVE) string {
 
 func description(c *cveschema.CVE) string {
 	var ds []string
-	for _, d := range c.Description.DescriptionData {
+	for _, d := range c.Description.Data {
 		ds = append(ds, d.Value)
 	}
 	return strings.Join(ds, "| \n ")

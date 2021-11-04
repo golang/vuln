@@ -34,14 +34,14 @@ func fromReport(r *report.Report) (_ *cveschema.CVE, err error) {
 		DataType:    "CVE",
 		DataFormat:  "MITRE",
 		DataVersion: "4.0",
-		CVEDataMeta: cveschema.CVEDataMeta{
+		Metadata: cveschema.Metadata{
 			ID:       r.CVEMetadata.ID,
-			ASSIGNER: "security@golang.org",
-			STATE:    "PUBLIC",
+			Assigner: "security@golang.org",
+			State:    cveschema.StatePublic,
 		},
 
 		Description: cveschema.Description{
-			DescriptionData: []cveschema.LangString{
+			Data: []cveschema.LangString{
 				{
 					Lang:  "eng",
 					Value: strings.TrimSuffix(r.CVEMetadata.Description, "\n"),
@@ -49,8 +49,8 @@ func fromReport(r *report.Report) (_ *cveschema.CVE, err error) {
 			},
 		},
 
-		Problemtype: cveschema.Problemtype{
-			ProblemtypeData: []cveschema.ProblemtypeDataItems{
+		ProblemType: cveschema.ProblemType{
+			Data: []cveschema.ProblemTypeDataItem{
 				{
 					Description: []cveschema.LangString{
 						{
@@ -64,11 +64,11 @@ func fromReport(r *report.Report) (_ *cveschema.CVE, err error) {
 
 		Affects: cveschema.Affects{
 			Vendor: cveschema.Vendor{
-				VendorData: []cveschema.VendorDataItems{
+				Data: []cveschema.VendorDataItem{
 					{
 						VendorName: "n/a", // ???
 						Product: cveschema.Product{
-							ProductData: []cveschema.ProductDataItem{
+							Data: []cveschema.ProductDataItem{
 								{
 									ProductName: r.Package,
 									Version:     versionToVersion(r.Versions),
@@ -82,10 +82,10 @@ func fromReport(r *report.Report) (_ *cveschema.CVE, err error) {
 	}
 
 	for _, additional := range r.AdditionalPackages {
-		c.Affects.Vendor.VendorData = append(c.Affects.Vendor.VendorData, cveschema.VendorDataItems{
+		c.Affects.Vendor.Data = append(c.Affects.Vendor.Data, cveschema.VendorDataItem{
 			VendorName: "n/a",
 			Product: cveschema.Product{
-				ProductData: []cveschema.ProductDataItem{
+				Data: []cveschema.ProductDataItem{
 					{
 						ProductName: additional.Package,
 						Version:     versionToVersion(additional.Versions),
@@ -96,13 +96,13 @@ func fromReport(r *report.Report) (_ *cveschema.CVE, err error) {
 	}
 
 	if r.Links.PR != "" {
-		c.References.ReferenceData = append(c.References.ReferenceData, cveschema.Reference{URL: r.Links.PR})
+		c.References.Data = append(c.References.Data, cveschema.Reference{URL: r.Links.PR})
 	}
 	if r.Links.Commit != "" {
-		c.References.ReferenceData = append(c.References.ReferenceData, cveschema.Reference{URL: r.Links.Commit})
+		c.References.Data = append(c.References.Data, cveschema.Reference{URL: r.Links.Commit})
 	}
 	for _, url := range r.Links.Context {
-		c.References.ReferenceData = append(c.References.ReferenceData, cveschema.Reference{URL: url})
+		c.References.Data = append(c.References.Data, cveschema.Reference{URL: url})
 	}
 
 	return c, nil
@@ -112,13 +112,13 @@ func versionToVersion(versions []report.VersionRange) cveschema.VersionData {
 	vd := cveschema.VersionData{}
 	for _, vr := range versions {
 		if vr.Introduced != "" {
-			vd.VersionData = append(vd.VersionData, cveschema.VersionDataItems{
+			vd.Data = append(vd.Data, cveschema.VersionDataItem{
 				VersionValue:    vr.Introduced,
 				VersionAffected: ">=",
 			})
 		}
 		if vr.Fixed != "" {
-			vd.VersionData = append(vd.VersionData, cveschema.VersionDataItems{
+			vd.Data = append(vd.Data, cveschema.VersionDataItem{
 				VersionValue:    vr.Fixed,
 				VersionAffected: "<",
 			})

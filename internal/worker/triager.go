@@ -36,7 +36,7 @@ type cve struct {
 }
 
 func (c *cve) id() string {
-	return c.CVEDataMeta.ID
+	return c.ID
 }
 
 func newTriager(triaged map[string]string) triager {
@@ -44,7 +44,7 @@ func newTriager(triaged map[string]string) triager {
 	for cveID, state := range triaged {
 		t[cveID] = &cve{
 			CVE: cveschema.CVE{
-				CVEDataMeta: cveschema.CVEDataMeta{
+				Metadata: cveschema.Metadata{
 					ID: cveID,
 				},
 			},

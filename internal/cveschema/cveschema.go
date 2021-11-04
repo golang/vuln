@@ -11,14 +11,14 @@ const (
 	// CVE ID is Reserved by a CNA.
 	StateReserved = "RESERVED"
 
-	// StatePublished is when a CNA populates the data associated with a CVE ID
-	// as a CVE Record, the state of the CVE Record is Published. The
+	// StatePublic is when a CNA populates the data associated with a CVE ID
+	// as a CVE Record, the state of the CVE Record is PUBLIC. The
 	// associated data must contain an identification number (CVE ID), a prose
 	// description, and at least one public reference.
-	StatePublished = "PUBLIC"
+	StatePublic = "PUBLIC"
 
 	// StateRejected is when the CVE ID and associated CVE Record should no
-	// longer be used, the CVE Record is placed in the Rejected state. A Rejected
+	// longer be used, the CVE Record is placed in the REJECT state. A Rejected
 	// CVE Record remains on the CVE List so that users can know when it is
 	// invalid.
 	StateRejected = "REJECT"
@@ -32,6 +32,11 @@ const (
 // impact to the confidentiality, integrity, or availability of an impacted
 // component or components.
 type CVE struct {
+	// Metadata is metadata about the CVE ID such as the CVE ID, who
+	// requested it, who assigned it, when it was requested, when it was assigned,
+	// the current state (PUBLIC, REJECT, etc.) and so on.
+	Metadata `json:"CVE_data_meta"`
+
 	// DataType identifies what kind of data is held in this JSON file. This is
 	// mandatory and designed to prevent problems with attempting to detect
 	// what kind of file this is. Valid values for this string are CVE, CNA,
@@ -49,11 +54,6 @@ type CVE struct {
 	// what format of data is used.
 	DataVersion string `json:"data_version"`
 
-	// CVEDataMeta is meta data about the CVE ID such as the CVE ID, who
-	// requested it, who assigned it, when it was requested, when it was assigned,
-	// the current state (PUBLIC, REJECT, etc.) and so on.
-	CVEDataMeta CVEDataMeta `json:"CVE_data_meta"`
-
 	// Affects is the root level container for affected vendors and in turn
 	// their affected technologies, products, hardware, etc. It only goes in
 	// the root level.
@@ -66,7 +66,7 @@ type CVE struct {
 	Description Description `json:"description"`
 
 	// ProblemType is problem type information (e.g. CWE identifier).
-	Problemtype Problemtype `json:"problemtype"`
+	ProblemType ProblemType `json:"problemtype"`
 
 	// References is reference data in the form of URLs or file objects
 	// (uuencoded and embedded within the JSON file, exact format to be
@@ -75,13 +75,13 @@ type CVE struct {
 	References References `json:"references"`
 }
 
-// CVEDataMeta is meta data about the CVE ID such as the CVE ID, who requested
+// Metadata is meta data about the CVE ID such as the CVE ID, who requested
 // it, who assigned it, when it was requested, when it was assigned, the
 // current state (PUBLIC, REJECT, etc.) and so on.
-type CVEDataMeta struct {
-	ASSIGNER string `json:"ASSIGNER"`
+type Metadata struct {
+	Assigner string `json:"ASSIGNER"`
 	ID       string `json:"ID"`
-	STATE    string `json:"STATE"`
+	State    string `json:"STATE"`
 }
 
 // Affects is the root level container for affected vendors and in turn their
@@ -111,19 +111,19 @@ type Affects struct {
 // where impact and attack are arbitrary terms that should be relevant to the
 // nature of the vulnerability.
 type Description struct {
-	DescriptionData []LangString `json:"description_data"`
+	Data []LangString `json:"description_data"`
 }
 
 // ProblemType is problem type information (e.g. CWE identifier).
 //
 // It can include an arbitrary summary of the problem, though Common Weakness
 // Enumerations (CWEs) are a standard to use in this field.
-type Problemtype struct {
-	ProblemtypeData []ProblemtypeDataItems `json:"problemtype_data"`
+type ProblemType struct {
+	Data []ProblemTypeDataItem `json:"problemtype_data"`
 }
 
-// ProblemtypeDataItems are the entries in a ProblemType.
-type ProblemtypeDataItems struct {
+// A ProblemTypeDataItem is an entry in ProblemType.Data.
+type ProblemTypeDataItem struct {
 	Description []LangString `json:"description"`
 }
 
@@ -139,7 +139,7 @@ type LangString struct {
 // require a compressed format so the objects require unpacking before they are
 // "dangerous").
 type References struct {
-	ReferenceData []Reference `json:"reference_data"`
+	Data []Reference `json:"reference_data"`
 }
 
 // A reference is a URL pointing to a world-wide-web-based resource. For
@@ -156,17 +156,17 @@ type Reference struct {
 // Vendor is the container for affected vendors, it only goes in the affects
 // container.
 type Vendor struct {
-	// VendorData is an array of version values (vulnerable and not); we use an
+	// Data is an array of version values (vulnerable and not); we use an
 	// array so that different entities can make statements about the same
 	// vendor and they are separate (if we used a JSON object we'd essentially
 	// be keying on the vendor name and they would have to overlap). Also this
 	// allows things like data_version or description to be applied directly to
 	// the vendor entry.
-	VendorData []VendorDataItems `json:"vendor_data"`
+	Data []VendorDataItem `json:"vendor_data"`
 }
 
-// VendorDataItems represents a single vendor name and product.
-type VendorDataItems struct {
+// A VendorDataItem represents a single vendor name and product.
+type VendorDataItem struct {
 	Product    Product `json:"product"`
 	VendorName string  `json:"vendor_name"`
 }
@@ -177,13 +177,13 @@ type VendorDataItems struct {
 // project name as well as the name of the actual software or hardware in which
 // the vulnerability exists.
 type Product struct {
-	// ProductData is an array of version values (vulnerable and not); we use
+	// Data is an array of version values (vulnerable and not); we use
 	// an array so that we can make multiple statements about the same product and
 	// they are separate (if we used a JSON object we'd essentially be keying on
 	// the product name and they would have to overlap). Also this allows things
 	// like data_version or description to be applied directly to the product
 	// entry.
-	ProductData []ProductDataItem `json:"product_data"`
+	Data []ProductDataItem `json:"product_data"`
 }
 
 // ProductDataItem represents a single product name and version that belongs to
@@ -203,15 +203,15 @@ type ProductDataItem struct {
 // statements can be used multiple branches of the same product can be defined
 // here.
 type VersionData struct {
-	VersionData []VersionDataItems `json:"version_data"`
+	Data []VersionDataItem `json:"version_data"`
 }
 
-// VersionDataItems represents a version, the date of release, or whatever
+// A VersionDataItem represents a version, the date of release, or whatever
 // indicator that is used by vendors, developers, or projects to differentiate
 // between releases. The version can be described with specific version
 // numbers, ranges of versions, or “all versions before/after” a version number or
 // date.
-type VersionDataItems struct {
+type VersionDataItem struct {
 	VersionValue    string `json:"version_value"`
 	VersionAffected string `json:"version_affected"`
 }
