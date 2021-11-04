@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package cvelist is used to fetch and parse information from
-// https://github.com/CVEProject/cvelist
-package cvelist
+// Package worker is used to fetch and create issues for CVEs that are
+// potential Go vulnerabilities.
+package worker
 
 import (
 	"encoding/json"

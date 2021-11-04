@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	"golang.org/x/vuln/internal"
-	"golang.org/x/vuln/internal/cvelist"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/worker"
 )
 
 func main() {
@@ -37,7 +37,7 @@ func run() (err error) {
 	if err != nil {
 		return err
 	}
-	return cvelist.Run(triaged)
+	return worker.Run(triaged)
 }
 
 const (
