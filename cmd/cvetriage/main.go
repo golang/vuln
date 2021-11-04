@@ -58,9 +58,9 @@ const (
 	statusTriaged       = "triaged"
 )
 
-func readTriagedCVEList() (_ map[string]bool, err error) {
+func readTriagedCVEList() (_ map[string]string, err error) {
 	defer derrors.Wrap(&err, "readTriagedCVEList()")
-	triaged := map[string]bool{}
+	triaged := map[string]string{}
 	lines, err := internal.ReadFileLines(triagedCVEList)
 	if err != nil {
 		return nil, err
@@ -71,20 +71,20 @@ func readTriagedCVEList() (_ map[string]bool, err error) {
 			return nil, fmt.Errorf("unexpected syntax: %q", l)
 		}
 		var (
-			cveID  = vuln[0]
-			status = vuln[1]
+			cveID = vuln[0]
+			state = vuln[1]
 		)
-		if status != statusFalsePositive && status != statusTriaged {
+		if state != statusFalsePositive && state != statusTriaged {
 			return nil, fmt.Errorf("unexpected syntax: %q", l)
 		}
-		if status == statusTriaged {
+		if state == statusTriaged {
 			if len(vuln) != 3 {
 				return nil, fmt.Errorf("unexpected syntax: %q", l)
 			}
-			triaged[cveID] = true
+			triaged[cveID] = state
 		}
-		if status == statusFalsePositive {
-			triaged[cveID] = true
+		if state == statusFalsePositive {
+			triaged[cveID] = state
 		}
 	}
 	return triaged, nil

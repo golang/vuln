@@ -25,7 +25,7 @@ import (
 
 // Run clones the CVEProject/cvelist repository and compares the files to the
 // existing triaged-cve-list.
-func Run(dirpath string, triaged map[string]bool) (err error) {
+func Run(dirpath string, triaged map[string]string) (err error) {
 	defer derrors.Wrap(&err, "Run(triaged)")
 	var repo *git.Repository
 	if dirpath != "" {
@@ -50,7 +50,7 @@ func Run(dirpath string, triaged map[string]bool) (err error) {
 // team.
 // TODO: Create GitHub issues. At the moment, this just prints the number of
 // issues to be created.
-func createIssuesToTriage(r *git.Repository, t *object.Tree, triaged map[string]bool) (err error) {
+func createIssuesToTriage(r *git.Repository, t *object.Tree, triaged map[string]string) (err error) {
 	defer derrors.Wrap(&err, "createIssuesToTriage(r, t, triaged)")
 	log.Printf("Finding new Go vulnerabilities from CVE list...")
 	cves, issues, err := walkRepo(r, t, "", triaged)
@@ -73,7 +73,7 @@ func createIssuesToTriage(r *git.Repository, t *object.Tree, triaged map[string]
 
 // walkRepo looks at the files in t, recursively, and check if it is a CVE that
 // needs to be manually triaged.
-func walkRepo(r *git.Repository, t *object.Tree, dirpath string, triaged map[string]bool) (newCVEs map[string]bool, newIssues []*GoVulnIssue, err error) {
+func walkRepo(r *git.Repository, t *object.Tree, dirpath string, triaged map[string]string) (newCVEs map[string]bool, newIssues []*GoVulnIssue, err error) {
 	defer derrors.Wrap(&err, "walkRepo(r, t, %q, triaged)", dirpath)
 	newCVEs = map[string]bool{}
 	for _, e := range t.Entries {
@@ -100,7 +100,7 @@ func walkRepo(r *git.Repository, t *object.Tree, dirpath string, triaged map[str
 				continue
 			}
 			cveID := strings.TrimSuffix(e.Name, ".json")
-			if triaged[cveID] {
+			if _, ok := triaged[cveID]; ok {
 				continue
 			}
 			newCVEs[cveID] = true
