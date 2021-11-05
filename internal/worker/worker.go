@@ -40,85 +40,60 @@ func Run(dirpath string, triaged map[string]string) (err error) {
 	if err != nil {
 		return err
 	}
-	if err := createIssuesToTriage(repo, root, triaged); err != nil {
-		return err
-	}
-	return nil
-}
-
-// createIssuesToTriage creates GitHub issues to be triaged by the Go security
-// team.
-// TODO: Create GitHub issues. At the moment, this just prints the number of
-// issues to be created.
-func createIssuesToTriage(r *git.Repository, t *object.Tree, triaged map[string]string) (err error) {
-	defer derrors.Wrap(&err, "createIssuesToTriage(r, t, triaged)")
+	t := newTriager(triaged)
 	log.Printf("Finding new Go vulnerabilities from CVE list...")
-	cves, issues, err := walkRepo(r, t, "", triaged)
-	if err != nil {
+	if err := walkRepo(repo, root, "", t); err != nil {
 		return err
 	}
-	// TODO: log CVE states in a CVE record.
-	// TODO: create GitHub issues.
-
-	var numRefs int
-	for _, issue := range issues {
-		if issue.AdditionalInfo.Reason == reasonReferenceData {
-			numRefs += 1
+	for cveID, r := range t {
+		if r.isGoVuln {
+			fmt.Println(cveID)
 		}
 	}
-	log.Printf("Found %d new issues from %d CVEs (%d based on reference data)",
-		len(issues), len(cves), numRefs)
+	log.Printf("Found %d new issues from %d CVEs", t.totalVulns(), t.totalCVEs())
 	return nil
 }
 
 // walkRepo looks at the files in t, recursively, and check if it is a CVE that
 // needs to be manually triaged.
-func walkRepo(r *git.Repository, t *object.Tree, dirpath string, triaged map[string]string) (newCVEs map[string]bool, newIssues []*GoVulnIssue, err error) {
-	defer derrors.Wrap(&err, "walkRepo(r, t, %q, triaged)", dirpath)
-	newCVEs = map[string]bool{}
-	for _, e := range t.Entries {
+func walkRepo(repo *git.Repository, root *object.Tree, dirpath string, t triager) (err error) {
+	defer derrors.Wrap(&err, "walkRepo(repo, root, %q, t)", dirpath)
+	for _, e := range root.Entries {
 		fp := path.Join(dirpath, e.Name)
 		if !strings.HasPrefix(fp, "202") {
 			continue
 		}
 		switch e.Mode {
 		case filemode.Dir:
-			t2, err := r.TreeObject(e.Hash)
+			root2, err := repo.TreeObject(e.Hash)
 			if err != nil {
-				return nil, nil, err
+				return err
 			}
-			cves, issues, err := walkRepo(r, t2, fp, triaged)
-			if err != nil {
-				return nil, nil, err
+			if err := walkRepo(repo, root2, fp, t); err != nil {
+				return err
 			}
-			for c := range cves {
-				newCVEs[c] = true
-			}
-			newIssues = append(newIssues, issues...)
 		default:
 			if !strings.HasPrefix(e.Name, "CVE-") {
 				continue
 			}
 			cveID := strings.TrimSuffix(e.Name, ".json")
-			if _, ok := triaged[cveID]; ok {
+			if t.contains(cveID) {
 				continue
 			}
-			newCVEs[cveID] = true
-			c, err := parseCVE(r, e)
+			c, err := parseCVE(repo, e)
 			if err != nil {
-				return nil, nil, err
+				return err
 			}
 			issue, err := cveToIssue(c)
 			if err != nil {
-				return nil, nil, err
+				return err
 			}
 			if issue != nil {
-				log.Printf("New CVE to triage: %q (%q)\n", cveID, issue.Report.Module)
-				newIssues = append(newIssues, issue)
+				t.add(issue)
 			}
 		}
 	}
-	return newCVEs, newIssues, nil
+	return nil
 }
 
 // parseCVEJSON parses a CVE file following the CVE JSON format:
@@ -152,8 +127,8 @@ func parseCVE(r *git.Repository, e object.TreeEntry) (_ *cveschema.CVE, err erro
 
 const goGitHubRepo = "github.com/golang/go"
 
-// cveToIssue creates a GoVulnIssue from a c *cveschema.CVE.
-func cveToIssue(c *cveschema.CVE) (_ *GoVulnIssue, err error) {
+// cveToIssue creates a cveRecord from a c *cveschema.CVE.
+func cveToIssue(c *cveschema.CVE) (_ *cve, err error) {
 	defer derrors.Wrap(&err, "cveToIssue(%q)", c.CVEDataMeta.ID)
 	if isPendingCVE(c) {
 		return nil, nil
@@ -168,7 +143,7 @@ func cveToIssue(c *cveschema.CVE) (_ *GoVulnIssue, err error) {
 	}
 }
 
-func cveToIssueV4(c *cveschema.CVE) (_ *GoVulnIssue, err error) {
+func cveToIssueV4(c *cveschema.CVE) (_ *cve, err error) {
 	mp, err := modulePathFromCVE(c)
 	if err != nil {
 		return nil, err
@@ -194,21 +169,17 @@ func cveToIssueV4(c *cveschema.CVE) (_ *GoVulnIssue, err error) {
 			}
 		}
 	}
-	r := report.Report{
-		Module:      mp,
-		Links:       links,
-		CVE:         c.CVEDataMeta.ID,
-		Description: description(c),
+	r := &cve{
+		CVE:         *c,
+		cwe:         cwe,
+		modulePath:  mp,
+		links:       links,
+		description: description(c),
 	}
 	if mp == goGitHubRepo {
-		r.Stdlib = true
+		r.modulePath = "Standard Library"
 	}
-	info := AdditionalInfo{
-		Products: products(c),
-		CWE:      cwe,
-		Reason:   reasonReferenceData,
-	}
-	return &GoVulnIssue{Report: r, AdditionalInfo: info}, nil
+	return r, nil
 }
 
 // isPendingCVE reports if the CVE is still waiting on information and not
@@ -260,37 +231,10 @@ func modulePathFromCVE(c *cveschema.CVE) (_ string, err error) {
 	return "", nil
 }
 
-const reasonReferenceData = "This CVE was identified as a go vuln because a Go module path was found in reference data."
-
-// GoVulnIssue represents a GitHub issue to be created about a Go
-// vulnerability.
-type GoVulnIssue struct {
-	AdditionalInfo AdditionalInfo
-	Report         report.Report
-}
-
-// AdditionalInfo contains additional information about the CVE not captured by
-// report.Report.
-type AdditionalInfo struct {
-	CWE      string
-	Products []*cveschema.ProductDataItem
-	Reason   string
-}
-
 func description(c *cveschema.CVE) string {
 	var ds []string
 	for _, d := range c.Description.DescriptionData {
 		ds = append(ds, d.Value)
 	}
 	return strings.Join(ds, "| \n ")
-}
-
-func products(c *cveschema.CVE) []*cveschema.ProductDataItem {
-	var pds []*cveschema.ProductDataItem
-	for _, v := range c.Affects.Vendor.VendorData {
-		for _, pd := range v.Product.ProductData {
-			pds = append(pds, &pd)
-		}
-	}
-	return pds
 }
