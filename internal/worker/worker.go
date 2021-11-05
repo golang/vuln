@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -42,12 +43,17 @@ func Run(dirpath string, triaged map[string]string) (err error) {
 	if err := walkRepo(repo, root, "", t); err != nil {
 		return err
 	}
+	var newVulns []string
 	for cveID, r := range t {
 		if r.isGoVuln {
-			fmt.Println(cveID)
+			newVulns = append(newVulns, fmt.Sprintf("%s (%s)", cveID, r.modulePath))
 		}
 	}
+	sort.Strings(newVulns)
 	log.Printf("Found %d new issues from %d CVEs", t.totalVulns(), t.totalCVEs())
+	for _, v := range newVulns {
+		fmt.Println(v)
+	}
 	return nil
 }
 
@@ -81,7 +87,7 @@ func walkRepo(repo *git.Repository, root *object.Tree, dirpath string, t triager
 			if err != nil {
 				return err
 			}
-			issue, err := cveToIssue(c)
+			issue, err := triageCVE(c)
 			if err != nil {
 				return err
 			}

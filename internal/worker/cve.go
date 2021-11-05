@@ -5,8 +5,8 @@
 package worker
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -16,66 +16,58 @@ import (
 	"golang.org/x/vuln/internal/report"
 )
 
-const goGitHubRepo = "github.com/golang/go"
+const (
+	stateReserved        = "Reserved"
+	statePublicNotGoVuln = "Public - Not Go Vuln"
+	statePublicGoVuln    = "Public - Go Vuln"
+)
 
-// cveToIssue creates a cveRecord from a c *cveschema.CVE.
-func cveToIssue(c *cveschema.CVE) (_ *cve, err error) {
+var errCVEVersionUnsupported = errors.New("unsupported CVE version")
+
+// triageCVE triages the CVE and creates a cve record state.
+func triageCVE(c *cveschema.CVE) (_ *cve, err error) {
 	defer derrors.Wrap(&err, "cveToIssue(%q)", c.CVEDataMeta.ID)
-	if isPendingCVE(c) {
-		return nil, nil
+	if isReservedCVE(c) {
+		return createCVE(c, stateReserved, "", false), nil
 	}
 	switch c.DataVersion {
 	case "4.0":
-		return cveToIssueV4(c)
+		mp, err := cveModulePath(c)
+		if err != nil {
+			return nil, err
+		}
+		if mp == "" {
+			return createCVE(c, statePublicNotGoVuln, "", false), nil
+		}
+		return createCVE(c, statePublicGoVuln, mp, true), nil
 	default:
 		// TODO(https://golang.org/issue/49289): Add support for v5.0.
-		log.Printf("Unxpected data_version for CVE %q: %q (skipping)", c.CVEDataMeta.ID, c.DataVersion)
-		return nil, nil
+		return nil, fmt.Errorf("CVE %q has DataVersion %q: %w", c.CVEDataMeta.ID, c.DataVersion, errCVEVersionUnsupported)
 	}
 }
 
-func cveToIssueV4(c *cveschema.CVE) (_ *cve, err error) {
-	mp, err := modulePathFromCVE(c)
-	if err != nil {
-		return nil, err
-	}
-	if mp == "" {
-		return nil, nil
-	}
-	var links report.Links
-	for _, r := range c.References.ReferenceData {
-		if links.Commit == "" && strings.Contains(r.URL, "/commit/") {
-			links.Commit = r.URL
-		} else if links.PR == "" && strings.Contains(r.URL, "/pull/") {
-			links.PR = r.URL
-		} else {
-			links.Context = append(links.Context, r.URL)
-		}
-	}
-	var cwe string
-	for _, pt := range c.Problemtype.ProblemtypeData {
-		for _, d := range pt.Description {
-			if strings.Contains(d.Value, "CWE") {
-				cwe = d.Value
-			}
-		}
-	}
+const goGitHubRepo = "github.com/golang/go"
+
+// createCVE creates a cve record state from the data provided.
+func createCVE(c *cveschema.CVE, state string, mp string, isGoVuln bool) *cve {
 	r := &cve{
 		CVE:         *c,
-		cwe:         cwe,
+		state:       state,
+		cwe:         cveCWE(c),
 		modulePath:  mp,
-		links:       links,
+		links:       cveLinks(c),
 		description: description(c),
+		isGoVuln:    isGoVuln,
 	}
 	if mp == goGitHubRepo {
 		r.modulePath = "Standard Library"
 	}
-	return r, nil
+	return r
 }
 
 // isPendingCVE reports if the CVE is still waiting on information and not
 // ready to be triaged.
-func isPendingCVE(c *cveschema.CVE) bool {
+func isReservedCVE(c *cveschema.CVE) bool {
 	return c.CVEDataMeta.STATE == cveschema.StateReserved
 }
 
@@ -88,10 +80,10 @@ var vcsHostsWithThreeElementRepoName = map[string]bool{
 	"golang.org":    true,
 }
 
-// modulePathFromCVE returns a Go module path for a CVE, if we can determine
-// what it is.
-func modulePathFromCVE(c *cveschema.CVE) (_ string, err error) {
-	defer derrors.Wrap(&err, "modulePathFromCVE(c)")
+// cveModulePath returns a Go module path for a CVE, if we can determine what
+// it is.
+func cveModulePath(c *cveschema.CVE) (_ string, err error) {
+	defer derrors.Wrap(&err, "cveModulePath(%q)", c.CVEDataMeta.ID)
 	for _, r := range c.References.ReferenceData {
 		if r.URL == "" {
 			continue
@@ -120,6 +112,32 @@ func modulePathFromCVE(c *cveschema.CVE) (_ string, err error) {
 		}
 	}
 	return "", nil
+}
+
+func cveLinks(c *cveschema.CVE) report.Links {
+	var links report.Links
+	for _, r := range c.References.ReferenceData {
+		if links.Commit == "" && strings.Contains(r.URL, "/commit/") {
+			links.Commit = r.URL
+		} else if links.PR == "" && strings.Contains(r.URL, "/pull/") {
+			links.PR = r.URL
+		} else {
+			links.Context = append(links.Context, r.URL)
+		}
+	}
+	return links
+}
+
+func cveCWE(c *cveschema.CVE) string {
+	var cwe string
+	for _, pt := range c.Problemtype.ProblemtypeData {
+		for _, d := range pt.Description {
+			if strings.Contains(d.Value, "CWE") {
+				cwe = d.Value
+			}
+		}
+	}
+	return cwe
 }
 
 func description(c *cveschema.CVE) string {
