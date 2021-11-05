@@ -46,8 +46,6 @@ func triageCVE(c *cveschema.CVE) (_ *cve, err error) {
 	}
 }
 
-const goGitHubRepo = "github.com/golang/go"
-
 // createCVE creates a cve record state from the data provided.
 func createCVE(c *cveschema.CVE, state string, mp string, isGoVuln bool) *cve {
 	r := &cve{
@@ -58,9 +56,6 @@ func createCVE(c *cveschema.CVE, state string, mp string, isGoVuln bool) *cve {
 		links:       cveLinks(c),
 		description: description(c),
 		isGoVuln:    isGoVuln,
-	}
-	if mp == goGitHubRepo {
-		r.modulePath = "Standard Library"
 	}
 	return r
 }
@@ -80,6 +75,13 @@ var vcsHostsWithThreeElementRepoName = map[string]bool{
 	"golang.org":    true,
 }
 
+var stdlibKeywords = map[string]bool{
+	"github.com/golang": true,
+	"golang-announce":   true,
+	"golang-nuts":       true,
+	"golang.org":        true,
+}
+
 // cveModulePath returns a Go module path for a CVE, if we can determine what
 // it is.
 func cveModulePath(c *cveschema.CVE) (_ string, err error) {
@@ -87,6 +89,11 @@ func cveModulePath(c *cveschema.CVE) (_ string, err error) {
 	for _, r := range c.References.ReferenceData {
 		if r.URL == "" {
 			continue
+		}
+		for k := range stdlibKeywords {
+			if strings.Contains(r.URL, k) {
+				return "Go Standard Library", nil
+			}
 		}
 		for host := range vcsHostsWithThreeElementRepoName {
 			if !strings.Contains(r.URL, host) {
