@@ -5,6 +5,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -157,7 +158,7 @@ func TestClient(t *testing.T) {
 	if runtime.GOOS == "js" {
 		t.Skip("skipping test: no network on js")
 	}
-
+	ctx := context.Background()
 	// Create a local http database.
 	srv := newTestServer()
 	defer srv.Close()
@@ -198,7 +199,7 @@ func TestClient(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		vulns, err := client.GetByModule("golang.org/example/one")
+		vulns, err := client.GetByModule(ctx, "golang.org/example/one")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -231,7 +232,7 @@ func TestCorrectFetchesNoCache(t *testing.T) {
 
 	hs := &httpSource{url: ts.URL, c: new(http.Client)}
 	for _, module := range []string{"a", "b", "c"} {
-		if _, err := hs.GetByModule(module); err != nil {
+		if _, err := hs.GetByModule(context.Background(), module); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
 	}
@@ -269,7 +270,7 @@ func TestCorrectFetchesNoChangeIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vulns, err := client.GetByModule("a")
+	vulns, err := client.GetByModule(context.Background(), "a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -309,7 +310,7 @@ func TestClientByID(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got, err := client.GetByID("ID")
+			got, err := client.GetByID(context.Background(), "ID")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -348,7 +349,7 @@ func TestListIDs(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got, err := client.ListIDs()
+			got, err := client.ListIDs(context.Background())
 			if err != nil {
 				t.Fatal(err)
 			}
