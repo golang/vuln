@@ -16,11 +16,10 @@ import (
 
 const cvelistRepoURL = "https://github.com/CVEProject/cvelist"
 
-// cloneRepo returns a repo and tree object for the repo at HEAD by
-// cloning the repo at repoURL.
+// cloneRepo returns a repo by cloning the repo at repoURL.
 func cloneRepo(repoURL string) (repo *git.Repository, err error) {
 	defer derrors.Wrap(&err, "cloneRepo(%q)", repoURL)
-	log.Printf("Cloning %q...", cvelistRepoURL)
+	log.Printf("Cloning %q...", repoURL)
 	return git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
 		URL:           repoURL,
 		ReferenceName: plumbing.HEAD,
@@ -30,6 +29,7 @@ func cloneRepo(repoURL string) (repo *git.Repository, err error) {
 	})
 }
 
+// openRepo returns a repo by opening the repo at the local path dirpath.
 func openRepo(dirpath string) (repo *git.Repository, err error) {
 	defer derrors.Wrap(&err, "openRepo(%q)", dirpath)
 	log.Printf("Opening %q...", dirpath)
@@ -40,7 +40,8 @@ func openRepo(dirpath string) (repo *git.Repository, err error) {
 	return repo, nil
 }
 
-func getRepoRoot(repo *git.Repository) (root *object.Tree, err error) {
+// repoRoot returns the root tree of the repo at HEAD.
+func repoRoot(repo *git.Repository) (root *object.Tree, err error) {
 	refName := plumbing.HEAD
 	ref, err := repo.Reference(refName, true)
 	if err != nil {
@@ -50,9 +51,5 @@ func getRepoRoot(repo *git.Repository) (root *object.Tree, err error) {
 	if err != nil {
 		return nil, err
 	}
-	root, err = repo.TreeObject(commit.TreeHash)
-	if err != nil {
-		return nil, err
-	}
-	return root, nil
+	return repo.TreeObject(commit.TreeHash)
 }

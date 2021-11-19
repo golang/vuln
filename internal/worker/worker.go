@@ -34,7 +34,7 @@ func Run(dirpath string, triaged map[string]string) (err error) {
 	if err != nil {
 		return err
 	}
-	root, err := getRepoRoot(repo)
+	root, err := repoRoot(repo)
 	if err != nil {
 		return err
 	}
