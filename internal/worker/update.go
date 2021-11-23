@@ -100,15 +100,6 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 	return st.SetUpdateRecord(ctx, ur)
 }
 
-// Action performed by handleCVE.
-type action int
-
-const (
-	nothing action = iota
-	add
-	mod
-)
-
 func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *git.Repository, commitHash plumbing.Hash, needsIssue triageFunc) (numAdds, numMods int, err error) {
 	startID := idFromFilename(batch[0].filename)
 	endID := idFromFilename(batch[len(batch)-1].filename)
@@ -131,14 +122,18 @@ func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *gi
 		// Determine what needs to be added and modified.
 		for _, f := range batch {
 			id := idFromFilename(f.filename)
-			act, err := handleCVE(ctx, repo, f, idToRecord[id], commitHash, needsIssue, tx)
+			old := idToRecord[id]
+			if old != nil && old.BlobHash == f.hash.String() {
+				// No change; do nothing.
+				continue
+			}
+			added, err := handleCVE(ctx, repo, f, old, commitHash, needsIssue, tx)
 			if err != nil {
 				return err
 			}
-			switch act {
-			case add:
+			if added {
 				numAdds++
-			case mod:
+			} else {
 				numMods++
 			}
 		}
@@ -152,48 +147,77 @@ func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *gi
 }
 
 // handleCVE determines how to change the store for a single CVE.
-func handleCVE(ctx context.Context, repo *git.Repository, f repoFile, old *store.CVERecord, commitHash plumbing.Hash, needsIssue triageFunc, tx store.Transaction) (_ action, err error) {
+// The CVE will definitely be either added, if it's new, or modified, if it's
+// already in the DB.
+func handleCVE(ctx context.Context, repo *git.Repository, f repoFile, old *store.CVERecord, commitHash plumbing.Hash, needsIssue triageFunc, tx store.Transaction) (added bool, err error) {
 	defer derrors.Wrap(&err, "handleCVE(%s)", f.filename)
 
-	if old != nil && old.BlobHash == f.hash.String() {
-		// No change; do nothing.
-		return nothing, nil
-	}
 	// Read CVE from repo.
 	r, err := blobReader(repo, f.hash)
 	if err != nil {
-		return nothing, err
+		return false, err
 	}
+	pathname := path.Join(f.dirpath, f.filename)
 	cve := &cveschema.CVE{}
 	if err := json.NewDecoder(r).Decode(cve); err != nil {
-		log.Printf("ERROR decoding %s: %v", f.filename, err)
-		return nothing, nil
+		return false, err
+	}
+	needs := false
+	if cve.State == cveschema.StatePublic {
+		needs, err = needsIssue(cve)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	// If the CVE is not in the database, add it.
 	if old == nil {
 		cr := store.NewCVERecord(cve, path.Join(f.dirpath, f.filename), f.hash.String())
 		cr.CommitHash = commitHash.String()
-		needs := false
-		if cve.State == cveschema.StatePublic {
-			needs, err = needsIssue(cve)
-			if err != nil {
-				return nothing, err
-			}
-		}
 		if needs {
 			cr.TriageState = store.TriageStateNeedsIssue
 		} else {
 			cr.TriageState = store.TriageStateNoActionNeeded
 		}
 		if err := tx.CreateCVERecord(cr); err != nil {
-			return nothing, err
+			return false, err
 		}
-		return add, nil
-	} else {
-		// TODO(golang/go#49733): handle changes to CVEs.
+		return true, nil
 	}
-	return nothing, nil
+	// Change to an existing record.
+	mod := *old // copy the old one
+	mod.Path = pathname
+	mod.BlobHash = f.hash.String()
+	mod.CVEState = cve.State
+	mod.CommitHash = commitHash.String()
+	switch old.TriageState {
+	case store.TriageStateNoActionNeeded:
+		if needs {
+			// Didn't need an issue before, does now.
+			mod.TriageState = store.TriageStateNeedsIssue
+		}
+		// Else don't change the triage state, but we still want
+		// to update the other changed fields.
+	case store.TriageStateNeedsIssue:
+		if !needs {
+			// Needed an issue, no longer does.
+			mod.TriageState = store.TriageStateNoActionNeeded
+		}
+		// Else don't change the triage state, but we still want
+		// to update the other changed fields.
+	case store.TriageStateIssueCreated, store.TriageStateUpdatedSinceIssueCreation:
+		// An issue was filed, so a person should revisit this CVE.
+		mod.TriageState = store.TriageStateUpdatedSinceIssueCreation
+		mod.TriageStateReason = fmt.Sprintf("CVE changed; needs issue = %t", needs)
+		// TODO(golang/go#49733): keep a history of the previous states and their commits.
+	default:
+		return false, fmt.Errorf("unknown TriageState: %q", old.TriageState)
+	}
+	// If we're here, then mod is a modification to the DB.
+	if err := tx.SetCVERecord(&mod); err != nil {
+		return false, err
+	}
+	return false, nil
 }
 
 type repoFile struct {
