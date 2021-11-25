@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/vuln/internal/cveschema"
+	"golang.org/x/vuln/internal/worker/log"
 	"golang.org/x/vuln/internal/worker/store"
 )
 
@@ -44,7 +45,7 @@ func TestRepoCVEFiles(t *testing.T) {
 }
 
 func TestDoUpdate(t *testing.T) {
-	ctx := context.Background()
+	ctx := log.WithLineLogger(context.Background())
 	repo, err := readTxtarRepo("testdata/basic.txtar")
 	if err != nil {
 		t.Fatal(err)

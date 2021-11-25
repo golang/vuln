@@ -5,13 +5,14 @@
 package worker
 
 import (
-	"log"
+	"context"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/worker/log"
 )
 
 const cvelistRepoURL = "https://github.com/CVEProject/cvelist"
@@ -19,7 +20,7 @@ const cvelistRepoURL = "https://github.com/CVEProject/cvelist"
 // cloneRepo returns a repo by cloning the repo at repoURL.
 func cloneRepo(repoURL string) (repo *git.Repository, err error) {
 	defer derrors.Wrap(&err, "cloneRepo(%q)", repoURL)
-	log.Printf("Cloning %q...", repoURL)
+	log.Infof(context.Background(), "Cloning %q...", repoURL)
 	return git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
 		URL:           repoURL,
 		ReferenceName: plumbing.HEAD,
@@ -32,7 +33,7 @@ func cloneRepo(repoURL string) (repo *git.Repository, err error) {
 // openRepo returns a repo by opening the repo at the local path dirpath.
 func openRepo(dirpath string) (repo *git.Repository, err error) {
 	defer derrors.Wrap(&err, "openRepo(%q)", dirpath)
-	log.Printf("Opening %q...", dirpath)
+	log.Infof(context.Background(), "Opening %q...", dirpath)
 	repo, err = git.PlainOpen(dirpath)
 	if err != nil {
 		return nil, err

@@ -7,9 +7,9 @@
 package worker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"path"
 	"sort"
 	"strings"
@@ -19,6 +19,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"golang.org/x/vuln/internal/cveschema"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/worker/log"
 )
 
 // Run clones the CVEProject/cvelist repository and compares the files to the
@@ -39,7 +40,7 @@ func Run(dirpath string, triaged map[string]string) (err error) {
 		return err
 	}
 	t := newTriager(triaged)
-	log.Printf("Finding new Go vulnerabilities from CVE list...")
+	log.Infof(context.Background(), "Finding new Go vulnerabilities from CVE list...")
 	if err := walkRepo(repo, root, "", t); err != nil {
 		return err
 	}
@@ -50,7 +51,7 @@ func Run(dirpath string, triaged map[string]string) (err error) {
 		}
 	}
 	sort.Strings(newVulns)
-	log.Printf("Found %d new issues from %d CVEs", t.totalVulns(), t.totalCVEs())
+	log.Infof(context.Background(), "Found %d new issues from %d CVEs", t.totalVulns(), t.totalCVEs())
 	for _, v := range newVulns {
 		fmt.Println(v)
 	}

@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"path"
 	"sort"
 	"strings"
@@ -19,8 +18,10 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"golang.org/x/exp/event"
 	"golang.org/x/vuln/internal/cveschema"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/worker/log"
 	"golang.org/x/vuln/internal/worker/store"
 )
 
@@ -41,10 +42,14 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 	defer derrors.Wrap(&err, "doUpdate(%s)", commitHash)
 
 	defer func() {
-		log.Printf("doUpdate finished with error %v", err)
+		if err != nil {
+			log.Error(ctx, "update failed", event.Value("error", err))
+		} else {
+			log.Info(ctx, "update succeeded")
+		}
 	}()
 
-	log.Printf("starting update of %s", commitHash)
+	log.Info(ctx, "update starting", event.String("commit", commitHash.String()))
 
 	// Get all the CVE files.
 	// It is cheaper to read all the files from the repo and compare
@@ -141,7 +146,11 @@ func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *gi
 	if err != nil {
 		return 0, 0, err
 	}
-	log.Printf("%s - %s: applied %d additions, %d modifications", startID, endID, numAdds, numMods)
+	log.Info(ctx, "update transaction",
+		event.String("startID", startID),
+		event.String("endID", endID),
+		event.Int64("adds", int64(numAdds)),
+		event.Int64("mods", int64(numMods)))
 	return numAdds, numMods, nil
 }
 
