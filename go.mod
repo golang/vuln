@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	cloud.google.com/go v0.97.0 // indirect
+	cloud.google.com/go/errorreporting v0.1.0
 	cloud.google.com/go/firestore v1.6.1
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 // indirect
@@ -21,6 +22,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.6
+	github.com/google/safehtml v0.0.2
 	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
@@ -46,3 +48,5 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+require golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
