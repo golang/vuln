@@ -6,7 +6,6 @@ package worker
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -127,7 +126,7 @@ func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *gi
 				// No change; do nothing.
 				continue
 			}
-			added, err := handleCVE(ctx, repo, f, old, commitHash, needsIssue, tx)
+			added, err := handleCVE(repo, f, old, commitHash, needsIssue, tx)
 			if err != nil {
 				return err
 			}
@@ -149,7 +148,7 @@ func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *gi
 // handleCVE determines how to change the store for a single CVE.
 // The CVE will definitely be either added, if it's new, or modified, if it's
 // already in the DB.
-func handleCVE(ctx context.Context, repo *git.Repository, f repoFile, old *store.CVERecord, commitHash plumbing.Hash, needsIssue triageFunc, tx store.Transaction) (added bool, err error) {
+func handleCVE(repo *git.Repository, f repoFile, old *store.CVERecord, commitHash plumbing.Hash, needsIssue triageFunc, tx store.Transaction) (added bool, err error) {
 	defer derrors.Wrap(&err, "handleCVE(%s)", f.filename)
 
 	// Read CVE from repo.
@@ -279,18 +278,6 @@ func blobReader(repo *git.Repository, hash plumbing.Hash) (io.Reader, error) {
 		return nil, err
 	}
 	return blob.Reader()
-}
-
-// hashFromString converts a hex string into a Hash.
-// Unlike plumbing.NewHash, it reports errors.
-func hashFromString(s string) (plumbing.Hash, error) {
-	b, err := hex.DecodeString(s)
-	if err != nil {
-		return plumbing.ZeroHash, err
-	}
-	var h plumbing.Hash
-	copy(h[:], b)
-	return h, nil
 }
 
 // idFromFilename extracts the CVE ID from its filename.

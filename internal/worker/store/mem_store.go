@@ -24,7 +24,7 @@ type MemStore struct {
 // NewMemStore creates a new, empty MemStore.
 func NewMemStore() *MemStore {
 	m := &MemStore{}
-	_ = m.Clear(nil)
+	_ = m.Clear(context.Background())
 	return m
 }
 

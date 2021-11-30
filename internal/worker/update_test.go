@@ -186,13 +186,6 @@ func readCVE(t *testing.T, repo *git.Repository, path string) (*cveschema.CVE, s
 	return &cve, blob.Hash.String()
 }
 
-func newTestCVERecord(cve *cveschema.CVE, path, blobHash string, ref *plumbing.Reference, ts store.TriageState) *store.CVERecord {
-	r := store.NewCVERecord(cve, path, blobHash)
-	r.CommitHash = ref.Hash().String()
-	r.TriageState = ts
-	return r
-}
-
 func createCVERecords(t *testing.T, s store.Store, crs []*store.CVERecord) {
 	err := s.RunTransaction(context.Background(), func(_ context.Context, tx store.Transaction) error {
 		for _, cr := range crs {
