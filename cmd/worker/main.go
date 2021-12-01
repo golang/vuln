@@ -3,14 +3,18 @@
 // license that can be found in the LICENSE file.
 
 // Command worker runs the vuln worker server.
+// It can also be used to perform actions from the command line
+// by providing a sub-command.
 package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
+	"text/tabwriter"
 
 	"cloud.google.com/go/errorreporting"
 	"golang.org/x/vuln/internal/derrors"
@@ -35,15 +39,25 @@ func main() {
 	if *namespace == "" {
 		die("need -namespace or VULN_WORKER_NAMESPACE")
 	}
-	if os.Getenv("PORT") == "" && flag.NArg() == 0 {
-		die("need PORT or command-line args")
-	}
-
 	ctx := log.WithLineLogger(context.Background())
 
 	fstore, err := store.NewFireStore(ctx, *project, *namespace)
 	if err != nil {
 		die("firestore: %v", err)
+	}
+	if flag.NArg() > 0 {
+		err = runCommandLine(ctx, fstore)
+	} else {
+		err = runServer(ctx, fstore)
+	}
+	if err != nil {
+		die("%v", err)
+	}
+}
+
+func runServer(ctx context.Context, st store.Store) error {
+	if os.Getenv("PORT") == "" {
+		return errors.New("need PORT")
 	}
 
 	if *errorReporting {
@@ -54,18 +68,50 @@ func main() {
 			},
 		})
 		if err != nil {
-			die("errorreporting: %v", err)
+			return err
 		}
 		derrors.SetReportingClient(reportingClient)
 	}
 
-	_, err = worker.NewServer(ctx, *namespace, fstore)
+	_, err := worker.NewServer(ctx, *namespace, st)
 	if err != nil {
-		die("NewServer: %v", err)
+		return err
 	}
 	addr := ":" + os.Getenv("PORT")
 	log.Infof(ctx, "Listening on addr %s", addr)
-	die("listening: %v", http.ListenAndServe(addr, nil))
+	return fmt.Errorf("listening: %v", http.ListenAndServe(addr, nil))
+}
+
+const timeFormat = "2006/01/02 15:04:05"
+
+func runCommandLine(ctx context.Context, st store.Store) error {
+	switch flag.Arg(0) {
+	case "list-updates":
+		return listUpdatesCommand(ctx, st)
+	default:
+		return fmt.Errorf("unknown command: %q", flag.Arg(1))
+	}
+}
+
+func listUpdatesCommand(ctx context.Context, st store.Store) error {
+	recs, err := st.ListCommitUpdateRecords(ctx)
+	if err != nil {
+		return err
+	}
+	tw := tabwriter.NewWriter(os.Stdout, 1, 8, 2, ' ', 0)
+	fmt.Fprintf(tw, "Start\tEnd\tCommit\tCVEs Processed\n")
+	for _, r := range recs {
+		endTime := "unfinished"
+		if !r.EndedAt.IsZero() {
+			endTime = r.EndedAt.Format(timeFormat)
+		}
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%d/%d (added %d, modified %d)\n",
+			r.StartedAt.Format(timeFormat),
+			endTime,
+			r.CommitHash,
+			r.NumProcessed, r.NumTotal, r.NumAdded, r.NumModified)
+	}
+	return tw.Flush()
 }
 
 func die(format string, args ...interface{}) {
