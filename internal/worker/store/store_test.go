@@ -34,31 +34,31 @@ func testUpdates(t *testing.T, s Store) {
 	ctx := context.Background()
 	start := time.Date(2021, time.September, 1, 0, 0, 0, 0, time.Local)
 
-	u1 := &UpdateRecord{
+	u1 := &CommitUpdateRecord{
 		StartedAt:  start,
 		CommitHash: "abc",
 		NumTotal:   100,
 	}
-	must(t, s.CreateUpdateRecord(ctx, u1))
+	must(t, s.CreateCommitUpdateRecord(ctx, u1))
 	u1.EndedAt = u1.StartedAt.Add(10 * time.Minute)
 	u1.NumAdded = 100
-	must(t, s.SetUpdateRecord(ctx, u1))
-	u2 := &UpdateRecord{
+	must(t, s.SetCommitUpdateRecord(ctx, u1))
+	u2 := &CommitUpdateRecord{
 		StartedAt:  start.Add(time.Hour),
 		CommitHash: "def",
 		NumTotal:   80,
 	}
-	must(t, s.CreateUpdateRecord(ctx, u2))
+	must(t, s.CreateCommitUpdateRecord(ctx, u2))
 	u2.EndedAt = u2.StartedAt.Add(8 * time.Minute)
 	u2.NumAdded = 40
 	u2.NumModified = 40
-	must(t, s.SetUpdateRecord(ctx, u2))
-	got, err := s.ListUpdateRecords(ctx)
+	must(t, s.SetCommitUpdateRecord(ctx, u2))
+	got, err := s.ListCommitUpdateRecords(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []*UpdateRecord{u2, u1}
-	diff(t, want, got, cmpopts.IgnoreFields(UpdateRecord{}, "UpdatedAt"))
+	want := []*CommitUpdateRecord{u2, u1}
+	diff(t, want, got, cmpopts.IgnoreFields(CommitUpdateRecord{}, "UpdatedAt"))
 	for _, g := range got {
 		if g.UpdatedAt.IsZero() {
 			t.Error("zero UpdatedAt field")

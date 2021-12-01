@@ -18,7 +18,7 @@ import (
 type MemStore struct {
 	mu            sync.Mutex
 	cveRecords    map[string]*CVERecord
-	updateRecords map[string]*UpdateRecord
+	updateRecords map[string]*CommitUpdateRecord
 }
 
 // NewMemStore creates a new, empty MemStore.
@@ -31,7 +31,7 @@ func NewMemStore() *MemStore {
 // Clear removes all data from the MemStore.
 func (ms *MemStore) Clear(context.Context) error {
 	ms.cveRecords = map[string]*CVERecord{}
-	ms.updateRecords = map[string]*UpdateRecord{}
+	ms.updateRecords = map[string]*CommitUpdateRecord{}
 	return nil
 }
 
@@ -40,20 +40,20 @@ func (ms *MemStore) CVERecords() map[string]*CVERecord {
 	return ms.cveRecords
 }
 
-// CreateUpdateRecord implements Store.CreateUpdateRecord.
-func (ms *MemStore) CreateUpdateRecord(ctx context.Context, r *UpdateRecord) error {
+// CreateCommitUpdateRecord implements Store.CreateCommitUpdateRecord.
+func (ms *MemStore) CreateCommitUpdateRecord(ctx context.Context, r *CommitUpdateRecord) error {
 	r.ID = fmt.Sprint(rand.Uint32())
 	if ms.updateRecords[r.ID] != nil {
 		panic("duplicate ID")
 	}
 	r.UpdatedAt = time.Now()
-	return ms.SetUpdateRecord(ctx, r)
+	return ms.SetCommitUpdateRecord(ctx, r)
 }
 
-// SetUpdateRecord implements Store.SetUpdateRecord.
-func (ms *MemStore) SetUpdateRecord(_ context.Context, r *UpdateRecord) error {
+// SetCommitUpdateRecord implements Store.SetCommitUpdateRecord.
+func (ms *MemStore) SetCommitUpdateRecord(_ context.Context, r *CommitUpdateRecord) error {
 	if r.ID == "" {
-		return errors.New("SetUpdateRecord: need ID")
+		return errors.New("SetCommitUpdateRecord: need ID")
 	}
 	c := *r
 	c.UpdatedAt = time.Now()
@@ -61,9 +61,9 @@ func (ms *MemStore) SetUpdateRecord(_ context.Context, r *UpdateRecord) error {
 	return nil
 }
 
-// ListUpdateRecords implements Store.ListUpdateRecords.
-func (ms *MemStore) ListUpdateRecords(context.Context) ([]*UpdateRecord, error) {
-	var urs []*UpdateRecord
+// ListCommitUpdateRecords implements Store.ListCommitUpdateRecords.
+func (ms *MemStore) ListCommitUpdateRecords(context.Context) ([]*CommitUpdateRecord, error) {
+	var urs []*CommitUpdateRecord
 	for _, ur := range ms.updateRecords {
 		urs = append(urs, ur)
 	}

@@ -93,9 +93,9 @@ func NewCVERecord(cve *cveschema.CVE, path, blobHash string) *CVERecord {
 	}
 }
 
-// An UpdateRecord describes a single update operation, which reconciles
+// A CommitUpdateRecord describes a single update operation, which reconciles
 // a commit in the CVE list repo with the DB state.
-type UpdateRecord struct {
+type CommitUpdateRecord struct {
 	// The ID of this record in the DB. Needed to modify the record.
 	ID string
 	// When the update started and completed. If EndedAt is zero,
@@ -120,18 +120,18 @@ type UpdateRecord struct {
 
 // A Store is a storage system for the CVE database.
 type Store interface {
-	// CreateUpdateRecord creates a new UpdateRecord. It should be called at the start
-	// of an update. On successful return, the UpdateRecord's ID field will be
+	// CreateCommitUpdateRecord creates a new CommitUpdateRecord. It should be called at the start
+	// of an update. On successful return, the CommitUpdateRecord's ID field will be
 	// set to a new, unique ID.
-	CreateUpdateRecord(context.Context, *UpdateRecord) error
+	CreateCommitUpdateRecord(context.Context, *CommitUpdateRecord) error
 
-	// SetUpdateRecord modifies the UpdateRecord. Use the same record passed to
-	// CreateUpdateRecord, because it will have the correct ID.
-	SetUpdateRecord(context.Context, *UpdateRecord) error
+	// SetCommitUpdateRecord modifies the CommitUpdateRecord. Use the same record passed to
+	// CreateCommitUpdateRecord, because it will have the correct ID.
+	SetCommitUpdateRecord(context.Context, *CommitUpdateRecord) error
 
-	// ListUpdateRecords returns all the UpdateRecords in the store, from most to
+	// ListCommitUpdateRecords returns all the CommitUpdateRecords in the store, from most to
 	// least recent.
-	ListUpdateRecords(context.Context) ([]*UpdateRecord, error)
+	ListCommitUpdateRecords(context.Context) ([]*CommitUpdateRecord, error)
 
 	// RunTransaction runs the function in a transaction.
 	RunTransaction(context.Context, func(context.Context, Transaction) error) error

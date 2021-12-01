@@ -23,7 +23,9 @@ import (
 //
 // In this layout, there is a single top-level collection called Namespaces,
 // with documents for each development environment. Within each namespace, there
-// are two collections: CVEs for CVERecords, and Updates for UpdateRecords.
+// are some collections:
+// - CVEs for CVERecords
+// - CommitUpdates for CommitUpdateRecords
 type FireStore struct {
 	namespace string
 	client    *firestore.Client
@@ -57,10 +59,10 @@ func NewFireStore(ctx context.Context, projectID, namespace string) (_ *FireStor
 	}, nil
 }
 
-// CreateUpdateRecord implements Store.CreateUpdateRecord.
+// CreateCommitUpdateRecord implements Store.CreateCommitUpdateRecord.
 // On successful return, r.ID is set to the record's ID.
-func (fs *FireStore) CreateUpdateRecord(ctx context.Context, r *UpdateRecord) (err error) {
-	defer derrors.Wrap(&err, "CreateUpdateRecord()")
+func (fs *FireStore) CreateCommitUpdateRecord(ctx context.Context, r *CommitUpdateRecord) (err error) {
+	defer derrors.Wrap(&err, "CreateCommitUpdateRecord()")
 
 	docref := fs.nsDoc.Collection(updateCollection).NewDoc()
 	if _, err := docref.Create(ctx, r); err != nil {
@@ -70,9 +72,9 @@ func (fs *FireStore) CreateUpdateRecord(ctx context.Context, r *UpdateRecord) (e
 	return nil
 }
 
-// SetUpdateRecord implements Store.SetUpdateRecord.
-func (fs *FireStore) SetUpdateRecord(ctx context.Context, r *UpdateRecord) (err error) {
-	defer derrors.Wrap(&err, "SetUpdateRecord(%q)", r.ID)
+// SetCommitUpdateRecord implements Store.SetCommitUpdateRecord.
+func (fs *FireStore) SetCommitUpdateRecord(ctx context.Context, r *CommitUpdateRecord) (err error) {
+	defer derrors.Wrap(&err, "SetCommitUpdateRecord(%q)", r.ID)
 
 	if r.ID == "" {
 		return errors.New("missing ID")
@@ -81,9 +83,9 @@ func (fs *FireStore) SetUpdateRecord(ctx context.Context, r *UpdateRecord) (err 
 	return err
 }
 
-// ListUpdateRecords implements Store.ListUpdateRecords.
-func (fs *FireStore) ListUpdateRecords(ctx context.Context) ([]*UpdateRecord, error) {
-	var urs []*UpdateRecord
+// ListCommitUpdateRecords implements Store.ListCommitUpdateRecords.
+func (fs *FireStore) ListCommitUpdateRecords(ctx context.Context) ([]*CommitUpdateRecord, error) {
+	var urs []*CommitUpdateRecord
 	iter := fs.nsDoc.Collection(updateCollection).Documents(ctx)
 	for {
 		docsnap, err := iter.Next()
@@ -93,7 +95,7 @@ func (fs *FireStore) ListUpdateRecords(ctx context.Context) ([]*UpdateRecord, er
 		if err != nil {
 			return nil, err
 		}
-		var ur UpdateRecord
+		var ur CommitUpdateRecord
 		if err := docsnap.DataTo(&ur); err != nil {
 			return nil, err
 		}

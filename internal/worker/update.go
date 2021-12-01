@@ -59,13 +59,13 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 	if err != nil {
 		return err
 	}
-	// Create a new UpdateRecord to describe this run of doUpdate.
-	ur := &store.UpdateRecord{
+	// Create a new CommitUpdateRecord to describe this run of doUpdate.
+	ur := &store.CommitUpdateRecord{
 		StartedAt:  time.Now(),
 		CommitHash: commitHash.String(),
 		NumTotal:   len(files),
 	}
-	if err := st.CreateUpdateRecord(ctx, ur); err != nil {
+	if err := st.CreateCommitUpdateRecord(ctx, ur); err != nil {
 		return err
 	}
 
@@ -82,10 +82,10 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 		}
 		numAdds, numMods, err := updateBatch(ctx, files[i:j], st, repo, commitHash, needsIssue)
 
-		// Change the UpdateRecord in the Store to reflect the results of the transaction.
+		// Change the CommitUpdateRecord in the Store to reflect the results of the transaction.
 		if err != nil {
 			ur.Error = err.Error()
-			if err2 := st.SetUpdateRecord(ctx, ur); err2 != nil {
+			if err2 := st.SetCommitUpdateRecord(ctx, ur); err2 != nil {
 				return fmt.Errorf("update failed with %w, could not set update record: %v", err, err2)
 			}
 			return err
@@ -95,13 +95,13 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 		// RunTransaction, because that function may be executed multiple times.
 		ur.NumAdded += numAdds
 		ur.NumModified += numMods
-		if err := st.SetUpdateRecord(ctx, ur); err != nil {
+		if err := st.SetCommitUpdateRecord(ctx, ur); err != nil {
 			return err
 		}
 	} // end loop
 
 	ur.EndedAt = time.Now()
-	return st.SetUpdateRecord(ctx, ur)
+	return st.SetCommitUpdateRecord(ctx, ur)
 }
 
 func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *git.Repository, commitHash plumbing.Hash, needsIssue triageFunc) (numAdds, numMods int, err error) {
