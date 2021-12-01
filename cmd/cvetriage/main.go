@@ -24,7 +24,6 @@ import (
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/derrors"
-	"golang.org/x/vuln/internal/worker"
 )
 
 func main() {
@@ -49,7 +48,7 @@ func run(repoPath string) (err error) {
 	if err != nil {
 		return err
 	}
-	return worker.Run(repoPath, triaged)
+	return Run(repoPath, triaged)
 }
 
 const (

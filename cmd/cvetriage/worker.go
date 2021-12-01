@@ -2,9 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package worker is used to fetch and create issues for CVEs that are
-// potential Go vulnerabilities.
-package worker
+package main
 
 import (
 	"context"
@@ -19,6 +17,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"golang.org/x/vuln/internal/cveschema"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/gitrepo"
 	"golang.org/x/vuln/internal/worker/log"
 )
 
@@ -28,14 +27,14 @@ func Run(dirpath string, triaged map[string]string) (err error) {
 	defer derrors.Wrap(&err, "Run(triaged)")
 	var repo *git.Repository
 	if dirpath != "" {
-		repo, err = openRepo(dirpath)
+		repo, err = gitrepo.Open(dirpath)
 	} else {
-		repo, err = cloneRepo(cvelistRepoURL)
+		repo, err = gitrepo.Clone(gitrepo.CVElistRepoURL)
 	}
 	if err != nil {
 		return err
 	}
-	root, err := repoRoot(repo)
+	root, err := gitrepo.Root(repo)
 	if err != nil {
 		return err
 	}

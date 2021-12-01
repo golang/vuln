@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package worker
+// Package gitrepo provides operations on git repos.
+package gitrepo
 
 import (
 	"context"
@@ -15,11 +16,11 @@ import (
 	"golang.org/x/vuln/internal/worker/log"
 )
 
-const cvelistRepoURL = "https://github.com/CVEProject/cvelist"
+const CVElistRepoURL = "https://github.com/CVEProject/cvelist"
 
-// cloneRepo returns a repo by cloning the repo at repoURL.
-func cloneRepo(repoURL string) (repo *git.Repository, err error) {
-	defer derrors.Wrap(&err, "cloneRepo(%q)", repoURL)
+// Clone returns a repo by cloning the repo at repoURL.
+func Clone(repoURL string) (repo *git.Repository, err error) {
+	defer derrors.Wrap(&err, "gitrepo.Clone(%q)", repoURL)
 	log.Infof(context.Background(), "Cloning %q...", repoURL)
 	return git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
 		URL:           repoURL,
@@ -30,9 +31,9 @@ func cloneRepo(repoURL string) (repo *git.Repository, err error) {
 	})
 }
 
-// openRepo returns a repo by opening the repo at the local path dirpath.
-func openRepo(dirpath string) (repo *git.Repository, err error) {
-	defer derrors.Wrap(&err, "openRepo(%q)", dirpath)
+// Open returns a repo by opening the repo at the local path dirpath.
+func Open(dirpath string) (repo *git.Repository, err error) {
+	defer derrors.Wrap(&err, "gitrepo.Open(%q)", dirpath)
 	log.Infof(context.Background(), "Opening %q...", dirpath)
 	repo, err = git.PlainOpen(dirpath)
 	if err != nil {
@@ -41,8 +42,8 @@ func openRepo(dirpath string) (repo *git.Repository, err error) {
 	return repo, nil
 }
 
-// repoRoot returns the root tree of the repo at HEAD.
-func repoRoot(repo *git.Repository) (root *object.Tree, err error) {
+// Root returns the root tree of the repo at HEAD.
+func Root(repo *git.Repository) (root *object.Tree, err error) {
 	refName := plumbing.HEAD
 	ref, err := repo.Reference(refName, true)
 	if err != nil {
