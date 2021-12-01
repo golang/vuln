@@ -101,13 +101,13 @@ check_vet() {
 # check_staticcheck runs staticcheck on source files.
 check_staticcheck() {
   ensure_go_binary honnef.co/go/tools/cmd/staticcheck
-  runcmd staticcheck $(go list ./... | grep -v third_party | grep -v internal/doc | grep -v internal/render)
+  runcmd staticcheck ./...
 }
 
 # check_misspell runs misspell on source files.
 check_misspell() {
   ensure_go_binary github.com/client9/misspell/cmd/misspell
-  runcmd misspell cmd/**/*.{go,sh} internal/**/* README.md
+  runcmd misspell .
 }
 
 go_linters() {
