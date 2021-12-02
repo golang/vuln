@@ -84,9 +84,13 @@ func (fs *FireStore) SetCommitUpdateRecord(ctx context.Context, r *CommitUpdateR
 }
 
 // ListCommitUpdateRecords implements Store.ListCommitUpdateRecords.
-func (fs *FireStore) ListCommitUpdateRecords(ctx context.Context) ([]*CommitUpdateRecord, error) {
+func (fs *FireStore) ListCommitUpdateRecords(ctx context.Context, limit int) ([]*CommitUpdateRecord, error) {
 	var urs []*CommitUpdateRecord
-	iter := fs.nsDoc.Collection(updateCollection).Documents(ctx)
+	q := fs.nsDoc.Collection(updateCollection).Query
+	if limit > 0 {
+		q = q.Limit(limit)
+	}
+	iter := q.Documents(ctx)
 	for {
 		docsnap, err := iter.Next()
 		if err == iterator.Done {

@@ -51,11 +51,16 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 
 	log.Info(ctx, "update starting", event.String("commit", commitHash.String()))
 
+	commit, err := repo.CommitObject(commitHash)
+	if err != nil {
+		return err
+	}
+
 	// Get all the CVE files.
 	// It is cheaper to read all the files from the repo and compare
 	// them to the DB in bulk, than to walk the repo and process
 	// each file individually.
-	files, err := repoCVEFiles(repo, commitHash)
+	files, err := repoCVEFiles(repo, commit)
 	if err != nil {
 		return err
 	}
@@ -63,6 +68,7 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 	ur := &store.CommitUpdateRecord{
 		StartedAt:  time.Now(),
 		CommitHash: commitHash.String(),
+		CommitTime: commit.Committer.When,
 		NumTotal:   len(files),
 	}
 	if err := st.CreateCommitUpdateRecord(ctx, ur); err != nil {
@@ -236,13 +242,9 @@ type repoFile struct {
 
 // repoCVEFiles returns all the CVE files in the given repo commit, sorted by
 // name.
-func repoCVEFiles(repo *git.Repository, commitHash plumbing.Hash) (_ []repoFile, err error) {
-	defer derrors.Wrap(&err, "repoCVEFiles(%s)", commitHash)
+func repoCVEFiles(repo *git.Repository, commit *object.Commit) (_ []repoFile, err error) {
+	defer derrors.Wrap(&err, "repoCVEFiles(%s)", commit.Hash)
 
-	commit, err := repo.CommitObject(commitHash)
-	if err != nil {
-		return nil, fmt.Errorf("CommitObject: %w", err)
-	}
 	root, err := repo.TreeObject(commit.TreeHash)
 	if err != nil {
 		return nil, fmt.Errorf("TreeObject: %v", err)

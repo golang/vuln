@@ -103,6 +103,8 @@ type CommitUpdateRecord struct {
 	StartedAt, EndedAt time.Time
 	// The repo commit hash that this update is working on.
 	CommitHash string
+	// The time the commit occurred.
+	CommitTime time.Time
 	// The total number of CVEs being processed in this update.
 	NumTotal int
 	// The number currently processed. When this equals NumTotal, the
@@ -129,9 +131,9 @@ type Store interface {
 	// CreateCommitUpdateRecord, because it will have the correct ID.
 	SetCommitUpdateRecord(context.Context, *CommitUpdateRecord) error
 
-	// ListCommitUpdateRecords returns all the CommitUpdateRecords in the store, from most to
+	// ListCommitUpdateRecords returns some the CommitUpdateRecords in the store, from most to
 	// least recent.
-	ListCommitUpdateRecords(context.Context) ([]*CommitUpdateRecord, error)
+	ListCommitUpdateRecords(ctx context.Context, limit int) ([]*CommitUpdateRecord, error)
 
 	// RunTransaction runs the function in a transaction.
 	RunTransaction(context.Context, func(context.Context, Transaction) error) error

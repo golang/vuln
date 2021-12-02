@@ -53,7 +53,7 @@ func testUpdates(t *testing.T, s Store) {
 	u2.NumAdded = 40
 	u2.NumModified = 40
 	must(t, s.SetCommitUpdateRecord(ctx, u2))
-	got, err := s.ListCommitUpdateRecords(ctx)
+	got, err := s.ListCommitUpdateRecords(ctx, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

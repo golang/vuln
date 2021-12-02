@@ -62,7 +62,7 @@ func (ms *MemStore) SetCommitUpdateRecord(_ context.Context, r *CommitUpdateReco
 }
 
 // ListCommitUpdateRecords implements Store.ListCommitUpdateRecords.
-func (ms *MemStore) ListCommitUpdateRecords(context.Context) ([]*CommitUpdateRecord, error) {
+func (ms *MemStore) ListCommitUpdateRecords(_ context.Context, limit int) ([]*CommitUpdateRecord, error) {
 	var urs []*CommitUpdateRecord
 	for _, ur := range ms.updateRecords {
 		urs = append(urs, ur)
@@ -70,6 +70,9 @@ func (ms *MemStore) ListCommitUpdateRecords(context.Context) ([]*CommitUpdateRec
 	sort.Slice(urs, func(i, j int) bool {
 		return urs[i].StartedAt.After(urs[j].StartedAt)
 	})
+	if limit > 0 && len(urs) > limit {
+		urs = urs[:limit]
+	}
 	return urs, nil
 }
 

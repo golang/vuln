@@ -24,11 +24,11 @@ func TestRepoCVEFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h, err := headHash(repo)
+	commit := headCommit(t, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := repoCVEFiles(repo, h)
+	got, err := repoCVEFiles(repo, commit)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,6 +62,7 @@ func TestDoUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	commitHash := ref.Hash().String()
 	const (
 		path1 = "2021/0xxx/CVE-2021-0001.json"
@@ -179,12 +180,20 @@ func TestDoUpdate(t *testing.T) {
 }
 
 func readCVE(t *testing.T, repo *git.Repository, path string) (*cveschema.CVE, string) {
-	blob := findBlob(t, repo, path)
-	var cve cveschema.CVE
-	if err := json.Unmarshal(readBlob(t, blob), &cve); err != nil {
+	c := headCommit(t, repo)
+	file, err := c.File(path)
+	if err != nil {
 		t.Fatal(err)
 	}
-	return &cve, blob.Hash.String()
+	var cve cveschema.CVE
+	r, err := file.Reader()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.NewDecoder(r).Decode(&cve); err != nil {
+		t.Fatal(err)
+	}
+	return &cve, file.Hash.String()
 }
 
 func createCVERecords(t *testing.T, s store.Store, crs []*store.CVERecord) {

@@ -94,7 +94,7 @@ func runCommandLine(ctx context.Context, st store.Store) error {
 }
 
 func listUpdatesCommand(ctx context.Context, st store.Store) error {
-	recs, err := st.ListCommitUpdateRecords(ctx)
+	recs, err := st.ListCommitUpdateRecords(ctx, 0)
 	if err != nil {
 		return err
 	}

@@ -5,8 +5,6 @@
 package worker
 
 import (
-	"io/ioutil"
-	"path"
 	"testing"
 	"time"
 
@@ -86,54 +84,4 @@ func headHash(repo *git.Repository) (plumbing.Hash, error) {
 		return plumbing.ZeroHash, err
 	}
 	return ref.Hash(), nil
-}
-
-// findBlob returns the blob at filename in repo.
-// It fail the test if it doesn't exist.
-func findBlob(t *testing.T, repo *git.Repository, filename string) *object.Blob {
-	c := headCommit(t, repo)
-	tree, err := repo.TreeObject(c.TreeHash)
-	if err != nil {
-		t.Fatal(err)
-	}
-	e := findEntry(t, repo, tree, filename)
-	blob, err := repo.BlobObject(e.Hash)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return blob
-}
-
-// readBlob reads the contents of a blob.
-func readBlob(t *testing.T, blob *object.Blob) []byte {
-	r, err := blob.Reader()
-	if err != nil {
-		t.Fatal(err)
-	}
-	data, err := ioutil.ReadAll(r)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return data
-}
-
-// findEntry returns the TreeEntry at filename. It fails the test if
-// it doesn't exist.
-func findEntry(t *testing.T, repo *git.Repository, tree *object.Tree, filename string) object.TreeEntry {
-	dir, base := path.Split(filename)
-	if dir != "" {
-		te := findEntry(t, repo, tree, dir[:len(dir)-1])
-		var err error
-		tree, err = repo.TreeObject(te.Hash)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	for _, e := range tree.Entries {
-		if e.Name == base {
-			return e
-		}
-	}
-	t.Fatalf("could not find %q in repo", filename)
-	return object.TreeEntry{}
 }
