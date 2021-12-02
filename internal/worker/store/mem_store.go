@@ -19,6 +19,7 @@ type MemStore struct {
 	mu            sync.Mutex
 	cveRecords    map[string]*CVERecord
 	updateRecords map[string]*CommitUpdateRecord
+	dirHashes     map[string]string
 }
 
 // NewMemStore creates a new, empty MemStore.
@@ -32,6 +33,7 @@ func NewMemStore() *MemStore {
 func (ms *MemStore) Clear(context.Context) error {
 	ms.cveRecords = map[string]*CVERecord{}
 	ms.updateRecords = map[string]*CommitUpdateRecord{}
+	ms.dirHashes = map[string]string{}
 	return nil
 }
 
@@ -74,6 +76,17 @@ func (ms *MemStore) ListCommitUpdateRecords(_ context.Context, limit int) ([]*Co
 		urs = urs[:limit]
 	}
 	return urs, nil
+}
+
+// GetDirectoryHash implements Transaction.GetDirectoryHash.
+func (ms *MemStore) GetDirectoryHash(_ context.Context, dir string) (string, error) {
+	return ms.dirHashes[dir], nil
+}
+
+// SetDirectoryHash implements Transaction.SetDirectoryHash.
+func (ms *MemStore) SetDirectoryHash(_ context.Context, dir, hash string) error {
+	ms.dirHashes[dir] = hash
+	return nil
 }
 
 // RunTransaction implements Store.RunTransaction.

@@ -35,12 +35,13 @@ func TestRepoCVEFiles(t *testing.T) {
 	}
 
 	want := []repoFile{
-		{dirpath: "2021/0xxx", filename: "CVE-2021-0001.json"},
-		{dirpath: "2021/0xxx", filename: "CVE-2021-0010.json"},
-		{dirpath: "2021/1xxx", filename: "CVE-2021-1384.json"},
+		{dirPath: "2021/0xxx", filename: "CVE-2021-0001.json", year: 2021, number: 1},
+		{dirPath: "2021/0xxx", filename: "CVE-2021-0010.json", year: 2021, number: 10},
+		{dirPath: "2021/1xxx", filename: "CVE-2021-1384.json", year: 2021, number: 1384},
 	}
 
-	if diff := cmp.Diff(want, got, cmp.AllowUnexported(repoFile{}), cmpopts.IgnoreFields(repoFile{}, "hash")); diff != "" {
+	opt := cmpopts.IgnoreFields(repoFile{}, "treeHash", "blobHash")
+	if diff := cmp.Diff(want, got, cmp.AllowUnexported(repoFile{}), opt); diff != "" {
 		t.Errorf("mismatch (-want, +got):\n%s", diff)
 	}
 }
@@ -165,7 +166,7 @@ func TestDoUpdate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mstore := store.NewMemStore()
 			createCVERecords(t, mstore, test.cur)
-			if err := doUpdate(ctx, repo, h, mstore, needsIssue); err != nil {
+			if _, err := doUpdate(ctx, repo, h, mstore, needsIssue); err != nil {
 				t.Fatal(err)
 			}
 			got := mstore.CVERecords()
@@ -177,6 +178,64 @@ func TestDoUpdate(t *testing.T) {
 				t.Errorf("mismatch (-want, +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestGroupFilesByDirectory(t *testing.T) {
+	for _, test := range []struct {
+		in   []repoFile
+		want [][]repoFile
+	}{
+		{in: nil, want: nil},
+		{
+			in:   []repoFile{{dirPath: "a"}},
+			want: [][]repoFile{{{dirPath: "a"}}},
+		},
+		{
+			in: []repoFile{
+				{dirPath: "a", filename: "f1"},
+				{dirPath: "a", filename: "f2"},
+			},
+			want: [][]repoFile{{
+				{dirPath: "a", filename: "f1"},
+				{dirPath: "a", filename: "f2"},
+			}},
+		},
+		{
+			in: []repoFile{
+				{dirPath: "a", filename: "f1"},
+				{dirPath: "a", filename: "f2"},
+				{dirPath: "b", filename: "f1"},
+				{dirPath: "c", filename: "f1"},
+				{dirPath: "c", filename: "f2"},
+			},
+			want: [][]repoFile{
+				{
+					{dirPath: "a", filename: "f1"},
+					{dirPath: "a", filename: "f2"},
+				},
+				{
+					{dirPath: "b", filename: "f1"},
+				},
+				{
+					{dirPath: "c", filename: "f1"},
+					{dirPath: "c", filename: "f2"},
+				},
+			},
+		},
+	} {
+		got, err := groupFilesByDirectory(test.in)
+		if err != nil {
+			t.Fatalf("%v: %v", test.in, err)
+		}
+		if diff := cmp.Diff(got, test.want, cmp.AllowUnexported(repoFile{})); diff != "" {
+			t.Errorf("%v: (-want, +got)\n%s", test.in, diff)
+		}
+	}
+
+	_, err := groupFilesByDirectory([]repoFile{{dirPath: "a"}, {dirPath: "b"}, {dirPath: "a"}})
+	if err == nil {
+		t.Error("got nil, want error")
 	}
 }
 

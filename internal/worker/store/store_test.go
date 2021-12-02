@@ -28,6 +28,9 @@ func testStore(t *testing.T, s Store) {
 	t.Run("CVEs", func(t *testing.T) {
 		testCVEs(t, s)
 	})
+	t.Run("DirHashes", func(t *testing.T) {
+		testDirHashes(t, s)
+	})
 }
 
 func testUpdates(t *testing.T, s Store) {
@@ -146,6 +149,29 @@ func testCVEs(t *testing.T, s Store) {
 	want.CVEState = cveschema.StateRejected
 	want.CommitHash = "999"
 	diff(t, &want, got)
+}
+
+func testDirHashes(t *testing.T, s Store) {
+	ctx := context.Background()
+	const dir = "a/b/c"
+	got, err := s.GetDirectoryHash(ctx, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "" {
+		t.Fatalf("got %q, want empty", got)
+	}
+	const want = "123"
+	if err := s.SetDirectoryHash(ctx, "a/b/c", want); err != nil {
+		t.Fatal(err)
+	}
+	got, err = s.GetDirectoryHash(ctx, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Fatalf("got %q, want %q", got, want)
+	}
 }
 
 func createCVERecords(t *testing.T, ctx context.Context, s Store, crs []*CVERecord) {

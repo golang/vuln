@@ -7,10 +7,14 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"cloud.google.com/go/firestore"
 	"golang.org/x/vuln/internal/derrors"
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // FireStore is a Store implemented with Google Cloud Firestore.
@@ -25,6 +29,7 @@ import (
 // are some collections:
 // - CVEs for CVERecords
 // - CommitUpdates for CommitUpdateRecords
+// - DirHashes for directory hashes
 type FireStore struct {
 	namespace string
 	client    *firestore.Client
@@ -35,6 +40,7 @@ const (
 	namespaceCollection = "Namespaces"
 	updateCollection    = "Updates"
 	cveCollection       = "CVEs"
+	dirHashCollection   = "DirHashes"
 )
 
 // NewFireStore creates a new FireStore, backed by a client to Firestore. Since
@@ -106,6 +112,46 @@ func (fs *FireStore) ListCommitUpdateRecords(ctx context.Context, limit int) ([]
 		urs = append(urs, &ur)
 	}
 	return urs, nil
+}
+
+type dirHash struct {
+	Hash string
+}
+
+// dirHashRef returns a DocumentRef for the directory dir.
+func (s *FireStore) dirHashRef(dir string) *firestore.DocumentRef {
+	// Firestore IDs cannot contain slashes.
+	// Do something simple and readable to fix that.
+	id := strings.ReplaceAll(dir, "/", "|")
+	return s.nsDoc.Collection(dirHashCollection).Doc(id)
+}
+
+// GetDirectoryHash implements Transaction.GetDirectoryHash.
+func (fs *FireStore) GetDirectoryHash(ctx context.Context, dir string) (_ string, err error) {
+	defer derrors.Wrap(&err, "GetDirectoryHash(%s)", dir)
+
+	ds, err := fs.dirHashRef(dir).Get(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return "", nil
+		}
+		return "", err
+	}
+	data, err := ds.DataAt("Hash")
+	if err != nil {
+		return "", err
+	}
+	hash, ok := data.(string)
+	if !ok {
+		return "", fmt.Errorf("hash data for %s is not a string", dir)
+	}
+	return hash, nil
+}
+
+// SetDirectoryHash implements Transaction.SetDirectoryHash.
+func (fs *FireStore) SetDirectoryHash(ctx context.Context, dir, hash string) error {
+	_, err := fs.dirHashRef(dir).Set(ctx, dirHash{Hash: hash})
+	return err
 }
 
 // RunTransaction implements Store.RunTransaction.

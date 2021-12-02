@@ -11,6 +11,7 @@ import (
 	"io"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,7 +33,7 @@ type triageFunc func(*cveschema.CVE) (bool, error)
 // of the DB and updates the DB to match.
 //
 // needsIssue determines whether a CVE needs an issue to be filed for it.
-func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Hash, st store.Store, needsIssue triageFunc) (err error) {
+func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Hash, st store.Store, needsIssue triageFunc) (ur *store.CommitUpdateRecord, err error) {
 	// We want the action of reading the old DB record, updating it and
 	// writing it back to be atomic. It would be too expensive to do that one
 	// record at a time. Ideally we'd process the whole repo commit in one
@@ -45,7 +46,11 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 		if err != nil {
 			log.Error(ctx, "update failed", event.Value("error", err))
 		} else {
-			log.Info(ctx, "update succeeded")
+			nProcessed := int64(0)
+			if ur != nil {
+				nProcessed = int64(ur.NumProcessed)
+			}
+			log.Info(ctx, "update succeeded", event.Int64("numProcessed", nProcessed))
 		}
 	}()
 
@@ -53,7 +58,7 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 
 	commit, err := repo.CommitObject(commitHash)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Get all the CVE files.
@@ -62,52 +67,95 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 	// each file individually.
 	files, err := repoCVEFiles(repo, commit)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	// Process files in the same directory together, so we can easily skip
+	// the entire directory if it hasn't changed.
+	filesByDir, err := groupFilesByDirectory(files)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create a new CommitUpdateRecord to describe this run of doUpdate.
-	ur := &store.CommitUpdateRecord{
+	ur = &store.CommitUpdateRecord{
 		StartedAt:  time.Now(),
 		CommitHash: commitHash.String(),
 		CommitTime: commit.Committer.When,
 		NumTotal:   len(files),
 	}
 	if err := st.CreateCommitUpdateRecord(ctx, ur); err != nil {
-		return err
+		return ur, err
 	}
 
-	// Update files in batches.
-
-	// Max Firestore writes per transaction.
-	// See https://cloud.google.com/firestore/quotas.
-	const batchSize = 500
-
-	for i := 0; i < len(files); i += batchSize {
-		j := i + batchSize
-		if j > len(files) {
-			j = len(files)
-		}
-		numAdds, numMods, err := updateBatch(ctx, files[i:j], st, repo, commitHash, needsIssue)
-
-		// Change the CommitUpdateRecord in the Store to reflect the results of the transaction.
+	for _, dirFiles := range filesByDir {
+		numProc, numAdds, numMods, err := updateDirectory(ctx, dirFiles, st, repo, commitHash, needsIssue)
+		// Change the CommitUpdateRecord in the Store to reflect the results of the directory update.
 		if err != nil {
 			ur.Error = err.Error()
 			if err2 := st.SetCommitUpdateRecord(ctx, ur); err2 != nil {
-				return fmt.Errorf("update failed with %w, could not set update record: %v", err, err2)
+				return ur, fmt.Errorf("update failed with %w, could not set update record: %v", err, err2)
 			}
-			return err
 		}
-		ur.NumProcessed += j - i
-		// Add in these two numbers here, instead of in the function passed to
-		// RunTransaction, because that function may be executed multiple times.
+		ur.NumProcessed += numProc
 		ur.NumAdded += numAdds
 		ur.NumModified += numMods
 		if err := st.SetCommitUpdateRecord(ctx, ur); err != nil {
-			return err
+			return ur, err
 		}
-	} // end loop
-
+	}
 	ur.EndedAt = time.Now()
-	return st.SetCommitUpdateRecord(ctx, ur)
+	return ur, st.SetCommitUpdateRecord(ctx, ur)
+}
+
+func updateDirectory(ctx context.Context, dirFiles []repoFile, st store.Store, repo *git.Repository, commitHash plumbing.Hash, needsIssue triageFunc) (numProc, numAdds, numMods int, err error) {
+	dirPath := dirFiles[0].dirPath
+	dirHash := dirFiles[0].treeHash.String()
+
+	// A non-empty directory hash means that we have fully processed the directory
+	// with that hash. If the stored hash matches the current one, we can skip
+	// this directory.
+	dbHash, err := st.GetDirectoryHash(ctx, dirPath)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	if dirHash == dbHash {
+		log.Infof(ctx, "skipping directory %s because the hashes match", dirPath)
+		return 0, 0, 0, nil
+	}
+	// Set the hash to something that can't match, until we fully process this directory.
+	if err := st.SetDirectoryHash(ctx, dirPath, "in progress"); err != nil {
+		return 0, 0, 0, err
+	}
+	// It's okay if we crash now; the directory hashes are just an optimization.
+	// At worst we'll redo this directory next time.
+
+	// Update files in batches.
+
+	// Firestore supports a maximum of 500 writes per transaction.
+	// See https://cloud.google.com/firestore/quotas.
+	const batchSize = 500
+
+	for i := 0; i < len(dirFiles); i += batchSize {
+		j := i + batchSize
+		if j > len(dirFiles) {
+			j = len(dirFiles)
+		}
+		numBatchAdds, numBatchMods, err := updateBatch(ctx, dirFiles[i:j], st, repo, commitHash, needsIssue)
+		if err != nil {
+			return 0, 0, 0, err
+		}
+		numProc += j - i
+		// Add in these two numbers here, instead of in the function passed to
+		// RunTransaction, because that function may be executed multiple times.
+		numAdds += numBatchAdds
+		numMods += numBatchMods
+	} // end batch loop
+
+	// We're done with this directory, so we can remember its hash.
+	if err := st.SetDirectoryHash(ctx, dirPath, dirHash); err != nil {
+		return 0, 0, 0, err
+	}
+	return numProc, numAdds, numMods, nil
 }
 
 func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *git.Repository, commitHash plumbing.Hash, needsIssue triageFunc) (numAdds, numMods int, err error) {
@@ -118,6 +166,7 @@ func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *gi
 	err = st.RunTransaction(ctx, func(ctx context.Context, tx store.Transaction) error {
 		numAdds = 0
 		numMods = 0
+
 		// Read information about the existing state in the store that's
 		// relevant to this batch. Since the entries are sorted, we can read
 		// a range of IDS.
@@ -133,7 +182,7 @@ func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *gi
 		for _, f := range batch {
 			id := idFromFilename(f.filename)
 			old := idToRecord[id]
-			if old != nil && old.BlobHash == f.hash.String() {
+			if old != nil && old.BlobHash == f.blobHash.String() {
 				// No change; do nothing.
 				continue
 			}
@@ -167,11 +216,11 @@ func handleCVE(repo *git.Repository, f repoFile, old *store.CVERecord, commitHas
 	defer derrors.Wrap(&err, "handleCVE(%s)", f.filename)
 
 	// Read CVE from repo.
-	r, err := blobReader(repo, f.hash)
+	r, err := blobReader(repo, f.blobHash)
 	if err != nil {
 		return false, err
 	}
-	pathname := path.Join(f.dirpath, f.filename)
+	pathname := path.Join(f.dirPath, f.filename)
 	cve := &cveschema.CVE{}
 	if err := json.NewDecoder(r).Decode(cve); err != nil {
 		return false, err
@@ -186,7 +235,7 @@ func handleCVE(repo *git.Repository, f repoFile, old *store.CVERecord, commitHas
 
 	// If the CVE is not in the database, add it.
 	if old == nil {
-		cr := store.NewCVERecord(cve, path.Join(f.dirpath, f.filename), f.hash.String())
+		cr := store.NewCVERecord(cve, pathname, f.blobHash.String())
 		cr.CommitHash = commitHash.String()
 		if needs {
 			cr.TriageState = store.TriageStateNeedsIssue
@@ -201,7 +250,7 @@ func handleCVE(repo *git.Repository, f repoFile, old *store.CVERecord, commitHas
 	// Change to an existing record.
 	mod := *old // copy the old one
 	mod.Path = pathname
-	mod.BlobHash = f.hash.String()
+	mod.BlobHash = f.blobHash.String()
 	mod.CVEState = cve.State
 	mod.CommitHash = commitHash.String()
 	switch old.TriageState {
@@ -235,9 +284,12 @@ func handleCVE(repo *git.Repository, f repoFile, old *store.CVERecord, commitHas
 }
 
 type repoFile struct {
-	dirpath  string
+	dirPath  string
 	filename string
-	hash     plumbing.Hash
+	treeHash plumbing.Hash
+	blobHash plumbing.Hash
+	year     int
+	number   int
 }
 
 // repoCVEFiles returns all the CVE files in the given repo commit, sorted by
@@ -254,10 +306,18 @@ func repoCVEFiles(repo *git.Repository, commit *object.Commit) (_ []repoFile, er
 		return nil, err
 	}
 	sort.Slice(files, func(i, j int) bool {
-		return files[i].filename < files[j].filename
+		// Compare the year and the number, as ints. Using the ID directly
+		// would put CVE-2014-100009 before CVE-2014-10001.
+		if files[i].year != files[j].year {
+			return files[i].year < files[j].year
+		}
+		return files[i].number < files[j].number
 	})
 	return files, nil
 }
+
+// func cmpIDs(id1, i2 string) int  {
+// 	toInts := func(id string) [2]int {
 
 // walkFiles collects CVE files from a repo tree.
 func walkFiles(repo *git.Repository, tree *object.Tree, dirpath string, files []repoFile) ([]repoFile, error) {
@@ -272,14 +332,56 @@ func walkFiles(repo *git.Repository, tree *object.Tree, dirpath string, files []
 				return nil, err
 			}
 		} else if isCVEFilename(e.Name) {
+			// e.Name is CVE-YEAR-NUMBER.json
+			year, err := strconv.Atoi(e.Name[4:8])
+			if err != nil {
+				return nil, err
+			}
+			number, err := strconv.Atoi(e.Name[9 : len(e.Name)-5])
+			if err != nil {
+				return nil, err
+			}
 			files = append(files, repoFile{
-				dirpath:  dirpath,
+				dirPath:  dirpath,
 				filename: e.Name,
-				hash:     e.Hash,
+				treeHash: tree.Hash,
+				blobHash: e.Hash,
+				year:     year,
+				number:   number,
 			})
 		}
 	}
 	return files, nil
+}
+
+// Collect files by directory, verifying that directories are contiguous in
+// the list of files. Our directory hash optimization depends on that.
+func groupFilesByDirectory(files []repoFile) ([][]repoFile, error) {
+	if len(files) == 0 {
+		return nil, nil
+	}
+	var (
+		result [][]repoFile
+		curDir []repoFile
+	)
+	for _, f := range files {
+		if len(curDir) > 0 && f.dirPath != curDir[0].dirPath {
+			result = append(result, curDir)
+			curDir = nil
+		}
+		curDir = append(curDir, f)
+	}
+	if len(curDir) > 0 {
+		result = append(result, curDir)
+	}
+	seen := map[string]bool{}
+	for _, dir := range result {
+		if seen[dir[0].dirPath] {
+			return nil, fmt.Errorf("directory %s is not contiguous in the sorted list of files", dir[0].dirPath)
+		}
+		seen[dir[0].dirPath] = true
+	}
+	return result, nil
 }
 
 // blobReader returns a reader to the blob with the given hash.

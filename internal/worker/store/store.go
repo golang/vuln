@@ -135,6 +135,13 @@ type Store interface {
 	// least recent.
 	ListCommitUpdateRecords(ctx context.Context, limit int) ([]*CommitUpdateRecord, error)
 
+	// GetDirectoryHash returns the hash for the tree object corresponding to dir.
+	// If dir isn't found, it succeeds with the empty string.
+	GetDirectoryHash(ctx context.Context, dir string) (string, error)
+
+	// SetDirectoryHash sets the hash for the given directory.
+	SetDirectoryHash(ctx context.Context, dir, hash string) error
+
 	// RunTransaction runs the function in a transaction.
 	RunTransaction(context.Context, func(context.Context, Transaction) error) error
 }

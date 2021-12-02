@@ -35,9 +35,10 @@ func UpdateCommit(ctx context.Context, repoPath, commitHash string, st store.Sto
 			return err
 		}
 	}
-	return doUpdate(ctx, repo, ch, st, func(cve *cveschema.CVE) (bool, error) {
+	_, err = doUpdate(ctx, repo, ch, st, func(cve *cveschema.CVE) (bool, error) {
 		return TriageCVE(ctx, cve, pkgsiteURL)
 	})
+	return err
 }
 
 // checkUpdate performs sanity checks on a potential update.
