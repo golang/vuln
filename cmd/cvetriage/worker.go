@@ -29,7 +29,7 @@ func Run(dirpath string, triaged map[string]string) (err error) {
 	if dirpath != "" {
 		repo, err = gitrepo.Open(dirpath)
 	} else {
-		repo, err = gitrepo.Clone(gitrepo.CVElistRepoURL)
+		repo, err = gitrepo.Clone(gitrepo.CVEListRepoURL)
 	}
 	if err != nil {
 		return err

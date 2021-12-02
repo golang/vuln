@@ -7,6 +7,7 @@ package gitrepo
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -16,7 +17,7 @@ import (
 	"golang.org/x/vuln/internal/worker/log"
 )
 
-const CVElistRepoURL = "https://github.com/CVEProject/cvelist"
+const CVEListRepoURL = "https://github.com/CVEProject/cvelist"
 
 // Clone returns a repo by cloning the repo at repoURL.
 func Clone(repoURL string) (repo *git.Repository, err error) {
@@ -40,6 +41,15 @@ func Open(dirpath string) (repo *git.Repository, err error) {
 		return nil, err
 	}
 	return repo, nil
+}
+
+// CloneOrOpen clones repoPath if it is an HTTP(S) URL, or opens it from the
+// local disk otherwise.
+func CloneOrOpen(repoPath string) (*git.Repository, error) {
+	if strings.HasPrefix(repoPath, "http://") || strings.HasPrefix(repoPath, "https://") {
+		return Clone(repoPath)
+	}
+	return Open(repoPath)
 }
 
 // Root returns the root tree of the repo at HEAD.

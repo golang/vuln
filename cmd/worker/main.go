@@ -18,6 +18,7 @@ import (
 
 	"cloud.google.com/go/errorreporting"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/gitrepo"
 	"golang.org/x/vuln/internal/worker"
 	"golang.org/x/vuln/internal/worker/log"
 	"golang.org/x/vuln/internal/worker/store"
@@ -27,6 +28,9 @@ var (
 	project        = flag.String("project", os.Getenv("GOOGLE_CLOUD_PROJECT"), "project ID")
 	namespace      = flag.String("namespace", os.Getenv("VULN_WORKER_NAMESPACE"), "Firestore namespace")
 	errorReporting = flag.Bool("reporterrors", os.Getenv("VULN_WORKER_REPORT_ERRORS") == "true", "use the error reporting API")
+	pkgsiteURL     = flag.String("pkgsite", "https://pkg.go.dev", "URL to pkgsite")
+	localRepoPath  = flag.String("repo", "", "path to local repo, instead of cloning remote")
+	force          = flag.Bool("force", false, "force an update to happen")
 )
 
 const serviceID = "vuln-worker"
@@ -88,6 +92,11 @@ func runCommandLine(ctx context.Context, st store.Store) error {
 	switch flag.Arg(0) {
 	case "list-updates":
 		return listUpdatesCommand(ctx, st)
+	case "update":
+		if flag.NArg() != 2 {
+			return errors.New("usage: update COMMIT")
+		}
+		return updateCommand(ctx, st, flag.Arg(1))
 	default:
 		return fmt.Errorf("unknown command: %q", flag.Arg(1))
 	}
@@ -112,6 +121,18 @@ func listUpdatesCommand(ctx context.Context, st store.Store) error {
 			r.NumProcessed, r.NumTotal, r.NumAdded, r.NumModified)
 	}
 	return tw.Flush()
+}
+
+func updateCommand(ctx context.Context, st store.Store, commitHash string) error {
+	repoPath := gitrepo.CVEListRepoURL
+	if *localRepoPath != "" {
+		repoPath = *localRepoPath
+	}
+	err := worker.UpdateCommit(ctx, repoPath, commitHash, st, *pkgsiteURL, *force)
+	if cerr := new(worker.CheckUpdateError); errors.As(err, &cerr) {
+		return fmt.Errorf("%w; use -force to override", cerr)
+	}
+	return err
 }
 
 func die(format string, args ...interface{}) {

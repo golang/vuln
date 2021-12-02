@@ -40,11 +40,11 @@ var stdlibKeywords = map[string]bool{
 
 // TriageCVE reports whether the CVE refers to a
 // Go module.
-func TriageCVE(c *cveschema.CVE) (_ bool, err error) {
+func TriageCVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ bool, err error) {
 	defer derrors.Wrap(&err, "triageCVE(%q)", c.ID)
 	switch c.DataVersion {
 	case "4.0":
-		mp, err := cveModulePath(context.TODO(), c)
+		mp, err := cveModulePath(ctx, c, pkgsiteURL)
 		if err != nil {
 			return false, err
 		}
@@ -62,7 +62,7 @@ func TriageCVE(c *cveschema.CVE) (_ bool, err error) {
 // it is.
 // TODO(golang/go#49733) Use the CandidateModulePaths function from pkgsite to catch
 // longer module paths, e.g. github.com/pulumi/pulumi/sdk/v2.
-func cveModulePath(ctx context.Context, c *cveschema.CVE) (_ string, err error) {
+func cveModulePath(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ string, err error) {
 	defer derrors.Wrap(&err, "cveModulePath(%q)", c.ID)
 	for _, r := range c.References.Data {
 		if r.URL == "" {
@@ -87,7 +87,7 @@ func cveModulePath(ctx context.Context, c *cveschema.CVE) (_ string, err error) 
 				continue
 			}
 			mod := strings.Join(parts[0:3], "/")
-			known, err := knownToPkgsite(ctx, "https://pkg.go.dev", mod)
+			known, err := knownToPkgsite(ctx, pkgsiteURL, mod)
 			if err != nil {
 				return "", err
 			}

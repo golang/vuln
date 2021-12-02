@@ -7,7 +7,6 @@ package store
 import (
 	"context"
 	"errors"
-	"sort"
 
 	"cloud.google.com/go/firestore"
 	"golang.org/x/vuln/internal/derrors"
@@ -86,7 +85,7 @@ func (fs *FireStore) SetCommitUpdateRecord(ctx context.Context, r *CommitUpdateR
 // ListCommitUpdateRecords implements Store.ListCommitUpdateRecords.
 func (fs *FireStore) ListCommitUpdateRecords(ctx context.Context, limit int) ([]*CommitUpdateRecord, error) {
 	var urs []*CommitUpdateRecord
-	q := fs.nsDoc.Collection(updateCollection).Query
+	q := fs.nsDoc.Collection(updateCollection).OrderBy("StartedAt", firestore.Desc)
 	if limit > 0 {
 		q = q.Limit(limit)
 	}
@@ -106,9 +105,6 @@ func (fs *FireStore) ListCommitUpdateRecords(ctx context.Context, limit int) ([]
 		ur.ID = docsnap.Ref.ID
 		urs = append(urs, &ur)
 	}
-	sort.Slice(urs, func(i, j int) bool {
-		return urs[i].StartedAt.After(urs[j].StartedAt)
-	})
 	return urs, nil
 }
 

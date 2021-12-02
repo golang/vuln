@@ -19,7 +19,7 @@ import (
 
 // readTxtarRepo converts a txtar file to a single-commit
 // repo.
-func readTxtarRepo(filename string) (_ *git.Repository, err error) {
+func readTxtarRepo(filename string, now time.Time) (_ *git.Repository, err error) {
 	defer derrors.Wrap(&err, "readTxtarRepo(%q)", filename)
 
 	mfs := memfs.New()
@@ -56,7 +56,7 @@ func readTxtarRepo(filename string) (_ *git.Repository, err error) {
 	_, err = wt.Commit("", &git.CommitOptions{All: true, Author: &object.Signature{
 		Name:  "Joe Random",
 		Email: "joe@example.com",
-		When:  time.Now(),
+		When:  now,
 	}})
 	if err != nil {
 		return nil, err

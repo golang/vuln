@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -20,7 +21,7 @@ import (
 )
 
 func TestRepoCVEFiles(t *testing.T) {
-	repo, err := readTxtarRepo("testdata/basic.txtar")
+	repo, err := readTxtarRepo("testdata/basic.txtar", time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +47,7 @@ func TestRepoCVEFiles(t *testing.T) {
 
 func TestDoUpdate(t *testing.T) {
 	ctx := log.WithLineLogger(context.Background())
-	repo, err := readTxtarRepo("testdata/basic.txtar")
+	repo, err := readTxtarRepo("testdata/basic.txtar", time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
