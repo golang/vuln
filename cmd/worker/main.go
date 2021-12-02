@@ -25,8 +25,8 @@ import (
 )
 
 var (
-	project        = flag.String("project", os.Getenv("GOOGLE_CLOUD_PROJECT"), "project ID")
-	namespace      = flag.String("namespace", os.Getenv("VULN_WORKER_NAMESPACE"), "Firestore namespace")
+	project        = flag.String("project", os.Getenv("GOOGLE_CLOUD_PROJECT"), "project ID (required)")
+	namespace      = flag.String("namespace", os.Getenv("VULN_WORKER_NAMESPACE"), "Firestore namespace (required)")
 	errorReporting = flag.Bool("reporterrors", os.Getenv("VULN_WORKER_REPORT_ERRORS") == "true", "use the error reporting API")
 	pkgsiteURL     = flag.String("pkgsite", "https://pkg.go.dev", "URL to pkgsite")
 	localRepoPath  = flag.String("repo", "", "path to local repo, instead of cloning remote")
@@ -36,12 +36,29 @@ var (
 const serviceID = "vuln-worker"
 
 func main() {
+	flag.Usage = func() {
+		out := flag.CommandLine.Output()
+		fmt.Fprintln(out, "usage:")
+		fmt.Fprintln(out, "worker FLAGS")
+		fmt.Fprintln(out, "  run as a server, listening at the PORT env var")
+		fmt.Fprintln(out, "worker FLAGS SUBCOMMAND ...")
+		fmt.Fprintln(out, "  run as a command-line tool, executing SUBCOMMAND")
+		fmt.Fprintln(out, "  subcommands:")
+		fmt.Fprintln(out, "    update COMMIT: perform an update operation")
+		fmt.Fprintln(out, "    list-updates: display info about update operations")
+		fmt.Fprintln(out, "flags:")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 	if *project == "" {
-		die("need -project or GOOGLE_CLOUD_PROJECT")
+		fmt.Fprintln(os.Stderr, "need -project or GOOGLE_CLOUD_PROJECT")
+		flag.Usage()
+		os.Exit(1)
 	}
 	if *namespace == "" {
-		die("need -namespace or VULN_WORKER_NAMESPACE")
+		fmt.Fprintln(os.Stderr, "need -namespace or VULN_WORKER_NAMESPACE")
+		flag.Usage()
+		os.Exit(1)
 	}
 	ctx := log.WithLineLogger(context.Background())
 

@@ -38,8 +38,7 @@ var stdlibKeywords = map[string]bool{
 	"golang.org":        true,
 }
 
-// TriageCVE reports whether the CVE refers to a
-// Go module.
+// TriageCVE reports whether the CVE refers to a Go module.
 func TriageCVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ bool, err error) {
 	defer derrors.Wrap(&err, "triageCVE(%q)", c.ID)
 	switch c.DataVersion {
@@ -99,7 +98,9 @@ func cveModulePath(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ 
 	return "", nil
 }
 
-// Limit pkgsite calls to 2 qps (once every 500ms)
+// Limit pkgsite calls to 2 qps (once every 500ms).
+// The second argument to rate.NewLimiter is the burst, which
+// basically lets you exceed the rate briefly.
 var pkgsiteRateLimiter = rate.NewLimiter(rate.Every(500*time.Millisecond), 3)
 
 var seenModulePath = map[string]bool{}
