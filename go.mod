@@ -22,6 +22,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.6
+	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/safehtml v0.0.2
 	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
@@ -36,7 +37,7 @@ require (
 	golang.org/x/exp v0.0.0-20211123021643-48cbe7f80d7c
 	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
-	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 // indirect
+	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359 // indirect
 	golang.org/x/text v0.3.7 // indirect
@@ -51,3 +52,5 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+require github.com/google/go-querystring v1.1.0 // indirect
