@@ -38,6 +38,10 @@ type updater struct {
 	needsIssue triageFunc
 }
 
+type updateStats struct {
+	numProcessed, numAdded, numModified int
+}
+
 // newUpdater creates an updater for updating the store with information from
 // the repo commit.
 // needsIssue determines whether a CVE needs an issue to be filed for it.
@@ -112,7 +116,7 @@ func (u *updater) update(ctx context.Context) (ur *store.CommitUpdateRecord, err
 	}
 
 	for _, dirFiles := range filesByDir {
-		numProc, numAdds, numMods, err := u.updateDirectory(ctx, dirFiles)
+		stats, err := u.updateDirectory(ctx, dirFiles)
 		// Change the CommitUpdateRecord in the Store to reflect the results of the directory update.
 		if err != nil {
 			ur.Error = err.Error()
@@ -120,9 +124,9 @@ func (u *updater) update(ctx context.Context) (ur *store.CommitUpdateRecord, err
 				return ur, fmt.Errorf("update failed with %w, could not set update record: %v", err, err2)
 			}
 		}
-		ur.NumProcessed += numProc
-		ur.NumAdded += numAdds
-		ur.NumModified += numMods
+		ur.NumProcessed += stats.numProcessed
+		ur.NumAdded += stats.numAdded
+		ur.NumModified += stats.numModified
 		if err := u.st.SetCommitUpdateRecord(ctx, ur); err != nil {
 			return ur, err
 		}
@@ -131,7 +135,7 @@ func (u *updater) update(ctx context.Context) (ur *store.CommitUpdateRecord, err
 	return ur, u.st.SetCommitUpdateRecord(ctx, ur)
 }
 
-func (u *updater) updateDirectory(ctx context.Context, dirFiles []repoFile) (numProc, numAdds, numMods int, err error) {
+func (u *updater) updateDirectory(ctx context.Context, dirFiles []repoFile) (_ updateStats, err error) {
 	dirPath := dirFiles[0].dirPath
 	dirHash := dirFiles[0].treeHash.String()
 
@@ -140,15 +144,15 @@ func (u *updater) updateDirectory(ctx context.Context, dirFiles []repoFile) (num
 	// this directory.
 	dbHash, err := u.st.GetDirectoryHash(ctx, dirPath)
 	if err != nil {
-		return 0, 0, 0, err
+		return updateStats{}, err
 	}
 	if dirHash == dbHash {
 		log.Infof(ctx, "skipping directory %s because the hashes match", dirPath)
-		return 0, 0, 0, nil
+		return updateStats{}, nil
 	}
 	// Set the hash to something that can't match, until we fully process this directory.
 	if err := u.st.SetDirectoryHash(ctx, dirPath, "in progress"); err != nil {
-		return 0, 0, 0, err
+		return updateStats{}, err
 	}
 	// It's okay if we crash now; the directory hashes are just an optimization.
 	// At worst we'll redo this directory next time.
@@ -159,6 +163,7 @@ func (u *updater) updateDirectory(ctx context.Context, dirFiles []repoFile) (num
 	// See https://cloud.google.com/firestore/quotas.
 	const batchSize = 500
 
+	var stats updateStats
 	for i := 0; i < len(dirFiles); i += batchSize {
 		j := i + batchSize
 		if j > len(dirFiles) {
@@ -166,20 +171,20 @@ func (u *updater) updateDirectory(ctx context.Context, dirFiles []repoFile) (num
 		}
 		numBatchAdds, numBatchMods, err := u.updateBatch(ctx, dirFiles[i:j])
 		if err != nil {
-			return 0, 0, 0, err
+			return updateStats{}, err
 		}
-		numProc += j - i
+		stats.numProcessed += j - i
 		// Add in these two numbers here, instead of in the function passed to
 		// RunTransaction, because that function may be executed multiple times.
-		numAdds += numBatchAdds
-		numMods += numBatchMods
+		stats.numAdded += numBatchAdds
+		stats.numModified += numBatchMods
 	} // end batch loop
 
 	// We're done with this directory, so we can remember its hash.
 	if err := u.st.SetDirectoryHash(ctx, dirPath, dirHash); err != nil {
-		return 0, 0, 0, err
+		return updateStats{}, err
 	}
-	return numProc, numAdds, numMods, nil
+	return stats, nil
 }
 
 func (u *updater) updateBatch(ctx context.Context, batch []repoFile) (numAdds, numMods int, err error) {
@@ -339,9 +344,6 @@ func repoCVEFiles(repo *git.Repository, commit *object.Commit) (_ []repoFile, er
 	})
 	return files, nil
 }
-
-// func cmpIDs(id1, i2 string) int  {
-// 	toInts := func(id string) [2]int {
 
 // walkFiles collects CVE files from a repo tree.
 func walkFiles(repo *git.Repository, tree *object.Tree, dirpath string, files []repoFile) ([]repoFile, error) {

@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"cloud.google.com/go/firestore"
 	"golang.org/x/vuln/internal/derrors"
@@ -165,25 +164,6 @@ func (fs *FireStore) GetDirectoryHash(ctx context.Context, dir string) (_ string
 func (fs *FireStore) SetDirectoryHash(ctx context.Context, dir, hash string) error {
 	_, err := fs.dirHashRef(dir).Set(ctx, dirHash{Hash: hash})
 	return err
-}
-
-func (fs *FireStore) GetAllCVERecords(ctx context.Context) ([]*CVERecord, error) {
-	start := time.Now()
-	ds, err := fs.nsDoc.Collection(cveCollection).Select().Where("TriageState", "==", "NoActionNeeded").Documents(ctx).GetAll()
-	if err != nil {
-		return nil, err
-	}
-	fmt.Printf("#### where needsissue: %d recs in %s\n", len(ds), time.Since(start))
-	_ = ds
-
-	docsnaps, err := fs.nsDoc.Collection(cveCollection).
-		Select("ID", "TriageState").
-		Limit(100).
-		Documents(ctx).GetAll()
-	if err != nil {
-		return nil, err
-	}
-	return docsnapsToCVERecords(docsnaps)
 }
 
 // RunTransaction implements Store.RunTransaction.

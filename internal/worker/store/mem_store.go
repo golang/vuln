@@ -42,15 +42,6 @@ func (ms *MemStore) CVERecords() map[string]*CVERecord {
 	return ms.cveRecords
 }
 
-func (ms *MemStore) GetAllCVERecords(ctx context.Context) ([]*CVERecord, error) {
-	var rs []*CVERecord
-	for _, r := range ms.cveRecords {
-		rs = append(rs, r)
-	}
-	sort.Slice(rs, func(i, j int) bool { return rs[i].ID < rs[j].ID })
-	return rs, nil
-}
-
 // CreateCommitUpdateRecord implements Store.CreateCommitUpdateRecord.
 func (ms *MemStore) CreateCommitUpdateRecord(ctx context.Context, r *CommitUpdateRecord) error {
 	r.ID = fmt.Sprint(rand.Uint32())
