@@ -7,7 +7,6 @@ package worker
 import (
 	"context"
 	"encoding/json"
-	"strings"
 	"testing"
 	"time"
 
@@ -35,6 +34,7 @@ func TestRepoCVEFiles(t *testing.T) {
 	}
 
 	want := []repoFile{
+		{dirPath: "2020/9xxx", filename: "CVE-2020-9283.json", year: 2020, number: 9283},
 		{dirPath: "2021/0xxx", filename: "CVE-2021-0001.json", year: 2021, number: 1},
 		{dirPath: "2021/0xxx", filename: "CVE-2021-0010.json", year: 2021, number: 10},
 		{dirPath: "2021/1xxx", filename: "CVE-2021-1384.json", year: 2021, number: 1384},
@@ -56,8 +56,10 @@ func TestDoUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	purl := pkgsiteURL(t)
 	needsIssue := func(cve *cveschema.CVE) (bool, error) {
-		return strings.HasSuffix(cve.ID, "0001"), nil
+		return TriageCVE(ctx, cve, purl)
 	}
 
 	ref, err := repo.Reference(plumbing.HEAD, true)
@@ -66,42 +68,40 @@ func TestDoUpdate(t *testing.T) {
 	}
 
 	commitHash := ref.Hash().String()
-	const (
-		path1 = "2021/0xxx/CVE-2021-0001.json"
-		path2 = "2021/0xxx/CVE-2021-0010.json"
-		path3 = "2021/1xxx/CVE-2021-1384.json"
-	)
-	cve1, bh1 := readCVE(t, repo, path1)
-	cve2, bh2 := readCVE(t, repo, path2)
-	cve3, bh3 := readCVE(t, repo, path3)
+	knownVulns := []string{"CVE-2020-9283"}
 
-	// CVERecords after the above CVEs are added to an empty DB.
-	rs := []*store.CVERecord{
-		{
-			ID:          cve1.ID,
-			CVEState:    cve1.State,
-			Path:        path1,
-			BlobHash:    bh1,
-			CommitHash:  commitHash,
-			TriageState: store.TriageStateNeedsIssue, // a public CVE, needsIssue returns true
-		},
-		{
-			ID:          cve2.ID,
-			CVEState:    cve2.State,
-			Path:        path2,
-			BlobHash:    bh2,
-			CommitHash:  commitHash,
-			TriageState: store.TriageStateNoActionNeeded, // state is reserved
-		},
-		{
-			ID:          cve3.ID,
-			CVEState:    cve3.State,
-			Path:        path3,
-			BlobHash:    bh3,
-			CommitHash:  commitHash,
-			TriageState: store.TriageStateNoActionNeeded, // state is rejected
-		},
+	paths := []string{
+		"2021/0xxx/CVE-2021-0001.json",
+		"2021/0xxx/CVE-2021-0010.json",
+		"2021/1xxx/CVE-2021-1384.json",
+		"2020/9xxx/CVE-2020-9283.json",
 	}
+
+	var (
+		cves       []*cveschema.CVE
+		blobHashes []string
+	)
+	for _, p := range paths {
+		cve, bh := readCVE(t, repo, p)
+		cves = append(cves, cve)
+		blobHashes = append(blobHashes, bh)
+	}
+	// CVERecords after the above CVEs are added to an empty DB.
+	var rs []*store.CVERecord
+	for i := 0; i < len(cves); i++ {
+		r := &store.CVERecord{
+			ID:         cves[i].ID,
+			CVEState:   cves[i].State,
+			Path:       paths[i],
+			BlobHash:   blobHashes[i],
+			CommitHash: commitHash,
+		}
+		rs = append(rs, r)
+	}
+	rs[0].TriageState = store.TriageStateNeedsIssue     // a public CVE, has a golang.org path
+	rs[1].TriageState = store.TriageStateNoActionNeeded // state is reserved
+	rs[2].TriageState = store.TriageStateNoActionNeeded // state is rejected
+	rs[3].TriageState = store.TriageStateNoActionNeeded // CVE is in the Go vuln DB
 
 	// withTriageState returns a copy of r with the TriageState field changed to ts.
 	withTriageState := func(r *store.CVERecord, ts store.TriageState) *store.CVERecord {
@@ -160,13 +160,14 @@ func TestDoUpdate(t *testing.T) {
 					return &c
 				}(),
 				rs[2],
+				rs[3],
 			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			mstore := store.NewMemStore()
 			createCVERecords(t, mstore, test.cur)
-			if _, err := doUpdate(ctx, repo, h, mstore, needsIssue); err != nil {
+			if _, err := doUpdate(ctx, repo, h, mstore, knownVulns, needsIssue); err != nil {
 				t.Fatal(err)
 			}
 			got := mstore.CVERecords()
@@ -243,7 +244,7 @@ func readCVE(t *testing.T, repo *git.Repository, path string) (*cveschema.CVE, s
 	c := headCommit(t, repo)
 	file, err := c.File(path)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("%s: %v", path, err)
 	}
 	var cve cveschema.CVE
 	r, err := file.Reader()
@@ -251,7 +252,7 @@ func readCVE(t *testing.T, repo *git.Repository, path string) (*cveschema.CVE, s
 		t.Fatal(err)
 	}
 	if err := json.NewDecoder(r).Decode(&cve); err != nil {
-		t.Fatal(err)
+		t.Fatalf("%s: %v", path, err)
 	}
 	return &cve, file.Hash.String()
 }

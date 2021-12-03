@@ -10,10 +10,13 @@ package worker
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"golang.org/x/sync/errgroup"
+	vulnc "golang.org/x/vuln/client"
 	"golang.org/x/vuln/internal/cveschema"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/gitrepo"
@@ -35,7 +38,11 @@ func UpdateCommit(ctx context.Context, repoPath, commitHash string, st store.Sto
 			return err
 		}
 	}
-	_, err = doUpdate(ctx, repo, ch, st, func(cve *cveschema.CVE) (bool, error) {
+	knownVulnIDs, err := readVulnDB(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = doUpdate(ctx, repo, ch, st, knownVulnIDs, func(cve *cveschema.CVE) (bool, error) {
 		return TriageCVE(ctx, cve, pkgsiteURL)
 	})
 	return err
@@ -86,4 +93,47 @@ type CheckUpdateError struct {
 
 func (c *CheckUpdateError) Error() string {
 	return c.msg
+}
+
+const vulnDBURL = "https://storage.googleapis.com/go-vulndb"
+
+// readVulnDB returns a list of all CVE IDs in the Go vuln DB.
+func readVulnDB(ctx context.Context) ([]string, error) {
+	const concurrency = 4
+
+	client, err := vulnc.NewClient([]string{vulnDBURL}, vulnc.Options{})
+	if err != nil {
+		return nil, err
+	}
+
+	goIDs, err := client.ListIDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		mu     sync.Mutex
+		cveIDs []string
+	)
+	sem := make(chan struct{}, concurrency)
+	g, ctx := errgroup.WithContext(ctx)
+	for _, id := range goIDs {
+		id := id
+		sem <- struct{}{}
+		g.Go(func() error {
+			defer func() { <-sem }()
+			e, err := client.GetByID(ctx, id)
+			if err != nil {
+				return err
+			}
+			// Assume all the aliases are CVE IDs.
+			mu.Lock()
+			cveIDs = append(cveIDs, e.Aliases...)
+			mu.Unlock()
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+	return cveIDs, nil
 }

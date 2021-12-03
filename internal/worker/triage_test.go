@@ -22,20 +22,7 @@ func TestKnownToPkgsite(t *testing.T) {
 
 	const validModule = "golang.org/x/mod"
 
-	var url string
-
-	if *usePkgsite {
-		url = "https://pkg.go.dev"
-	} else {
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			modulePath := strings.TrimPrefix(r.URL.Path, "/mod/")
-			if modulePath != validModule {
-				http.Error(w, "unknown", http.StatusNotFound)
-			}
-		}))
-		defer s.Close()
-		url = s.URL
-	}
+	url := pkgsiteURL(t)
 
 	for _, test := range []struct {
 		in   string
@@ -54,4 +41,21 @@ func TestKnownToPkgsite(t *testing.T) {
 			}
 		})
 	}
+}
+
+// pkgsiteURL returns a URL to either a fake server or the real pkg.go.dev,
+// depending on the usePkgsite flag.
+func pkgsiteURL(t *testing.T) string {
+	if *usePkgsite {
+		return "https://pkg.go.dev"
+	}
+	// Start a test server that recognizes anything from golang.org.
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		modulePath := strings.TrimPrefix(r.URL.Path, "/mod/")
+		if !strings.HasPrefix(modulePath, "golang.org/") {
+			http.Error(w, "unknown", http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(s.Close)
+	return s.URL
 }

@@ -33,7 +33,7 @@ type triageFunc func(*cveschema.CVE) (bool, error)
 // of the DB and updates the DB to match.
 //
 // needsIssue determines whether a CVE needs an issue to be filed for it.
-func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Hash, st store.Store, needsIssue triageFunc) (ur *store.CommitUpdateRecord, err error) {
+func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Hash, st store.Store, knownVulnIDs []string, needsIssue triageFunc) (ur *store.CommitUpdateRecord, err error) {
 	// We want the action of reading the old DB record, updating it and
 	// writing it back to be atomic. It would be too expensive to do that one
 	// record at a time. Ideally we'd process the whole repo commit in one
@@ -76,6 +76,12 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 		return nil, err
 	}
 
+	// Put the known vuln CVE IDs into a map.
+	known := map[string]bool{}
+	for _, k := range knownVulnIDs {
+		known[k] = true
+	}
+
 	// Create a new CommitUpdateRecord to describe this run of doUpdate.
 	ur = &store.CommitUpdateRecord{
 		StartedAt:  time.Now(),
@@ -88,7 +94,7 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 	}
 
 	for _, dirFiles := range filesByDir {
-		numProc, numAdds, numMods, err := updateDirectory(ctx, dirFiles, st, repo, commitHash, needsIssue)
+		numProc, numAdds, numMods, err := updateDirectory(ctx, dirFiles, st, repo, commitHash, known, needsIssue)
 		// Change the CommitUpdateRecord in the Store to reflect the results of the directory update.
 		if err != nil {
 			ur.Error = err.Error()
@@ -107,7 +113,7 @@ func doUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Has
 	return ur, st.SetCommitUpdateRecord(ctx, ur)
 }
 
-func updateDirectory(ctx context.Context, dirFiles []repoFile, st store.Store, repo *git.Repository, commitHash plumbing.Hash, needsIssue triageFunc) (numProc, numAdds, numMods int, err error) {
+func updateDirectory(ctx context.Context, dirFiles []repoFile, st store.Store, repo *git.Repository, commitHash plumbing.Hash, knownIDs map[string]bool, needsIssue triageFunc) (numProc, numAdds, numMods int, err error) {
 	dirPath := dirFiles[0].dirPath
 	dirHash := dirFiles[0].treeHash.String()
 
@@ -140,7 +146,7 @@ func updateDirectory(ctx context.Context, dirFiles []repoFile, st store.Store, r
 		if j > len(dirFiles) {
 			j = len(dirFiles)
 		}
-		numBatchAdds, numBatchMods, err := updateBatch(ctx, dirFiles[i:j], st, repo, commitHash, needsIssue)
+		numBatchAdds, numBatchMods, err := updateBatch(ctx, dirFiles[i:j], st, repo, commitHash, knownIDs, needsIssue)
 		if err != nil {
 			return 0, 0, 0, err
 		}
@@ -158,7 +164,7 @@ func updateDirectory(ctx context.Context, dirFiles []repoFile, st store.Store, r
 	return numProc, numAdds, numMods, nil
 }
 
-func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *git.Repository, commitHash plumbing.Hash, needsIssue triageFunc) (numAdds, numMods int, err error) {
+func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *git.Repository, commitHash plumbing.Hash, knownIDs map[string]bool, needsIssue triageFunc) (numAdds, numMods int, err error) {
 	startID := idFromFilename(batch[0].filename)
 	endID := idFromFilename(batch[len(batch)-1].filename)
 	defer derrors.Wrap(&err, "updateBatch(%s-%s)", startID, endID)
@@ -186,7 +192,7 @@ func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *gi
 				// No change; do nothing.
 				continue
 			}
-			added, err := handleCVE(repo, f, old, commitHash, needsIssue, tx)
+			added, err := handleCVE(repo, f, old, commitHash, knownIDs, needsIssue, tx)
 			if err != nil {
 				return err
 			}
@@ -212,7 +218,7 @@ func updateBatch(ctx context.Context, batch []repoFile, st store.Store, repo *gi
 // handleCVE determines how to change the store for a single CVE.
 // The CVE will definitely be either added, if it's new, or modified, if it's
 // already in the DB.
-func handleCVE(repo *git.Repository, f repoFile, old *store.CVERecord, commitHash plumbing.Hash, needsIssue triageFunc, tx store.Transaction) (added bool, err error) {
+func handleCVE(repo *git.Repository, f repoFile, old *store.CVERecord, commitHash plumbing.Hash, knownIDs map[string]bool, needsIssue triageFunc, tx store.Transaction) (added bool, err error) {
 	defer derrors.Wrap(&err, "handleCVE(%s)", f.filename)
 
 	// Read CVE from repo.
@@ -226,7 +232,7 @@ func handleCVE(repo *git.Repository, f repoFile, old *store.CVERecord, commitHas
 		return false, err
 	}
 	needs := false
-	if cve.State == cveschema.StatePublic {
+	if cve.State == cveschema.StatePublic && !knownIDs[cve.ID] {
 		needs, err = needsIssue(cve)
 		if err != nil {
 			return false, err
