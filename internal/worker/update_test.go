@@ -167,7 +167,7 @@ func TestDoUpdate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mstore := store.NewMemStore()
 			createCVERecords(t, mstore, test.cur)
-			if _, err := doUpdate(ctx, repo, h, mstore, knownVulns, needsIssue); err != nil {
+			if _, err := newUpdater(repo, h, mstore, knownVulns, needsIssue).update(ctx); err != nil {
 				t.Fatal(err)
 			}
 			got := mstore.CVERecords()
