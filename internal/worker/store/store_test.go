@@ -149,6 +149,12 @@ func testCVEs(t *testing.T, s Store) {
 	want.CVEState = cveschema.StateRejected
 	want.CommitHash = "999"
 	diff(t, &want, got)
+
+	gotNoAction, err := s.ListCVERecordsWithTriageState(ctx, TriageStateNoActionNeeded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	diff(t, crs[1:], gotNoAction)
 }
 
 func testDirHashes(t *testing.T, s Store) {

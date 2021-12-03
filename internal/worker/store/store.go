@@ -135,6 +135,10 @@ type Store interface {
 	// least recent.
 	ListCommitUpdateRecords(ctx context.Context, limit int) ([]*CommitUpdateRecord, error)
 
+	// ListCVERecordsWithTriageState returns all CVERecords with the given triage state,
+	// ordered by ID.
+	ListCVERecordsWithTriageState(ctx context.Context, ts TriageState) ([]*CVERecord, error)
+
 	// GetDirectoryHash returns the hash for the tree object corresponding to dir.
 	// If dir isn't found, it succeeds with the empty string.
 	GetDirectoryHash(ctx context.Context, dir string) (string, error)

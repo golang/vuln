@@ -9,12 +9,15 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/google/safehtml/template"
 	"golang.org/x/exp/event"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/gitrepo"
 	"golang.org/x/vuln/internal/worker/log"
 	"golang.org/x/vuln/internal/worker/store"
 )
@@ -43,16 +46,6 @@ func NewServer(ctx context.Context, namespace string, st store.Store) (_ *Server
 		return nil
 	})
 	return s, nil
-}
-
-func (s *Server) indexPage(w http.ResponseWriter, r *http.Request) error {
-	type data struct {
-		Namespace string
-	}
-	page := data{
-		Namespace: s.namespace,
-	}
-	return renderPage(r.Context(), w, page, s.indexTemplate)
 }
 
 func (s *Server) handle(ctx context.Context, pattern string, handler func(w http.ResponseWriter, r *http.Request) error) {
@@ -106,7 +99,27 @@ func parseTemplate(staticPath, filename template.TrustedSource) (*template.Templ
 		return nil, nil
 	}
 	templatePath := template.TrustedSourceJoin(staticPath, filename)
-	return template.New(filename.String()).ParseFilesFromTrustedSources(templatePath)
+	return template.New(filename.String()).Funcs(template.FuncMap{
+		"timefmt": formatTime,
+	}).ParseFilesFromTrustedSources(templatePath)
+}
+
+var locNewYork *time.Location
+
+func init() {
+	var err error
+	locNewYork, err = time.LoadLocation("America/New_York")
+	if err != nil {
+		log.Errorf(context.Background(), "time.LoadLocation: %v", err)
+		os.Exit(1)
+	}
+}
+
+func formatTime(t *time.Time) string {
+	if t == nil || t.IsZero() {
+		return "-"
+	}
+	return t.In(locNewYork).Format("2006-01-02 15:04:05")
 }
 
 func renderPage(ctx context.Context, w http.ResponseWriter, page interface{}, tmpl *template.Template) (err error) {
@@ -121,4 +134,49 @@ func renderPage(ctx context.Context, w http.ResponseWriter, page interface{}, tm
 		return err
 	}
 	return nil
+}
+
+type indexPage struct {
+	CVEListRepoURL   string
+	Namespace        string
+	Updates          []*store.CommitUpdateRecord
+	CVEsNeedingIssue []*store.CVERecord
+	CVEsUpdatedSince []*store.CVERecord
+}
+
+func (s *Server) indexPage(w http.ResponseWriter, r *http.Request) error {
+
+	var (
+		updates                    []*store.CommitUpdateRecord
+		needingIssue, updatedSince []*store.CVERecord
+	)
+
+	g, ctx := errgroup.WithContext(r.Context())
+	g.Go(func() error {
+		var err error
+		updates, err = s.st.ListCommitUpdateRecords(ctx, 10)
+		return err
+	})
+	g.Go(func() error {
+		var err error
+		needingIssue, err = s.st.ListCVERecordsWithTriageState(ctx, store.TriageStateNeedsIssue)
+		return err
+	})
+	g.Go(func() error {
+		var err error
+		updatedSince, err = s.st.ListCVERecordsWithTriageState(ctx, store.TriageStateUpdatedSinceIssueCreation)
+		return err
+	})
+	if err := g.Wait(); err != nil {
+		return err
+	}
+
+	page := indexPage{
+		CVEListRepoURL:   gitrepo.CVEListRepoURL,
+		Namespace:        s.namespace,
+		Updates:          updates,
+		CVEsNeedingIssue: needingIssue,
+		CVEsUpdatedSince: updatedSince,
+	}
+	return renderPage(r.Context(), w, page, s.indexTemplate)
 }

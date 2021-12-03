@@ -25,6 +25,7 @@ require (
 	github.com/google/safehtml v0.0.2
 	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
+	github.com/jba/templatecheck v0.6.0
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -36,6 +37,7 @@ require (
 	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
@@ -49,5 +51,3 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
-
-require golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect

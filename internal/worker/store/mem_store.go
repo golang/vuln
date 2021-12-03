@@ -42,6 +42,15 @@ func (ms *MemStore) CVERecords() map[string]*CVERecord {
 	return ms.cveRecords
 }
 
+func (ms *MemStore) GetAllCVERecords(ctx context.Context) ([]*CVERecord, error) {
+	var rs []*CVERecord
+	for _, r := range ms.cveRecords {
+		rs = append(rs, r)
+	}
+	sort.Slice(rs, func(i, j int) bool { return rs[i].ID < rs[j].ID })
+	return rs, nil
+}
+
 // CreateCommitUpdateRecord implements Store.CreateCommitUpdateRecord.
 func (ms *MemStore) CreateCommitUpdateRecord(ctx context.Context, r *CommitUpdateRecord) error {
 	r.ID = fmt.Sprint(rand.Uint32())
@@ -76,6 +85,20 @@ func (ms *MemStore) ListCommitUpdateRecords(_ context.Context, limit int) ([]*Co
 		urs = urs[:limit]
 	}
 	return urs, nil
+}
+
+// ListCVERecordsWithTriageState implements Store.ListCVERecordsWithTriageState.
+func (ms *MemStore) ListCVERecordsWithTriageState(_ context.Context, ts TriageState) ([]*CVERecord, error) {
+	var crs []*CVERecord
+	for _, r := range ms.cveRecords {
+		if r.TriageState == ts {
+			crs = append(crs, r)
+		}
+	}
+	sort.Slice(crs, func(i, j int) bool {
+		return crs[i].ID < crs[j].ID
+	})
+	return crs, nil
 }
 
 // GetDirectoryHash implements Transaction.GetDirectoryHash.

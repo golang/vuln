@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/firestore"
 	"golang.org/x/vuln/internal/derrors"
@@ -118,6 +119,18 @@ type dirHash struct {
 	Hash string
 }
 
+// ListCVERecordsWithTriageState implements Store.ListCVERecordsWithTriageState.
+func (fs *FireStore) ListCVERecordsWithTriageState(ctx context.Context, ts TriageState) (_ []*CVERecord, err error) {
+	defer derrors.Wrap(&err, "ListCVERecordsWithTriageState(%s)", ts)
+
+	q := fs.nsDoc.Collection(cveCollection).Where("TriageState", "==", ts).OrderBy("ID", firestore.Asc)
+	docsnaps, err := q.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return docsnapsToCVERecords(docsnaps)
+}
+
 // dirHashRef returns a DocumentRef for the directory dir.
 func (s *FireStore) dirHashRef(dir string) *firestore.DocumentRef {
 	// Firestore IDs cannot contain slashes.
@@ -154,6 +167,25 @@ func (fs *FireStore) SetDirectoryHash(ctx context.Context, dir, hash string) err
 	return err
 }
 
+func (fs *FireStore) GetAllCVERecords(ctx context.Context) ([]*CVERecord, error) {
+	start := time.Now()
+	ds, err := fs.nsDoc.Collection(cveCollection).Select().Where("TriageState", "==", "NoActionNeeded").Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("#### where needsissue: %d recs in %s\n", len(ds), time.Since(start))
+	_ = ds
+
+	docsnaps, err := fs.nsDoc.Collection(cveCollection).
+		Select("ID", "TriageState").
+		Limit(100).
+		Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return docsnapsToCVERecords(docsnaps)
+}
+
 // RunTransaction implements Store.RunTransaction.
 func (fs *FireStore) RunTransaction(ctx context.Context, f func(context.Context, Transaction) error) error {
 	return fs.client.RunTransaction(ctx,
@@ -163,8 +195,8 @@ func (fs *FireStore) RunTransaction(ctx context.Context, f func(context.Context,
 }
 
 // cveRecordRef returns a DocumentRef to the CVERecord with id.
-func (s *FireStore) cveRecordRef(id string) *firestore.DocumentRef {
-	return s.nsDoc.Collection(cveCollection).Doc(id)
+func (fs *FireStore) cveRecordRef(id string) *firestore.DocumentRef {
+	return fs.nsDoc.Collection(cveCollection).Doc(id)
 }
 
 // fsTransaction implements Transaction
@@ -206,6 +238,10 @@ func (tx *fsTransaction) GetCVERecords(startID, endID string) (_ []*CVERecord, e
 	if err != nil {
 		return nil, err
 	}
+	return docsnapsToCVERecords(docsnaps)
+}
+
+func docsnapsToCVERecords(docsnaps []*firestore.DocumentSnapshot) ([]*CVERecord, error) {
 	var crs []*CVERecord
 	for _, ds := range docsnaps {
 		var cr CVERecord
