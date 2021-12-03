@@ -7,34 +7,33 @@ package worker
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"testing"
-
-	"golang.org/x/vuln/internal"
 )
 
 var (
-	githubRepo            = flag.String("repo", "", "GitHub repo (in form owner/repo) to test issues")
-	githubAccessTokenFile = flag.String("ghtokenfile", "", "path to file containing GitHub access token")
+	githubRepo      = flag.String("repo", "", "GitHub repo (in form owner/repo) to test issues")
+	githubTokenFile = flag.String("ghtokenfile", "", "path to file containing GitHub access token")
 )
 
 func TestIssueClient(t *testing.T) {
 	t.Run("fake", func(t *testing.T) {
-		testIssueClient(t, newFakeIssueClient("owner", "repo"))
+		testIssueClient(t, newFakeIssueClient())
 	})
 	t.Run("github", func(t *testing.T) {
 		if *githubRepo == "" {
 			t.Skip("skipping: no -repo flag")
 		}
-		owner, repo, found := internal.Cut(*githubRepo, "/")
-		if !found {
-			t.Fatal("-repo needs to be in the form owner/repo")
+		owner, repo, err := ParseGithubRepo(*githubRepo)
+		if err != nil {
+			t.Fatal(err)
 		}
-		if *githubAccessTokenFile == "" {
+		if *githubTokenFile == "" {
 			t.Fatal("need -ghtokenfile")
 		}
-		data, err := ioutil.ReadFile(*githubAccessTokenFile)
+		data, err := ioutil.ReadFile(*githubTokenFile)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -65,15 +64,12 @@ func testIssueClient(t *testing.T, c IssueClient) {
 }
 
 type fakeIssueClient struct {
-	owner, repo string
-	nextID      int
-	issues      map[int]*Issue
+	nextID int
+	issues map[int]*Issue
 }
 
-func newFakeIssueClient(owner, repo string) *fakeIssueClient {
+func newFakeIssueClient() *fakeIssueClient {
 	return &fakeIssueClient{
-		owner:  owner,
-		repo:   repo,
 		nextID: 1,
 		issues: map[int]*Issue{},
 	}
@@ -81,6 +77,10 @@ func newFakeIssueClient(owner, repo string) *fakeIssueClient {
 
 func (c *fakeIssueClient) Destination() string {
 	return "in memory"
+}
+
+func (c *fakeIssueClient) Reference(num int) string {
+	return fmt.Sprintf("inMemory#%d", num)
 }
 
 func (c *fakeIssueClient) IssueExists(_ context.Context, number int) (bool, error) {

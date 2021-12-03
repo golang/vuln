@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"golang.org/x/vuln/internal/worker/log"
 	"golang.org/x/vuln/internal/worker/store"
 )
 
@@ -74,6 +77,60 @@ func TestCheckUpdate(t *testing.T) {
 			t.Errorf("%+v:\ngot no error, wanted %q", test.latestUpdate, test.want)
 		} else if got != nil && !strings.Contains(got.Error(), test.want) {
 			t.Errorf("%+v:\ngot '%s', does not contain %q", test.latestUpdate, got, test.want)
+		}
+	}
+}
+
+func TestCreateIssues(t *testing.T) {
+	ctx := log.WithLineLogger(context.Background())
+	mstore := store.NewMemStore()
+	ic := newFakeIssueClient()
+
+	crs := []*store.CVERecord{
+		{
+			ID:          "ID1",
+			BlobHash:    "bh1",
+			CommitHash:  "ch",
+			Path:        "path1",
+			TriageState: store.TriageStateNeedsIssue,
+		},
+		{
+			ID:          "ID2",
+			BlobHash:    "bh2",
+			CommitHash:  "ch",
+			Path:        "path2",
+			TriageState: store.TriageStateNoActionNeeded,
+		},
+		{
+			ID:          "ID3",
+			BlobHash:    "bh3",
+			CommitHash:  "ch",
+			Path:        "path3",
+			TriageState: store.TriageStateIssueCreated,
+		},
+	}
+	createCVERecords(t, mstore, crs)
+
+	if err := CreateIssues(ctx, mstore, ic, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	var wants []*store.CVERecord
+	for _, r := range crs {
+		copy := *r
+		wants = append(wants, &copy)
+	}
+	wants[0].TriageState = store.TriageStateIssueCreated
+	wants[0].IssueReference = "inMemory#1"
+
+	gotRecs := mstore.CVERecords()
+	if len(gotRecs) != len(wants) {
+		t.Fatalf("wrong number of records: got %d, want %d", len(gotRecs), len(wants))
+	}
+	for _, want := range wants {
+		got := gotRecs[want.ID]
+		if !cmp.Equal(got, want, cmpopts.IgnoreFields(store.CVERecord{}, "IssueCreatedAt")) {
+			t.Errorf("got  %+v\nwant %+v", got, want)
 		}
 	}
 }

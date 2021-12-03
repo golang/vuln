@@ -10,16 +10,20 @@ package worker
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"golang.org/x/exp/event"
 	"golang.org/x/sync/errgroup"
 	vulnc "golang.org/x/vuln/client"
 	"golang.org/x/vuln/internal/cveschema"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/gitrepo"
+	"golang.org/x/vuln/internal/worker/log"
 	"golang.org/x/vuln/internal/worker/store"
 )
 
@@ -138,3 +142,108 @@ func readVulnDB(ctx context.Context) ([]string, error) {
 	}
 	return cveIDs, nil
 }
+
+func CreateIssues(ctx context.Context, st store.Store, ic IssueClient, limit int) (err error) {
+	derrors.Wrap(&err, "CreateIssues(destination: %s)", ic.Destination())
+
+	log.Info(ctx, "CreateIssues starting", event.String("destination", ic.Destination()))
+	needsIssue, err := st.ListCVERecordsWithTriageState(ctx, store.TriageStateNeedsIssue)
+	if err != nil {
+		return err
+	}
+	numCreated := int64(0)
+	for _, r := range needsIssue {
+		if limit > 0 && int(numCreated) >= limit {
+			break
+		}
+		if r.IssueReference != "" || !r.IssueCreatedAt.IsZero() {
+			log.Error(ctx, "triage state is NeedsIssue but issue field(s) non-zero; skipping",
+				event.String("ID", r.ID),
+				event.String("IssueReference", r.IssueReference),
+				event.Value("IssueCreatedAt", r.IssueCreatedAt))
+			continue
+		}
+		body, err := newBody(r)
+		if err != nil {
+			return err
+		}
+
+		// Create the issue.
+		iss := &Issue{
+			Title:  fmt.Sprintf("x/vulndb: potential Go vulnerability found from CVE List: %s", r.ID),
+			Body:   body,
+			Labels: []string{"Needs Triage"},
+		}
+		num, err := ic.CreateIssue(ctx, iss)
+		if err != nil {
+			return fmt.Errorf("creating issue for %s: %w", r.ID, err)
+		}
+		// If we crashed here, we would have filed an issue without recording
+		// that fact in the DB. That can lead to duplicate issues, but nothing
+		// worse (we won't miss a CVE).
+		// TODO(golang/go#49733): look for the issue title to avoid duplications.
+		ref := ic.Reference(num)
+		log.Info(ctx, "created issue", event.String("CVE", r.ID), event.String("reference", ref))
+
+		// Update the CVERecord in the DB with issue information.
+		err = st.RunTransaction(ctx, func(ctx context.Context, tx store.Transaction) error {
+			rs, err := tx.GetCVERecords(r.ID, r.ID)
+			if err != nil {
+				return err
+			}
+			r := rs[0]
+			r.TriageState = store.TriageStateIssueCreated
+			r.IssueReference = ref
+			r.IssueCreatedAt = time.Now()
+			return tx.SetCVERecord(r)
+		})
+		if err != nil {
+			return err
+		}
+		numCreated++
+	}
+	log.Info(ctx, "CreateIssues done", event.Int64("limit", int64(limit)), event.Int64("numCreated", numCreated))
+	return nil
+}
+
+func newBody(r *store.CVERecord) (string, error) {
+	var b strings.Builder
+	err := issueTemplate.Execute(&b, issueTemplateData{
+		Heading: fmt.Sprintf(
+			"One or more of the reference URLs in [%s](%s/tree/%s/%s) refers to a Go module.",
+			r.ID, gitrepo.CVEListRepoURL, r.CommitHash, r.Path),
+		CVERecord: r,
+	})
+	if err != nil {
+		return "", err
+	}
+	return b.String(), nil
+}
+
+type issueTemplateData struct {
+	Heading string
+	*store.CVERecord
+}
+
+var issueTemplate = template.Must(template.New("issue").Parse(`
+{{.Heading}}
+
+module:
+package:
+stdlib:
+versions:
+  - introduced:
+  - fixed:
+description: |
+
+cve: {{.ID}}
+credit:
+symbols:
+  -
+published:
+links:
+  commit:
+  pr:
+  context:
+    -
+`))

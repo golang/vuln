@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/derrors"
 )
 
@@ -23,11 +24,24 @@ type IssueClient interface {
 	// Destination describes where issues will be created.
 	Destination() string
 
+	// Reference returns a string that refers to the issue with number.
+	Reference(number int) string
+
 	// IssueExists reports whether an issue with the given ID exists.
 	IssueExists(ctx context.Context, number int) (bool, error)
 
 	// CreateIssue creates a new issue.
 	CreateIssue(ctx context.Context, iss *Issue) (number int, err error)
+}
+
+// ParseGithubRepo parses a string of the form owner/repo.
+func ParseGithubRepo(s string) (owner, repoName string, err error) {
+	var found bool
+	owner, repoName, found = internal.Cut(s, "/")
+	if !found {
+		return "", "", fmt.Errorf("%q is not in the form owner/repo", s)
+	}
+	return owner, repoName, nil
 }
 
 type githubIssueClient struct {
@@ -52,6 +66,11 @@ func NewGithubIssueClient(owner, repo, accessToken string) *githubIssueClient {
 // Destination implements IssueClient.Destination.
 func (c *githubIssueClient) Destination() string {
 	return fmt.Sprintf("https://github.com/%s/%s", c.owner, c.repo)
+}
+
+// Reference implements IssueClient.Reference.
+func (c *githubIssueClient) Reference(num int) string {
+	return fmt.Sprintf("%s/issues/%d", c.Destination(), num)
 }
 
 // IssueExists implements IssueClient.IssueExists.

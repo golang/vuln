@@ -12,8 +12,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"cloud.google.com/go/errorreporting"
@@ -25,11 +27,14 @@ import (
 )
 
 var (
-	project        = flag.String("project", os.Getenv("GOOGLE_CLOUD_PROJECT"), "project ID (required)")
-	namespace      = flag.String("namespace", os.Getenv("VULN_WORKER_NAMESPACE"), "Firestore namespace (required)")
-	errorReporting = flag.Bool("reporterrors", os.Getenv("VULN_WORKER_REPORT_ERRORS") == "true", "use the error reporting API")
-	localRepoPath  = flag.String("repo", "", "path to local repo, instead of cloning remote")
-	force          = flag.Bool("force", false, "force an update to happen")
+	project         = flag.String("project", os.Getenv("GOOGLE_CLOUD_PROJECT"), "project ID (required)")
+	namespace       = flag.String("namespace", os.Getenv("VULN_WORKER_NAMESPACE"), "Firestore namespace (required)")
+	errorReporting  = flag.Bool("report-errors", os.Getenv("VULN_WORKER_REPORT_ERRORS") == "true", "use the error reporting API")
+	localRepoPath   = flag.String("local-cve-repo", "", "path to local repo, instead of cloning remote")
+	force           = flag.Bool("force", false, "force an update to happen")
+	limit           = flag.Int("limit", 0, "limit on number of things to list or issues to create (0 means unlimited)")
+	issueRepo       = flag.String("issue-repo", "", "repo to create issues in")
+	githubTokenFile = flag.String("ghtokenfile", "", "path to file containing GitHub access token (for creating issues)")
 )
 
 const (
@@ -48,19 +53,17 @@ func main() {
 		fmt.Fprintln(out, "  subcommands:")
 		fmt.Fprintln(out, "    update COMMIT: perform an update operation")
 		fmt.Fprintln(out, "    list-updates: display info about update operations")
+		fmt.Fprintln(out, "    list-cves TRIAGE_STATE: display info about CVE records")
+		fmt.Fprintln(out, "    create-issues: create issues for CVEs that need them")
 		fmt.Fprintln(out, "flags:")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 	if *project == "" {
-		fmt.Fprintln(os.Stderr, "need -project or GOOGLE_CLOUD_PROJECT")
-		flag.Usage()
-		os.Exit(1)
+		dieWithUsage("need -project or GOOGLE_CLOUD_PROJECT")
 	}
 	if *namespace == "" {
-		fmt.Fprintln(os.Stderr, "need -namespace or VULN_WORKER_NAMESPACE")
-		flag.Usage()
-		os.Exit(1)
+		dieWithUsage("need -namespace or VULN_WORKER_NAMESPACE")
 	}
 	ctx := log.WithLineLogger(context.Background())
 
@@ -74,7 +77,7 @@ func main() {
 		err = runServer(ctx, fstore)
 	}
 	if err != nil {
-		die("%v", err)
+		dieWithUsage("%v", err)
 	}
 }
 
@@ -111,11 +114,16 @@ func runCommandLine(ctx context.Context, st store.Store) error {
 	switch flag.Arg(0) {
 	case "list-updates":
 		return listUpdatesCommand(ctx, st)
+	case "list-cves":
+		return listCVEsCommand(ctx, st, flag.Arg(1))
 	case "update":
 		if flag.NArg() != 2 {
 			return errors.New("usage: update COMMIT")
 		}
 		return updateCommand(ctx, st, flag.Arg(1))
+	case "create-issues":
+		return createIssuesCommand(ctx, st)
+
 	default:
 		return fmt.Errorf("unknown command: %q", flag.Arg(1))
 	}
@@ -128,7 +136,10 @@ func listUpdatesCommand(ctx context.Context, st store.Store) error {
 	}
 	tw := tabwriter.NewWriter(os.Stdout, 1, 8, 2, ' ', 0)
 	fmt.Fprintf(tw, "Start\tEnd\tCommit\tCVEs Processed\n")
-	for _, r := range recs {
+	for i, r := range recs {
+		if *limit > 0 && i >= *limit {
+			break
+		}
 		endTime := "unfinished"
 		if !r.EndedAt.IsZero() {
 			endTime = r.EndedAt.Format(timeFormat)
@@ -138,6 +149,27 @@ func listUpdatesCommand(ctx context.Context, st store.Store) error {
 			endTime,
 			r.CommitHash,
 			r.NumProcessed, r.NumTotal, r.NumAdded, r.NumModified)
+	}
+	return tw.Flush()
+}
+
+func listCVEsCommand(ctx context.Context, st store.Store, triageState string) error {
+	ts := store.TriageState(triageState)
+	if err := ts.Validate(); err != nil {
+		return err
+	}
+	crs, err := st.ListCVERecordsWithTriageState(ctx, ts)
+	if err != nil {
+		return err
+	}
+	tw := tabwriter.NewWriter(os.Stdout, 1, 8, 2, ' ', 0)
+	fmt.Fprintf(tw, "ID\tCVEState\tCommit\tReason\tIssue\tIssue Created\n")
+	for i, r := range crs {
+		if *limit > 0 && i >= *limit {
+			break
+		}
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n",
+			r.ID, r.CVEState, r.CommitHash, r.TriageStateReason, r.IssueReference, worker.FormatTime(r.IssueCreatedAt))
 	}
 	return tw.Flush()
 }
@@ -154,8 +186,31 @@ func updateCommand(ctx context.Context, st store.Store, commitHash string) error
 	return err
 }
 
+func createIssuesCommand(ctx context.Context, st store.Store) error {
+	owner, repoName, err := worker.ParseGithubRepo(*issueRepo)
+	if err != nil {
+		return err
+	}
+	if *githubTokenFile == "" {
+		return errors.New("need -ghtokenfile")
+	}
+	data, err := ioutil.ReadFile(*githubTokenFile)
+	if err != nil {
+		return err
+	}
+	token := strings.TrimSpace(string(data))
+	return worker.CreateIssues(ctx, st, worker.NewGithubIssueClient(owner, repoName, token), *limit)
+}
+
 func die(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprintln(os.Stderr)
+	os.Exit(1)
+}
+
+func dieWithUsage(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, args...)
+	fmt.Fprintln(os.Stderr)
+	flag.Usage()
 	os.Exit(1)
 }

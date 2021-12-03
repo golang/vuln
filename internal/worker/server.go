@@ -100,7 +100,7 @@ func parseTemplate(staticPath, filename template.TrustedSource) (*template.Templ
 	}
 	templatePath := template.TrustedSourceJoin(staticPath, filename)
 	return template.New(filename.String()).Funcs(template.FuncMap{
-		"timefmt": formatTime,
+		"timefmt": FormatTime,
 	}).ParseFilesFromTrustedSources(templatePath)
 }
 
@@ -115,8 +115,8 @@ func init() {
 	}
 }
 
-func formatTime(t *time.Time) string {
-	if t == nil || t.IsZero() {
+func FormatTime(t time.Time) string {
+	if t.IsZero() {
 		return "-"
 	}
 	return t.In(locNewYork).Format("2006-01-02 15:04:05")
