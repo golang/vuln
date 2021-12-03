@@ -28,12 +28,14 @@ var (
 	project        = flag.String("project", os.Getenv("GOOGLE_CLOUD_PROJECT"), "project ID (required)")
 	namespace      = flag.String("namespace", os.Getenv("VULN_WORKER_NAMESPACE"), "Firestore namespace (required)")
 	errorReporting = flag.Bool("reporterrors", os.Getenv("VULN_WORKER_REPORT_ERRORS") == "true", "use the error reporting API")
-	pkgsiteURL     = flag.String("pkgsite", "https://pkg.go.dev", "URL to pkgsite")
 	localRepoPath  = flag.String("repo", "", "path to local repo, instead of cloning remote")
 	force          = flag.Bool("force", false, "force an update to happen")
 )
 
-const serviceID = "vuln-worker"
+const (
+	pkgsiteURL = "https://pkg.go.dev"
+	serviceID  = "vuln-worker"
+)
 
 func main() {
 	flag.Usage = func() {
@@ -145,7 +147,7 @@ func updateCommand(ctx context.Context, st store.Store, commitHash string) error
 	if *localRepoPath != "" {
 		repoPath = *localRepoPath
 	}
-	err := worker.UpdateCommit(ctx, repoPath, commitHash, st, *pkgsiteURL, *force)
+	err := worker.UpdateCommit(ctx, repoPath, commitHash, st, pkgsiteURL, *force)
 	if cerr := new(worker.CheckUpdateError); errors.As(err, &cerr) {
 		return fmt.Errorf("%w; use -force to override", cerr)
 	}

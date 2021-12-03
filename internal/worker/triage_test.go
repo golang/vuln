@@ -6,6 +6,7 @@ package worker
 
 import (
 	"context"
+	"flag"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,17 +15,27 @@ import (
 	"golang.org/x/vuln/internal/worker/log"
 )
 
+var usePkgsite = flag.Bool("pkgsite", false, "use pkg.go.dev for tests")
+
 func TestKnownToPkgsite(t *testing.T) {
 	ctx := log.WithLineLogger(context.Background())
 
 	const validModule = "golang.org/x/mod"
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		modulePath := strings.TrimPrefix(r.URL.Path, "/mod/")
-		if modulePath != validModule {
-			http.Error(w, "unknown", http.StatusNotFound)
-		}
-	}))
-	defer s.Close()
+
+	var url string
+
+	if *usePkgsite {
+		url = "https://pkg.go.dev"
+	} else {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			modulePath := strings.TrimPrefix(r.URL.Path, "/mod/")
+			if modulePath != validModule {
+				http.Error(w, "unknown", http.StatusNotFound)
+			}
+		}))
+		defer s.Close()
+		url = s.URL
+	}
 
 	for _, test := range []struct {
 		in   string
@@ -34,12 +45,12 @@ func TestKnownToPkgsite(t *testing.T) {
 		{"github.com/something/something", false},
 	} {
 		t.Run(test.in, func(t *testing.T) {
-			got, err := knownToPkgsite(ctx, s.URL, test.in)
+			got, err := knownToPkgsite(ctx, url, test.in)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if got != test.want {
-				t.Errorf("got %t, want %t", got, test.want)
+				t.Errorf("%s: got %t, want %t", test.in, got, test.want)
 			}
 		})
 	}

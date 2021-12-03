@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -107,7 +108,7 @@ var seenModulePath = map[string]bool{}
 
 // knownToPkgsite reports whether pkgsite knows that modulePath actually refers
 // to a module.
-func knownToPkgsite(ctx context.Context, url, modulePath string) (bool, error) {
+func knownToPkgsite(ctx context.Context, baseURL, modulePath string) (bool, error) {
 	// If we've seen it before, no need to call.
 	if b, ok := seenModulePath[modulePath]; ok {
 		return b, nil
@@ -116,13 +117,17 @@ func knownToPkgsite(ctx context.Context, url, modulePath string) (bool, error) {
 	if err := pkgsiteRateLimiter.Wait(ctx); err != nil {
 		return false, err
 	}
-	msg := fmt.Sprintf("call to %s", url)
-	log.Info(ctx, msg+" starting", event.String("path", modulePath))
 	start := time.Now()
-	res, err := http.Get(url + "/mod/" + modulePath)
-	log.Info(ctx, msg+" ended",
-		event.String("path", modulePath),
+
+	url := baseURL + "/mod/" + modulePath
+	res, err := http.Head(url)
+	var status string
+	if err == nil {
+		status = strconv.Quote(res.Status)
+	}
+	log.Info(ctx, "HEAD "+url,
 		event.Value("latency", time.Since(start)),
+		event.String("status", status),
 		event.Value("error", err))
 	if err != nil {
 		return false, err
