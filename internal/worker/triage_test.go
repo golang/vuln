@@ -12,10 +12,88 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/vuln/internal/cveschema"
 	"golang.org/x/vuln/internal/worker/log"
 )
 
 var usePkgsite = flag.Bool("pkgsite", false, "use pkg.go.dev for tests")
+
+func TestCVEModulePath(t *testing.T) {
+	ctx := log.WithLineLogger(context.Background())
+	url := pkgsiteURL(t)
+
+	for _, test := range []struct {
+		name string
+		in   *cveschema.CVE
+		want string
+	}{
+		{
+			"contains golang-nuts",
+			&cveschema.CVE{
+				References: cveschema.References{
+					Data: []cveschema.Reference{
+						{URL: "https://groups.google.com/forum/#!topic/golang-nuts/1234"},
+					},
+				},
+			},
+			"Go Standard Library",
+		},
+		{
+			"contains golang.org and on pkg.go.dev",
+			&cveschema.CVE{
+				References: cveschema.References{
+					Data: []cveschema.Reference{
+						{URL: "https://golang.org/x/mod"},
+					},
+				},
+			},
+			"golang.org/x/mod",
+		},
+		{
+			"contains github.com but not on pkg.go.dev",
+			&cveschema.CVE{
+				References: cveschema.References{
+					Data: []cveschema.Reference{
+						{URL: "https://github.com/something/something/404"},
+					},
+				},
+			},
+			"",
+		},
+		{
+			"contains longer module path",
+			&cveschema.CVE{
+				References: cveschema.References{
+					Data: []cveschema.Reference{
+						{URL: "https://bitbucket.org/foo/bar/baz/v2"},
+					},
+				},
+			},
+			"bitbucket.org/foo/bar/baz/v2",
+		},
+		{
+			"repo path is not a module",
+			&cveschema.CVE{
+				References: cveschema.References{
+					Data: []cveschema.Reference{
+						{URL: "https://bitbucket.org/foo/bar"},
+					},
+				},
+			},
+			"",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := cveModulePath(ctx, test.in, url)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != test.want {
+				t.Errorf("got %q, want %q", got, test.want)
+			}
+		})
+	}
+}
 
 func TestKnownToPkgsite(t *testing.T) {
 	ctx := log.WithLineLogger(context.Background())
@@ -49,10 +127,11 @@ func pkgsiteURL(t *testing.T) string {
 	if *usePkgsite {
 		return "https://pkg.go.dev"
 	}
-	// Start a test server that recognizes anything from golang.org.
+	// Start a test server that recognizes anything from golang.org and bitbucket.org/foo/bar/baz.
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		modulePath := strings.TrimPrefix(r.URL.Path, "/mod/")
-		if !strings.HasPrefix(modulePath, "golang.org/") {
+		if !strings.HasPrefix(modulePath, "golang.org/") &&
+			!strings.HasPrefix(modulePath, "bitbucket.org/foo/bar/baz") {
 			http.Error(w, "unknown", http.StatusNotFound)
 		}
 	}))

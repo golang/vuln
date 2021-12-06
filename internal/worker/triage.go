@@ -23,15 +23,6 @@ import (
 
 var errCVEVersionUnsupported = errors.New("unsupported CVE version")
 
-var vcsHostsWithThreeElementRepoName = map[string]bool{
-	"bitbucket.org": true,
-	"gitea.com":     true,
-	"gitee.com":     true,
-	"github.com":    true,
-	"gitlab.com":    true,
-	"golang.org":    true,
-}
-
 var stdlibKeywords = map[string]bool{
 	"github.com/golang": true,
 	"golang-announce":   true,
@@ -57,8 +48,6 @@ func TriageCVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (module
 
 // cveModulePath returns a Go module path for a CVE, if we can determine what
 // it is.
-// TODO(golang/go#49733) Use the CandidateModulePaths function from pkgsite to catch
-// longer module paths, e.g. github.com/pulumi/pulumi/sdk/v2.
 func cveModulePath(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ string, err error) {
 	defer derrors.Wrap(&err, "cveModulePath(%q)", c.ID)
 	for _, r := range c.References.Data {
@@ -70,26 +59,18 @@ func cveModulePath(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ 
 				return "Go Standard Library", nil
 			}
 		}
-		for host := range vcsHostsWithThreeElementRepoName {
-			if !strings.Contains(r.URL, host) {
-				continue
-			}
-			refURL, err := url.Parse(r.URL)
-			if err != nil {
-				return "", fmt.Errorf("url.Parse(%q): %v", r.URL, err)
-			}
-			u := refURL.Host + refURL.Path
-			parts := strings.Split(u, "/")
-			if len(parts) < 3 {
-				continue
-			}
-			mod := strings.Join(parts[0:3], "/")
-			known, err := knownToPkgsite(ctx, pkgsiteURL, mod)
+		refURL, err := url.Parse(r.URL)
+		if err != nil {
+			return "", fmt.Errorf("url.Parse(%q): %v", r.URL, err)
+		}
+		modpaths := candidateModulePaths(refURL.Host + refURL.Path)
+		for _, mp := range modpaths {
+			known, err := knownToPkgsite(ctx, pkgsiteURL, mp)
 			if err != nil {
 				return "", err
 			}
 			if known {
-				return mod, nil
+				return mp, nil
 			}
 		}
 	}
