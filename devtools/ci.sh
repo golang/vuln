@@ -7,4 +7,4 @@
 # can be found under go/kokoro in Google3's internal repo.
 # It is run from the repo's root directory.
 
-./all.bash
+docker run -v $PWD:/vuln -w /vuln golang:1.17.3 ./all.bash
