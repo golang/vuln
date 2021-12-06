@@ -9,10 +9,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"strings"
+
 	"os"
 
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/report"
+	"gopkg.in/yaml.v2"
 )
 
 func main() {
@@ -37,7 +42,9 @@ func main() {
 			log.Fatal(err)
 		}
 	case "lint":
-		log.Fatalf("not implemented")
+		if err := lint(filename); err != nil {
+			log.Fatal(err)
+		}
 	default:
 		flag.Usage()
 		log.Fatalf("unsupported command: %q", cmd)
@@ -65,4 +72,23 @@ links:
   context:
     -
 `), 0644)
+}
+
+func lint(filename string) (err error) {
+	defer derrors.Wrap(&err, "lint(%q)", filename)
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("ioutil.ReadFile: %v", err)
+	}
+
+	var vuln report.Report
+	err = yaml.UnmarshalStrict(content, &vuln)
+	if err != nil {
+		return fmt.Errorf("yaml.UnmarshalStrict: %v", err)
+	}
+
+	if lints := vuln.Lint(); len(lints) > 0 {
+		return fmt.Errorf("vuln.Lint returned errors:\n\t %s", strings.Join(lints, "\n\t"))
+	}
+	return nil
 }
