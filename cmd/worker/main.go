@@ -163,13 +163,13 @@ func listCVEsCommand(ctx context.Context, st store.Store, triageState string) er
 		return err
 	}
 	tw := tabwriter.NewWriter(os.Stdout, 1, 8, 2, ' ', 0)
-	fmt.Fprintf(tw, "ID\tCVEState\tCommit\tReason\tIssue\tIssue Created\n")
+	fmt.Fprintf(tw, "ID\tCVEState\tCommit\tReason\tModule\tIssue\tIssue Created\n")
 	for i, r := range crs {
 		if *limit > 0 && i >= *limit {
 			break
 		}
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n",
-			r.ID, r.CVEState, r.CommitHash, r.TriageStateReason, r.IssueReference, worker.FormatTime(r.IssueCreatedAt))
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			r.ID, r.CVEState, r.CommitHash, r.TriageStateReason, r.Module, r.IssueReference, worker.FormatTime(r.IssueCreatedAt))
 	}
 	return tw.Flush()
 }
