@@ -103,7 +103,8 @@ func TestDoUpdate(t *testing.T) {
 	rs[0].CVE = cves[0]
 	rs[1].TriageState = store.TriageStateNoActionNeeded // state is reserved
 	rs[2].TriageState = store.TriageStateNoActionNeeded // state is rejected
-	rs[3].TriageState = store.TriageStateNoActionNeeded // CVE is in the Go vuln DB
+	rs[3].TriageState = store.TriageStateNoActionNeeded
+	rs[3].TriageStateReason = "already in vuln DB"
 
 	// withTriageState returns a copy of r with the TriageState field changed to ts.
 	withTriageState := func(r *store.CVERecord, ts store.TriageState) *store.CVERecord {

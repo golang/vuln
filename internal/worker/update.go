@@ -274,6 +274,9 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 			cr.CVE = cve
 		} else {
 			cr.TriageState = store.TriageStateNoActionNeeded
+			if u.knownIDs[cve.ID] {
+				cr.TriageStateReason = "already in vuln DB"
+			}
 		}
 		if err := tx.CreateCVERecord(cr); err != nil {
 			return false, err
