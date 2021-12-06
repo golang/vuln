@@ -27,15 +27,17 @@ import (
 )
 
 // A triageFunc triages a CVE: it decides whether an issue needs to be filed.
-type triageFunc func(*cveschema.CVE) (bool, error)
+// If so, it returns a non-empty string indicating the possibly
+// affected module.
+type triageFunc func(*cveschema.CVE) (string, error)
 
 // An updater performs an update operation on the DB.
 type updater struct {
-	repo       *git.Repository
-	commitHash plumbing.Hash
-	st         store.Store
-	knownIDs   map[string]bool
-	needsIssue triageFunc
+	repo           *git.Repository
+	commitHash     plumbing.Hash
+	st             store.Store
+	knownIDs       map[string]bool
+	affectedModule triageFunc
 }
 
 type updateStats struct {
@@ -47,11 +49,11 @@ type updateStats struct {
 // needsIssue determines whether a CVE needs an issue to be filed for it.
 func newUpdater(repo *git.Repository, commitHash plumbing.Hash, st store.Store, knownVulnIDs []string, needsIssue triageFunc) *updater {
 	u := &updater{
-		repo:       repo,
-		commitHash: commitHash,
-		st:         st,
-		knownIDs:   map[string]bool{},
-		needsIssue: needsIssue,
+		repo:           repo,
+		commitHash:     commitHash,
+		st:             st,
+		knownIDs:       map[string]bool{},
+		affectedModule: needsIssue,
 	}
 	for _, k := range knownVulnIDs {
 		u.knownIDs[k] = true
@@ -254,9 +256,9 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 	if err := json.NewDecoder(r).Decode(cve); err != nil {
 		return false, err
 	}
-	needs := false
+	module := ""
 	if cve.State == cveschema.StatePublic && !u.knownIDs[cve.ID] {
-		needs, err = u.needsIssue(cve)
+		module, err = u.affectedModule(cve)
 		if err != nil {
 			return false, err
 		}
@@ -266,8 +268,10 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 	if old == nil {
 		cr := store.NewCVERecord(cve, pathname, f.blobHash.String())
 		cr.CommitHash = u.commitHash.String()
-		if needs {
+		if module != "" {
 			cr.TriageState = store.TriageStateNeedsIssue
+			cr.Module = module
+			cr.CVE = cve
 		} else {
 			cr.TriageState = store.TriageStateNoActionNeeded
 		}
@@ -284,23 +288,26 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 	mod.CommitHash = u.commitHash.String()
 	switch old.TriageState {
 	case store.TriageStateNoActionNeeded:
-		if needs {
+		if module != "" {
 			// Didn't need an issue before, does now.
 			mod.TriageState = store.TriageStateNeedsIssue
+			mod.Module = module
 		}
 		// Else don't change the triage state, but we still want
 		// to update the other changed fields.
 	case store.TriageStateNeedsIssue:
-		if !needs {
+		if module == "" {
 			// Needed an issue, no longer does.
 			mod.TriageState = store.TriageStateNoActionNeeded
+			mod.Module = ""
+			mod.CVE = nil
 		}
 		// Else don't change the triage state, but we still want
 		// to update the other changed fields.
 	case store.TriageStateIssueCreated, store.TriageStateUpdatedSinceIssueCreation:
 		// An issue was filed, so a person should revisit this CVE.
 		mod.TriageState = store.TriageStateUpdatedSinceIssueCreation
-		mod.TriageStateReason = fmt.Sprintf("CVE changed; needs issue = %t", needs)
+		mod.TriageStateReason = fmt.Sprintf("CVE changed; affected module = %q", module)
 		// TODO(golang/go#49733): keep a history of the previous states and their commits.
 	default:
 		return false, fmt.Errorf("unknown TriageState: %q", old.TriageState)

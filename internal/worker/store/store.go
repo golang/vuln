@@ -31,6 +31,12 @@ type CVERecord struct {
 	// TriageStateReason is an explanation of TriageState.
 	TriageStateReason string
 
+	// Module is the Go module path that might be affected.
+	Module string
+
+	// CVE is a copy of the CVE, for the NeedsIssue triage state.
+	CVE *cveschema.CVE
+
 	// IssueReference is a reference to the GitHub issue that was filed.
 	// E.g. golang/vulndb#12345.
 	// Set only after a GitHub issue has been successfully created.

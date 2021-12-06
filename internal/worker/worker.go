@@ -46,7 +46,7 @@ func UpdateCommit(ctx context.Context, repoPath, commitHash string, st store.Sto
 	if err != nil {
 		return err
 	}
-	u := newUpdater(repo, ch, st, knownVulnIDs, func(cve *cveschema.CVE) (bool, error) {
+	u := newUpdater(repo, ch, st, knownVulnIDs, func(cve *cveschema.CVE) (string, error) {
 		return TriageCVE(ctx, cve, pkgsiteURL)
 	})
 	_, err = u.update(ctx)
@@ -206,13 +206,24 @@ func CreateIssues(ctx context.Context, st store.Store, ic IssueClient, limit int
 	return nil
 }
 
+const englishLang = "eng"
+
 func newBody(r *store.CVERecord) (string, error) {
 	var b strings.Builder
+	var desc string
+	if r.CVE != nil {
+		for _, d := range r.CVE.Description.Data {
+			if d.Lang == englishLang {
+				desc = d.Value
+			}
+		}
+	}
 	err := issueTemplate.Execute(&b, issueTemplateData{
 		Heading: fmt.Sprintf(
 			"One or more of the reference URLs in [%s](%s/tree/%s/%s) refers to a Go module.",
 			r.ID, gitrepo.CVEListRepoURL, r.CommitHash, r.Path),
-		CVERecord: r,
+		Description: desc,
+		CVERecord:   r,
 	})
 	if err != nil {
 		return "", err
@@ -221,20 +232,22 @@ func newBody(r *store.CVERecord) (string, error) {
 }
 
 type issueTemplateData struct {
-	Heading string
+	Heading     string
+	Description string
 	*store.CVERecord
 }
 
 var issueTemplate = template.Must(template.New("issue").Parse(`
 {{.Heading}}
 
-module:
+module: {{.Module}}
 package:
 stdlib:
 versions:
   - introduced:
   - fixed:
 description: |
+  {{.Description}}
 
 cve: {{.ID}}
 credit:

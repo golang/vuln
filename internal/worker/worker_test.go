@@ -6,12 +6,14 @@ package worker
 
 import (
 	"context"
+	"math"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"golang.org/x/vuln/internal/cveschema"
 	"golang.org/x/vuln/internal/worker/log"
 	"golang.org/x/vuln/internal/worker/store"
 )
@@ -133,4 +135,78 @@ func TestCreateIssues(t *testing.T) {
 			t.Errorf("got  %+v\nwant %+v", got, want)
 		}
 	}
+}
+
+func TestNewBody(t *testing.T) {
+	r := &store.CVERecord{
+		ID:     "ID1",
+		Module: "aModule",
+		CVE: &cveschema.CVE{
+			Description: cveschema.Description{
+				Data: []cveschema.LangString{{
+					Lang:  "eng",
+					Value: "a description",
+				}},
+			},
+		},
+	}
+	got, err := newBody(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `
+        One or more of the reference URLs in [ID1](https://github.com/CVEProject/cvelist/tree//) refers to a Go module.
+
+        module: aModule
+        package:
+        stdlib:
+        versions:
+          - introduced:
+          - fixed:
+        description: |
+          a description
+
+        cve: ID1
+        credit:
+        symbols:
+          -
+        published:
+        links:
+          commit:
+          pr:
+          context:
+            -
+`
+	if diff := cmp.Diff(unindent(want), got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+// unindent removes leading whitespace from s.
+// It first finds the line beginning with the fewest space and tab characters.
+// It then removes that many characters from every line.
+func unindent(s string) string {
+	lines := strings.Split(s, "\n")
+	min := math.MaxInt
+	for _, l := range lines {
+		if len(l) == 0 {
+			continue
+		}
+		n := 0
+		for _, r := range l {
+			if r != ' ' && r != '\t' {
+				break
+			}
+			n++
+		}
+		if n < min {
+			min = n
+		}
+	}
+	for i, l := range lines {
+		if len(l) > 0 {
+			lines[i] = l[min:]
+		}
+	}
+	return strings.Join(lines, "\n")
 }

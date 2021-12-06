@@ -58,7 +58,7 @@ func TestDoUpdate(t *testing.T) {
 	}
 
 	purl := pkgsiteURL(t)
-	needsIssue := func(cve *cveschema.CVE) (bool, error) {
+	needsIssue := func(cve *cveschema.CVE) (string, error) {
 		return TriageCVE(ctx, cve, purl)
 	}
 
@@ -98,7 +98,9 @@ func TestDoUpdate(t *testing.T) {
 		}
 		rs = append(rs, r)
 	}
-	rs[0].TriageState = store.TriageStateNeedsIssue     // a public CVE, has a golang.org path
+	rs[0].TriageState = store.TriageStateNeedsIssue // a public CVE, has a golang.org path
+	rs[0].Module = "golang.org/x/mod"
+	rs[0].CVE = cves[0]
 	rs[1].TriageState = store.TriageStateNoActionNeeded // state is reserved
 	rs[2].TriageState = store.TriageStateNoActionNeeded // state is rejected
 	rs[3].TriageState = store.TriageStateNoActionNeeded // CVE is in the Go vuln DB
@@ -133,11 +135,26 @@ func TestDoUpdate(t *testing.T) {
 				// NoActionNeeded -> NeedsIssue
 				withTriageState(rs[0], store.TriageStateNoActionNeeded),
 				// NeedsIssue -> NoActionNeeded
-				withTriageState(rs[1], store.TriageStateNeedsIssue),
+				func() *store.CVERecord {
+					r := withTriageState(rs[1], store.TriageStateNeedsIssue)
+					r.Module = "something"
+					r.CVE = cves[1]
+					return r
+				}(),
 				// NoActionNeeded, triage state stays the same but other fields change.
 				withTriageState(rs[2], store.TriageStateNoActionNeeded),
 			},
-			want: rs,
+			want: []*store.CVERecord{
+				rs[0],
+				func() *store.CVERecord {
+					c := *rs[1]
+					c.Module = ""
+					c.CVE = nil
+					return &c
+				}(),
+				rs[2],
+				rs[3],
+			},
 		},
 		{
 			name: "post-issue changes",
@@ -150,13 +167,13 @@ func TestDoUpdate(t *testing.T) {
 				func() *store.CVERecord {
 					c := *rs[0]
 					c.TriageState = store.TriageStateUpdatedSinceIssueCreation
-					c.TriageStateReason = "CVE changed; needs issue = true"
+					c.TriageStateReason = `CVE changed; affected module = "golang.org/x/mod"`
 					return &c
 				}(),
 				func() *store.CVERecord {
 					c := *rs[1]
 					c.TriageState = store.TriageStateUpdatedSinceIssueCreation
-					c.TriageStateReason = "CVE changed; needs issue = false"
+					c.TriageStateReason = `CVE changed; affected module = ""`
 					return &c
 				}(),
 				rs[2],

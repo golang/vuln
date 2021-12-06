@@ -40,21 +40,18 @@ var stdlibKeywords = map[string]bool{
 }
 
 // TriageCVE reports whether the CVE refers to a Go module.
-func TriageCVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ bool, err error) {
+func TriageCVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (module string, err error) {
 	defer derrors.Wrap(&err, "triageCVE(%q)", c.ID)
 	switch c.DataVersion {
 	case "4.0":
 		mp, err := cveModulePath(ctx, c, pkgsiteURL)
 		if err != nil {
-			return false, err
+			return "", err
 		}
-		if mp == "" {
-			return false, nil
-		}
-		return true, nil
+		return mp, nil
 	default:
 		// TODO(https://golang.org/issue/49289): Add support for v5.0.
-		return false, fmt.Errorf("CVE %q has DataVersion %q: %w", c.ID, c.DataVersion, errCVEVersionUnsupported)
+		return "", fmt.Errorf("CVE %q has DataVersion %q: %w", c.ID, c.DataVersion, errCVEVersionUnsupported)
 	}
 }
 
@@ -69,7 +66,7 @@ func cveModulePath(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ 
 			continue
 		}
 		for k := range stdlibKeywords {
-			if strings.Contains(r.URL, k) {
+			if strings.Contains(r.URL, k) && !strings.Contains(r.URL, "golang.org/x/") {
 				return "Go Standard Library", nil
 			}
 		}
