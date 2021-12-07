@@ -26,11 +26,17 @@ die() {
   exit 1
 }
 
+dryrun=false
+
 # runcmd prints an info log describing the command that is about to be run, and
 # then runs it. It sets EXIT_CODE to non-zero if the command fails, but does not exit
 # the script.
 runcmd() {
   msg="$@"
+  if $dryrun; then
+    echo -e "${YELLOW}dryrun${GREEN}\$ $msg${NORMAL}"
+    return 0
+  fi
   # Truncate command logging for narrow terminals.
   # Account for the 2 characters of '$ '.
   if [[ $MAXWIDTH -gt 0 && ${#msg} -gt $MAXWIDTH ]]; then
