@@ -3,6 +3,17 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
+# This file will be run by `go test`.
+# See all_test.go in this directory.
+
+go version
+
+# Ensure that installed go binaries are on the path.
+# This bash expression follows the algorithm described at the top of
+# `go install help`: first try $GOBIN, then $GOPATH/bin, then $HOME/go/bin.
+go_install_dir=${GOBIN:-${GOPATH:-$HOME/go}/bin}
+PATH=$PATH:$go_install_dir
+
 source devtools/lib.sh
 
 # ensure_go_binary verifies that a binary exists in $PATH corresponding to the
@@ -12,7 +23,7 @@ ensure_go_binary() {
   if ! [ -x "$(command -v $binary)" ]; then
     info "Installing: $1"
     # Install the binary in a way that doesn't affect our go.mod file.
-    go install $1@latest
+    go install $1@master
   fi
 }
 
@@ -22,7 +33,7 @@ verify_header() {
   if [[ "$@" != "" ]]; then
     for FILE in $@
     do
-        line="$(head -1 $FILE)"
+        line="$(head -4 $FILE)"
         if [[ ! $line == *"The Go Authors. All rights reserved."* ]] &&
          [[ ! $line == "// DO NOT EDIT. This file was copied from" ]]; then
               err "missing license header: $FILE"
@@ -31,13 +42,8 @@ verify_header() {
   fi
 }
 
-# Support ** in globs for findcode.
+# Support ** in globs for finding files throughout the tree.
 shopt -s globstar
-
-# findcode finds source files in the repo.
-findcode() {
-  find **/*.go
-}
 
 # check_headers checks that all source files that have been staged in this
 # commit, and all other non-third-party files in the repo, have a license
@@ -47,11 +53,9 @@ check_headers() {
     info "Checking listed files for license header"
     verify_header $*
   else
-    info "Checking staged files for license header"
     # Check code files that have been modified or added.
-    verify_header $(git diff --cached --name-status | grep -vE "^D" | cut -f 2- | grep -E ".go$|.sh$")
-    info "Checking go files for license header"
-    verify_header $(findcode)
+    info "Checking go and sh files for license header"
+    verify_header $(find **/*.go) $(find **/*.sh)
   fi
 }
 
@@ -82,36 +86,24 @@ go_linters() {
   check_vet
   check_staticcheck
   check_misspell
-  check_unparam
+  # Commented out pending https://github.com/mvdan/unparam/issues/59.
+  # check_unparam
 }
 
 go_modtidy() {
   runcmd go mod tidy
 }
 
-go_test() {
-  runcmd go test ./...
-}
-
 runchecks() {
   check_headers
   go_linters
   go_modtidy
-  go_test
 }
 
 usage() {
   cat <<EOUSAGE
 Usage: $0 [subcommand]
 Available subcommands:
-  (empty)        - run all standard checks and tests:
-     * headers: check source files for the license disclaimer
-     * vet: run go vet on source files
-     * staticcheck: run staticcheck on source files
-     * misspell: run misspell on source files
-     * unparam: run unparam on source files
-     * tidy: run go mod tidy
-     * tests: run all Go tests
   help           - display this help message
 EOUSAGE
 }
