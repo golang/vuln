@@ -4,6 +4,8 @@
 
 # Config for vuln worker.
 
+################################################################
+# Inputs.
 
 variable "env" {
   description = "environment name"
@@ -30,6 +32,19 @@ variable "min_frontend_instances" {
   type        = number
 }
 
+variable "client_id" {
+  description = "OAuth 2 client ID (visit APIs & Services > Credentials)"
+  type = string
+}
+
+variable "client_secret" {
+  description = "OAuth 2 client ID (visit APIs & Services > Credentials, click on client)"
+  type = string
+}
+
+
+################################################################
+# Cloud Run service.
 
 resource "google_cloud_run_service" "worker" {
 
@@ -66,7 +81,7 @@ resource "google_cloud_run_service" "worker" {
 	}
 	env {
 	  name = "VULN_WORKER_ISSUE_REPO"
-	  value = var.env == "dev"? "jba/nested-modules": "golang/vulndb"
+	  value = var.env == "dev"? "": "golang/vulndb"
 	}
 	env{
           name  = "VULN_WORKER_USE_PROFILER"
@@ -108,4 +123,60 @@ data "google_cloud_run_service" "worker" {
   name     = "${var.env}-vuln-worker"
   project  = var.project
   location = var.region
+}
+
+################################################################
+# Load balancer for Cloud Run service.
+
+resource "google_compute_region_network_endpoint_group" "worker" {
+  count = var.client_id == ""? 0: 1
+  name         = "${var.env}-vuln-worker-neg"
+  network_endpoint_type = "SERVERLESS"
+  project = var.project
+  region = var.region
+  cloud_run {
+    service = google_cloud_run_service.worker.name
+  }
+}
+
+module "worker_lb" {
+  count = var.client_id == ""? 0: 1
+  source  = "GoogleCloudPlatform/lb-http/google//modules/serverless_negs"
+  version = "~> 6.1.1"
+
+  name = "${var.env}-vuln-worker-lb"
+  project = var.project
+
+  ssl                             = true
+  managed_ssl_certificate_domains = ["${var.env}-vuln-worker.go.dev"]
+  https_redirect                  = true
+
+  backends = {
+    default = {
+      description = null
+      groups = [
+        {
+	  group = google_compute_region_network_endpoint_group.worker[0].id
+        }
+      ]
+      enable_cdn              = false
+      security_policy         = null
+      custom_request_headers  = null
+      custom_response_headers = null
+
+      iap_config = {
+        enable               = true
+        oauth2_client_id     = var.client_id
+        oauth2_client_secret = var.client_secret
+      }
+      log_config = {
+        enable      = false
+        sample_rate = null
+      }
+    }
+  }
+}
+
+output "load_balancer_ip" {
+  value = var.client_id == ""? "": module.worker_lb[0].external_ip
 }

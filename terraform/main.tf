@@ -13,7 +13,7 @@ terraform {
   }
   required_providers {
     google = {
-      version = "~> 3.86.0"
+      version = "~> 3.90.1"
       source  = "hashicorp/google"
     }
   }
@@ -28,6 +28,19 @@ provider "google" {
   region  = local.region
 }
 
+# Inputs for values that should not appear in the repo.
+# Terraform will prompt for these when you run it, or
+# you can put them in a local file that is only readable
+# by you, and pass them to terraform.
+# See https://www.terraform.io/docs/language/values/variables.html#variable-definitions-tfvars-files.
+
+variable "prod_client_secret" {
+  description = "OAuth 2 client secret for prod"
+  type = string
+  sensitive = true
+}
+
+
 
 # Deployment environments
 
@@ -38,6 +51,8 @@ module "dev" {
   region                    = local.region
   use_profiler              = false
   min_frontend_instances    = 0
+  client_id = "" # go-discovery-exp does not allow external load balancers
+  client_secret = ""
 }
 
 module "prod" {
@@ -47,5 +62,7 @@ module "prod" {
   region                    = local.region
   use_profiler              = true
   min_frontend_instances    = 1
+  client_id = "unknown"
+  client_secret = var.prod_client_secret
 }
 
