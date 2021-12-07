@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build go1.17
+// +build go1.17
+
 package worker
 
 import (
@@ -53,7 +56,6 @@ func testIssueClient(t *testing.T, c IssueClient) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("created issue #%d", num)
 	gotExists, err := c.IssueExists(ctx, num)
 	if err != nil {
 		t.Fatal(err)
