@@ -6,14 +6,12 @@ package worker
 
 import (
 	"context"
-	"math"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"golang.org/x/vuln/internal/cveschema"
 	"golang.org/x/vuln/internal/worker/log"
 	"golang.org/x/vuln/internal/worker/store"
 )
@@ -137,6 +135,8 @@ func TestCreateIssues(t *testing.T) {
 	}
 }
 
+/*
+TODO(golang/go#50026): Uncomment this test once CI is moved to kokoro.
 func TestNewBody(t *testing.T) {
 	r := &store.CVERecord{
 		ID:     "ID1",
@@ -210,3 +210,4 @@ func unindent(s string) string {
 	}
 	return strings.Join(lines, "\n")
 }
+*/
