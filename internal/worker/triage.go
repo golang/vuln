@@ -31,50 +31,59 @@ var stdlibKeywords = map[string]bool{
 }
 
 // TriageCVE reports whether the CVE refers to a Go module.
-func TriageCVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (module string, err error) {
+func TriageCVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *triageResult, err error) {
 	defer derrors.Wrap(&err, "triageCVE(%q)", c.ID)
 	switch c.DataVersion {
 	case "4.0":
-		mp, err := cveModulePath(ctx, c, pkgsiteURL)
-		if err != nil {
-			return "", err
-		}
-		return mp, nil
+		return triageV4CVE(ctx, c, pkgsiteURL)
 	default:
 		// TODO(https://golang.org/issue/49289): Add support for v5.0.
-		return "", fmt.Errorf("CVE %q has DataVersion %q: %w", c.ID, c.DataVersion, errCVEVersionUnsupported)
+		return nil, fmt.Errorf("CVE %q has DataVersion %q: %w", c.ID, c.DataVersion, errCVEVersionUnsupported)
 	}
 }
 
-// cveModulePath returns a Go module path for a CVE, if we can determine what
-// it is.
-func cveModulePath(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ string, err error) {
-	defer derrors.Wrap(&err, "cveModulePath(%q)", c.ID)
+type triageResult struct {
+	modulePath string
+	stdlib     bool
+	reason     string
+}
+
+// triageV4CVE triages a CVE following schema v4.0 and returns the result.
+func triageV4CVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *triageResult, err error) {
+	defer derrors.Wrap(&err, "triageV4CVE(ctx, %q, %q)", c.ID, pkgsiteURL)
 	for _, r := range c.References.Data {
 		if r.URL == "" {
 			continue
 		}
 		for k := range stdlibKeywords {
 			if strings.Contains(r.URL, k) && !strings.Contains(r.URL, "golang.org/x/") {
-				return "Go Standard Library", nil
+				return &triageResult{
+					modulePath: "Go Standard Library",
+					stdlib:     true,
+					reason:     fmt.Sprintf("Reference data URL %q contains %q", r.URL, k),
+				}, nil
 			}
 		}
 		refURL, err := url.Parse(r.URL)
 		if err != nil {
-			return "", fmt.Errorf("url.Parse(%q): %v", r.URL, err)
+			return nil, fmt.Errorf("url.Parse(%q): %v", r.URL, err)
 		}
 		modpaths := candidateModulePaths(refURL.Host + refURL.Path)
 		for _, mp := range modpaths {
 			known, err := knownToPkgsite(ctx, pkgsiteURL, mp)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			if known {
-				return mp, nil
+				u := pkgsiteURL + "/" + mp
+				return &triageResult{
+					modulePath: mp,
+					reason:     fmt.Sprintf("Reference data URL %q contains path %q; %q returned a status 200", r.URL, mp, u),
+				}, nil
 			}
 		}
 	}
-	return "", nil
+	return nil, nil
 }
 
 // Limit pkgsite calls to 2 qps (once every 500ms).

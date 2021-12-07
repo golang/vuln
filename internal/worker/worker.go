@@ -46,7 +46,7 @@ func UpdateCommit(ctx context.Context, repoPath, commitHash string, st store.Sto
 	if err != nil {
 		return err
 	}
-	u := newUpdater(repo, ch, st, knownVulnIDs, func(cve *cveschema.CVE) (string, error) {
+	u := newUpdater(repo, ch, st, knownVulnIDs, func(cve *cveschema.CVE) (*triageResult, error) {
 		return TriageCVE(ctx, cve, pkgsiteURL)
 	})
 	_, err = u.update(ctx)

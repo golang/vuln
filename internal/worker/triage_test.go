@@ -18,7 +18,7 @@ import (
 
 var usePkgsite = flag.Bool("pkgsite", false, "use pkg.go.dev for tests")
 
-func TestCVEModulePath(t *testing.T) {
+func TestTriageV4CVE(t *testing.T) {
 	ctx := log.WithLineLogger(context.Background())
 	url := pkgsiteURL(t)
 
@@ -84,12 +84,19 @@ func TestCVEModulePath(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := cveModulePath(ctx, test.in, url)
+			test.in.DataVersion = "4.0"
+			got, err := TriageCVE(ctx, test.in, url)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got != test.want {
-				t.Errorf("got %q, want %q", got, test.want)
+			if got == nil {
+				if test.want != "" {
+					t.Fatalf("got empty string, want %q", test.want)
+				}
+				return
+			}
+			if got.modulePath != test.want {
+				t.Errorf("got %q, want %q", got.modulePath, test.want)
 			}
 		})
 	}

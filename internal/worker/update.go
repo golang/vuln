@@ -29,7 +29,7 @@ import (
 // A triageFunc triages a CVE: it decides whether an issue needs to be filed.
 // If so, it returns a non-empty string indicating the possibly
 // affected module.
-type triageFunc func(*cveschema.CVE) (string, error)
+type triageFunc func(*cveschema.CVE) (*triageResult, error)
 
 // An updater performs an update operation on the DB.
 type updater struct {
@@ -256,9 +256,9 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 	if err := json.NewDecoder(r).Decode(cve); err != nil {
 		return false, err
 	}
-	module := ""
+	var result *triageResult
 	if cve.State == cveschema.StatePublic && !u.knownIDs[cve.ID] {
-		module, err = u.affectedModule(cve)
+		result, err = u.affectedModule(cve)
 		if err != nil {
 			return false, err
 		}
@@ -268,9 +268,9 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 	if old == nil {
 		cr := store.NewCVERecord(cve, pathname, f.blobHash.String())
 		cr.CommitHash = u.commitHash.String()
-		if module != "" {
+		if result != nil {
 			cr.TriageState = store.TriageStateNeedsIssue
-			cr.Module = module
+			cr.Module = result.modulePath
 			cr.CVE = cve
 		} else {
 			cr.TriageState = store.TriageStateNoActionNeeded
@@ -291,15 +291,15 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 	mod.CommitHash = u.commitHash.String()
 	switch old.TriageState {
 	case store.TriageStateNoActionNeeded:
-		if module != "" {
+		if result != nil {
 			// Didn't need an issue before, does now.
 			mod.TriageState = store.TriageStateNeedsIssue
-			mod.Module = module
+			mod.Module = result.modulePath
 		}
 		// Else don't change the triage state, but we still want
 		// to update the other changed fields.
 	case store.TriageStateNeedsIssue:
-		if module == "" {
+		if result == nil {
 			// Needed an issue, no longer does.
 			mod.TriageState = store.TriageStateNoActionNeeded
 			mod.Module = ""
@@ -310,7 +310,11 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 	case store.TriageStateIssueCreated, store.TriageStateUpdatedSinceIssueCreation:
 		// An issue was filed, so a person should revisit this CVE.
 		mod.TriageState = store.TriageStateUpdatedSinceIssueCreation
-		mod.TriageStateReason = fmt.Sprintf("CVE changed; affected module = %q", module)
+		var mp string
+		if result != nil {
+			mp = result.modulePath
+		}
+		mod.TriageStateReason = fmt.Sprintf("CVE changed; affected module = %q", mp)
 		// TODO(golang/go#49733): keep a history of the previous states and their commits.
 	default:
 		return false, fmt.Errorf("unknown TriageState: %q", old.TriageState)
