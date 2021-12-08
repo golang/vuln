@@ -9,7 +9,6 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -263,19 +262,11 @@ func TestGroupFilesByDirectory(t *testing.T) {
 
 func readCVE(t *testing.T, repo *git.Repository, path string) (*cveschema.CVE, string) {
 	c := headCommit(t, repo)
-	file, err := c.File(path)
-	if err != nil {
-		t.Fatalf("%s: %v", path, err)
-	}
-	var cve cveschema.CVE
-	r, err := file.Reader()
+	cve, blobHash, err := ReadCVEAtPath(c, path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := json.NewDecoder(r).Decode(&cve); err != nil {
-		t.Fatalf("%s: %v", path, err)
-	}
-	return &cve, file.Hash.String()
+	return cve, blobHash
 }
 
 func createCVERecords(t *testing.T, s store.Store, crs []*store.CVERecord) {

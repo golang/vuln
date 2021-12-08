@@ -70,6 +70,9 @@ func TestCheckUpdate(t *testing.T) {
 		},
 	} {
 		mstore := store.NewMemStore()
+		if err := InsertFalsePositives(ctx, mstore); err != nil {
+			t.Fatal(err)
+		}
 		if test.latestUpdate != nil {
 			if err := mstore.CreateCommitUpdateRecord(ctx, test.latestUpdate); err != nil {
 				t.Fatal(err)

@@ -137,6 +137,10 @@ func (u *updater) update(ctx context.Context) (ur *store.CommitUpdateRecord, err
 	return ur, u.st.SetCommitUpdateRecord(ctx, ur)
 }
 
+// Firestore supports a maximum of 500 writes per transaction.
+// See https://cloud.google.com/firestore/quotas.
+const maxTransactionWrites = 500
+
 func (u *updater) updateDirectory(ctx context.Context, dirFiles []repoFile) (_ updateStats, err error) {
 	dirPath := dirFiles[0].dirPath
 	dirHash := dirFiles[0].treeHash.String()
@@ -161,13 +165,9 @@ func (u *updater) updateDirectory(ctx context.Context, dirFiles []repoFile) (_ u
 
 	// Update files in batches.
 
-	// Firestore supports a maximum of 500 writes per transaction.
-	// See https://cloud.google.com/firestore/quotas.
-	const batchSize = 500
-
 	var stats updateStats
-	for i := 0; i < len(dirFiles); i += batchSize {
-		j := i + batchSize
+	for i := 0; i < len(dirFiles); i += maxTransactionWrites {
+		j := i + maxTransactionWrites
 		if j > len(dirFiles) {
 			j = len(dirFiles)
 		}

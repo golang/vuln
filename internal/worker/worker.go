@@ -9,6 +9,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -31,6 +32,17 @@ import (
 // Unless force is true, it checks that the update makes sense before doing it.
 func UpdateCommit(ctx context.Context, repoPath, commitHash string, st store.Store, pkgsiteURL string, force bool) (err error) {
 	defer derrors.Wrap(&err, "RunCommitUpdate(%q, %q, force=%t)", repoPath, commitHash, force)
+
+	b, err := falsePositivesInserted(ctx, st)
+	if err != nil {
+		return err
+	}
+	if !b {
+		log.Info(ctx, "inserting false positives")
+		if err := InsertFalsePositives(ctx, st); err != nil {
+			return err
+		}
+	}
 
 	repo, err := gitrepo.CloneOrOpen(repoPath)
 	if err != nil {
@@ -57,6 +69,14 @@ func UpdateCommit(ctx context.Context, repoPath, commitHash string, st store.Sto
 // It verifies that there is not an update currently in progress,
 // and it makes sure that the update is to a more recent commit.
 func checkUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.Hash, st store.Store) error {
+	b, err := falsePositivesInserted(ctx, st)
+	if err != nil {
+		return err
+	}
+	if !b {
+		return errors.New("False positives not inserted.")
+	}
+
 	urs, err := st.ListCommitUpdateRecords(ctx, 1)
 	if err != nil {
 		return err

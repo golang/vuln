@@ -121,7 +121,6 @@ func runCommandLine(ctx context.Context) error {
 		return updateCommand(ctx, flag.Arg(1))
 	case "create-issues":
 		return createIssuesCommand(ctx)
-
 	default:
 		return fmt.Errorf("unknown command: %q", flag.Arg(1))
 	}
