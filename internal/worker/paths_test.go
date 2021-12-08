@@ -54,3 +54,26 @@ func TestCandidateModulePaths(t *testing.T) {
 		}
 	}
 }
+
+func TestMatchesNegativeRegexp(t *testing.T) {
+	for _, test := range []struct {
+		in   string
+		want bool
+	}{
+		{"groups.google.com", true},
+		{"groupsgooglecom", false},
+		{"groups.google.com/foo", true},
+		{"groups.google.comics.org", false},
+		{"some/groups.google.com", false},
+		{"lists.ubuntu.com", true},
+		{"lists.ubuntu.com/pipermail", true},
+		{"bugzilla.anything.org", true},
+		{"github.com/evacchi/flatpress/issues/14", true},
+		{"github.com/evacchi/issues/14", false},
+	} {
+		got := matchesNegativeRegexp(test.in)
+		if got != test.want {
+			t.Errorf("%s: got %t, want %t", test.in, got, test.want)
+		}
+	}
+}
