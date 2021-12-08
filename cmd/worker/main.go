@@ -18,8 +18,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"cloud.google.com/go/errorreporting"
-	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/gitrepo"
 	"golang.org/x/vuln/internal/worker"
 	"golang.org/x/vuln/internal/worker/log"
@@ -27,19 +25,28 @@ import (
 )
 
 var (
-	project         = flag.String("project", os.Getenv("GOOGLE_CLOUD_PROJECT"), "project ID (required)")
-	namespace       = flag.String("namespace", os.Getenv("VULN_WORKER_NAMESPACE"), "Firestore namespace (required)")
-	errorReporting  = flag.Bool("report-errors", os.Getenv("VULN_WORKER_REPORT_ERRORS") == "true", "use the error reporting API")
-	localRepoPath   = flag.String("local-cve-repo", "", "path to local repo, instead of cloning remote")
-	force           = flag.Bool("force", false, "force an update to happen")
-	limit           = flag.Int("limit", 0, "limit on number of things to list or issues to create (0 means unlimited)")
-	issueRepo       = flag.String("issue-repo", "", "repo to create issues in")
-	githubTokenFile = flag.String("ghtokenfile", "", "path to file containing GitHub access token (for creating issues)")
+	// Flags only for the command-line tool.
+	localRepoPath = flag.String("local-cve-repo", "", "path to local repo, instead of cloning remote")
+	force         = flag.Bool("force", false, "force an update to happen")
+	limit         = flag.Int("limit", 0,
+		"limit on number of things to list or issues to create (0 means unlimited)")
+	githubTokenFile = flag.String("ghtokenfile", "",
+		"path to file containing GitHub access token (for creating issues)")
 )
+
+// Config for both the server and the command-line tool.
+var cfg worker.Config
+
+func init() {
+	flag.StringVar(&cfg.Project, "project", os.Getenv("GOOGLE_CLOUD_PROJECT"), "project ID (required)")
+	flag.StringVar(&cfg.Namespace, "namespace", os.Getenv("VULN_WORKER_NAMESPACE"), "Firestore namespace (required)")
+	flag.BoolVar(&cfg.UseErrorReporting, "report-errors", os.Getenv("VULN_WORKER_REPORT_ERRORS") == "true",
+		"use the error reporting API")
+	flag.StringVar(&cfg.IssueRepo, "issue-repo", os.Getenv("VULN_WORKER_ISSUE_REPO"), "repo to create issues in")
+}
 
 const (
 	pkgsiteURL = "https://pkg.go.dev"
-	serviceID  = "vuln-worker"
 )
 
 func main() {
@@ -58,49 +65,40 @@ func main() {
 		fmt.Fprintln(out, "flags:")
 		flag.PrintDefaults()
 	}
-	flag.Parse()
-	if *project == "" {
-		dieWithUsage("need -project or GOOGLE_CLOUD_PROJECT")
-	}
-	if *namespace == "" {
-		dieWithUsage("need -namespace or VULN_WORKER_NAMESPACE")
-	}
-	ctx := log.WithLineLogger(context.Background())
 
-	fstore, err := store.NewFireStore(ctx, *project, *namespace)
+	flag.Parse()
+	if *githubTokenFile != "" {
+		data, err := ioutil.ReadFile(*githubTokenFile)
+		if err != nil {
+			die("%v", err)
+		}
+		cfg.GitHubAccessToken = strings.TrimSpace(string(data))
+	}
+	if err := cfg.Validate(); err != nil {
+		dieWithUsage("%v", err)
+	}
+
+	ctx := log.WithLineLogger(context.Background())
+	var err error
+	cfg.Store, err = store.NewFireStore(ctx, cfg.Project, cfg.Namespace)
 	if err != nil {
 		die("firestore: %v", err)
 	}
 	if flag.NArg() > 0 {
-		err = runCommandLine(ctx, fstore)
+		err = runCommandLine(ctx)
 	} else {
-		err = runServer(ctx, fstore)
+		err = runServer(ctx)
 	}
 	if err != nil {
 		dieWithUsage("%v", err)
 	}
 }
 
-func runServer(ctx context.Context, st store.Store) error {
+func runServer(ctx context.Context) error {
 	if os.Getenv("PORT") == "" {
 		return errors.New("need PORT")
 	}
-
-	if *errorReporting {
-		reportingClient, err := errorreporting.NewClient(ctx, *project, errorreporting.Config{
-			ServiceName: serviceID,
-			OnError: func(err error) {
-				log.Errorf(ctx, "Error reporting failed: %v", err)
-			},
-		})
-		if err != nil {
-			return err
-		}
-		derrors.SetReportingClient(reportingClient)
-	}
-
-	_, err := worker.NewServer(ctx, *namespace, st)
-	if err != nil {
+	if _, err := worker.NewServer(ctx, cfg); err != nil {
 		return err
 	}
 	addr := ":" + os.Getenv("PORT")
@@ -110,27 +108,27 @@ func runServer(ctx context.Context, st store.Store) error {
 
 const timeFormat = "2006/01/02 15:04:05"
 
-func runCommandLine(ctx context.Context, st store.Store) error {
+func runCommandLine(ctx context.Context) error {
 	switch flag.Arg(0) {
 	case "list-updates":
-		return listUpdatesCommand(ctx, st)
+		return listUpdatesCommand(ctx)
 	case "list-cves":
-		return listCVEsCommand(ctx, st, flag.Arg(1))
+		return listCVEsCommand(ctx, flag.Arg(1))
 	case "update":
 		if flag.NArg() != 2 {
 			return errors.New("usage: update COMMIT")
 		}
-		return updateCommand(ctx, st, flag.Arg(1))
+		return updateCommand(ctx, flag.Arg(1))
 	case "create-issues":
-		return createIssuesCommand(ctx, st)
+		return createIssuesCommand(ctx)
 
 	default:
 		return fmt.Errorf("unknown command: %q", flag.Arg(1))
 	}
 }
 
-func listUpdatesCommand(ctx context.Context, st store.Store) error {
-	recs, err := st.ListCommitUpdateRecords(ctx, 0)
+func listUpdatesCommand(ctx context.Context) error {
+	recs, err := cfg.Store.ListCommitUpdateRecords(ctx, 0)
 	if err != nil {
 		return err
 	}
@@ -153,12 +151,12 @@ func listUpdatesCommand(ctx context.Context, st store.Store) error {
 	return tw.Flush()
 }
 
-func listCVEsCommand(ctx context.Context, st store.Store, triageState string) error {
+func listCVEsCommand(ctx context.Context, triageState string) error {
 	ts := store.TriageState(triageState)
 	if err := ts.Validate(); err != nil {
 		return err
 	}
-	crs, err := st.ListCVERecordsWithTriageState(ctx, ts)
+	crs, err := cfg.Store.ListCVERecordsWithTriageState(ctx, ts)
 	if err != nil {
 		return err
 	}
@@ -174,32 +172,25 @@ func listCVEsCommand(ctx context.Context, st store.Store, triageState string) er
 	return tw.Flush()
 }
 
-func updateCommand(ctx context.Context, st store.Store, commitHash string) error {
+func updateCommand(ctx context.Context, commitHash string) error {
 	repoPath := gitrepo.CVEListRepoURL
 	if *localRepoPath != "" {
 		repoPath = *localRepoPath
 	}
-	err := worker.UpdateCommit(ctx, repoPath, commitHash, st, pkgsiteURL, *force)
+	err := worker.UpdateCommit(ctx, repoPath, commitHash, cfg.Store, pkgsiteURL, *force)
 	if cerr := new(worker.CheckUpdateError); errors.As(err, &cerr) {
 		return fmt.Errorf("%w; use -force to override", cerr)
 	}
 	return err
 }
 
-func createIssuesCommand(ctx context.Context, st store.Store) error {
-	owner, repoName, err := worker.ParseGithubRepo(*issueRepo)
+func createIssuesCommand(ctx context.Context) error {
+	owner, repoName, err := worker.ParseGithubRepo(cfg.IssueRepo)
 	if err != nil {
 		return err
 	}
-	if *githubTokenFile == "" {
-		return errors.New("need -ghtokenfile")
-	}
-	data, err := ioutil.ReadFile(*githubTokenFile)
-	if err != nil {
-		return err
-	}
-	token := strings.TrimSpace(string(data))
-	return worker.CreateIssues(ctx, st, worker.NewGithubIssueClient(owner, repoName, token), *limit)
+	client := worker.NewGithubIssueClient(owner, repoName, cfg.GitHubAccessToken)
+	return worker.CreateIssues(ctx, cfg.Store, client, *limit)
 }
 
 func die(format string, args ...interface{}) {

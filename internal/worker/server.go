@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"cloud.google.com/go/errorreporting"
 	"github.com/google/safehtml/template"
 	"golang.org/x/exp/event"
 	"golang.org/x/sync/errgroup"
@@ -25,16 +26,28 @@ import (
 var staticPath = template.TrustedSourceFromConstant("internal/worker/static")
 
 type Server struct {
-	namespace string
-	st        store.Store
-
+	cfg           Config
 	indexTemplate *template.Template
 }
 
-func NewServer(ctx context.Context, namespace string, st store.Store) (_ *Server, err error) {
-	defer derrors.Wrap(&err, "NewServer(%q)", namespace)
+func NewServer(ctx context.Context, cfg Config) (_ *Server, err error) {
+	defer derrors.Wrap(&err, "NewServer(%q)", cfg.Namespace)
 
-	s := &Server{namespace: namespace, st: st}
+	s := &Server{cfg: cfg}
+
+	if cfg.UseErrorReporting {
+		reportingClient, err := errorreporting.NewClient(ctx, cfg.Project, errorreporting.Config{
+			ServiceName: serviceID,
+			OnError: func(err error) {
+				log.Errorf(ctx, "Error reporting failed: %v", err)
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		derrors.SetReportingClient(reportingClient)
+	}
+
 	s.indexTemplate, err = parseTemplate(staticPath, template.TrustedSourceFromConstant("index.tmpl"))
 	if err != nil {
 		return nil, err
@@ -154,17 +167,17 @@ func (s *Server) indexPage(w http.ResponseWriter, r *http.Request) error {
 	g, ctx := errgroup.WithContext(r.Context())
 	g.Go(func() error {
 		var err error
-		updates, err = s.st.ListCommitUpdateRecords(ctx, 10)
+		updates, err = s.cfg.Store.ListCommitUpdateRecords(ctx, 10)
 		return err
 	})
 	g.Go(func() error {
 		var err error
-		needingIssue, err = s.st.ListCVERecordsWithTriageState(ctx, store.TriageStateNeedsIssue)
+		needingIssue, err = s.cfg.Store.ListCVERecordsWithTriageState(ctx, store.TriageStateNeedsIssue)
 		return err
 	})
 	g.Go(func() error {
 		var err error
-		updatedSince, err = s.st.ListCVERecordsWithTriageState(ctx, store.TriageStateUpdatedSinceIssueCreation)
+		updatedSince, err = s.cfg.Store.ListCVERecordsWithTriageState(ctx, store.TriageStateUpdatedSinceIssueCreation)
 		return err
 	})
 	if err := g.Wait(); err != nil {
@@ -173,7 +186,7 @@ func (s *Server) indexPage(w http.ResponseWriter, r *http.Request) error {
 
 	page := indexPage{
 		CVEListRepoURL:   gitrepo.CVEListRepoURL,
-		Namespace:        s.namespace,
+		Namespace:        s.cfg.Namespace,
 		Updates:          updates,
 		CVEsNeedingIssue: needingIssue,
 		CVEsUpdatedSince: updatedSince,
