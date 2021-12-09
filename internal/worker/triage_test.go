@@ -15,6 +15,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/vuln/internal/cveschema"
 )
 
@@ -27,19 +29,35 @@ func TestTriageV4CVE(t *testing.T) {
 	for _, test := range []struct {
 		name string
 		in   *cveschema.CVE
-		want string
+		want *triageResult
 	}{
 		{
-			"repo path is Go standard library",
+			"repo path is unknown Go standard library",
 			&cveschema.CVE{
 				References: cveschema.References{
 					Data: []cveschema.Reference{
-						{URL: "https://pkg.go.dev/net/http"},
 						{URL: "https://groups.google.com/forum/#!topic/golang-nuts/1234"},
 					},
 				},
 			},
-			stdlibPath,
+			&triageResult{
+				modulePath: stdlibPath,
+				stdlib:     true,
+			},
+		},
+		{
+			"pkg.go.dev URL is Go standard library package",
+			&cveschema.CVE{
+				References: cveschema.References{
+					Data: []cveschema.Reference{
+						{URL: "https://pkg.go.dev/net/http"},
+					},
+				},
+			},
+			&triageResult{
+				modulePath: "net/http",
+				stdlib:     true,
+			},
 		},
 		{
 			"repo path is is valid golang.org module path",
@@ -51,7 +69,36 @@ func TestTriageV4CVE(t *testing.T) {
 					},
 				},
 			},
-			"golang.org/x/mod",
+			&triageResult{
+				modulePath: "golang.org/x/mod",
+			},
+		},
+		{
+			"pkg.go.dev URL is is valid golang.org module path",
+			&cveschema.CVE{
+				References: cveschema.References{
+					Data: []cveschema.Reference{
+						{URL: "https://pkg.go.dev/golang.org/x/mod"},
+					},
+				},
+			},
+			&triageResult{
+				modulePath: "golang.org/x/mod",
+			},
+		},
+		{
+			"contains golang.org/pkg URL",
+			&cveschema.CVE{
+				References: cveschema.References{
+					Data: []cveschema.Reference{
+						{URL: "https://golang.org/pkg/net/http"},
+					},
+				},
+			},
+			&triageResult{
+				modulePath: "net/http",
+				stdlib:     true,
+			},
 		},
 		{
 			"contains github.com but not on pkg.go.dev",
@@ -62,7 +109,7 @@ func TestTriageV4CVE(t *testing.T) {
 					},
 				},
 			},
-			"",
+			nil,
 		},
 		{
 			"contains longer module path",
@@ -73,7 +120,9 @@ func TestTriageV4CVE(t *testing.T) {
 					},
 				},
 			},
-			"bitbucket.org/foo/bar/baz/v2",
+			&triageResult{
+				modulePath: "bitbucket.org/foo/bar/baz/v2",
+			},
 		},
 		{
 			"repo path is not a module",
@@ -84,7 +133,7 @@ func TestTriageV4CVE(t *testing.T) {
 					},
 				},
 			},
-			"",
+			nil,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -93,14 +142,10 @@ func TestTriageV4CVE(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got == nil {
-				if test.want != "" {
-					t.Fatalf("got empty string, want %q", test.want)
-				}
-				return
-			}
-			if got.modulePath != test.want {
-				t.Errorf("got %q, want %q", got.modulePath, test.want)
+			if diff := cmp.Diff(test.want, got,
+				cmp.AllowUnexported(triageResult{}),
+				cmpopts.IgnoreFields(triageResult{}, "reason")); diff != "" {
+				t.Errorf("mismatch (-want, +got):\n%s", diff)
 			}
 		})
 	}

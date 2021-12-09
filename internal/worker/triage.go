@@ -35,7 +35,7 @@ var stdlibReferenceDataKeywords = []string{
 	"golang-nuts",
 }
 
-const stdlibPath = "Go Standard Library"
+const stdlibPath = "Go Standard Library (package not identified)"
 
 // TriageCVE reports whether the CVE refers to a Go module.
 func TriageCVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *triageResult, err error) {
@@ -55,6 +55,12 @@ type triageResult struct {
 	reason     string
 }
 
+// gopkgHosts are hostnames for popular Go package websites.
+var gopkgHosts = map[string]bool{
+	"godoc.org":  true,
+	"pkg.go.dev": true,
+}
+
 // triageV4CVE triages a CVE following schema v4.0 and returns the result.
 func triageV4CVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *triageResult, err error) {
 	defer derrors.Wrap(&err, "triageV4CVE(ctx, %q, %q)", c.ID, pkgsiteURL)
@@ -65,6 +71,22 @@ func triageV4CVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *t
 		refURL, err := url.Parse(r.URL)
 		if err != nil {
 			return nil, fmt.Errorf("url.Parse(%q): %v", r.URL, err)
+		}
+		if strings.Contains(r.URL, "golang.org/pkg") {
+			mp := strings.TrimPrefix(refURL.Path, "/pkg/")
+			return &triageResult{
+				modulePath: mp,
+				stdlib:     true,
+				reason:     fmt.Sprintf("Reference data URL %q contains path %q", r.URL, mp),
+			}, nil
+		}
+		if gopkgHosts[refURL.Host] {
+			mp := strings.TrimPrefix(refURL.Path, "/")
+			return &triageResult{
+				modulePath: mp,
+				stdlib:     stdlibContains(mp),
+				reason:     fmt.Sprintf("Reference data URL %q contains path %q", r.URL, mp),
+			}, nil
 		}
 		modpaths := candidateModulePaths(refURL.Host + refURL.Path)
 		for _, mp := range modpaths {
