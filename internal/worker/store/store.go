@@ -141,6 +141,9 @@ type Store interface {
 	// least recent.
 	ListCommitUpdateRecords(ctx context.Context, limit int) ([]*CommitUpdateRecord, error)
 
+	// GetCVERecord returns the CVERecord with the given id. If not found, it returns (nil, nil).
+	GetCVERecord(ctx context.Context, id string) (*CVERecord, error)
+
 	// ListCVERecordsWithTriageState returns all CVERecords with the given triage state,
 	// ordered by ID.
 	ListCVERecordsWithTriageState(ctx context.Context, ts TriageState) ([]*CVERecord, error)

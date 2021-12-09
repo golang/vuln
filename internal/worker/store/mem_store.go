@@ -78,6 +78,11 @@ func (ms *MemStore) ListCommitUpdateRecords(_ context.Context, limit int) ([]*Co
 	return urs, nil
 }
 
+// GetCVERecord implements store.GetCVERecord.
+func (ms *MemStore) GetCVERecord(ctx context.Context, id string) (*CVERecord, error) {
+	return ms.cveRecords[id], nil
+}
+
 // ListCVERecordsWithTriageState implements Store.ListCVERecordsWithTriageState.
 func (ms *MemStore) ListCVERecordsWithTriageState(_ context.Context, ts TriageState) ([]*CVERecord, error) {
 	var crs []*CVERecord

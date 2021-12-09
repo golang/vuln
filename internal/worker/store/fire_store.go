@@ -88,6 +88,21 @@ func (fs *FireStore) SetCommitUpdateRecord(ctx context.Context, r *CommitUpdateR
 	return err
 }
 
+// GetCVERecord implements store.GetCVERecord.
+func (fs *FireStore) GetCVERecord(ctx context.Context, id string) (_ *CVERecord, err error) {
+	defer derrors.Wrap(&err, "GetCVERecord(%q)", id)
+
+	docsnap, err := fs.cveRecordRef(id).Get(ctx)
+	if status.Code(err) == codes.NotFound {
+		return nil, nil
+	}
+	var cr CVERecord
+	if err := docsnap.DataTo(&cr); err != nil {
+		return nil, err
+	}
+	return &cr, nil
+}
+
 // ListCommitUpdateRecords implements Store.ListCommitUpdateRecords.
 func (fs *FireStore) ListCommitUpdateRecords(ctx context.Context, limit int) ([]*CommitUpdateRecord, error) {
 	var urs []*CommitUpdateRecord

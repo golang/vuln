@@ -119,10 +119,6 @@ func testCVEs(t *testing.T, s Store) {
 		return got
 	}
 
-	getCVERecord := func(id string) *CVERecord {
-		return getCVERecords(id, id)[0]
-	}
-
 	createCVERecords(t, ctx, s, crs)
 
 	diff(t, crs[:1], getCVERecords(id1, id1))
@@ -137,11 +133,18 @@ func testCVEs(t *testing.T, s Store) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		return getCVERecord(r.ID)
+		r2, err := s.GetCVERecord(ctx, r.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r2
 	}
 
 	// Make sure the first record is the same that we created.
-	got := getCVERecord(id1)
+	got, err := s.GetCVERecord(ctx, id1)
+	if err != nil {
+		t.Fatal(err)
+	}
 	diff(t, crs[0], got)
 
 	// Change the state and the commit hash.
