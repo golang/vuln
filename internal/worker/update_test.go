@@ -59,7 +59,7 @@ func TestDoUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	purl := pkgsiteURL(t)
+	purl := getPkgsiteURL(t)
 	needsIssue := func(cve *cveschema.CVE) (*triageResult, error) {
 		return TriageCVE(ctx, cve, purl)
 	}

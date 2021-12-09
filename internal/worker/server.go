@@ -7,10 +7,13 @@ package worker
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/errorreporting"
@@ -23,11 +26,14 @@ import (
 	"golang.org/x/vuln/internal/worker/store"
 )
 
+const pkgsiteURL = "https://pkg.go.dev"
+
 var staticPath = template.TrustedSourceFromConstant("internal/worker/static")
 
 type Server struct {
 	cfg           Config
 	indexTemplate *template.Template
+	issueClient   IssueClient
 }
 
 func NewServer(ctx context.Context, cfg Config) (_ *Server, err error) {
@@ -48,6 +54,17 @@ func NewServer(ctx context.Context, cfg Config) (_ *Server, err error) {
 		derrors.SetReportingClient(reportingClient)
 	}
 
+	if cfg.IssueRepo != "" {
+		owner, repoName, err := ParseGithubRepo(cfg.IssueRepo)
+		if err != nil {
+			return nil, err
+		}
+		s.issueClient = NewGithubIssueClient(owner, repoName, cfg.GitHubAccessToken)
+		log.Info(ctx, "issue creation enabled", event.String("repo", cfg.IssueRepo))
+	} else {
+		log.Info(ctx, "issue creation disabled")
+	}
+
 	s.indexTemplate, err = parseTemplate(staticPath, template.TrustedSourceFromConstant("index.tmpl"))
 	if err != nil {
 		return nil, err
@@ -58,6 +75,13 @@ func NewServer(ctx context.Context, cfg Config) (_ *Server, err error) {
 		http.ServeFile(w, r, filepath.Join(staticPath.String(), "favicon.ico"))
 		return nil
 	})
+
+	// update: Update the DB from the cvelist repo head and decide which CVEs need issues.
+	s.handle(ctx, "/update", s.handleUpdate)
+	// issues: File issues on GitHub for CVEs that need them.
+	s.handle(ctx, "/issues", s.handleIssues)
+	// update-and-issues: do update followed by issues.
+	s.handle(ctx, "/update-and-issues", s.handleUpdateAndIssues)
 	return s, nil
 }
 
@@ -83,10 +107,26 @@ func (s *Server) handle(ctx context.Context, pattern string, handler func(w http
 	})
 }
 
+type serverError struct {
+	status int   // HTTP status code
+	err    error // wrapped error
+}
+
+func (s *serverError) Error() string {
+	return fmt.Sprintf("%d (%s): %v", s.status, http.StatusText(s.status), s.err)
+}
+
 func (s *Server) serveError(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
-	errString := err.Error()
-	log.Error(ctx, errString)
-	http.Error(w, errString, http.StatusInternalServerError)
+	serr, ok := err.(*serverError)
+	if !ok {
+		serr = &serverError{status: http.StatusInternalServerError, err: err}
+	}
+	if serr.status == http.StatusInternalServerError {
+		log.Error(ctx, serr.err.Error())
+	} else {
+		log.Infof(ctx, "returning %d (%s) for error %v", serr.status, http.StatusText(serr.status), err)
+	}
+	http.Error(w, serr.err.Error(), serr.status)
 }
 
 type responseWriter struct {
@@ -192,4 +232,55 @@ func (s *Server) indexPage(w http.ResponseWriter, r *http.Request) error {
 		CVEsUpdatedSince: updatedSince,
 	}
 	return renderPage(r.Context(), w, page, s.indexTemplate)
+}
+
+func (s *Server) handleUpdate(w http.ResponseWriter, r *http.Request) error {
+	if r.Method != http.MethodPost {
+		return &serverError{
+			status: http.StatusMethodNotAllowed,
+			err:    fmt.Errorf("%s required", http.MethodPost),
+		}
+	}
+	err := UpdateCommit(r.Context(), gitrepo.CVEListRepoURL, "HEAD", s.cfg.Store, pkgsiteURL, false /* force */)
+	if cerr := new(CheckUpdateError); errors.As(err, &cerr) {
+		return fmt.Errorf("%w; use -force on the command line to override", cerr)
+	}
+	if err == nil {
+		fmt.Fprintf(w, "Update succeeded.\n")
+	}
+	return err
+}
+
+func (s *Server) handleIssues(w http.ResponseWriter, r *http.Request) error {
+	if r.Method != http.MethodPost {
+		return &serverError{
+			status: http.StatusMethodNotAllowed,
+			err:    fmt.Errorf("%s required", http.MethodPost),
+		}
+	}
+	if s.issueClient == nil {
+		return &serverError{
+			status: http.StatusPreconditionFailed,
+			err:    errors.New("Issue creation disabled."),
+		}
+	}
+	limit := 0
+	if sl := r.FormValue("limit"); sl != "" {
+		var err error
+		limit, err = strconv.Atoi(sl)
+		if err != nil {
+			return &serverError{
+				status: http.StatusBadRequest,
+				err:    fmt.Errorf("parsing limit query param: %w", err),
+			}
+		}
+	}
+	return CreateIssues(r.Context(), s.cfg.Store, s.issueClient, limit)
+}
+
+func (s *Server) handleUpdateAndIssues(w http.ResponseWriter, r *http.Request) error {
+	if err := s.handleUpdate(w, r); err != nil {
+		return err
+	}
+	return s.handleIssues(w, r)
 }

@@ -23,7 +23,7 @@ var usePkgsite = flag.Bool("pkgsite", false, "use pkg.go.dev for tests")
 
 func TestTriageV4CVE(t *testing.T) {
 	ctx := log.WithLineLogger(context.Background())
-	url := pkgsiteURL(t)
+	url := getPkgsiteURL(t)
 
 	for _, test := range []struct {
 		name string
@@ -110,7 +110,7 @@ func TestKnownToPkgsite(t *testing.T) {
 
 	const validModule = "golang.org/x/mod"
 
-	url := pkgsiteURL(t)
+	url := getPkgsiteURL(t)
 
 	for _, test := range []struct {
 		in   string
@@ -131,11 +131,11 @@ func TestKnownToPkgsite(t *testing.T) {
 	}
 }
 
-// pkgsiteURL returns a URL to either a fake server or the real pkg.go.dev,
+// getPkgsiteURL returns a URL to either a fake server or the real pkg.go.dev,
 // depending on the usePkgsite flag.
-func pkgsiteURL(t *testing.T) string {
+func getPkgsiteURL(t *testing.T) string {
 	if *usePkgsite {
-		return "https://pkg.go.dev"
+		return pkgsiteURL
 	}
 	// Start a test server that recognizes anything from golang.org and bitbucket.org/foo/bar/baz.
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -45,9 +45,7 @@ func init() {
 	flag.StringVar(&cfg.IssueRepo, "issue-repo", os.Getenv("VULN_WORKER_ISSUE_REPO"), "repo to create issues in")
 }
 
-const (
-	pkgsiteURL = "https://pkg.go.dev"
-)
+const pkgsiteURL = "https://pkg.go.dev"
 
 func main() {
 	flag.Usage = func() {

@@ -48,7 +48,16 @@ func UpdateCommit(ctx context.Context, repoPath, commitHash string, st store.Sto
 	if err != nil {
 		return err
 	}
-	ch := plumbing.NewHash(commitHash)
+	var ch plumbing.Hash
+	if commitHash == "HEAD" {
+		ref, err := repo.Reference(plumbing.HEAD, true)
+		if err != nil {
+			return err
+		}
+		ch = ref.Hash()
+	} else {
+		ch = plumbing.NewHash(commitHash)
+	}
 	if !force {
 		if err := checkUpdate(ctx, repo, ch, st); err != nil {
 			return err
