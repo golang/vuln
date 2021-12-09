@@ -30,21 +30,23 @@ func TestTriageV4CVE(t *testing.T) {
 		want string
 	}{
 		{
-			"contains golang-nuts",
+			"repo path is Go standard library",
 			&cveschema.CVE{
 				References: cveschema.References{
 					Data: []cveschema.Reference{
+						{URL: "https://pkg.go.dev/net/http"},
 						{URL: "https://groups.google.com/forum/#!topic/golang-nuts/1234"},
 					},
 				},
 			},
-			"Go Standard Library",
+			stdlibPath,
 		},
 		{
-			"contains golang.org and on pkg.go.dev",
+			"repo path is is valid golang.org module path",
 			&cveschema.CVE{
 				References: cveschema.References{
 					Data: []cveschema.Reference{
+						{URL: "https://groups.google.com/forum/#!topic/golang-nuts/1234"},
 						{URL: "https://golang.org/x/mod"},
 					},
 				},
@@ -108,7 +110,6 @@ func TestKnownToPkgsite(t *testing.T) {
 	ctx := context.Background()
 
 	const validModule = "golang.org/x/mod"
-
 	url := getPkgsiteURL(t)
 
 	for _, test := range []struct {

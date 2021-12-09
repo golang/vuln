@@ -23,12 +23,19 @@ import (
 
 var errCVEVersionUnsupported = errors.New("unsupported CVE version")
 
-var stdlibKeywords = map[string]bool{
-	"github.com/golang": true,
-	"golang-announce":   true,
-	"golang-nuts":       true,
-	"golang.org":        true,
+// stdlibReferenceDataKeywords are words found in the reference data URL that
+// indicate the CVE is about the standard library or a Go x-repo owned by the
+// Go team.
+var stdlibReferenceDataKeywords = []string{
+	"github.com/golang",
+	"golang.org",
+	// from https://groups.google.com/g/golang-announce.
+	"golang-announce",
+	// from https://groups.google.com/g/golang-nuts.
+	"golang-nuts",
 }
+
+const stdlibPath = "Go Standard Library"
 
 // TriageCVE reports whether the CVE refers to a Go module.
 func TriageCVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *triageResult, err error) {
@@ -55,15 +62,6 @@ func triageV4CVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *t
 		if r.URL == "" {
 			continue
 		}
-		for k := range stdlibKeywords {
-			if strings.Contains(r.URL, k) && !strings.Contains(r.URL, "golang.org/x/") {
-				return &triageResult{
-					modulePath: "Go Standard Library",
-					stdlib:     true,
-					reason:     fmt.Sprintf("Reference data URL %q contains %q", r.URL, k),
-				}, nil
-			}
-		}
 		refURL, err := url.Parse(r.URL)
 		if err != nil {
 			return nil, fmt.Errorf("url.Parse(%q): %v", r.URL, err)
@@ -79,6 +77,20 @@ func triageV4CVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *t
 				return &triageResult{
 					modulePath: mp,
 					reason:     fmt.Sprintf("Reference data URL %q contains path %q; %q returned a status 200", r.URL, mp, u),
+				}, nil
+			}
+		}
+	}
+
+	// We didn't find a module path in the reference data. Check if this CVE is
+	// related to the standard library.
+	for _, r := range c.References.Data {
+		for _, k := range stdlibReferenceDataKeywords {
+			if strings.Contains(r.URL, k) {
+				return &triageResult{
+					modulePath: stdlibPath,
+					stdlib:     true,
+					reason:     fmt.Sprintf("Reference data URL %q contains %q", r.URL, k),
 				}, nil
 			}
 		}
