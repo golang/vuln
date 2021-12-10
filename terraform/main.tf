@@ -20,12 +20,11 @@ terraform {
 }
 
 locals {
-  region            = "us-central1"
+  region = "us-central1"
 }
 
 provider "google" {
-#  project = local.project
-  region  = local.region
+  region = local.region
 }
 
 # Inputs for values that should not appear in the repo.
@@ -36,8 +35,8 @@ provider "google" {
 
 variable "prod_client_secret" {
   description = "OAuth 2 client secret for prod"
-  type = string
-  sensitive = true
+  type        = string
+  sensitive   = true
 }
 
 
@@ -45,24 +44,24 @@ variable "prod_client_secret" {
 # Deployment environments
 
 module "dev" {
-  source                    = "./environment"
-  env                       = "dev"
-  project                   = "go-discovery-exp"
-  region                    = local.region
-  use_profiler              = false
-  min_frontend_instances    = 0
-  client_id = "" # go-discovery-exp does not allow external load balancers
-  client_secret = ""
+  source                 = "./environment"
+  env                    = "dev"
+  project                = "go-discovery-exp"
+  region                 = local.region
+  use_profiler           = false
+  min_frontend_instances = 0
+  client_id              = "" # go-discovery-exp does not allow external load balancers
+  client_secret          = ""
 }
 
 module "prod" {
-  source                    = "./environment"
-  env                       = "prod"
-  project                   = "golang-org"
-  region                    = local.region
-  use_profiler              = true
-  min_frontend_instances    = 1
-  client_id = "unknown"
-  client_secret = var.prod_client_secret
+  source                 = "./environment"
+  env                    = "prod"
+  project                = "golang-org"
+  region                 = local.region
+  use_profiler           = true
+  min_frontend_instances = 1
+  client_id              = "unknown"
+  client_secret          = var.prod_client_secret
 }
 
