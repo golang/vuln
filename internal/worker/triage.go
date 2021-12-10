@@ -86,12 +86,29 @@ func triageV4CVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *t
 	return nil, nil
 }
 
-// Limit pkgsite calls to 2 qps (once every 500ms).
-// The second argument to rate.NewLimiter is the burst, which
-// basically lets you exceed the rate briefly.
-var pkgsiteRateLimiter = rate.NewLimiter(rate.Every(500*time.Millisecond), 3)
+// Limit pkgsite requests to this many per second.
+const pkgsiteQPS = 5
 
-var seenModulePath = map[string]bool{}
+var (
+	// The limiter used to throttle pkgsite requests.
+	// The second argument to rate.NewLimiter is the burst, which
+	// basically lets you exceed the rate briefly.
+	pkgsiteRateLimiter = rate.NewLimiter(rate.Every(time.Duration(1000/float64(pkgsiteQPS))*time.Millisecond), 3)
+
+	// Cache of module paths already seen.
+	seenModulePath = map[string]bool{}
+	// Does seenModulePath contain all known modules?
+	cacheComplete = false
+)
+
+// SetKnownModules provides a list of all known modules,
+// so that no requests need to be made to pkg.go.dev.
+func SetKnownModules(mods []string) {
+	for _, m := range mods {
+		seenModulePath[m] = true
+	}
+	cacheComplete = true
+}
 
 // knownToPkgsite reports whether pkgsite knows that modulePath actually refers
 // to a module.
@@ -99,6 +116,9 @@ func knownToPkgsite(ctx context.Context, baseURL, modulePath string) (bool, erro
 	// If we've seen it before, no need to call.
 	if b, ok := seenModulePath[modulePath]; ok {
 		return b, nil
+	}
+	if cacheComplete {
+		return false, nil
 	}
 	// Pause to maintain a max QPS.
 	if err := pkgsiteRateLimiter.Wait(ctx); err != nil {

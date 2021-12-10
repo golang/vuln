@@ -8,6 +8,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -33,6 +34,7 @@ var (
 		"limit on number of things to list or issues to create (0 means unlimited)")
 	githubTokenFile = flag.String("ghtokenfile", "",
 		"path to file containing GitHub access token (for creating issues)")
+	knownModuleFile = flag.String("known-module-file", "", "file with list of all known modules")
 )
 
 // Config for both the server and the command-line tool.
@@ -180,11 +182,40 @@ func updateCommand(ctx context.Context, commitHash string) error {
 	if *localRepoPath != "" {
 		repoPath = *localRepoPath
 	}
+	if *knownModuleFile != "" {
+		if err := populateKnownModules(*knownModuleFile); err != nil {
+			return err
+		}
+	}
 	err := worker.UpdateCommit(ctx, repoPath, commitHash, cfg.Store, pkgsiteURL, *force)
 	if cerr := new(worker.CheckUpdateError); errors.As(err, &cerr) {
 		return fmt.Errorf("%w; use -force to override", cerr)
 	}
 	return err
+}
+
+func populateKnownModules(filename string) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	var mods []string
+	scan := bufio.NewScanner(f)
+	for scan.Scan() {
+		line := strings.TrimSpace(scan.Text())
+		if line == "" || line[0] == '#' {
+			continue
+		}
+		mods = append(mods, line)
+	}
+	if err := scan.Err(); err != nil {
+		return err
+	}
+	worker.SetKnownModules(mods)
+	fmt.Printf("set %d known modules\n", len(mods))
+	return nil
 }
 
 func createIssuesCommand(ctx context.Context) error {
