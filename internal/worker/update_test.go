@@ -83,6 +83,9 @@ func modify(r, m *store.CVERecord) *store.CVERecord {
 	if !m.IssueCreatedAt.IsZero() {
 		panic("unsupported modification")
 	}
+	if m.History != nil {
+		c.History = m.History
+	}
 	return &c
 }
 
@@ -182,10 +185,21 @@ func TestDoUpdate(t *testing.T) {
 				}),
 			},
 			want: []*store.CVERecord{
-				rs[0],
+				modify(rs[0], &store.CVERecord{
+					History: []*store.CVERecordSnapshot{{
+						CommitHash:  commitHash,
+						CVEState:    cveschema.StatePublic,
+						TriageState: store.TriageStateNoActionNeeded,
+					}},
+				}),
 				modify(rs[1], &store.CVERecord{
 					Module: clearString,
 					CVE:    clearCVE,
+					History: []*store.CVERecordSnapshot{{
+						CommitHash:  commitHash,
+						CVEState:    cveschema.StateReserved,
+						TriageState: store.TriageStateNeedsIssue,
+					}},
 				}),
 				rs[2],
 				rs[3],
@@ -208,6 +222,11 @@ func TestDoUpdate(t *testing.T) {
 				modify(rs[0], &store.CVERecord{
 					TriageState:       store.TriageStateUpdatedSinceIssueCreation,
 					TriageStateReason: `CVE changed; affected module = "golang.org/x/mod"`,
+					History: []*store.CVERecordSnapshot{{
+						CommitHash:  commitHash,
+						CVEState:    cveschema.StatePublic,
+						TriageState: store.TriageStateIssueCreated,
+					}},
 				}),
 				modify(rs[1], &store.CVERecord{
 					TriageState:       store.TriageStateUpdatedSinceIssueCreation,

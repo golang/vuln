@@ -45,6 +45,10 @@ type CVERecord struct {
 	// IssueCreatedAt is the time when the issue was created.
 	// Set only after a GitHub issue has been successfully created.
 	IssueCreatedAt time.Time
+
+	// History holds previous states of a CVERecord,
+	// from most to least recent.
+	History []*CVERecordSnapshot
 }
 
 // Validate returns an error if the CVERecord is not valid.
@@ -96,6 +100,24 @@ func NewCVERecord(cve *cveschema.CVE, path, blobHash string) *CVERecord {
 		CVEState: cve.State,
 		Path:     path,
 		BlobHash: blobHash,
+	}
+}
+
+// CVERecordSnapshot holds a previous state of a CVERecord.
+// The fields mean the same as those of CVERecord.
+type CVERecordSnapshot struct {
+	CommitHash        string
+	CVEState          string
+	TriageState       TriageState
+	TriageStateReason string
+}
+
+func (r *CVERecord) Snapshot() *CVERecordSnapshot {
+	return &CVERecordSnapshot{
+		CommitHash:        r.CommitHash,
+		CVEState:          r.CVEState,
+		TriageState:       r.TriageState,
+		TriageStateReason: r.TriageStateReason,
 	}
 }
 

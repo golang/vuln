@@ -316,9 +316,12 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 			mp = result.modulePath
 		}
 		mod.TriageStateReason = fmt.Sprintf("CVE changed; affected module = %q", mp)
-		// TODO(golang/go#49733): keep a history of the previous states and their commits.
 	default:
 		return false, fmt.Errorf("unknown TriageState: %q", old.TriageState)
+	}
+	// If the triage state changed, add the old state to the history at the beginning.
+	if old.TriageState != mod.TriageState {
+		mod.History = append([]*store.CVERecordSnapshot{old.Snapshot()}, mod.History...)
 	}
 	// If we're here, then mod is a modification to the DB.
 	if err := tx.SetCVERecord(&mod); err != nil {
