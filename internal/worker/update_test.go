@@ -48,6 +48,44 @@ func TestRepoCVEFiles(t *testing.T) {
 	}
 }
 
+const clearString = "**CLEAR**"
+
+var clearCVE = &cveschema.CVE{}
+
+func modify(r, m *store.CVERecord) *store.CVERecord {
+	modString := func(p *string, s string) {
+		if s == clearString {
+			*p = ""
+		} else if s != "" {
+			*p = s
+		}
+	}
+
+	c := *r
+	modString(&c.BlobHash, m.BlobHash)
+	modString(&c.CommitHash, m.CommitHash)
+	modString(&c.CVEState, m.CVEState)
+	if m.TriageState != "" {
+		if m.TriageState == clearString {
+			c.TriageState = ""
+		} else {
+			c.TriageState = m.TriageState
+		}
+	}
+	modString(&c.TriageStateReason, m.TriageStateReason)
+	modString(&c.Module, m.Module)
+	if m.CVE == clearCVE {
+		c.CVE = nil
+	} else if m.CVE != nil {
+		c.CVE = m.CVE
+	}
+	modString(&c.IssueReference, m.IssueReference)
+	if !m.IssueCreatedAt.IsZero() {
+		panic("unsupported modification")
+	}
+	return &c
+}
+
 func TestDoUpdate(t *testing.T) {
 	ctx := log.WithLineLogger(context.Background())
 	repo, err := readTxtarRepo("testdata/basic.txtar", time.Now())
@@ -108,15 +146,6 @@ func TestDoUpdate(t *testing.T) {
 	rs[3].TriageState = store.TriageStateNoActionNeeded
 	rs[3].TriageStateReason = "already in vuln DB"
 
-	// withTriageState returns a copy of r with the TriageState field changed to ts.
-	withTriageState := func(r *store.CVERecord, ts store.TriageState) *store.CVERecord {
-		c := *r
-		c.BlobHash += "x" // if we don't use a different blob hash, no update will happen
-		c.CommitHash = "?"
-		c.TriageState = ts
-		return &c
-	}
-
 	for _, test := range []struct {
 		name string
 		cur  []*store.CVERecord // current state of DB
@@ -136,25 +165,28 @@ func TestDoUpdate(t *testing.T) {
 			name: "pre-issue changes",
 			cur: []*store.CVERecord{
 				// NoActionNeeded -> NeedsIssue
-				withTriageState(rs[0], store.TriageStateNoActionNeeded),
+				modify(rs[0], &store.CVERecord{
+					BlobHash:    "x", // if we don't use a different blob hash, no update will happen
+					TriageState: store.TriageStateNoActionNeeded,
+				}),
 				// NeedsIssue -> NoActionNeeded
-				func() *store.CVERecord {
-					r := withTriageState(rs[1], store.TriageStateNeedsIssue)
-					r.Module = "something"
-					r.CVE = cves[1]
-					return r
-				}(),
+				modify(rs[1], &store.CVERecord{
+					BlobHash:    "x",
+					TriageState: store.TriageStateNeedsIssue,
+					Module:      "something",
+					CVE:         cves[1],
+				}),
 				// NoActionNeeded, triage state stays the same but other fields change.
-				withTriageState(rs[2], store.TriageStateNoActionNeeded),
+				modify(rs[2], &store.CVERecord{
+					TriageState: store.TriageStateNoActionNeeded,
+				}),
 			},
 			want: []*store.CVERecord{
 				rs[0],
-				func() *store.CVERecord {
-					c := *rs[1]
-					c.Module = ""
-					c.CVE = nil
-					return &c
-				}(),
+				modify(rs[1], &store.CVERecord{
+					Module: clearString,
+					CVE:    clearCVE,
+				}),
 				rs[2],
 				rs[3],
 			},
@@ -163,22 +195,24 @@ func TestDoUpdate(t *testing.T) {
 			name: "post-issue changes",
 			cur: []*store.CVERecord{
 				// IssueCreated -> Updated
-				withTriageState(rs[0], store.TriageStateIssueCreated),
-				withTriageState(rs[1], store.TriageStateUpdatedSinceIssueCreation),
+				modify(rs[0], &store.CVERecord{
+					BlobHash:    "x",
+					TriageState: store.TriageStateIssueCreated,
+				}),
+				modify(rs[1], &store.CVERecord{
+					BlobHash:    "x",
+					TriageState: store.TriageStateUpdatedSinceIssueCreation,
+				}),
 			},
 			want: []*store.CVERecord{
-				func() *store.CVERecord {
-					c := *rs[0]
-					c.TriageState = store.TriageStateUpdatedSinceIssueCreation
-					c.TriageStateReason = `CVE changed; affected module = "golang.org/x/mod"`
-					return &c
-				}(),
-				func() *store.CVERecord {
-					c := *rs[1]
-					c.TriageState = store.TriageStateUpdatedSinceIssueCreation
-					c.TriageStateReason = `CVE changed; affected module = ""`
-					return &c
-				}(),
+				modify(rs[0], &store.CVERecord{
+					TriageState:       store.TriageStateUpdatedSinceIssueCreation,
+					TriageStateReason: `CVE changed; affected module = "golang.org/x/mod"`,
+				}),
+				modify(rs[1], &store.CVERecord{
+					TriageState:       store.TriageStateUpdatedSinceIssueCreation,
+					TriageStateReason: `CVE changed; affected module = ""`,
+				}),
 				rs[2],
 				rs[3],
 			},
