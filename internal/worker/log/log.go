@@ -59,6 +59,11 @@ func (h *lineHandler) Event(ctx context.Context, ev *event.Event) context.Contex
 	return ctx
 }
 
+// Debug emits one log event at the Debug severity.
+func Debug(ctx context.Context, message string, labels ...event.Label) {
+	event.Log(ctx, message, append(labels, severity.Debug.Label())...)
+}
+
 // Info emits one log event at the Info severity.
 func Info(ctx context.Context, message string, labels ...event.Label) {
 	event.Log(ctx, message, append(labels, severity.Info.Label())...)
@@ -72,6 +77,11 @@ func Warning(ctx context.Context, message string, labels ...event.Label) {
 // Error emits one log event at the Error severity.
 func Error(ctx context.Context, message string, labels ...event.Label) {
 	event.Log(ctx, message, append(labels, severity.Error.Label())...)
+}
+
+// Debugf logs a formatted message with no labels at the Debug severity.
+func Debugf(ctx context.Context, format string, args ...interface{}) {
+	Debug(ctx, fmt.Sprintf(format, args...))
 }
 
 // Infof logs a formatted message with no labels at the Info severity.

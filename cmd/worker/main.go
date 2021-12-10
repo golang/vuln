@@ -18,6 +18,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"golang.org/x/exp/event"
 	"golang.org/x/vuln/internal/gitrepo"
 	"golang.org/x/vuln/internal/worker"
 	"golang.org/x/vuln/internal/worker/log"
@@ -77,6 +78,11 @@ func main() {
 	}
 
 	ctx := log.WithLineLogger(context.Background())
+	log.Info(ctx, "config",
+		event.String("Project", cfg.Project),
+		event.String("Namespace", cfg.Namespace),
+		event.String("IssueRepo", cfg.IssueRepo))
+
 	var err error
 	cfg.Store, err = store.NewFireStore(ctx, cfg.Project, cfg.Namespace)
 	if err != nil {
