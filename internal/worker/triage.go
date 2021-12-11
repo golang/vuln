@@ -35,7 +35,10 @@ var stdlibReferenceDataKeywords = []string{
 	"golang-nuts",
 }
 
-const stdlibPath = "Go Standard Library (package not identified)"
+const (
+	stdlibPath  = "Go Standard Library (package not identified)"
+	unknownPath = "Path is unknown"
+)
 
 // TriageCVE reports whether the CVE refers to a Go module.
 func TriageCVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *triageResult, err error) {
@@ -60,6 +63,8 @@ var gopkgHosts = map[string]bool{
 	"godoc.org":  true,
 	"pkg.go.dev": true,
 }
+
+const snykIdentifier = "snyk.io/vuln/SNYK-GOLANG"
 
 // triageV4CVE triages a CVE following schema v4.0 and returns the result.
 func triageV4CVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *triageResult, err error) {
@@ -104,9 +109,20 @@ func triageV4CVE(ctx context.Context, c *cveschema.CVE, pkgsiteURL string) (_ *t
 		}
 	}
 
-	// We didn't find a module path in the reference data. Check if this CVE is
-	// related to the standard library.
+	// We didn't find a Go package or module path in the reference data. Check
+	// secondary heuristics to see if this is a Go related CVE.
 	for _, r := range c.References.Data {
+		// Example CVE containing snyk.io URL:
+		// https://github.com/CVEProject/cvelist/blob/899bba20d62eb73e04d1841a5ff04cd6225e1618/2020/7xxx/CVE-2020-7668.json#L52.
+		if strings.Contains(r.URL, snykIdentifier) {
+			return &triageResult{
+				modulePath: unknownPath,
+				reason:     fmt.Sprintf("Reference data URL %q contains %q", r.URL, snykIdentifier),
+			}, nil
+		}
+
+		// Check for reference data indicating that this is related to the Go
+		// project.
 		for _, k := range stdlibReferenceDataKeywords {
 			if strings.Contains(r.URL, k) {
 				return &triageResult{

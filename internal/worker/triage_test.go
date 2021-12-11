@@ -135,6 +135,19 @@ func TestTriageV4CVE(t *testing.T) {
 			},
 			nil,
 		},
+		{
+			"contains snyk.io URL containing GOLANG",
+			&cveschema.CVE{
+				References: cveschema.References{
+					Data: []cveschema.Reference{
+						{URL: "https://snyk.io/vuln/SNYK-GOLANG-12345"},
+					},
+				},
+			},
+			&triageResult{
+				modulePath: unknownPath,
+			},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			test.in.DataVersion = "4.0"
