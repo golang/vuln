@@ -83,7 +83,7 @@ func checkUpdate(ctx context.Context, repo *git.Repository, commitHash plumbing.
 		return err
 	}
 	if !b {
-		return errors.New("False positives not inserted.")
+		return errors.New("false positives not inserted")
 	}
 
 	urs, err := st.ListCommitUpdateRecords(ctx, 1)
