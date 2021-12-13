@@ -23,7 +23,7 @@ ensure_go_binary() {
   if ! [ -x "$(command -v $binary)" ]; then
     info "Installing: $1"
     # Install the binary in a way that doesn't affect our go.mod file.
-    go install $1@master
+    go install $1@latest
   fi
 }
 
@@ -61,8 +61,10 @@ check_headers() {
 
 # check_unparam runs unparam on source files.
 check_unparam() {
-  ensure_go_binary mvdan.cc/unparam
-  runcmd unparam ./...
+  if [[ $(go version) = *go1.17* ]]; then
+    ensure_go_binary mvdan.cc/unparam
+    runcmd unparam ./...
+  fi
 }
 
 # check_vet runs go vet on source files.
@@ -72,8 +74,10 @@ check_vet() {
 
 # check_staticcheck runs staticcheck on source files.
 check_staticcheck() {
-  ensure_go_binary honnef.co/go/tools/cmd/staticcheck
-  runcmd staticcheck ./...
+  if [[ $(go version) = *go1.17* ]]; then
+    ensure_go_binary honnef.co/go/tools/cmd/staticcheck
+    runcmd staticcheck ./...
+  fi
 }
 
 # check_misspell runs misspell on source files.
@@ -86,8 +90,7 @@ go_linters() {
   check_vet
   check_staticcheck
   check_misspell
-  # Commented out pending https://github.com/mvdan/unparam/issues/59.
-  # check_unparam
+  check_unparam
 }
 
 go_modtidy() {

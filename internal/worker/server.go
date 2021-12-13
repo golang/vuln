@@ -116,7 +116,7 @@ func (s *serverError) Error() string {
 	return fmt.Sprintf("%d (%s): %v", s.status, http.StatusText(s.status), s.err)
 }
 
-func (s *Server) serveError(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+func (s *Server) serveError(ctx context.Context, w http.ResponseWriter, _ *http.Request, err error) {
 	serr, ok := err.(*serverError)
 	if !ok {
 		serr = &serverError{status: http.StatusInternalServerError, err: err}
@@ -261,7 +261,7 @@ func (s *Server) handleIssues(w http.ResponseWriter, r *http.Request) error {
 	if s.issueClient == nil {
 		return &serverError{
 			status: http.StatusPreconditionFailed,
-			err:    errors.New("Issue creation disabled."),
+			err:    errors.New("issue creation disabled"),
 		}
 	}
 	limit := 0
