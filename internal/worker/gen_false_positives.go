@@ -30,7 +30,9 @@ import (
 	"golang.org/x/vuln/internal/worker/store"
 )
 
-// The CVEs marked "false-positive" in triaged-cve-list.
+// The CVEs marked "false-positive" in triaged-cve-list,
+// including both true false positives and CVEs that are
+// covered by a Go vulndb report.
 var falsePositiveIDs = []string{
 	"CVE-2013-2124",
 	"CVE-2013-2233",
@@ -574,12 +576,12 @@ var falsePositiveIDs = []string{
 	"CVE-2021-3391",
 }
 
-// Reasons other than "known false positive".
-var falsePositiveReasons = map[string]string{
-	"CVE-2020-15112": "covered by GO-2020-0005",
-	"CVE-2020-29243": "covered by GO-2021-0097",
-	"CVE-2020-29244": "covered by GO-2021-0097",
-	"CVE-2020-29245": "covered by GO-2021-0097",
+// IDs that are covered by a Go vuln report, and the report ID.
+var coveredIDs = map[string]string{
+	"CVE-2020-15112": "GO-2020-0005",
+	"CVE-2020-29243": "GO-2021-0097",
+	"CVE-2020-29244": "GO-2021-0097",
+	"CVE-2020-29245": "GO-2021-0097",
 }
 
 func main() {
@@ -600,7 +602,7 @@ func run(repoPath string) error {
 	if err != nil {
 		return err
 	}
-	crs, err := buildFalsePositiveCVERecords(repo)
+	crs, err := buildCVERecords(repo)
 	if err != nil {
 		return err
 	}
@@ -615,7 +617,7 @@ func run(repoPath string) error {
 	return ioutil.WriteFile("false_positive_records.gen.go", src, 0644)
 }
 
-func buildFalsePositiveCVERecords(repo *git.Repository) ([]*store.CVERecord, error) {
+func buildCVERecords(repo *git.Repository) ([]*store.CVERecord, error) {
 	commit, err := repo.CommitObject(plumbing.NewHash(worker.FalsePositiveCommitHash))
 	if err != nil {
 		return nil, err
@@ -632,14 +634,18 @@ func buildFalsePositiveCVERecords(repo *git.Repository) ([]*store.CVERecord, err
 		}
 		cr := store.NewCVERecord(cve, path, blobHash)
 		cr.CommitHash = worker.FalsePositiveCommitHash
-		cr.TriageState = store.TriageStateNoActionNeeded
-		cr.TriageStateReason = "known false positive"
-		if r := falsePositiveReasons[id]; r != "" {
-			// Not actually a false positive; something else.
-			cr.TriageStateReason = r
+		if reportID := coveredIDs[id]; reportID != "" {
+			cr.TriageState = store.TriageStateHasVuln
+			cr.TriageStateReason = reportID
+		} else {
+			cr.TriageState = store.TriageStateFalsePositive
+			for _, r := range cve.References.Data {
+				if r.URL != "" {
+					cr.ReferenceURLs = append(cr.ReferenceURLs, r.URL)
+				}
+			}
 		}
 		crs = append(crs, cr)
-
 	}
 	return crs, nil
 }
@@ -670,7 +676,7 @@ package worker
 import "golang.org/x/vuln/internal/worker/store"
 
 var falsePositives = []*store.CVERecord{
-{{range .}}
+{{range . -}}
     {
        ID: "{{.ID}}",
        Path: "{{.Path}}",
@@ -678,7 +684,16 @@ var falsePositives = []*store.CVERecord{
        CommitHash: "{{.CommitHash}}",
        CVEState: "{{.CVEState}}",
        TriageState: "{{.TriageState}}",
-       TriageStateReason: "{{.TriageStateReason}}",
+       {{with .TriageStateReason -}}
+         TriageStateReason: "{{.}}",
+       {{end}}
+       {{- with .ReferenceURLs -}}
+         ReferenceURLs: []string{
+            {{- range .}}
+              "{{.}}",
+            {{- end}}
+         },
+       {{end}}
     },
 {{end}}
 }

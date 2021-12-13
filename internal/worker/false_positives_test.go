@@ -22,13 +22,16 @@ func TestInsertFalsePositives(t *testing.T) {
 	got := mstore.CVERecords()
 	for _, want := range []*store.CVERecord{
 		{
-			ID:                "CVE-2016-0216",
-			Path:              "2016/0xxx/CVE-2016-0216.json",
-			CommitHash:        FalsePositiveCommitHash,
-			BlobHash:          "ac9f59c6700576b5936dc014ce265ee0c9a41097",
-			CVEState:          cveschema.StatePublic,
-			TriageState:       store.TriageStateNoActionNeeded,
-			TriageStateReason: "known false positive",
+			ID:          "CVE-2016-0216",
+			Path:        "2016/0xxx/CVE-2016-0216.json",
+			CommitHash:  FalsePositiveCommitHash,
+			BlobHash:    "ac9f59c6700576b5936dc014ce265ee0c9a41097",
+			CVEState:    cveschema.StatePublic,
+			TriageState: store.TriageStateFalsePositive,
+			ReferenceURLs: []string{
+				"http://www.ibm.com/support/docview.wss?uid=swg21975358",
+				"http://www.ibm.com/connections/blogs/PSIRT/entry/ibm_security_bulletin_multiple_security_vulnerabilities_in_ibm_tivoli_storage_manager_fastback_cve_2016_0212_cve_2016_0213_cve_2016_0216",
+			},
 		},
 		{
 			ID:                "CVE-2020-15112",
@@ -36,8 +39,8 @@ func TestInsertFalsePositives(t *testing.T) {
 			CommitHash:        FalsePositiveCommitHash,
 			BlobHash:          "3d87891317ff107037bc0145194ab72df1890411",
 			CVEState:          cveschema.StatePublic,
-			TriageState:       store.TriageStateNoActionNeeded,
-			TriageStateReason: "covered by GO-2020-0005",
+			TriageState:       store.TriageStateHasVuln,
+			TriageStateReason: "GO-2020-0005",
 		},
 	} {
 		if diff := cmp.Diff(want, got[want.ID]); diff != "" {

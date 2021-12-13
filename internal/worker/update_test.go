@@ -30,6 +30,7 @@ func TestRepoCVEFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	got, err := repoCVEFiles(repo, commit)
 	if err != nil {
 		t.Fatal(err)
@@ -82,6 +83,9 @@ func modify(r, m *store.CVERecord) *store.CVERecord {
 	modString(&c.IssueReference, m.IssueReference)
 	if !m.IssueCreatedAt.IsZero() {
 		panic("unsupported modification")
+	}
+	if m.ReferenceURLs != nil {
+		c.ReferenceURLs = m.ReferenceURLs
 	}
 	if m.History != nil {
 		c.History = m.History
@@ -146,8 +150,7 @@ func TestDoUpdate(t *testing.T) {
 	rs[0].CVE = cves[0]
 	rs[1].TriageState = store.TriageStateNoActionNeeded // state is reserved
 	rs[2].TriageState = store.TriageStateNoActionNeeded // state is rejected
-	rs[3].TriageState = store.TriageStateNoActionNeeded
-	rs[3].TriageStateReason = "already in vuln DB"
+	rs[3].TriageState = store.TriageStateHasVuln
 
 	for _, test := range []struct {
 		name string
@@ -234,6 +237,56 @@ func TestDoUpdate(t *testing.T) {
 				}),
 				rs[2],
 				rs[3],
+			},
+		},
+		{
+			name: "false positive no Go URLs",
+			cur: []*store.CVERecord{
+				// FalsePositive; no change
+				modify(rs[0], &store.CVERecord{
+					BlobHash:    "x",
+					TriageState: store.TriageStateFalsePositive,
+					ReferenceURLs: []string{
+						"https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00477.html",
+						"https://golang.org/x/mod",
+					},
+				}),
+			},
+			want: []*store.CVERecord{
+				modify(rs[0], &store.CVERecord{
+					TriageState: store.TriageStateFalsePositive,
+					ReferenceURLs: []string{
+						"https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00477.html",
+						"https://golang.org/x/mod",
+					},
+				}),
+				rs[1], rs[2], rs[3],
+			},
+		},
+		{
+			name: "false positive new Go URLs",
+			cur: []*store.CVERecord{
+				// FalsePositive; no change
+				modify(rs[0], &store.CVERecord{
+					BlobHash:    "x",
+					TriageState: store.TriageStateFalsePositive,
+					ReferenceURLs: []string{
+						"https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00477.html",
+					},
+				}),
+			},
+			want: []*store.CVERecord{
+				modify(rs[0], &store.CVERecord{
+					ReferenceURLs: []string{
+						"https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00477.html",
+					},
+					History: []*store.CVERecordSnapshot{{
+						CommitHash:  commitHash,
+						CVEState:    "PUBLIC",
+						TriageState: "FalsePositive",
+					}},
+				}),
+				rs[1], rs[2], rs[3],
 			},
 		},
 	} {

@@ -37,6 +37,10 @@ type CVERecord struct {
 	// CVE is a copy of the CVE, for the NeedsIssue triage state.
 	CVE *cveschema.CVE
 
+	// ReferenceURLs is a list of the URLs in the CVE references,
+	// for the FalsePositive triage state.
+	ReferenceURLs []string
+
 	// IssueReference is a reference to the GitHub issue that was filed.
 	// E.g. golang/vulndb#12345.
 	// Set only after a GitHub issue has been successfully created.
@@ -83,14 +87,20 @@ const (
 	TriageStateIssueCreated TriageState = "IssueCreated"
 	// The CVE state was changed after the CVE was created.
 	TriageStateUpdatedSinceIssueCreation TriageState = "UpdatedSinceIssueCreation"
+	// Although the triager might think this CVE is relevant to Go, it is not.
+	TriageStateFalsePositive TriageState = "FalsePositive"
+	// There is already an entry in the Go vuln DB that covers this CVE.
+	TriageStateHasVuln TriageState = "HasVuln"
 )
 
 // Validate returns an error if the TriageState is not one of the above values.
 func (s TriageState) Validate() error {
-	if s == TriageStateNoActionNeeded || s == TriageStateNeedsIssue || s == TriageStateIssueCreated || s == TriageStateUpdatedSinceIssueCreation {
+	switch s {
+	case TriageStateNoActionNeeded, TriageStateNeedsIssue, TriageStateIssueCreated, TriageStateUpdatedSinceIssueCreation, TriageStateFalsePositive, TriageStateHasVuln:
 		return nil
+	default:
+		return fmt.Errorf("bad TriageState %q", s)
 	}
-	return fmt.Errorf("bad TriageState %q", s)
 }
 
 // NewCVERecord creates a CVERecord from a CVE, its path and its blob hash.

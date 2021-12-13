@@ -259,7 +259,15 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 	}
 	var result *triageResult
 	if cve.State == cveschema.StatePublic && !u.knownIDs[cve.ID] {
-		result, err = u.affectedModule(cve)
+		c := cve
+		// If a false positive has changed, we only care about
+		// whether new reference URLs refer to a Go module.
+		// We know some old ones do. So remove the old ones
+		// before checking.
+		if old != nil && old.TriageState == store.TriageStateFalsePositive {
+			c = copyRemoving(cve, old.ReferenceURLs)
+		}
+		result, err = u.affectedModule(c)
 		if err != nil {
 			return false, err
 		}
@@ -269,15 +277,15 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 	if old == nil {
 		cr := store.NewCVERecord(cve, pathname, f.blobHash.String())
 		cr.CommitHash = u.commitHash.String()
-		if result != nil {
+		switch {
+		case result != nil:
 			cr.TriageState = store.TriageStateNeedsIssue
 			cr.Module = result.modulePath
 			cr.CVE = cve
-		} else {
+		case u.knownIDs[cve.ID]:
+			cr.TriageState = store.TriageStateHasVuln
+		default:
 			cr.TriageState = store.TriageStateNoActionNeeded
-			if u.knownIDs[cve.ID] {
-				cr.TriageStateReason = "already in vuln DB"
-			}
 		}
 		if err := tx.CreateCVERecord(cr); err != nil {
 			return false, err
@@ -291,7 +299,7 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 	mod.CVEState = cve.State
 	mod.CommitHash = u.commitHash.String()
 	switch old.TriageState {
-	case store.TriageStateNoActionNeeded:
+	case store.TriageStateNoActionNeeded, store.TriageStateFalsePositive:
 		if result != nil {
 			// Didn't need an issue before, does now.
 			mod.TriageState = store.TriageStateNeedsIssue
@@ -299,6 +307,7 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 		}
 		// Else don't change the triage state, but we still want
 		// to update the other changed fields.
+
 	case store.TriageStateNeedsIssue:
 		if result == nil {
 			// Needed an issue, no longer does.
@@ -308,6 +317,7 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 		}
 		// Else don't change the triage state, but we still want
 		// to update the other changed fields.
+
 	case store.TriageStateIssueCreated, store.TriageStateUpdatedSinceIssueCreation:
 		// An issue was filed, so a person should revisit this CVE.
 		mod.TriageState = store.TriageStateUpdatedSinceIssueCreation
@@ -316,6 +326,9 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 			mp = result.modulePath
 		}
 		mod.TriageStateReason = fmt.Sprintf("CVE changed; affected module = %q", mp)
+	case store.TriageStateHasVuln:
+		// There is already a Go vuln report for this CVE, so
+		// nothing to do.
 	default:
 		return false, fmt.Errorf("unknown TriageState: %q", old.TriageState)
 	}
@@ -328,6 +341,23 @@ func (u *updater) handleCVE(f repoFile, old *store.CVERecord, tx store.Transacti
 		return false, err
 	}
 	return false, nil
+}
+
+// copyRemoving returns a copy of cve with any reference that has a given URL removed.
+func copyRemoving(cve *cveschema.CVE, refURLs []string) *cveschema.CVE {
+	remove := map[string]bool{}
+	for _, u := range refURLs {
+		remove[u] = true
+	}
+	c := *cve
+	var rs []cveschema.Reference
+	for _, r := range cve.References.Data {
+		if !remove[r.URL] {
+			rs = append(rs, r)
+		}
+	}
+	c.References.Data = rs
+	return &c
 }
 
 type repoFile struct {
