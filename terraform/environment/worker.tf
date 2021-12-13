@@ -32,12 +32,12 @@ variable "min_frontend_instances" {
   type        = number
 }
 
-variable "client_id" {
+variable "oauth_client_id" {
   description = "OAuth 2 client ID (visit APIs & Services > Credentials)"
   type = string
 }
 
-variable "client_secret" {
+variable "oauth_client_secret" {
   description = "OAuth 2 client ID (visit APIs & Services > Credentials, click on client)"
   type = string
 }
@@ -132,7 +132,7 @@ data "google_cloud_run_service" "worker" {
 # Load balancer for Cloud Run service.
 
 resource "google_compute_region_network_endpoint_group" "worker" {
-  count = var.client_id == ""? 0: 1
+  count = var.oauth_client_secret == ""? 0: 1
   name         = "${var.env}-vuln-worker-neg"
   network_endpoint_type = "SERVERLESS"
   project = var.project
@@ -143,7 +143,7 @@ resource "google_compute_region_network_endpoint_group" "worker" {
 }
 
 module "worker_lb" {
-  count = var.client_id == ""? 0: 1
+  count = var.oauth_client_secret == ""? 0: 1
   source  = "GoogleCloudPlatform/lb-http/google//modules/serverless_negs"
   version = "~> 6.1.1"
 
@@ -169,8 +169,8 @@ module "worker_lb" {
 
       iap_config = {
         enable               = true
-        oauth2_client_id     = var.client_id
-        oauth2_client_secret = var.client_secret
+        oauth2_client_id     = var.oauth_client_id
+        oauth2_client_secret = var.oauth_client_secret
       }
       log_config = {
         enable      = false
@@ -180,6 +180,39 @@ module "worker_lb" {
   }
 }
 
+output "worker_url" {
+  value = data.google_cloud_run_service.worker.status[0].url
+}
+
 output "load_balancer_ip" {
-  value = var.client_id == ""? "": module.worker_lb[0].external_ip
+  value = var.oauth_client_secret == ""? "": module.worker_lb[0].external_ip
+}
+
+################################################################
+# Other components.
+
+locals {
+  tz = "America/New_York"
+}
+
+data "google_compute_default_service_account" "default" {
+  project = var.project
+}
+
+resource "google_cloud_scheduler_job" "issue_triage" {
+  name             = "${var.env}-issue-triage"
+  description      = "Updates the DB and files issues."
+  schedule         = "0 * * * *" # every hour
+  time_zone        = local.tz
+  project          = var.project
+  attempt_deadline = format("%ds", 60 * 60)
+
+  http_target {
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.worker.status[0].url}/update-and-issues"
+    oidc_token {
+      service_account_email = data.google_compute_default_service_account.default.email
+      audience              = var.oauth_client_id
+    }
+  }
 }

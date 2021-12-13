@@ -50,8 +50,8 @@ module "dev" {
   region                 = local.region
   use_profiler           = false
   min_frontend_instances = 0
-  client_id              = "" # go-discovery-exp does not allow external load balancers
-  client_secret          = ""
+  oauth_client_id              = "55665122702-tk2rogkaalgru7pqibvbltqs7geev8j5.apps.googleusercontent.com"
+  oauth_client_secret          = ""  # go-discovery-exp does not allow external load balancers
 }
 
 # module "prod" {
