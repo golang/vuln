@@ -16,13 +16,12 @@ import (
 	"testing"
 
 	"golang.org/x/vuln/internal/cveschema"
-	"golang.org/x/vuln/internal/worker/log"
 )
 
 var usePkgsite = flag.Bool("pkgsite", false, "use pkg.go.dev for tests")
 
 func TestTriageV4CVE(t *testing.T) {
-	ctx := log.WithLineLogger(context.Background())
+	ctx := context.Background()
 	url := getPkgsiteURL(t)
 
 	for _, test := range []struct {
@@ -106,7 +105,7 @@ func TestTriageV4CVE(t *testing.T) {
 }
 
 func TestKnownToPkgsite(t *testing.T) {
-	ctx := log.WithLineLogger(context.Background())
+	ctx := context.Background()
 
 	const validModule = "golang.org/x/mod"
 

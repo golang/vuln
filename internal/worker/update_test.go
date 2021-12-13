@@ -17,7 +17,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/vuln/internal/cveschema"
-	"golang.org/x/vuln/internal/worker/log"
 	"golang.org/x/vuln/internal/worker/store"
 )
 
@@ -94,7 +93,7 @@ func modify(r, m *store.CVERecord) *store.CVERecord {
 }
 
 func TestDoUpdate(t *testing.T) {
-	ctx := log.WithLineLogger(context.Background())
+	ctx := context.Background()
 	repo, err := readTxtarRepo("testdata/basic.txtar", time.Now())
 	if err != nil {
 		t.Fatal(err)
