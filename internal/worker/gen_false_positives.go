@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/jba/printsrc"
 	"golang.org/x/vuln/internal/gitrepo"
 	"golang.org/x/vuln/internal/worker"
 	"golang.org/x/vuln/internal/worker/store"
@@ -594,7 +595,10 @@ func main() {
 }
 
 func run(repoPath string) error {
-	tmpl, err := template.New("").Parse(fileTemplate)
+	printer := printsrc.NewPrinter("golang.org/x/vuln/internal/worker")
+	tmpl, err := template.New("").
+		Funcs(template.FuncMap{"src": printer.Sprint}).
+		Parse(fileTemplate)
 	if err != nil {
 		return err
 	}
@@ -675,26 +679,5 @@ package worker
 
 import "golang.org/x/vuln/internal/worker/store"
 
-var falsePositives = []*store.CVERecord{
-{{range . -}}
-    {
-       ID: "{{.ID}}",
-       Path: "{{.Path}}",
-       BlobHash: "{{.BlobHash}}",
-       CommitHash: "{{.CommitHash}}",
-       CVEState: "{{.CVEState}}",
-       TriageState: "{{.TriageState}}",
-       {{with .TriageStateReason -}}
-         TriageStateReason: "{{.}}",
-       {{end}}
-       {{- with .ReferenceURLs -}}
-         ReferenceURLs: []string{
-            {{- range .}}
-              "{{.}}",
-            {{- end}}
-         },
-       {{end}}
-    },
-{{end}}
-}
+var falsePositives = {{. | src}}
 `
