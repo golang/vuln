@@ -14,7 +14,12 @@ import (
 )
 
 func Test(t *testing.T) {
-	cmd := exec.Command("./checks.bash")
+	bash, err := exec.LookPath("bash")
+	if err != nil {
+		t.Skipf("skipping: %v", err)
+	}
+
+	cmd := exec.Command(bash, "./checks.bash")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
