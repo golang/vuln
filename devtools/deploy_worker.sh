@@ -45,12 +45,12 @@ main() {
   local image=gcr.io/$project/vuln-worker:$(docker_image_tag)
 
   $prefix docker build -t $image -f cmd/worker/Dockerfile .
-  $prefix docker pushx $image
+  $prefix docker push $image
   $prefix gcloud run deploy --quiet --project $project $env-vuln-worker --image $image
   # If there was a rollback, `gcloud run deploy` will create a revision but
   # not point traffic to it. The following command ensures that the new revision
   # will get traffic.
-  $prefix gcloud run services update-traffic $env-worker --to-latest
+  $prefix gcloud run services --project $project update-traffic $env-vuln-worker --to-latest
 }
 
 main $@

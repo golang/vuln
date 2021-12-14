@@ -14,7 +14,7 @@ WORKDIR /src
 # Copy go.mod and go.sum into the container.
 # If they don't change, which is the common case, then docker can
 # cache this COPY and the subsequent RUN.
-COPY go.mod go.sum all.bash /
+COPY go.mod go.sum checks.bash /
 
 # Download the dependencies.
 RUN go mod download
