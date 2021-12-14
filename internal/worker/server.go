@@ -91,7 +91,7 @@ func (s *Server) handle(ctx context.Context, pattern string, handler func(w http
 		traceID := r.Header.Get("X-Cloud-Trace-Context")
 
 		log.Info(ctx, "request start",
-			event.Value("httpRequest", r),
+			event.Value("url", r.URL),
 			event.String("traceID", traceID))
 
 		r = r.WithContext(log.WithLineLogger(r.Context()))

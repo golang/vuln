@@ -24,12 +24,13 @@ import (
 // Run clones the CVEProject/cvelist repository and compares the files to the
 // existing triaged-cve-list.
 func Run(dirpath string, triaged map[string]string) (err error) {
+	ctx := context.Background()
 	defer derrors.Wrap(&err, "Run(triaged)")
 	var repo *git.Repository
 	if dirpath != "" {
-		repo, err = gitrepo.Open(dirpath)
+		repo, err = gitrepo.Open(ctx, dirpath)
 	} else {
-		repo, err = gitrepo.Clone(gitrepo.CVEListRepoURL)
+		repo, err = gitrepo.Clone(ctx, gitrepo.CVEListRepoURL)
 	}
 	if err != nil {
 		return err
@@ -39,7 +40,7 @@ func Run(dirpath string, triaged map[string]string) (err error) {
 		return err
 	}
 	t := newTriager(triaged)
-	log.Infof(context.Background(), "Finding new Go vulnerabilities from CVE list...")
+	log.Infof(ctx, "Finding new Go vulnerabilities from CVE list...")
 	if err := walkRepo(repo, root, "", t); err != nil {
 		return err
 	}

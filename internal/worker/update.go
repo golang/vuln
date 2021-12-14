@@ -194,7 +194,6 @@ func (u *updater) updateBatch(ctx context.Context, batch []repoFile) (numAdds, n
 	endID := idFromFilename(batch[len(batch)-1].filename)
 	defer derrors.Wrap(&err, "updateBatch(%s-%s)", startID, endID)
 
-	log.Debug(ctx, "update transaction started", event.String("startID", startID), event.String("endID", endID))
 	err = u.st.RunTransaction(ctx, func(ctx context.Context, tx store.Transaction) error {
 		numAdds = 0
 		numMods = 0
@@ -233,7 +232,7 @@ func (u *updater) updateBatch(ctx context.Context, batch []repoFile) (numAdds, n
 	if err != nil {
 		return 0, 0, err
 	}
-	log.Debug(ctx, "update transaction finished",
+	log.Debug(ctx, "update transaction",
 		event.String("startID", startID),
 		event.String("endID", endID),
 		event.Int64("adds", int64(numAdds)),

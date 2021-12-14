@@ -20,9 +20,9 @@ import (
 const CVEListRepoURL = "https://github.com/CVEProject/cvelist"
 
 // Clone returns a repo by cloning the repo at repoURL.
-func Clone(repoURL string) (repo *git.Repository, err error) {
+func Clone(ctx context.Context, repoURL string) (repo *git.Repository, err error) {
 	defer derrors.Wrap(&err, "gitrepo.Clone(%q)", repoURL)
-	log.Infof(context.Background(), "Cloning %q...", repoURL)
+	log.Infof(ctx, "Cloning repo %q at HEAD", repoURL)
 	return git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
 		URL:           repoURL,
 		ReferenceName: plumbing.HEAD,
@@ -33,9 +33,9 @@ func Clone(repoURL string) (repo *git.Repository, err error) {
 }
 
 // Open returns a repo by opening the repo at the local path dirpath.
-func Open(dirpath string) (repo *git.Repository, err error) {
+func Open(ctx context.Context, dirpath string) (repo *git.Repository, err error) {
 	defer derrors.Wrap(&err, "gitrepo.Open(%q)", dirpath)
-	log.Infof(context.Background(), "Opening %q...", dirpath)
+	log.Infof(ctx, "Opening repo at %q", dirpath)
 	repo, err = git.PlainOpen(dirpath)
 	if err != nil {
 		return nil, err
@@ -45,11 +45,11 @@ func Open(dirpath string) (repo *git.Repository, err error) {
 
 // CloneOrOpen clones repoPath if it is an HTTP(S) URL, or opens it from the
 // local disk otherwise.
-func CloneOrOpen(repoPath string) (*git.Repository, error) {
+func CloneOrOpen(ctx context.Context, repoPath string) (*git.Repository, error) {
 	if strings.HasPrefix(repoPath, "http://") || strings.HasPrefix(repoPath, "https://") {
-		return Clone(repoPath)
+		return Clone(ctx, repoPath)
 	}
-	return Open(repoPath)
+	return Open(ctx, repoPath)
 }
 
 // Root returns the root tree of the repo at HEAD.

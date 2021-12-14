@@ -44,7 +44,7 @@ func UpdateCommit(ctx context.Context, repoPath, commitHash string, st store.Sto
 		}
 	}
 
-	repo, err := gitrepo.CloneOrOpen(repoPath)
+	repo, err := gitrepo.CloneOrOpen(ctx, repoPath)
 	if err != nil {
 		return err
 	}
