@@ -23,7 +23,7 @@ ensure_go_binary() {
   if ! [ -x "$(command -v $binary)" ]; then
     info "Installing: $1"
     # Install the binary in a way that doesn't affect our go.mod file.
-    go install $1@latest
+    go install $1
   fi
 }
 
