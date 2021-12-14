@@ -90,7 +90,7 @@ resource "google_cloud_run_service" "worker" {
         resources {
           limits = {
             "cpu"    = "1000m"
-            "memory" = "1Gi"
+            "memory" = "2Gi"
           }
         }
       }
