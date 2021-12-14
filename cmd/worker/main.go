@@ -10,6 +10,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -63,6 +64,7 @@ func main() {
 		fmt.Fprintln(out, "    list-updates: display info about update operations")
 		fmt.Fprintln(out, "    list-cves TRIAGE_STATE: display info about CVE records")
 		fmt.Fprintln(out, "    create-issues: create issues for CVEs that need them")
+		fmt.Fprintln(out, "    show ID1 ID2 ...: display CVE records")
 		fmt.Fprintln(out, "flags:")
 		flag.PrintDefaults()
 	}
@@ -127,6 +129,8 @@ func runCommandLine(ctx context.Context) error {
 		return updateCommand(ctx, flag.Arg(1))
 	case "create-issues":
 		return createIssuesCommand(ctx)
+	case "show":
+		return showCommand(ctx, flag.Args()[1:])
 	default:
 		return fmt.Errorf("unknown command: %q", flag.Arg(1))
 	}
@@ -225,6 +229,26 @@ func createIssuesCommand(ctx context.Context) error {
 	}
 	client := worker.NewGithubIssueClient(owner, repoName, cfg.GitHubAccessToken)
 	return worker.CreateIssues(ctx, cfg.Store, client, *limit)
+}
+
+func showCommand(ctx context.Context, ids []string) error {
+	for _, id := range ids {
+		r, err := cfg.Store.GetCVERecord(ctx, id)
+		if err != nil {
+			return err
+		}
+		if r == nil {
+			fmt.Printf("%s not found\n", id)
+		} else {
+			// Display as JSON because it's an easy way to get nice formatting.
+			j, err := json.MarshalIndent(r, "", "\t")
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s\n", j)
+		}
+	}
+	return nil
 }
 
 func die(format string, args ...interface{}) {
