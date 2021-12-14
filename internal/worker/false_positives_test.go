@@ -19,12 +19,13 @@ func TestInsertFalsePositives(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Spot-check a couple of records.
+	const commitHash = "17294f1a2af61a2a2df52ac89cbd7c516f0c4e6a"
 	got := mstore.CVERecords()
 	for _, want := range []*store.CVERecord{
 		{
 			ID:          "CVE-2016-0216",
 			Path:        "2016/0xxx/CVE-2016-0216.json",
-			CommitHash:  FalsePositiveCommitHash,
+			CommitHash:  commitHash,
 			BlobHash:    "ac9f59c6700576b5936dc014ce265ee0c9a41097",
 			CVEState:    cveschema.StatePublic,
 			TriageState: store.TriageStateFalsePositive,
@@ -36,7 +37,7 @@ func TestInsertFalsePositives(t *testing.T) {
 		{
 			ID:                "CVE-2020-15112",
 			Path:              "2020/15xxx/CVE-2020-15112.json",
-			CommitHash:        FalsePositiveCommitHash,
+			CommitHash:        commitHash,
 			BlobHash:          "3d87891317ff107037bc0145194ab72df1890411",
 			CVEState:          cveschema.StatePublic,
 			TriageState:       store.TriageStateHasVuln,

@@ -11,11 +11,6 @@ import (
 	"golang.org/x/vuln/internal/worker/store"
 )
 
-// FalsePositiveCommitHash is the commit used to generate false positive records.
-// It is last commit to github.com/CVEProject/cvelist on April 12, 2021.
-// The triaged-cve-list file was last edited the next day.
-const FalsePositiveCommitHash = "17294f1a2af61a2a2df52ac89cbd7c516f0c4e6a"
-
 func InsertFalsePositives(ctx context.Context, st store.Store) (err error) {
 	defer derrors.Wrap(&err, "InsertFalsePositives")
 
