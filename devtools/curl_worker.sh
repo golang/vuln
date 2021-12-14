@@ -29,4 +29,8 @@ esac
 
 tok=$(gcloud --impersonate-service-account $svc_acct auth print-identity-token --audiences $oauth_client_id  --include-email)
 
-curl -H "Authorization: Bearer $tok" $url/$path
+if [[ $path = update* ]]; then
+  args="-X POST"
+fi
+
+curl $args -i -H "Authorization: Bearer $tok" $url/$path
