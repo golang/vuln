@@ -56,7 +56,7 @@ func main() {
 			failf("unable to unmarshal %q: %s", f.Name(), err)
 		}
 		if lints := vuln.Lint(); len(lints) > 0 {
-			fmt.Fprintf(os.Stderr, "invalid vulnerability file %q:\n", os.Args[1])
+			fmt.Fprintf(os.Stderr, "invalid vulnerability file %q:\n", f.Name())
 			for _, lint := range lints {
 				fmt.Fprintf(os.Stderr, "\t%s\n", lint)
 			}

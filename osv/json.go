@@ -243,6 +243,8 @@ func Generate(id string, url string, r report.Report) (Entry, []string) {
 
 	if r.CVE != "" {
 		entry.Aliases = []string{r.CVE}
+	} else {
+		entry.Aliases = r.CVEs
 	}
 
 	var modules []string

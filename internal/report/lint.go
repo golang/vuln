@@ -48,7 +48,7 @@ func getModVersions(module string) (_ map[string]bool, err error) {
 	return versions, nil
 }
 
-func getCanonicalModName(module string, version string) (_ string, err error) {
+func getCanonicalModName(module, version string) (_ string, err error) {
 	defer derrors.Wrap(&err, "getCanonicalModName(%q, %q)", module, version)
 	resp, err := http.Get(fmt.Sprintf("%s/%s/@v/%s.mod", proxyURL, module, version))
 	if err != nil {
@@ -139,23 +139,25 @@ func checkModVersions(path string, vr []VersionRange) (err error) {
 var cveRegex = regexp.MustCompile(`^CVE-\d{4}-\d{4,}$`)
 
 // Lint checks the content of a Report.
-// TODO: instead of returning a single error we may want to return a slice, so that
-// we aren't fixing one thing at a time. Similarly it might make sense to include
-// warnings or informational things alongside errors, especially during for use
-// during the triage process.
+// TODO: It might make sense to include warnings or informational things
+// alongside errors, especially during for use during the triage process.
 func (vuln *Report) Lint() []string {
 	var issues []string
+
+	addIssue := func(iss string) {
+		issues = append(issues, iss)
+	}
 
 	var importPath string
 	if !vuln.Stdlib {
 		if vuln.Module == "" {
-			issues = append(issues, "missing module")
+			addIssue("missing module")
 		}
 		if vuln.Module != "" && vuln.Package == vuln.Module {
-			issues = append(issues, "package is redundant and can be removed")
+			addIssue("package is redundant and can be removed")
 		}
 		if vuln.Package != "" && !strings.HasPrefix(vuln.Package, vuln.Module) {
-			issues = append(issues, "module must be a prefix of package")
+			addIssue("module must be a prefix of package")
 		}
 		if vuln.Package == "" {
 			importPath = vuln.Module
@@ -164,27 +166,27 @@ func (vuln *Report) Lint() []string {
 		}
 		if vuln.Module != "" && importPath != "" {
 			if err := checkModVersions(vuln.Module, vuln.Versions); err != nil {
-				issues = append(issues, err.Error())
+				addIssue(err.Error())
 			}
 
 			if err := module.CheckImportPath(importPath); err != nil {
-				issues = append(issues, err.Error())
+				addIssue(err.Error())
 			}
 		}
 	} else if vuln.Package == "" {
-		issues = append(issues, "missing package")
+		addIssue("missing package")
 	}
 
 	for _, additionalPackage := range vuln.AdditionalPackages {
 		var additionalImportPath string
 		if additionalPackage.Module == "" {
-			issues = append(issues, "missing additional_package.module")
+			addIssue("missing additional_package.module")
 		}
 		if additionalPackage.Package == additionalPackage.Module {
-			issues = append(issues, "package is redundant and can be removed")
+			addIssue("package is redundant and can be removed")
 		}
 		if additionalPackage.Package != "" && !strings.HasPrefix(additionalPackage.Package, additionalPackage.Module) {
-			issues = append(issues, "additional_package.module must be a prefix of additional_package.package")
+			addIssue("additional_package.module must be a prefix of additional_package.package")
 		}
 		if additionalPackage.Package == "" {
 			additionalImportPath = additionalPackage.Module
@@ -192,42 +194,51 @@ func (vuln *Report) Lint() []string {
 			additionalImportPath = additionalPackage.Package
 		}
 		if err := module.CheckImportPath(additionalImportPath); err != nil {
-			issues = append(issues, err.Error())
+			addIssue(err.Error())
 		}
 		if !vuln.Stdlib {
 			if err := checkModVersions(additionalPackage.Module, additionalPackage.Versions); err != nil {
-				issues = append(issues, err.Error())
+				addIssue(err.Error())
 			}
 		}
 	}
 
 	if vuln.Description == "" {
-		issues = append(issues, "missing description")
+		addIssue("missing description")
 	}
 
 	if vuln.Published.IsZero() {
-		issues = append(issues, "missing published")
+		addIssue("missing published")
 	}
 
 	if vuln.LastModified != nil && vuln.LastModified.Before(vuln.Published) {
-		issues = append(issues, "last_modified is before published")
+		addIssue("last_modified is before published")
+	}
+
+	if vuln.CVE != "" && len(vuln.CVEs) > 0 {
+		addIssue("use only one of CVE and CVEs")
 	}
 
 	if vuln.CVE != "" && vuln.CVEMetadata != nil && vuln.CVEMetadata.ID != "" {
 		// TODO: may just want to use one of these? :shrug:
-		issues = append(issues, "only one of cve and cve_metadata.id should be present")
+		addIssue("only one of cve and cve_metadata.id should be present")
 	}
 
 	if vuln.CVE != "" && !cveRegex.MatchString(vuln.CVE) {
 		issues = append(issues, "malformed cve identifier")
 	}
+	for _, cve := range vuln.CVEs {
+		if !cveRegex.MatchString(cve) {
+			addIssue("malformed cve identifier")
+		}
+	}
 
 	if vuln.CVEMetadata != nil {
 		if vuln.CVEMetadata.ID == "" {
-			issues = append(issues, "cve_metadata.id is required")
+			addIssue("cve_metadata.id is required")
 		}
 		if !cveRegex.MatchString(vuln.CVEMetadata.ID) {
-			issues = append(issues, "malformed cve_metadata.id identifier")
+			addIssue("malformed cve_metadata.id identifier")
 		}
 	}
 

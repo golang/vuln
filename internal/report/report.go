@@ -59,7 +59,10 @@ type Report struct {
 
 	// CVE is the CVE ID for an existing CVE. If we are assigning a CVE ID
 	// ourselves, use CVEMetdata.ID instead.
-	CVE     string   `yaml:",omitempty"`
+	CVE string `yaml:",omitempty"`
+	// CVE are CVE IDs for existing CVEs, if there is more than one.
+	// Use either CVE or CVEs, but not both.
+	CVEs    []string `yaml:",omitempty"`
 	Credit  string   `yaml:",omitempty"`
 	Symbols []string `yaml:",omitempty"`
 	OS      []string `yaml:",omitempty"`

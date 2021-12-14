@@ -22,7 +22,7 @@ import (
 
 func fromReport(r *report.Report) (_ *cveschema.CVE, err error) {
 	defer derrors.Wrap(&err, "fromReport(r)")
-	if r.CVE != "" {
+	if r.CVE != "" || len(r.CVEs) > 0 {
 		return nil, errors.New("report has CVE ID is wrong section (should be in cve_metadata for self-issued CVEs)")
 	}
 	if r.CVEMetadata == nil {

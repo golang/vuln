@@ -15,8 +15,8 @@ import (
 )
 
 // LintReport is used to lint the x/vulndb/reports/ directory. It is run by
-// TestLintReports and cmd/gendb to ensure that there are no errors in the YAML
-// reports.
+// TestLintReports (in the vulndb repo) to ensure that there are no errors in
+// the YAML reports.
 func LintReport(filename string) (_ []string, err error) {
 	defer derrors.Wrap(&err, "Lint(%q)", filename)
 	b, err := ioutil.ReadFile(filename)
