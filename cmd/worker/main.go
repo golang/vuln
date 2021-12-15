@@ -227,6 +227,12 @@ func populateKnownModules(filename string) error {
 }
 
 func createIssuesCommand(ctx context.Context) error {
+	if cfg.IssueRepo == "" {
+		return errors.New("need -issue-repo")
+	}
+	if cfg.GitHubAccessToken == "" {
+		return errors.New("need -ghtokenfile")
+	}
 	owner, repoName, err := worker.ParseGithubRepo(cfg.IssueRepo)
 	if err != nil {
 		return err
