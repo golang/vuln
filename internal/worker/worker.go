@@ -263,10 +263,11 @@ func newBody(r *store.CVERecord) (string, error) {
 	}
 	err := issueTemplate.Execute(&b, issueTemplateData{
 		Heading: fmt.Sprintf(
-			"One or more of the reference URLs in [%s](%s/tree/%s/%s) refers to a Go module.",
-			r.ID, gitrepo.CVEListRepoURL, r.CommitHash, r.Path),
+			"In [%s](%s/tree/%s/%s), the reference URL [%s](%s) (and possibly others) refers to something in Go.",
+			r.ID, gitrepo.CVEListRepoURL, r.CommitHash, r.Path, r.Module, r.Module),
 		Description: desc,
 		CVERecord:   r,
+		Pre:         "```",
 	})
 	if err != nil {
 		return "", err
@@ -277,12 +278,14 @@ func newBody(r *store.CVERecord) (string, error) {
 type issueTemplateData struct {
 	Heading     string
 	Description string
+	Pre         string // markdown string for a <pre> block
 	*store.CVERecord
 }
 
 var issueTemplate = template.Must(template.New("issue").Parse(`
-{{.Heading}}
+{{- .Heading}}
 
+{{.Pre}}
 module: {{.Module}}
 package:
 stdlib:
@@ -302,4 +305,5 @@ links:
   pr:
   context:
     -
+{{.Pre}}
 `))

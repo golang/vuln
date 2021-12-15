@@ -160,29 +160,29 @@ func TestNewBody(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := `
-        One or more of the reference URLs in [ID1](https://github.com/CVEProject/cvelist/tree//) refers to a Go module.
+	want := `In [ID1](https://github.com/CVEProject/cvelist/tree//), the reference URL [aModule](aModule) (and possibly others) refers to something in Go.
 
-        module: aModule
-        package:
-        stdlib:
-        versions:
-          - introduced:
-          - fixed:
-        description: |
-          a description
+` + "```" + `
+module: aModule
+package:
+stdlib:
+versions:
+  - introduced:
+  - fixed:
+description: |
+  a description
 
-        cve: ID1
-        credit:
-        symbols:
-          -
-        published:
-        links:
-          commit:
-          pr:
-          context:
-            -
-`
+cve: ID1
+credit:
+symbols:
+  -
+published:
+links:
+  commit:
+  pr:
+  context:
+    -
+` + "```\n"
 	if diff := cmp.Diff(unindent(want), got); diff != "" {
 		t.Errorf("mismatch (-want, +got):\n%s", diff)
 	}
