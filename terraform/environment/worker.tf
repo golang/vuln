@@ -96,12 +96,15 @@ resource "google_cloud_run_service" "worker" {
       }
 
       service_account_name = "frontend@${var.project}.iam.gserviceaccount.com"
+      # 60 minutes is the maximum Cloud Run request time.
+      timeout_seconds = 60 * 60
     }
 
     metadata {
       annotations = {
         "autoscaling.knative.dev/minScale"  = var.min_frontend_instances
         "autoscaling.knative.dev/maxScale"  = "1"
+	"client.knative.dev/user-image"     = data.google_cloud_run_service.worker.template[0].spec[0].containers[0].image
       }
     }
   }

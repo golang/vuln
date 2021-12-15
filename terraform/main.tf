@@ -54,14 +54,14 @@ module "dev" {
   client_secret          = ""
 }
 
-module "prod" {
-  source                 = "./environment"
-  env                    = "prod"
-  project                = "golang-org"
-  region                 = local.region
-  use_profiler           = true
-  min_frontend_instances = 1
-  client_id              = "unknown"
-  client_secret          = var.prod_client_secret
-}
+# module "prod" {
+#   source                 = "./environment"
+#   env                    = "prod"
+#   project                = "golang-org"
+#   region                 = local.region
+#   use_profiler           = true
+#   min_frontend_instances = 1
+#   client_id              = "unknown"
+#   client_secret          = var.prod_client_secret
+# }
 
