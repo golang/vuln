@@ -19,6 +19,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"golang.org/x/exp/event"
 	"golang.org/x/vuln/internal/gitrepo"
@@ -142,19 +143,20 @@ func listUpdatesCommand(ctx context.Context) error {
 		return err
 	}
 	tw := tabwriter.NewWriter(os.Stdout, 1, 8, 2, ' ', 0)
-	fmt.Fprintf(tw, "Start\tEnd\tCommit\tCVEs Processed\n")
+	fmt.Fprintf(tw, "Start\tEnd\tCommit\tID\tCVEs Processed\n")
 	for i, r := range recs {
 		if *limit > 0 && i >= *limit {
 			break
 		}
 		endTime := "unfinished"
 		if !r.EndedAt.IsZero() {
-			endTime = r.EndedAt.Format(timeFormat)
+			endTime = r.EndedAt.In(time.Local).Format(timeFormat)
 		}
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%d/%d (added %d, modified %d)\n",
-			r.StartedAt.Format(timeFormat),
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%d/%d (added %d, modified %d)\n",
+			r.StartedAt.In(time.Local).Format(timeFormat),
 			endTime,
 			r.CommitHash,
+			r.ID,
 			r.NumProcessed, r.NumTotal, r.NumAdded, r.NumModified)
 	}
 	return tw.Flush()
