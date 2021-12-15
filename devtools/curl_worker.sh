@@ -29,7 +29,7 @@ esac
 
 tok=$(gcloud --impersonate-service-account $svc_acct auth print-identity-token --audiences $oauth_client_id  --include-email)
 
-if [[ $path = update* ]]; then
+if [[ $path = update* || $path = issue* ]]; then
   args="-X POST"
 fi
 
