@@ -77,6 +77,8 @@ func main() {
 			die("%v", err)
 		}
 		cfg.GitHubAccessToken = strings.TrimSpace(string(data))
+	} else {
+		cfg.GitHubAccessToken = os.Getenv("VULN_GITHUB_ACCESS_TOKEN")
 	}
 	if err := cfg.Validate(); err != nil {
 		dieWithUsage("%v", err)

@@ -20,6 +20,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"golang.org/x/exp/event"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/time/rate"
 	vulnc "golang.org/x/vuln/client"
 	"golang.org/x/vuln/internal/cveschema"
 	"golang.org/x/vuln/internal/derrors"
@@ -172,14 +173,24 @@ func readVulnDB(ctx context.Context) ([]string, error) {
 	return cveIDs, nil
 }
 
+// Limit GitHub issue creation requests to this many per second.
+const issueQPS = 1
+
+// The limiter used to throttle pkgsite requests.
+// The second argument to rate.NewLimiter is the burst, which
+// basically lets you exceed the rate briefly.
+var issueRateLimiter = rate.NewLimiter(rate.Every(time.Duration(1000/float64(issueQPS))*time.Millisecond), 1)
+
 func CreateIssues(ctx context.Context, st store.Store, ic IssueClient, limit int) (err error) {
 	derrors.Wrap(&err, "CreateIssues(destination: %s)", ic.Destination())
 
-	log.Info(ctx, "CreateIssues starting", event.String("destination", ic.Destination()))
 	needsIssue, err := st.ListCVERecordsWithTriageState(ctx, store.TriageStateNeedsIssue)
 	if err != nil {
 		return err
 	}
+	log.Info(ctx, "CreateIssues starting",
+		event.String("destination", ic.Destination()),
+		event.Int64("needsIssue", int64(len(needsIssue))))
 	numCreated := int64(0)
 	for _, r := range needsIssue {
 		if limit > 0 && int(numCreated) >= limit {
@@ -202,6 +213,9 @@ func CreateIssues(ctx context.Context, st store.Store, ic IssueClient, limit int
 			Title:  fmt.Sprintf("x/vulndb: potential Go vulnerability found from CVE List: %s", r.ID),
 			Body:   body,
 			Labels: []string{"Needs Triage"},
+		}
+		if err := issueRateLimiter.Wait(ctx); err != nil {
+			return err
 		}
 		num, err := ic.CreateIssue(ctx, iss)
 		if err != nil {

@@ -235,18 +235,27 @@ func (s *Server) indexPage(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) handleUpdate(w http.ResponseWriter, r *http.Request) error {
+	err := s.doUpdate(r)
+	if err == nil {
+		fmt.Fprintf(w, "Update succeeded.\n")
+	}
+	return err
+}
+
+func (s *Server) doUpdate(r *http.Request) error {
 	if r.Method != http.MethodPost {
 		return &serverError{
 			status: http.StatusMethodNotAllowed,
 			err:    fmt.Errorf("%s required", http.MethodPost),
 		}
 	}
-	err := UpdateCommit(r.Context(), gitrepo.CVEListRepoURL, "HEAD", s.cfg.Store, pkgsiteURL, false /* force */)
-	if cerr := new(CheckUpdateError); errors.As(err, &cerr) {
-		return fmt.Errorf("%w; use -force on the command line to override", cerr)
+	force := false
+	if f := r.FormValue("force"); f == "true" {
+		force = true
 	}
-	if err == nil {
-		fmt.Fprintf(w, "Update succeeded.\n")
+	err := UpdateCommit(r.Context(), gitrepo.CVEListRepoURL, "HEAD", s.cfg.Store, pkgsiteURL, force)
+	if cerr := new(CheckUpdateError); errors.As(err, &cerr) {
+		return fmt.Errorf("%w; use /update?force=true to override", cerr)
 	}
 	return err
 }
@@ -264,7 +273,8 @@ func (s *Server) handleIssues(w http.ResponseWriter, r *http.Request) error {
 			err:    errors.New("issue creation disabled"),
 		}
 	}
-	limit := 0
+	// Unless explicitly asked to, don't create more than a few issues.
+	limit := 10
 	if sl := r.FormValue("limit"); sl != "" {
 		var err error
 		limit, err = strconv.Atoi(sl)
@@ -275,11 +285,12 @@ func (s *Server) handleIssues(w http.ResponseWriter, r *http.Request) error {
 			}
 		}
 	}
+	log.Info(r.Context(), "creating issues", event.Int64("limit", int64(limit)))
 	return CreateIssues(r.Context(), s.cfg.Store, s.issueClient, limit)
 }
 
 func (s *Server) handleUpdateAndIssues(w http.ResponseWriter, r *http.Request) error {
-	if err := s.handleUpdate(w, r); err != nil {
+	if err := s.doUpdate(r); err != nil {
 		return err
 	}
 	return s.handleIssues(w, r)

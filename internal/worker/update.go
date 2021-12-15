@@ -76,11 +76,17 @@ func (u *updater) update(ctx context.Context) (ur *store.CommitUpdateRecord, err
 		if err != nil {
 			log.Error(ctx, "update failed", event.Value("error", err))
 		} else {
-			nProcessed := int64(0)
+			var nProcessed, nAdded, nModified int64
 			if ur != nil {
 				nProcessed = int64(ur.NumProcessed)
+				nAdded = int64(ur.NumAdded)
+				nModified = int64(ur.NumModified)
 			}
-			log.Info(ctx, "update succeeded", event.Int64("numProcessed", nProcessed))
+			log.Info(ctx, "update succeeded",
+				event.String("commit", u.commitHash.String()),
+				event.Int64("processed", nProcessed),
+				event.Int64("added", nAdded),
+				event.Int64("modified", nModified))
 		}
 	}()
 
