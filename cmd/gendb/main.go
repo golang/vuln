@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/database"
 	"golang.org/x/vuln/internal/report"
 	"golang.org/x/vuln/osv"
 	"gopkg.in/yaml.v2"
@@ -68,7 +69,7 @@ func main() {
 		// TODO(rolandshoemaker): once the HTML representation is ready this should be
 		// the link to the HTML page.
 		linkName := fmt.Sprintf("%s%s.yaml", dbURL, name)
-		entry, paths := osv.Generate(name, linkName, vuln)
+		entry, paths := database.Generate(name, linkName, vuln)
 		for _, path := range paths {
 			jsonVulns[path] = append(jsonVulns[path], entry)
 		}

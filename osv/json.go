@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"golang.org/x/mod/semver"
-	"golang.org/x/vuln/internal/report"
 )
 
 // DBIndex contains a mapping of vulnerable packages to the
@@ -89,40 +88,6 @@ func (ar AffectsRange) containsSemver(v string) bool {
 
 type Affects []AffectsRange
 
-// removeSemverPrefix removes the 'v' or 'go' prefixes from go-style
-// SEMVER strings, for usage in the public vulnerability format.
-func removeSemverPrefix(s string) string {
-	s = strings.TrimPrefix(s, "v")
-	s = strings.TrimPrefix(s, "go")
-	return s
-}
-
-// canonicalizeSemverPrefix turns a SEMVER string into the canonical
-// representation using the 'v' prefix, as used by the OSV format.
-// Input may be a bare SEMVER ("1.2.3"), Go prefixed SEMVER ("go1.2.3"),
-// or already canonical SEMVER ("v1.2.3").
-func canonicalizeSemverPrefix(s string) string {
-	return addSemverPrefix(removeSemverPrefix(s))
-}
-
-func generateAffectedRanges(versions []report.VersionRange) Affects {
-	a := AffectsRange{Type: TypeSemver}
-	if len(versions) == 0 || versions[0].Introduced == "" {
-		a.Events = append(a.Events, RangeEvent{Introduced: "0"})
-	}
-	for _, v := range versions {
-		if v.Introduced != "" {
-			v.Introduced = canonicalizeSemverPrefix(v.Introduced)
-			a.Events = append(a.Events, RangeEvent{Introduced: removeSemverPrefix(semver.Canonical(v.Introduced))})
-		}
-		if v.Fixed != "" {
-			v.Fixed = canonicalizeSemverPrefix(v.Fixed)
-			a.Events = append(a.Events, RangeEvent{Fixed: removeSemverPrefix(semver.Canonical(v.Fixed))})
-		}
-	}
-	return Affects{a}
-}
-
 func (a Affects) AffectsSemver(v string) bool {
 	if len(a) == 0 {
 		// No ranges implies all versions are affected
@@ -180,77 +145,18 @@ type Entry struct {
 	References []Reference `json:"references,omitempty"`
 }
 
-func generateAffected(importPath string, versions []report.VersionRange, goos, goarch, symbols []string, url string) Affected {
-	return Affected{
-		Package: Package{
-			Name:      importPath,
-			Ecosystem: GoEcosystem,
-		},
-		Ranges:           generateAffectedRanges(versions),
-		DatabaseSpecific: DatabaseSpecific{URL: url},
-		EcosystemSpecific: EcosystemSpecific{
-			GOOS:    goos,
-			GOARCH:  goarch,
-			Symbols: symbols,
-		},
-	}
+// removeSemverPrefix removes the 'v' or 'go' prefixes from go-style
+// SEMVER strings, for usage in the public vulnerability format.
+func removeSemverPrefix(s string) string {
+	s = strings.TrimPrefix(s, "v")
+	s = strings.TrimPrefix(s, "go")
+	return s
 }
 
-func Generate(id string, url string, r report.Report) (Entry, []string) {
-	importPath := r.Module
-	if r.Package != "" {
-		importPath = r.Package
-	}
-	moduleMap := make(map[string]bool)
-	if r.Stdlib {
-		moduleMap["stdlib"] = true
-	} else {
-		moduleMap[r.Module] = true
-	}
-	lastModified := r.Published
-	if r.LastModified != nil {
-		lastModified = *r.LastModified
-	}
-	entry := Entry{
-		ID:        id,
-		Published: r.Published,
-		Modified:  lastModified,
-		Withdrawn: r.Withdrawn,
-		Details:   r.Description,
-		Affected:  []Affected{generateAffected(importPath, r.Versions, r.OS, r.Arch, r.Symbols, url)},
-	}
-
-	for _, additional := range r.AdditionalPackages {
-		additionalPath := additional.Module
-		if additional.Package != "" {
-			additionalPath = additional.Package
-		}
-		if !r.Stdlib {
-			moduleMap[additional.Module] = true
-		}
-		entry.Affected = append(entry.Affected, generateAffected(additionalPath, additional.Versions, r.OS, r.Arch, additional.Symbols, url))
-	}
-
-	if r.Links.PR != "" {
-		entry.References = append(entry.References, Reference{Type: "FIX", URL: r.Links.PR})
-	}
-	if r.Links.Commit != "" {
-		entry.References = append(entry.References, Reference{Type: "FIX", URL: r.Links.Commit})
-	}
-	for _, link := range r.Links.Context {
-		entry.References = append(entry.References, Reference{Type: "WEB", URL: link})
-	}
-
-	if r.CVE != "" {
-		entry.Aliases = []string{r.CVE}
-	} else {
-		entry.Aliases = r.CVEs
-	}
-
-	var modules []string
-	for module := range moduleMap {
-		modules = append(modules, module)
-	}
-
-	return entry, modules
+// canonicalizeSemverPrefix turns a SEMVER string into the canonical
+// representation using the 'v' prefix, as used by the OSV format.
+// Input may be a bare SEMVER ("1.2.3"), Go prefixed SEMVER ("go1.2.3"),
+// or already canonical SEMVER ("v1.2.3").
+func canonicalizeSemverPrefix(s string) string {
+	return addSemverPrefix(removeSemverPrefix(s))
 }
