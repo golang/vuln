@@ -46,20 +46,20 @@ var (
 
 // testCache for testing purposes
 type testCache struct {
-	indexMap   map[string]osv.DBIndex
+	indexMap   map[string]DBIndex
 	indexStamp map[string]time.Time
 	vulnMap    map[string]map[string][]*osv.Entry
 }
 
 func freshTestCache() *testCache {
 	return &testCache{
-		indexMap:   make(map[string]osv.DBIndex),
+		indexMap:   make(map[string]DBIndex),
 		indexStamp: make(map[string]time.Time),
 		vulnMap:    make(map[string]map[string][]*osv.Entry),
 	}
 }
 
-func (tc *testCache) ReadIndex(db string) (osv.DBIndex, time.Time, error) {
+func (tc *testCache) ReadIndex(db string) (DBIndex, time.Time, error) {
 	index, ok := tc.indexMap[db]
 	if !ok {
 		return nil, time.Time{}, nil
@@ -71,7 +71,7 @@ func (tc *testCache) ReadIndex(db string) (osv.DBIndex, time.Time, error) {
 	return index, stamp, nil
 }
 
-func (tc *testCache) WriteIndex(db string, index osv.DBIndex, stamp time.Time) error {
+func (tc *testCache) WriteIndex(db string, index DBIndex, stamp time.Time) error {
 	tc.indexMap[db] = index
 	tc.indexStamp[db] = stamp
 	return nil
@@ -219,7 +219,7 @@ func TestCorrectFetchesNoCache(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fetches[r.URL.Path]++
 		if r.URL.Path == "/index.json" {
-			j, _ := json.Marshal(osv.DBIndex{
+			j, _ := json.Marshal(DBIndex{
 				"a": time.Now(),
 				"b": time.Now(),
 			})
@@ -256,7 +256,7 @@ func TestCorrectFetchesNoChangeIndex(t *testing.T) {
 	// set timestamp so that cached index is stale,
 	// i.e., more than two hours old.
 	timeStamp := time.Now().Add(time.Hour * (-3))
-	index := osv.DBIndex{"a": timeStamp}
+	index := DBIndex{"a": timeStamp}
 	cache := freshTestCache()
 	cache.WriteIndex(url.Hostname(), index, timeStamp)
 

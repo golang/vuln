@@ -18,13 +18,6 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-// DBIndex contains a mapping of vulnerable packages to the
-// last time a new vulnerability was added to the database.
-// TODO: this is probably not the correct place to put this
-// type, since it's not really an OSV/CVF thing, but rather
-// vulndb implementatiion detail.
-type DBIndex map[string]time.Time
-
 type AffectsRangeType string
 
 const (

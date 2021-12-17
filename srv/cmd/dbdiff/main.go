@@ -15,14 +15,15 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/srv/internal"
 	"golang.org/x/vuln/srv/internal/derrors"
 )
 
-func loadDB(dbPath string) (_ osv.DBIndex, _ map[string][]osv.Entry, err error) {
+func loadDB(dbPath string) (_ client.DBIndex, _ map[string][]osv.Entry, err error) {
 	defer derrors.Wrap(&err, "loadDB(%q)", dbPath)
-	index := osv.DBIndex{}
+	index := client.DBIndex{}
 	dbMap := map[string][]osv.Entry{}
 
 	var loadDir func(string) error

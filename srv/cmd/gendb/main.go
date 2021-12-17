@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/srv/internal"
 	"golang.org/x/vuln/srv/internal/database"
@@ -76,7 +77,7 @@ func main() {
 		entries = append(entries, entry)
 	}
 
-	index := make(osv.DBIndex, len(jsonVulns))
+	index := make(client.DBIndex, len(jsonVulns))
 	for path, vulns := range jsonVulns {
 		outPath := filepath.Join(*jsonDir, path)
 		content, err := json.Marshal(vulns)

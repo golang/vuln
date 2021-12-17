@@ -12,8 +12,8 @@ import (
 
 // Cache interface for vuln DB caching.
 type Cache interface {
-	ReadIndex(string) (osv.DBIndex, time.Time, error)
-	WriteIndex(string, osv.DBIndex, time.Time) error
+	ReadIndex(string) (DBIndex, time.Time, error)
+	WriteIndex(string, DBIndex, time.Time) error
 	ReadEntries(string, string) ([]*osv.Entry, error)
 	WriteEntries(string, string, []*osv.Entry) error
 }

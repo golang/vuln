@@ -12,7 +12,7 @@
 // was added. The index file is called indx.json, and has the
 // following format:
 //
-//   map[string]time.Time (osv.DBIndex)
+//   map[string]time.Time (DBIndex)
 //
 // Each vulnerable module is represented by an individual JSON file
 // which contains all of the vulnerabilities in that module. The path
@@ -50,6 +50,10 @@ import (
 	"golang.org/x/vuln/osv"
 )
 
+// DBIndex contains a mapping of vulnerable packages to the last time a new
+// vulnerability was added to the database.
+type DBIndex map[string]time.Time
+
 // Client interface for fetching vulnerabilities based on module path or ID.
 type Client interface {
 	// GetByModule returns the entries that affect the given module path.
@@ -68,7 +72,7 @@ type Client interface {
 
 type source interface {
 	Client
-	Index(context.Context) (osv.DBIndex, error)
+	Index(context.Context) (DBIndex, error)
 }
 
 type localSource struct {
@@ -120,9 +124,9 @@ func (ls *localSource) ListIDs(context.Context) (_ []string, err error) {
 	return ids, nil
 }
 
-func (ls *localSource) Index(context.Context) (_ osv.DBIndex, err error) {
+func (ls *localSource) Index(context.Context) (_ DBIndex, err error) {
 	defer derrors.Wrap(&err, "Index()")
-	var index osv.DBIndex
+	var index DBIndex
 	b, err := ioutil.ReadFile(filepath.Join(ls.dir, "index.json"))
 	if err != nil {
 		return nil, err
@@ -140,10 +144,10 @@ type httpSource struct {
 	dbName string
 }
 
-func (hs *httpSource) Index(ctx context.Context) (_ osv.DBIndex, err error) {
+func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
 	defer derrors.Wrap(&err, "Index()")
 
-	var cachedIndex osv.DBIndex
+	var cachedIndex DBIndex
 	var cachedIndexRetrieved *time.Time
 
 	if hs.cache != nil {
@@ -190,7 +194,7 @@ func (hs *httpSource) Index(ctx context.Context) (_ osv.DBIndex, err error) {
 	if err != nil {
 		return nil, err
 	}
-	var index osv.DBIndex
+	var index DBIndex
 	if err = json.Unmarshal(b, &index); err != nil {
 		return nil, err
 	}
