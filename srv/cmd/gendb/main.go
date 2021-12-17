@@ -13,10 +13,6 @@ import (
 	"golang.org/x/vuln/srv/internal/database"
 )
 
-// TODO(rolandshoemaker): once we have the HTML representation ready this should
-// be the prefix for that.
-const dbURL = "https://go.googlesource.com/vuln/+/refs/heads/master/reports/"
-
 var (
 	yamlDir = flag.String("reports", "reports", "Directory containing yaml reports")
 	jsonDir = flag.String("out", "out", "Directory to write JSON database to")
@@ -24,7 +20,7 @@ var (
 
 func main() {
 	flag.Parse()
-	if err := database.Generate(*yamlDir, *jsonDir, dbURL); err != nil {
+	if err := database.Generate(*yamlDir, *jsonDir); err != nil {
 		log.Fatal(err)
 	}
 }

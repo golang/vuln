@@ -22,7 +22,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func Generate(yamlDir, jsonDir, dbURL string) (err error) {
+const dbURL = "https://go.googlesource.com/vuln/+/refs/heads/master/reports/"
+
+func Generate(yamlDir, jsonDir string) (err error) {
 	defer derrors.Wrap(&err, "Generate(%q)", yamlDir)
 	yamlFiles, err := ioutil.ReadDir(yamlDir)
 	if err != nil {
