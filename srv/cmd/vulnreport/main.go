@@ -7,6 +7,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -22,9 +23,10 @@ import (
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "usage: vulnreport [cmd] [filename]\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "  create [filename]: creates a new vulnerability YAML report\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "  lint [filename]: lints a vulnerability YAML report\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "usage: vulnreport [cmd] [filename.yaml]\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "  create [filename.yaml]: creates a new vulnerability YAML report\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "  lint [filename.yaml]: lints a vulnerability YAML report\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "  newcve [filename.yaml]: creates a CVE report from the provided YAML report\n")
 		flag.PrintDefaults()
 	}
 
@@ -43,6 +45,10 @@ func main() {
 		}
 	case "lint":
 		if err := lint(filename); err != nil {
+			log.Fatal(err)
+		}
+	case "newcve":
+		if err := newCVE(filename); err != nil {
 			log.Fatal(err)
 		}
 	default:
@@ -91,4 +97,19 @@ func lint(filename string) (err error) {
 		return fmt.Errorf("vuln.Lint returned errors:\n\t %s", strings.Join(lints, "\n\t"))
 	}
 	return nil
+}
+
+func newCVE(filename string) (err error) {
+	defer derrors.Wrap(&err, "newCVE(%q)", filename)
+	cve, err := report.ToCVE(filename)
+	if err != nil {
+		return err
+	}
+
+	// We need to use an encoder so that it doesn't escape angle
+	// brackets.
+	e := json.NewEncoder(os.Stdout)
+	e.SetEscapeHTML(false)
+	e.SetIndent("", "\t")
+	return e.Encode(cve)
 }
