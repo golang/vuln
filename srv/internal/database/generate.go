@@ -6,14 +6,117 @@
 package database
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/mod/semver"
+	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/srv/internal"
+	"golang.org/x/vuln/srv/internal/derrors"
 	"golang.org/x/vuln/srv/internal/report"
+	"gopkg.in/yaml.v2"
 )
 
-func Generate(id string, url string, r report.Report) (osv.Entry, []string) {
+func Generate(yamlDir, jsonDir, dbURL string) (err error) {
+	defer derrors.Wrap(&err, "Generate(%q)", yamlDir)
+	yamlFiles, err := ioutil.ReadDir(yamlDir)
+	if err != nil {
+		return fmt.Errorf("can't read %q: %s", yamlDir, err)
+	}
+
+	jsonVulns := map[string][]osv.Entry{}
+	var entries []osv.Entry
+	for _, f := range yamlFiles {
+		if !strings.HasSuffix(f.Name(), ".yaml") {
+			continue
+		}
+		content, err := ioutil.ReadFile(filepath.Join(yamlDir, f.Name()))
+		if err != nil {
+			return fmt.Errorf("can't read %q: %s", f.Name(), err)
+		}
+		var vuln report.Report
+		if err := yaml.UnmarshalStrict(content, &vuln); err != nil {
+			return fmt.Errorf("unable to unmarshal %q: %s", f.Name(), err)
+		}
+		if lints := vuln.Lint(); len(lints) > 0 {
+			return fmt.Errorf("vuln.Lint: %v", lints)
+		}
+
+		name := strings.TrimSuffix(filepath.Base(f.Name()), filepath.Ext(f.Name()))
+
+		// TODO(rolandshoemaker): once the HTML representation is ready this should be
+		// the link to the HTML page.
+		linkName := fmt.Sprintf("%s%s.yaml", dbURL, name)
+		entry, paths := generateOSVEntry(name, linkName, vuln)
+		for _, path := range paths {
+			jsonVulns[path] = append(jsonVulns[path], entry)
+		}
+		entries = append(entries, entry)
+	}
+
+	index := make(client.DBIndex, len(jsonVulns))
+	for path, vulns := range jsonVulns {
+		outPath := filepath.Join(jsonDir, path)
+		content, err := json.Marshal(vulns)
+		if err != nil {
+			return fmt.Errorf("failed to marshal json: %s", err)
+		}
+		if err := os.MkdirAll(filepath.Dir(outPath), 0700); err != nil {
+			return fmt.Errorf("failed to create directory %q: %s", filepath.Dir(outPath), err)
+		}
+		if err := ioutil.WriteFile(outPath+".json", content, 0644); err != nil {
+			return fmt.Errorf("failed to write %q: %s", outPath+".json", err)
+		}
+		for _, v := range vulns {
+			if v.Modified.After(index[path]) || v.Published.After(index[path]) {
+				index[path] = v.Modified
+			}
+		}
+	}
+
+	indexJSON, err := json.Marshal(index)
+	if err != nil {
+		return fmt.Errorf("failed to marshal index json: %s", err)
+	}
+	if err := ioutil.WriteFile(filepath.Join(jsonDir, "index.json"), indexJSON, 0644); err != nil {
+		return fmt.Errorf("failed to write index: %s", err)
+	}
+
+	// Write a directory containing entries by ID.
+	idDir := filepath.Join(jsonDir, internal.IDDirectory)
+	if err := os.MkdirAll(idDir, 0700); err != nil {
+		return fmt.Errorf("failed to create directory %q: %v", idDir, err)
+	}
+	var idIndex []string
+	for _, e := range entries {
+		outPath := filepath.Join(idDir, e.ID+".json")
+		content, err := json.Marshal(e)
+		if err != nil {
+			return fmt.Errorf("failed to marshal json: %v", err)
+		}
+		if err := ioutil.WriteFile(outPath, content, 0644); err != nil {
+			return fmt.Errorf("failed to write %q: %v", outPath, err)
+		}
+		idIndex = append(idIndex, e.ID)
+	}
+
+	// Write an index.json in the ID directory with a list of all the IDs.
+	idIndexJSON, err := json.Marshal(idIndex)
+	if err != nil {
+		return fmt.Errorf("failed to marshal index json: %s", err)
+	}
+	if err := ioutil.WriteFile(filepath.Join(idDir, "index.json"), idIndexJSON, 0644); err != nil {
+		return fmt.Errorf("failed to write index: %s", err)
+	}
+	return nil
+}
+
+func generateOSVEntry(id string, url string, r report.Report) (osv.Entry, []string) {
 	importPath := r.Module
 	if r.Package != "" {
 		importPath = r.Package
@@ -68,7 +171,6 @@ func Generate(id string, url string, r report.Report) (osv.Entry, []string) {
 	for module := range moduleMap {
 		modules = append(modules, module)
 	}
-
 	return entry, modules
 }
 
