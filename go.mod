@@ -7,7 +7,6 @@ require (
 	github.com/client9/misspell v0.3.4
 	github.com/google/go-cmp v0.5.6
 	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57
-	gopkg.in/yaml.v2 v2.4.0
 	honnef.co/go/tools v0.1.3
 	mvdan.cc/unparam v0.0.0-20211214103731-d0ef000c54e5
 )
@@ -24,7 +23,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 // indirect
@@ -38,5 +36,4 @@ require (
 	google.golang.org/genproto v0.0.0-20211028162531-8db9c33dc351 // indirect
 	google.golang.org/grpc v1.40.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )

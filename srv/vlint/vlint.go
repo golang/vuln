@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"golang.org/x/vuln/internal/derrors"
-	"golang.org/x/vuln/internal/report"
+	"golang.org/x/vuln/srv/internal/derrors"
+	"golang.org/x/vuln/srv/internal/report"
 	"gopkg.in/yaml.v2"
 )
 
