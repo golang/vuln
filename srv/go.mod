@@ -17,7 +17,7 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
 	golang.org/x/tools v0.1.8
-	golang.org/x/vuln v0.0.0-20211215213114-5e054cb3e47e
+	golang.org/x/vuln v0.0.0-00010101000000-000000000000
 	google.golang.org/api v0.63.0
 	google.golang.org/grpc v1.43.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -57,3 +57,5 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
+
+replace golang.org/x/vuln => ../
