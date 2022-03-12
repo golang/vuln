@@ -6,6 +6,8 @@ package vulncheck
 
 import (
 	"context"
+	"fmt"
+	"go/token"
 	"runtime"
 
 	"golang.org/x/tools/go/callgraph"
@@ -21,6 +23,23 @@ import (
 //  - call graph leading to the use of a known vulnerable function
 //    or method
 func Source(ctx context.Context, pkgs []*Package, cfg *Config) (*Result, error) {
+
+	// buildSSA builds a whole program that assumes all packages use the same FileSet.
+	// Check all packages in pkgs are using the same FileSet.
+	// TODO(hyangah): Alternative is to take FileSet out of Package and
+	// let Source take a single FileSet. That will make the enforcement
+	// clearer from the API level.
+	var fset *token.FileSet
+	for _, p := range pkgs {
+		if fset == nil {
+			fset = p.Fset
+		} else {
+			if fset != p.Fset {
+				return nil, fmt.Errorf("[]*Package must have created with the same FileSet")
+			}
+		}
+	}
+
 	modVulns, err := fetchVulnerabilities(ctx, cfg.Client, extractModules(pkgs))
 	if err != nil {
 		return nil, err
@@ -38,7 +57,7 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (*Result, error) 
 		return result, nil
 	}
 
-	prog, ssaPkgs := buildSSA(pkgs)
+	prog, ssaPkgs := buildSSA(pkgs, fset)
 	entries := entryPoints(ssaPkgs)
 	cg := callGraph(prog, entries)
 	vulnCallGraphSlice(entries, modVulns, cg, result)
