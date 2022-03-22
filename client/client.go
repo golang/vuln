@@ -67,6 +67,11 @@ type Client interface {
 	// ListIDs returns the IDs of all entries in the database.
 	ListIDs(context.Context) ([]string, error)
 
+	// LastModifiedTime returns the time that the database was last modified.
+	// It can be used by tools that periodically check for vulnerabilities
+	// to avoid repeating work.
+	LastModifiedTime(context.Context) (time.Time, error)
+
 	unexported() // ensures that adding a method won't break users
 }
 
@@ -122,6 +127,17 @@ func (ls *localSource) ListIDs(context.Context) (_ []string, err error) {
 		return nil, err
 	}
 	return ids, nil
+}
+
+func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error) {
+	defer derrors.Wrap(&err, "LastModifiedTime()")
+
+	// Assume that if anything changes, the index does.
+	info, err := os.Stat(filepath.Join(ls.dir, "index.json"))
+	if err != nil {
+		return time.Time{}, err
+	}
+	return info.ModTime(), nil
 }
 
 func (ls *localSource) Index(context.Context) (_ DBIndex, err error) {
@@ -287,6 +303,30 @@ func (hs *httpSource) ListIDs(ctx context.Context) (_ []string, err error) {
 	return ids, nil
 }
 
+// This is the format for the last-modified header, as described at
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified.
+var lastModifiedFormat = "Mon, 2 Jan 2006 15:04:05 GMT"
+
+func (hs *httpSource) LastModifiedTime(ctx context.Context) (_ time.Time, err error) {
+	defer derrors.Wrap(&err, "LastModifiedTime()")
+
+	// Assume that if anything changes, the index does.
+	url := fmt.Sprintf("%s/index.json", hs.url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
+	if err != nil {
+		return time.Time{}, err
+	}
+	resp, err := hs.c.Do(req)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if resp.StatusCode != 200 {
+		return time.Time{}, fmt.Errorf("got status code %d", resp.StatusCode)
+	}
+	h := resp.Header.Get("Last-Modified")
+	return time.Parse(lastModifiedFormat, h)
+}
+
 func (hs *httpSource) readBody(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -395,4 +435,20 @@ func (c *client) ListIDs(ctx context.Context) (_ []string, err error) {
 	}
 	sort.Strings(ids)
 	return ids, nil
+}
+
+// LastModifiedTime returns the latest modified time of all the sources.
+func (c *client) LastModifiedTime(ctx context.Context) (_ time.Time, err error) {
+	defer derrors.Wrap(&err, "LastModifiedTime()")
+	var lmt time.Time
+	for _, s := range c.sources {
+		t, err := s.LastModifiedTime(ctx)
+		if err != nil {
+			return time.Time{}, err
+		}
+		if t.After(lmt) {
+			lmt = t
+		}
+	}
+	return lmt, nil
 }

@@ -140,6 +140,7 @@ func localDB(t *testing.T) (string, error) {
 func newTestServer() *httptest.Server {
 	dataHandler := func(data string) http.HandlerFunc {
 		return func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Last-Modified", time.Now().In(time.UTC).Format(lastModifiedFormat))
 			io.WriteString(w, data)
 		}
 	}
@@ -355,6 +356,46 @@ func TestListIDs(t *testing.T) {
 			}
 			if !cmp.Equal(got, want) {
 				t.Errorf("got\n%+v\nwant\n%+v", got, want)
+			}
+		})
+	}
+}
+
+func TestLastModifiedTime(t *testing.T) {
+	if runtime.GOOS == "js" {
+		t.Skip("skipping test: no network on js")
+	}
+
+	srv := newTestServer()
+	defer srv.Close()
+
+	// Create a local file database.
+	localDBName, err := localDB(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(localDBName)
+
+	for _, test := range []struct {
+		name   string
+		source string
+	}{
+		{name: "http", source: srv.URL},
+		{name: "file", source: "file://" + localDBName},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			client, err := NewClient([]string{test.source}, Options{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			got, err := client.LastModifiedTime(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Time should be a little before now.
+			diff := time.Since(got)
+			if diff < 0 || diff > 10*time.Second {
+				t.Errorf("got difference from now of %s, wanted something positive under 10s", diff)
 			}
 		})
 	}
