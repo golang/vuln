@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/tools/go/callgraph"
 	"golang.org/x/tools/go/ssa"
+	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/osv"
 )
 
@@ -22,7 +23,8 @@ import (
 //    package that has some known vulnerabilities
 //  - call graph leading to the use of a known vulnerable function
 //    or method
-func Source(ctx context.Context, pkgs []*Package, cfg *Config) (*Result, error) {
+func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err error) {
+	defer derrors.Wrap(&err, "vulncheck.Source")
 
 	// buildSSA builds a whole program that assumes all packages use the same FileSet.
 	// Check all packages in pkgs are using the same FileSet.
