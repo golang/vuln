@@ -176,26 +176,26 @@ func writeText(r *vulncheck.Result, pkgs []*packages.Package, moduleVersions map
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.
 		v0 := vg[0]
-
-		current := moduleVersions[v0.ModPath]
-		fixed := "v" + latestFixed(v0.OSV.Affected)
-		ref := fmt.Sprintf("https://pkg.go.dev/vuln/%s", v0.OSV.ID)
-
-		fns := representativeFuncs(vg, topPackages, callStacks)
-		// Use first as representative.
-		rep := funcName(fns[0])
-		var syms string
-		if len(fns) == 1 {
-			syms = rep
-		} else {
-			syms = fmt.Sprintf("%s and %d others", rep, len(fns)-1)
-		}
 		line("package:", v0.PkgPath)
-		line("your version:", current)
-		line("fixed version:", fixed)
-		line("symbols:", syms)
-		line("reference:", ref)
-
+		line("your version:", moduleVersions[v0.ModPath])
+		line("fixed version:", "v"+latestFixed(v0.OSV.Affected))
+		var summaries []string
+		for _, v := range vg {
+			if css := callStacks[v]; len(css) > 0 {
+				if sum := summarizeCallStack(css[0], topPackages, v.PkgPath); sum != "" {
+					summaries = append(summaries, sum)
+				}
+			}
+		}
+		if len(summaries) > 0 {
+			sort.Strings(summaries)
+			summaries = compact(summaries)
+			line("sample call stacks:", "")
+			for _, s := range summaries {
+				line("", s)
+			}
+		}
+		line("reference:", fmt.Sprintf("https://pkg.go.dev/vuln/%s", v0.OSV.ID))
 		desc := strings.Split(wrap(v0.OSV.Details, 80-labelWidth), "\n")
 		for i, l := range desc {
 			if i == 0 {
@@ -284,29 +284,59 @@ func latestFixed(as []osv.Affected) string {
 	return v
 }
 
-// representativeFuncs collects representative functions for the group
-// of vulns from the the call stacks.
-func representativeFuncs(vg []*vulncheck.Vuln, topPkgs map[string]bool, callStacks map[*vulncheck.Vuln][]vulncheck.CallStack) []*vulncheck.FuncNode {
-	// Collect unique top of call stacks.
-	fns := map[*vulncheck.FuncNode]bool{}
-	for _, v := range vg {
-		for _, cs := range callStacks[v] {
-			// Find the lowest function in the stack that is in
-			// one of the top packages.
-			for i := len(cs) - 1; i >= 0; i-- {
-				pkg := pkgPath(cs[i].Function)
-				if topPkgs[pkg] {
-					fns[cs[i].Function] = true
-					break
-				}
-			}
+// summarizeCallStack returns a short description of the call stack.
+// It uses one of two forms, depending on what the lowest function F in topPkgs
+// calls:
+// - If it calls a function V from the vulnerable package, then summarizeCallStack
+//   returns "F calls V".
+// - If it calls a function G in some other package, which eventually calls V,
+//   it returns "F calls G, which eventually calls V".
+// If it can't find any of these functions, summarizeCallStack returns the empty string.
+func summarizeCallStack(cs vulncheck.CallStack, topPkgs map[string]bool, vulnPkg string) string {
+	// Find the lowest function in the top packages.
+	iTop := lowest(cs, func(e vulncheck.StackEntry) bool {
+		return topPkgs[pkgPath(e.Function)]
+	})
+	if iTop < 0 {
+		return ""
+	}
+	// Find the highest function in the vulnerable package that is below iTop.
+	iVuln := highest(cs[iTop+1:], func(e vulncheck.StackEntry) bool {
+		return pkgPath(e.Function) == vulnPkg
+	})
+	if iVuln < 0 {
+		return ""
+	}
+	iVuln += iTop + 1 // adjust for slice in call to highest.
+	topName := funcName(cs[iTop].Function)
+	vulnName := funcName(cs[iVuln].Function)
+	if iVuln == iTop+1 {
+		return fmt.Sprintf("%s calls %s", topName, vulnName)
+	}
+	return fmt.Sprintf("%s calls %s, which eventually calls %s",
+		topName, funcName(cs[iTop+1].Function), vulnName)
+}
+
+// highest returns the highest (one with the smallest index) entry in the call
+// stack for which f returns true.
+func highest(cs vulncheck.CallStack, f func(e vulncheck.StackEntry) bool) int {
+	for i := 0; i < len(cs); i++ {
+		if f(cs[i]) {
+			return i
 		}
 	}
-	var res []*vulncheck.FuncNode
-	for fn := range fns {
-		res = append(res, fn)
+	return -1
+}
+
+// lowest returns the lowest (one with the largets index) entry in the call
+// stack for which f returns true.
+func lowest(cs vulncheck.CallStack, f func(e vulncheck.StackEntry) bool) int {
+	for i := len(cs) - 1; i >= 0; i-- {
+		if f(cs[i]) {
+			return i
+		}
 	}
-	return res
+	return -1
 }
 
 func pkgPath(fn *vulncheck.FuncNode) string {
@@ -322,6 +352,27 @@ func pkgPath(fn *vulncheck.FuncNode) string {
 
 func funcName(fn *vulncheck.FuncNode) string {
 	return strings.TrimPrefix(fn.String(), "*")
+}
+
+// compact replaces consecutive runs of equal elements with a single copy.
+// This is like the uniq command found on Unix.
+// compact modifies the contents of the slice s; it does not create a new slice.
+//
+// Modified (generics removed) from exp/slices/slices.go.
+func compact(s []string) []string {
+	if len(s) == 0 {
+		return s
+	}
+	i := 1
+	last := s[0]
+	for _, v := range s[1:] {
+		if v != last {
+			s[i] = v
+			i++
+			last = v
+		}
+	}
+	return s[:i]
 }
 
 func die(format string, args ...interface{}) {
