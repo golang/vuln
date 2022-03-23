@@ -28,12 +28,12 @@ import (
 	"sort"
 	"strings"
 
-	"golang.org/x/exp/vulncheck"
 	"golang.org/x/mod/semver"
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/vulncheck"
 )
 
 var (

@@ -10,8 +10,8 @@ package main
 import (
 	"testing"
 
-	"golang.org/x/exp/vulncheck"
 	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/vulncheck"
 )
 
 func TestLatestFixed(t *testing.T) {
