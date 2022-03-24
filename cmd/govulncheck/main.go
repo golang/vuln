@@ -40,6 +40,7 @@ var (
 	jsonFlag    = flag.Bool("json", false, "")
 	verboseFlag = flag.Bool("v", false, "")
 	testsFlag   = flag.Bool("tests", false, "")
+	htmlFlag    = flag.Bool("html", false, "")
 )
 
 const usage = `govulncheck: identify known vulnerabilities by call graph traversal.
@@ -52,11 +53,13 @@ Usage:
 
 Flags:
 
-	-json  	   Print vulnerability findings in JSON format.
+	-json	Print vulnerability findings in JSON format.
 
-	-tags	   Comma-separated list of build tags.
+	-html	Generate HTML with the vulnerability findings.
 
-	-tests     Boolean flag indicating if test files should be analyzed too.
+	-tags	Comma-separated list of build tags.
+
+	-tests	Boolean flag indicating if test files should be analyzed too.
 
 govulncheck can be used with either one or more package patterns (i.e. golang.org/x/crypto/...
 or ./...) or with a single path to a Go binary. In the latter case module and symbol
@@ -135,7 +138,20 @@ func main() {
 	if *jsonFlag {
 		writeJSON(r)
 	} else {
-		writeText(r, pkgs, moduleVersions)
+		callStacks := vulncheck.CallStacks(r)
+		// Create set of top-level packages, used to find representative symbols
+		topPackages := map[string]bool{}
+		for _, p := range pkgs {
+			topPackages[p.PkgPath] = true
+		}
+		vulnGroups := groupByIDAndPackage(r.Vulns)
+		if *htmlFlag {
+			if err := html(os.Stdout, r, callStacks, moduleVersions, topPackages, vulnGroups); err != nil {
+				die("writing HTML: %v", err)
+			}
+		} else {
+			writeText(r, callStacks, moduleVersions, topPackages, vulnGroups)
+		}
 	}
 	exitCode := 0
 	// Following go vet, fail with 3 if there are findings (in this case, vulns).
@@ -154,24 +170,11 @@ func writeJSON(r *vulncheck.Result) {
 	fmt.Println()
 }
 
-func writeText(r *vulncheck.Result, pkgs []*packages.Package, moduleVersions map[string]string) {
-	if len(r.Vulns) == 0 {
-		return
-	}
-	callStacks := vulncheck.CallStacks(r)
-
+func writeText(r *vulncheck.Result, callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, moduleVersions map[string]string, topPackages map[string]bool, vulnGroups [][]*vulncheck.Vuln) {
 	const labelWidth = 16
 	line := func(label, text string) {
 		fmt.Printf("%-*s%s\n", labelWidth, label, text)
 	}
-
-	// Create set of top-level packages, used to find
-	// representative symbols
-	topPackages := map[string]bool{}
-	for _, p := range pkgs {
-		topPackages[p.PkgPath] = true
-	}
-	vulnGroups := groupByIDAndPackage(r.Vulns)
 	for _, vg := range vulnGroups {
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.
