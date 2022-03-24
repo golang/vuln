@@ -47,9 +47,9 @@ const usage = `govulncheck: identify known vulnerabilities by call graph travers
 
 Usage:
 
-	govulncheck [-json] [-all] [-tests] [-tags] {package pattern...}
+	govulncheck [flags] {package pattern...}
 
-	govulncheck {binary path}
+	govulncheck [flags] {binary path}
 
 Flags:
 
