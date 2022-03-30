@@ -8,12 +8,14 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/osv"
 )
@@ -77,5 +79,87 @@ func TestCache(t *testing.T) {
 	}
 	if !reflect.DeepEqual(entries, expectedEntries) {
 		t.Errorf("ReadEntries returned unexpected entries, got:\n%v\nwant:\n%v", entries, expectedEntries)
+	}
+}
+
+func TestConcurrency(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	cache := &fsCache{rootDir: tmpDir}
+	dbName := "vulndb.golang.org"
+
+	g := new(errgroup.Group)
+	for i := 0; i < 1000; i++ {
+		i := i
+		g.Go(func() error {
+			id := i % 5
+			p := fmt.Sprintf("package%d", id)
+
+			entries, err := cache.ReadEntries(dbName, p)
+			if err != nil {
+				return err
+			}
+
+			err = cache.WriteEntries(dbName, p, append(entries, &osv.Entry{ID: fmt.Sprint(id)}))
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		t.Errorf("error in parallel cache entries read/write: %v", err)
+	}
+
+	// sanity checking
+	for i := 0; i < 5; i++ {
+		id := fmt.Sprint(i)
+		p := fmt.Sprintf("package%s", id)
+
+		es, err := cache.ReadEntries(dbName, p)
+		if err != nil {
+			t.Fatalf("failed to read entries: %v", err)
+		}
+		for _, e := range es {
+			if e.ID != id {
+				t.Errorf("want %s ID for vuln entry; got %s", id, e.ID)
+			}
+		}
+	}
+
+	// do similar for cache index
+	start := time.Now()
+	for i := 0; i < 1000; i++ {
+		i := i
+		g.Go(func() error {
+			id := i % 5
+			p := fmt.Sprintf("package%v", id)
+
+			idx, _, err := cache.ReadIndex(dbName)
+			if err != nil {
+				return err
+			}
+
+			if idx == nil {
+				idx = client.DBIndex{}
+			}
+
+			// sanity checking
+			if rt, ok := idx[p]; ok && !start.Before(rt) {
+				return fmt.Errorf("unexpected past time in index: start %v not before %v", start, rt)
+			}
+
+			now := time.Now()
+			idx[p] = now
+			if err := cache.WriteIndex(dbName, idx, now); err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		t.Errorf("error in parallel cache index read/write: %v", err)
 	}
 }
