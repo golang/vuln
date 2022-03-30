@@ -20,6 +20,9 @@ import (
 
 // TODO: we build binary programatically, so what if the underlying tool chain changes?
 func TestBinary(t *testing.T) {
+	// TODO(golang/go#52047): fix
+	t.Skip("fails on android and plan9")
+
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name: "golang.org/entry",
