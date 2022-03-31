@@ -20,8 +20,10 @@ import (
 
 // TODO: we build binary programatically, so what if the underlying tool chain changes?
 func TestBinary(t *testing.T) {
-	// TODO(golang/go#52047): fix
-	t.Skip("fails on android and plan9")
+	// TODO(#52160): investigate why Binary does not process plan9 binaries
+	if !hasGoBuild() || runtime.GOOS == "plan9" {
+		t.Skip("fails on android and plan9")
+	}
 
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
@@ -133,4 +135,19 @@ func TestBinary(t *testing.T) {
 	if len(res.Vulns) != 1 {
 		t.Errorf("expected 1 vuln symbols got %d", len(res.Vulns))
 	}
+}
+
+// hasGoBuild reports whether the current system can build programs with ``go build''
+// and then run them with os.StartProcess or exec.Command.
+//
+// Duplicated from std/internal/testenv
+func hasGoBuild() bool {
+	if os.Getenv("GO_GCFLAGS") != "" {
+		return false
+	}
+	switch runtime.GOOS {
+	case "android", "js", "ios":
+		return false
+	}
+	return true
 }
