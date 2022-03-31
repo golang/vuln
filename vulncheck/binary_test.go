@@ -89,7 +89,7 @@ func TestBinary(t *testing.T) {
 	})
 	defer e.Cleanup()
 
-	cmd := exec.Command("go", "build")
+	cmd := exec.Command("go", "build", "-o", "entry")
 	cmd.Dir = e.Config.Dir
 	cmd.Env = e.Config.Env
 	out, err := cmd.CombinedOutput()
@@ -97,13 +97,7 @@ func TestBinary(t *testing.T) {
 		t.Fatalf("failed to build the binary %v %v", err, string(out))
 	}
 
-	binExt := ""
-	// TODO: is there a better way to do this?
-	if runtime.GOOS == "windows" {
-		binExt = ".exe"
-	}
-
-	bin, err := os.Open(filepath.Join(e.Config.Dir, "entry"+binExt))
+	bin, err := os.Open(filepath.Join(e.Config.Dir, "entry"))
 	if err != nil {
 		t.Fatalf("failed to access the binary %v", err)
 	}
