@@ -146,8 +146,8 @@ func TestConcurrency(t *testing.T) {
 			}
 
 			// sanity checking
-			if rt, ok := idx[p]; ok && !start.Before(rt) {
-				return fmt.Errorf("unexpected past time in index: start %v not before %v", start, rt)
+			if rt, ok := idx[p]; ok && rt.Before(start) {
+				return fmt.Errorf("unexpected past time in index: %v before start %v", rt, start)
 			}
 
 			now := time.Now()
