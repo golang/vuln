@@ -82,7 +82,7 @@ func main() {
 		die("%s", usage)
 	}
 
-	dbs := []string{"https://storage.googleapis.com/go-vulndb"}
+	dbs := []string{"https://vuln.go.dev"}
 	if GOVULNDB := os.Getenv("GOVULNDB"); GOVULNDB != "" {
 		dbs = strings.Split(GOVULNDB, ",")
 	}

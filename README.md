@@ -16,6 +16,5 @@ considered stable.
 Unless otherwise noted, the Go source files are distributed under
 the BSD-style license found in the LICENSE file.
 
-Database entries available at https://storage.googleapis.com/go-vulndb/ are
-distributed under the terms of the
-[CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
+Database entries available at https://vuln.go.dev are distributed under the
+terms of the [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
