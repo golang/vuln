@@ -42,9 +42,6 @@ verify_header() {
   fi
 }
 
-# Support ** in globs for finding files throughout the tree.
-shopt -s globstar
-
 # check_headers checks that all source files that have been staged in this
 # commit, and all other non-third-party files in the repo, have a license
 # header.
@@ -53,11 +50,14 @@ check_headers() {
     info "Checking listed files for license header"
     verify_header $*
   else
-    # Check code files that have been modified or added.
     info "Checking go and sh files for license header"
-    verify_header $(find **/*.go) $(find **/*.sh)
+    # Ignore files in testdata directories.
+    verify_header $(find . -name testdata -prune \
+      -o -name '*.go' -print \
+      -o -name '*.sh' -print)
   fi
 }
+
 
 # check_unparam runs unparam on source files.
 check_unparam() {
