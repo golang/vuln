@@ -15,6 +15,9 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 var (
@@ -35,13 +38,23 @@ func dotest(t *testing.T) {
 	if runtime.GOOS != "linux" && testing.Short() {
 		t.Skipf("skipping in short mode on non-Linux system %s", runtime.GOARCH)
 	}
+
 	var err error
+	var exeSuffix string
+	if runtime.GOOS == "windows" {
+		exeSuffix = ".exe"
+	}
+	goCommandPath := filepath.Join(runtime.GOROOT(), "bin", "go"+exeSuffix)
+	if _, err := os.Stat(goCommandPath); err != nil {
+		t.Fatal(err)
+	}
+
 	pclineTempDir, err = os.MkdirTemp("", "pclinetest")
 	if err != nil {
 		t.Fatal(err)
 	}
 	pclinetestBinary = filepath.Join(pclineTempDir, "pclinetest")
-	cmd := exec.Command("go", "build", "-o", pclinetestBinary)
+	cmd := exec.Command(goCommandPath, "build", "-o", pclinetestBinary)
 	cmd.Dir = "testdata"
 	cmd.Env = append(os.Environ(), "GOOS=linux")
 	cmd.Stdout = os.Stdout
@@ -224,7 +237,6 @@ func TestPCLine(t *testing.T) {
 			break
 		}
 		wantLine += int(textdat[off])
-		t.Logf("off is %d %#x (max %d)", off, textdat[off], sym.End-pc)
 		file, line, fn := tab.PCToLine(pc)
 		if fn == nil {
 			t.Errorf("failed to get line of PC %#x", pc)
@@ -268,6 +280,77 @@ func TestPCLine(t *testing.T) {
 		}
 		off = pc + 1 - text.Addr
 	}
+}
+
+func TestInlineTree(t *testing.T) {
+	dotest(t)
+	defer endtest()
+
+	f, err := elf.Open(pclinetestBinary)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	pclndat, err := f.Section(".gopclntab").Data()
+	if err != nil {
+		t.Fatalf("reading %s gopclntab: %v", pclinetestBinary, err)
+	}
+	goFunc := lookupSymbol(f, "go.func.*")
+	if goFunc == nil {
+		t.Fatal("couldn't find go.func.*")
+	}
+	prog := progContaining(f, goFunc.Value)
+	if prog == nil {
+		t.Fatal("couldn't find go.func.* Prog")
+	}
+	pcln := NewLineTable(pclndat, f.Section(".text").Addr)
+	s := f.Section(".gosymtab")
+	if s == nil {
+		t.Fatal("no .gosymtab section")
+	}
+	d, err := s.Data()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tab, err := NewTable(d, pcln)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fun := tab.LookupFunc("main.main")
+	got, err := pcln.InlineTree(fun, goFunc.Value, prog.Vaddr, prog.ReaderAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []InlinedCall{
+		{Parent: -1, FuncID: 0, File: 1, Name: "main.inline1"},
+		{Parent: 0, FuncID: 0, File: 1, Name: "main.inline2"},
+	}
+	if !cmp.Equal(got, want, cmpopts.IgnoreFields(InlinedCall{}, "Line", "ParentPC")) {
+		t.Errorf("got\n%+v\nwant\n%+v", got, want)
+	}
+}
+
+func progContaining(f *elf.File, addr uint64) *elf.Prog {
+	for _, p := range f.Progs {
+		if addr >= p.Vaddr && addr < p.Vaddr+p.Filesz {
+			return p
+		}
+	}
+	return nil
+}
+
+func lookupSymbol(f *elf.File, name string) *elf.Symbol {
+	syms, err := f.Symbols()
+	if err != nil {
+		return nil
+	}
+	for _, s := range syms {
+		if s.Name == name {
+			return &s
+		}
+	}
+	return nil
 }
 
 // read115Executable returns a hello world executable compiled by Go 1.15.

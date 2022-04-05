@@ -122,12 +122,14 @@ func (s *Sym) BaseName() string {
 type Func struct {
 	Entry uint64
 	*Sym
-	End       uint64
-	Params    []*Sym // nil for Go 1.3 and later binaries
-	Locals    []*Sym // nil for Go 1.3 and later binaries
-	FrameSize int
-	LineTable *LineTable
-	Obj       *Obj
+	End              uint64
+	Params           []*Sym // nil for Go 1.3 and later binaries
+	Locals           []*Sym // nil for Go 1.3 and later binaries
+	FrameSize        int
+	LineTable        *LineTable
+	Obj              *Obj
+	inlineTreeOffset uint32 // offset from go.func.* symbol
+	inlineTreeCount  int    // number of entries in inline tree
 }
 
 // An Obj represents a collection of functions in a symbol table.
@@ -515,6 +517,7 @@ func NewTable(symtab []byte, pcln *LineTable) (*Table, error) {
 
 	if t.go12line != nil && nf == 0 {
 		t.Funcs = t.go12line.go12Funcs()
+
 	}
 	if obj != nil {
 		obj.Funcs = t.Funcs[lastf:]
