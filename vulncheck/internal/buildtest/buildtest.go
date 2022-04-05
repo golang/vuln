@@ -7,23 +7,45 @@
 package buildtest
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
-// GoBuild runs "go build" on dir using the additional environment
-// variables in env. Each element of env should be of the form
-// "VAR=VALUE".
+var unsupportedGoosGoarch = map[string]bool{
+	"darwin/386": true,
+}
+
+// GoBuild runs "go build" on dir using the additional environment variables in
+// envVarVals, which should be an alternating list of variables and values.
 // It returns the path to the resulting binary, and a function
 // to call when finished with the binary.
-func GoBuild(t *testing.T, dir string, env ...string) (binaryPath string, cleanup func()) {
+func GoBuild(t *testing.T, dir string, envVarVals ...string) (binaryPath string, cleanup func()) {
 	switch runtime.GOOS {
 	case "android", "js", "ios":
 		t.Skipf("skipping on OS without 'go build' %s", runtime.GOOS)
 	}
+
+	if len(envVarVals)%2 != 0 {
+		t.Fatal("last args should be alternating variables and values")
+	}
+	var env []string
+	if len(envVarVals) > 0 {
+		env = os.Environ()
+		for i := 0; i < len(envVarVals); i += 2 {
+			env = append(env, fmt.Sprintf("%s=%s", envVarVals[i], envVarVals[i+1]))
+		}
+	}
+
+	gg := lookupEnv("GOOS", env, runtime.GOOS) + "/" + lookupEnv("GOARCH", env, runtime.GOARCH)
+	if unsupportedGoosGoarch[gg] {
+		t.Skipf("skipping unsupported GOOS/GOARCH pair %s", gg)
+	}
+
 	tmpDir, err := os.MkdirTemp("", "buildtest")
 	if err != nil {
 		t.Fatal(err)
@@ -40,13 +62,27 @@ func GoBuild(t *testing.T, dir string, env ...string) (binaryPath string, cleanu
 	}
 	cmd := exec.Command(goCommandPath, "build", "-o", binaryPath)
 	cmd.Dir = dir
-	if len(env) > 0 {
-		cmd.Env = append(os.Environ(), env...)
-	}
+	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
 	return binaryPath, func() { os.RemoveAll(tmpDir) }
+}
+
+// lookEnv looks for name in env, a list of "VAR=VALUE" strings. It returns
+// the value if name is found, and defaultValue if it is not.
+func lookupEnv(name string, env []string, defaultValue string) string {
+	for _, vv := range env {
+		i := strings.IndexByte(vv, '=')
+		if i < 0 {
+			// malformed env entry; just ignore it
+			continue
+		}
+		if name == vv[:i] {
+			return vv[i+1:]
+		}
+	}
+	return defaultValue
 }

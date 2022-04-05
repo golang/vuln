@@ -8,6 +8,6 @@ func f() {
 	g()
 }
 
-func g() int {
-	return 1
+func g() {
+	println(1)
 }

@@ -31,6 +31,8 @@ type exe interface {
 	DataStart() uint64
 
 	PCLNTab() ([]byte, uint64)
+
+	SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error)
 }
 
 // openExe returns reader r as an exe.
@@ -108,6 +110,40 @@ func (x *elfExe) DataStart() uint64 {
 		}
 	}
 	return 0
+}
+
+func (x *elfExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
+	sym := x.lookupSymbol(name)
+	if sym == nil {
+		return 0, 0, nil, fmt.Errorf("no symbol %q", name)
+	}
+	prog := x.progContaining(sym.Value)
+	if prog == nil {
+		return 0, 0, nil, fmt.Errorf("no Prog containing value %d for %q", sym.Value, name)
+	}
+	return sym.Value, prog.Vaddr, prog.ReaderAt, nil
+}
+
+func (x *elfExe) lookupSymbol(name string) *elf.Symbol {
+	syms, err := x.f.Symbols()
+	if err != nil {
+		return nil
+	}
+	for _, s := range syms {
+		if s.Name == name {
+			return &s
+		}
+	}
+	return nil
+}
+
+func (x *elfExe) progContaining(addr uint64) *elf.Prog {
+	for _, p := range x.f.Progs {
+		if addr >= p.Vaddr && addr < p.Vaddr+p.Filesz {
+			return p
+		}
+	}
+	return nil
 }
 
 const go12magic = 0xfffffffb
@@ -223,6 +259,25 @@ func (x *peExe) DataStart() uint64 {
 	return 0
 }
 
+func (x *peExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
+	sym := x.lookupSymbol(name)
+	if sym == nil {
+		return 0, 0, nil, fmt.Errorf("no symbol %q", name)
+	}
+	sect := x.f.Sections[sym.SectionNumber-1]
+	// In PE, the symbol's value is the offset from the section start.
+	return uint64(sym.Value), 0, sect.ReaderAt, nil
+}
+
+func (x *peExe) lookupSymbol(name string) *pe.Symbol {
+	for _, s := range x.f.Symbols {
+		if s.Name == name {
+			return s
+		}
+	}
+	return nil
+}
+
 func (x *peExe) PCLNTab() ([]byte, uint64) {
 	var textOffset uint64
 	for _, section := range x.f.Sections {
@@ -252,7 +307,6 @@ func (x *peExe) PCLNTab() ([]byte, uint64) {
 	if _, err := x.r.ReadAt(pclntab, offset); err != nil {
 		return nil, 0
 	}
-
 	return pclntab, textOffset
 }
 
@@ -302,6 +356,37 @@ func (x *machoExe) DataStart() uint64 {
 		}
 	}
 	return 0
+}
+
+func (x *machoExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
+	sym := x.lookupSymbol(name)
+	if sym == nil {
+		return 0, 0, nil, fmt.Errorf("no symbol %q", name)
+	}
+	seg := x.segmentContaining(sym.Value)
+	if seg == nil {
+		return 0, 0, nil, fmt.Errorf("no Segment containing value %d for %q", sym.Value, name)
+	}
+	return sym.Value, seg.Addr, seg.ReaderAt, nil
+}
+
+func (x *machoExe) lookupSymbol(name string) *macho.Symbol {
+	for _, s := range x.f.Symtab.Syms {
+		if s.Name == name {
+			return &s
+		}
+	}
+	return nil
+}
+
+func (x *machoExe) segmentContaining(addr uint64) *macho.Segment {
+	for _, load := range x.f.Loads {
+		seg, ok := load.(*macho.Segment)
+		if ok && seg.Addr <= addr && addr <= seg.Addr+seg.Filesz-1 && seg.Name != "__PAGEZERO" {
+			return seg
+		}
+	}
+	return nil
 }
 
 func (x *machoExe) PCLNTab() ([]byte, uint64) {

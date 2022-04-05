@@ -42,10 +42,8 @@ func debugModulesToPackagesModules(debugModules []*debug.Module) []*packages.Mod
 	return packagesModules
 }
 
-// ExtractPackagesAndSymbols extracts the symbols, packages, and their associated module versions
-// from a Go binary. Stripped binaries are not supported.
-//
-// TODO(#51412): detect inlined symbols too
+// ExtractPackagesAndSymbols extracts the symbols, packages, and their
+// associated module versions from a Go binary.
 func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string][]string, error) {
 	bi, err := buildinfo.Read(bin)
 	if err != nil {
@@ -77,25 +75,46 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 		if f.Func == nil {
 			continue
 		}
-		symName := f.Func.BaseName()
-		if r := f.Func.ReceiverName(); r != "" {
-			if strings.HasPrefix(r, "(*") {
-				r = strings.Trim(r, "(*)")
-			}
-			symName = fmt.Sprintf("%s.%s", r, symName)
-		}
-
-		pkgName := f.Func.PackageName()
-		if pkgName == "" {
-			continue
-		}
-		pkgName, err := url.PathUnescape(pkgName)
+		pkgName, symName, err := parseName(f.Func.Sym)
 		if err != nil {
 			return nil, nil, err
 		}
-
 		packageSymbols[pkgName] = append(packageSymbols[pkgName], symName)
+		value, base, r, err := x.SymbolInfo("go.func.*")
+		if err != nil {
+			return nil, nil, fmt.Errorf("reading go.func.*: %v", err)
+		}
+		it, err := lineTab.InlineTree(&f, value, base, r)
+		if err != nil {
+			return nil, nil, fmt.Errorf("InlineTree: %v", err)
+		}
+		for _, ic := range it {
+			pkgName, symName, err := parseName(&gosym.Sym{Name: ic.Name})
+			if err != nil {
+				return nil, nil, err
+			}
+			packageSymbols[pkgName] = append(packageSymbols[pkgName], symName)
+		}
 	}
 
 	return debugModulesToPackagesModules(bi.Deps), packageSymbols, nil
+}
+
+func parseName(s *gosym.Sym) (pkg, sym string, err error) {
+	symName := s.BaseName()
+	if r := s.ReceiverName(); r != "" {
+		if strings.HasPrefix(r, "(*") {
+			r = strings.Trim(r, "(*)")
+		}
+		symName = fmt.Sprintf("%s.%s", r, symName)
+	}
+
+	pkgName := s.PackageName()
+	if pkgName != "" {
+		pkgName, err = url.PathUnescape(pkgName)
+		if err != nil {
+			return "", "", err
+		}
+	}
+	return pkgName, symName, nil
 }
