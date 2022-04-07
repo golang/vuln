@@ -579,7 +579,7 @@ func (f funcData) funcdataOffset(i uint8) uint32 {
 	} else {
 		off = f.fieldOffset(10) + // skip fixed part of _func
 			f.npcdata()*4
-		off += uint32(i) * 8
+		off += uint32(i) * f.t.ptrsize
 	}
 	return f.t.binary.Uint32(f.data[off:])
 }
