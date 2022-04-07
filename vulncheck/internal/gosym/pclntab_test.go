@@ -10,22 +10,16 @@ import (
 	"debug/elf"
 	"io"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"golang.org/x/vuln/vulncheck/internal/buildtest"
 )
 
-var (
-	pclineTempDir    string
-	pclinetestBinary string
-)
-
-func dotest(t *testing.T) {
+func dotest(t *testing.T) (binaryName string, cleanup func()) {
 	switch runtime.GOOS {
 	case "android", "js", "ios":
 		t.Skipf("skipping on OS without 'go build' %s", runtime.GOOS)
@@ -39,37 +33,7 @@ func dotest(t *testing.T) {
 		t.Skipf("skipping in short mode on non-Linux system %s", runtime.GOARCH)
 	}
 
-	var err error
-	var exeSuffix string
-	if runtime.GOOS == "windows" {
-		exeSuffix = ".exe"
-	}
-	goCommandPath := filepath.Join(runtime.GOROOT(), "bin", "go"+exeSuffix)
-	if _, err := os.Stat(goCommandPath); err != nil {
-		t.Fatal(err)
-	}
-
-	pclineTempDir, err = os.MkdirTemp("", "pclinetest")
-	if err != nil {
-		t.Fatal(err)
-	}
-	pclinetestBinary = filepath.Join(pclineTempDir, "pclinetest")
-	cmd := exec.Command(goCommandPath, "build", "-o", pclinetestBinary)
-	cmd.Dir = "testdata"
-	cmd.Env = append(os.Environ(), "GOOS=linux")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func endtest() {
-	if pclineTempDir != "" {
-		os.RemoveAll(pclineTempDir)
-		pclineTempDir = ""
-		pclinetestBinary = ""
-	}
+	return buildtest.GoBuild(t, "testdata", "GOOS=linux")
 }
 
 // skipIfNotELF skips the test if we are not running on an ELF system.
@@ -217,8 +181,8 @@ func TestLineAline(t *testing.T) {
 }
 
 func TestPCLine(t *testing.T) {
-	dotest(t)
-	defer endtest()
+	pclinetestBinary, cleanup := dotest(t)
+	defer cleanup()
 
 	f, tab := crack(pclinetestBinary, t)
 	defer f.Close()
@@ -283,8 +247,8 @@ func TestPCLine(t *testing.T) {
 }
 
 func TestInlineTree(t *testing.T) {
-	dotest(t)
-	defer endtest()
+	pclinetestBinary, cleanup := dotest(t)
+	defer cleanup()
 
 	f, err := elf.Open(pclinetestBinary)
 	if err != nil {
