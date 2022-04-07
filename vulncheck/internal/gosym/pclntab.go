@@ -543,7 +543,7 @@ func (f funcData) pcfile() uint32      { return f.field(5) }
 func (f funcData) pcln() uint32        { return f.field(6) }
 func (f funcData) npcdata() uint32     { return f.field(7) }
 func (f funcData) cuOffset() uint32    { return f.field(8) }
-func (f funcData) nfuncdata() uint32   { return f.field(9) }
+func (f funcData) nfuncdata() uint32   { return uint32(f.data[f.fieldOffset(9)+3]) }
 
 func (f funcData) fieldOffset(n uint32) uint32 {
 	// In Go 1.18, the first field of _func changed
@@ -576,13 +576,12 @@ func (f funcData) funcdataOffset(i uint8) uint32 {
 		off = f.fieldOffset(10) + // skip fixed part of _func
 			f.npcdata()*4 + // skip pcdata
 			uint32(i)*4 // index of i'th FUNCDATA
-		return f.t.binary.Uint32(f.data[off:])
 	} else {
 		off = f.fieldOffset(10) + // skip fixed part of _func
 			f.npcdata()*4
 		off += uint32(i) * 8
-		return f.t.binary.Uint32(f.data[off:])
 	}
+	return f.t.binary.Uint32(f.data[off:])
 }
 
 func (f funcData) pcdataOffset(i uint8) uint32 {
@@ -806,4 +805,4 @@ func (t *LineTable) go12MapFiles(m map[string]*Obj, obj *Obj) {
 
 // disableRecover causes this package not to swallow panics.
 // This is useful when making changes.
-const disableRecover = false
+const disableRecover = true

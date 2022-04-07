@@ -14,7 +14,6 @@ package binscan
 
 import (
 	"debug/buildinfo"
-	"debug/gosym"
 	"errors"
 	"fmt"
 	"io"
@@ -23,6 +22,7 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/packages"
+	"golang.org/x/vuln/vulncheck/internal/gosym"
 )
 
 func debugModulesToPackagesModules(debugModules []*debug.Module) []*packages.Module {
