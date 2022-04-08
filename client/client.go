@@ -377,7 +377,15 @@ func NewClient(sources []string, opts Options) (_ Client, err error) {
 			}
 			c.sources = append(c.sources, hs)
 		case strings.HasPrefix(uri, "file://"):
-			c.sources = append(c.sources, &localSource{dir: strings.TrimPrefix(uri, "file://")})
+			dir := strings.TrimPrefix(uri, "file://")
+			fi, err := os.Stat(dir)
+			if err != nil {
+				return nil, err
+			}
+			if !fi.IsDir() {
+				return nil, fmt.Errorf("%s is not a directory", dir)
+			}
+			c.sources = append(c.sources, &localSource{dir: dir})
 		default:
 			return nil, fmt.Errorf("source %q has unsupported scheme", uri)
 		}
