@@ -8,7 +8,11 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -21,14 +25,36 @@ import (
 var update = flag.Bool("update", false, "update test files with results")
 
 func TestCommand(t *testing.T) {
-	binary, cleanup := buildtest.GoBuild(t, ".")
-	defer cleanup()
-
+	testDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
 	ts, err := cmdtest.Read("testdata")
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts.Commands["govulncheck"] = cmdtest.Program(binary)
+	// Define a command that lets us cd into a module directory.
+	// The modules for these tests live under testdata/modules.
+	ts.Commands["cdmodule"] = func(args []string, inputFile string) ([]byte, error) {
+		if len(args) != 1 {
+			return nil, errors.New("need exactly 1 argument")
+		}
+		return nil, os.Chdir(filepath.Join(testDir, "testdata", "modules", args[0]))
+	}
+	// Define a command that runs govulncheck with our local DB. We can't use
+	// cmdtest.Program for this because it doesn't let us set the environment,
+	// and that is the only way to tell govulncheck about an alternative vuln
+	// database.
+	binary, cleanup := buildtest.GoBuild(t, ".") // build govulncheck
+	defer cleanup()
+	ts.Commands["govulncheck"] = func(args []string, inputFile string) ([]byte, error) {
+		cmd := exec.Command(binary, args...)
+		if inputFile != "" {
+			return nil, errors.New("input redirection makes no sense")
+		}
+		cmd.Env = append(os.Environ(), "GOVULNDB=file://"+testDir+"/testdata/vulndb")
+		return cmd.CombinedOutput()
+	}
 	ts.Run(t, *update)
 }
 
