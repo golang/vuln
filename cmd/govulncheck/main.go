@@ -98,6 +98,7 @@ func main() {
 		r              *vulncheck.Result
 		pkgs           []*packages.Package
 		moduleVersions map[string]string
+		vulns          []*vulncheck.Vuln
 	)
 	if len(patterns) == 1 && isFile(patterns[0]) {
 		f, err := os.Open(patterns[0])
@@ -109,6 +110,7 @@ func main() {
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
+		vulns = r.Vulns
 	} else {
 		cfg := &packages.Config{
 			Mode:       packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps | packages.NeedModule,
@@ -134,6 +136,12 @@ func main() {
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
+		// Skip vulns that are in the import graph but have no calls to them.
+		for _, v := range r.Vulns {
+			if v.CallSink != 0 {
+				vulns = append(vulns, v)
+			}
+		}
 	}
 	if *jsonFlag {
 		writeJSON(r)
@@ -144,7 +152,7 @@ func main() {
 		for _, p := range pkgs {
 			topPackages[p.PkgPath] = true
 		}
-		vulnGroups := groupByIDAndPackage(r.Vulns)
+		vulnGroups := groupByIDAndPackage(vulns)
 		if *htmlFlag {
 			if err := html(os.Stdout, r, callStacks, moduleVersions, topPackages, vulnGroups); err != nil {
 				die("writing HTML: %v", err)
@@ -155,7 +163,7 @@ func main() {
 	}
 	exitCode := 0
 	// Following go vet, fail with 3 if there are findings (in this case, vulns).
-	if len(r.Vulns) > 0 {
+	if len(vulns) > 0 {
 		exitCode = 3
 	}
 	os.Exit(exitCode)
@@ -214,11 +222,6 @@ func writeText(r *vulncheck.Result, callStacks map[*vulncheck.Vuln][]vulncheck.C
 func groupByIDAndPackage(vs []*vulncheck.Vuln) [][]*vulncheck.Vuln {
 	groups := map[[2]string][]*vulncheck.Vuln{}
 	for _, v := range vs {
-		if v.CallSink == 0 {
-			// Skip this vuln because although it appears in the
-			// import graph, there are no calls to it.
-			continue
-		}
 		key := [2]string{v.OSV.ID, v.PkgPath}
 		groups[key] = append(groups[key], v)
 	}
