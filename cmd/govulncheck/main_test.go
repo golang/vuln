@@ -8,12 +8,29 @@
 package main
 
 import (
+	"flag"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmdtest"
+	"golang.org/x/vuln/internal/buildtest"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
+
+var update = flag.Bool("update", false, "update test files with results")
+
+func TestCommand(t *testing.T) {
+	binary, cleanup := buildtest.GoBuild(t, ".")
+	defer cleanup()
+
+	ts, err := cmdtest.Read("testdata")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts.Commands["govulncheck"] = cmdtest.Program(binary)
+	ts.Run(t, *update)
+}
 
 func TestLatestFixed(t *testing.T) {
 	for _, test := range []struct {

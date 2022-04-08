@@ -65,7 +65,7 @@ govulncheck can be used with either one or more package patterns (i.e. golang.or
 or ./...) or with a single path to a Go binary. In the latter case module and symbol
 information will be extracted from the binary in order to detect vulnerable symbols.
 
-The environment variable GOVULNDB can be set to a comma-separate list of vulnerability
+The environment variable GOVULNDB can be set to a comma-separated list of vulnerability
 database URLs, with http://, https://, or file:// protocols. Entries from multiple
 databases are merged.
 `

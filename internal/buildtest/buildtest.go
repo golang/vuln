@@ -18,6 +18,7 @@ import (
 
 var unsupportedGoosGoarch = map[string]bool{
 	"darwin/386": true,
+	"darwin/arm": true,
 }
 
 // GoBuild runs "go build" on dir using the additional environment variables in
@@ -50,7 +51,11 @@ func GoBuild(t *testing.T, dir string, envVarVals ...string) (binaryPath string,
 	if err != nil {
 		t.Fatal(err)
 	}
-	binaryPath = filepath.Join(tmpDir, filepath.Base(dir))
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	binaryPath = filepath.Join(tmpDir, filepath.Base(abs))
 	var exeSuffix string
 	if runtime.GOOS == "windows" {
 		exeSuffix = ".exe"
@@ -60,7 +65,7 @@ func GoBuild(t *testing.T, dir string, envVarVals ...string) (binaryPath string,
 	if _, err := os.Stat(goCommandPath); err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(goCommandPath, "build", "-o", binaryPath)
+	cmd := exec.Command(goCommandPath, "build", "-o", binaryPath+exeSuffix)
 	cmd.Dir = dir
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
@@ -68,7 +73,7 @@ func GoBuild(t *testing.T, dir string, envVarVals ...string) (binaryPath string,
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
-	return binaryPath, func() { os.RemoveAll(tmpDir) }
+	return binaryPath + exeSuffix, func() { os.RemoveAll(tmpDir) }
 }
 
 // lookEnv looks for name in env, a list of "VAR=VALUE" strings. It returns

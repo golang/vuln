@@ -16,7 +16,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"golang.org/x/vuln/vulncheck/internal/buildtest"
+	"golang.org/x/vuln/internal/buildtest"
 )
 
 func dotest(t *testing.T) (binaryName string, cleanup func()) {
