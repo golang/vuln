@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/client9/misspell v0.3.4
-	github.com/google/go-cmdtest v0.3.0
+	github.com/google/go-cmdtest v0.4.0
 	github.com/google/go-cmp v0.5.6
 	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
