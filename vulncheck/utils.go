@@ -98,8 +98,8 @@ func siteCallees(call ssa.CallInstruction, callgraph *callgraph.Graph) []*ssa.Fu
 
 // dbTypeFormat formats the name of t according how types
 // are encoded in vulnerability database:
-//  - pointer designation * is skipped
-//  - full path prefix is skipped as well
+//   - pointer designation * is skipped
+//   - full path prefix is skipped as well
 func dbTypeFormat(t types.Type) string {
 	switch tt := t.(type) {
 	case *types.Pointer:
@@ -118,9 +118,10 @@ func dbTypeFormat(t types.Type) string {
 // enclosing package, but not globally.
 //
 // Examples:
-//   func (a A) foo (...) {...}  -> A.foo
-//   func foo(...) {...}         -> foo
-//   func (b *B) bar (...) {...} -> B.bar
+//
+//	func (a A) foo (...) {...}  -> A.foo
+//	func foo(...) {...}         -> foo
+//	func (b *B) bar (...) {...} -> B.bar
 func dbFuncName(f *ssa.Function) string {
 	selectBound := func(f *ssa.Function) types.Type {
 		// If f is a "bound" function introduced by ssa for a given type, return the type.

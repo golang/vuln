@@ -131,7 +131,7 @@ func TestBinary(t *testing.T) {
 	}
 }
 
-// hasGoBuild reports whether the current system can build programs with ``go build''
+// hasGoBuild reports whether the current system can build programs with “go build”
 // and then run them with os.StartProcess or exec.Command.
 //
 // Duplicated from std/internal/testenv

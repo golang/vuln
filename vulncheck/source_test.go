@@ -19,13 +19,13 @@ import (
 // for the Config.ImportsOnly=true mode. The inlined test code has
 // the following package (left) and module (right) imports graphs:
 //
-//       entry/x        entry/y                     entry
-//              \     /        \                   /     \
-//            amod/avuln      zmod/z           amod       zmod
-//                |                              |
-//              wmod/w                         wmod
-//                |                              |
-//            bmod/bvuln                       bmod
+//	entry/x        entry/y                     entry
+//	       \     /        \                   /     \
+//	     amod/avuln      zmod/z           amod       zmod
+//	         |                              |
+//	       wmod/w                         wmod
+//	         |                              |
+//	     bmod/bvuln                       bmod
 //
 // Packages ending in "vuln" have some known vulnerabilities.
 func TestImportsOnly(t *testing.T) {
@@ -171,37 +171,38 @@ func TestImportsOnly(t *testing.T) {
 // TestCallGraph checks for call graph vuln slicing correctness.
 // The inlined test code has the following call graph
 //
-//          x.X
-//        /  |  \
-//       /  d.D1 avuln.VulnData.Vuln1
-//      /  /  |
-//     c.C1  d.internal.Vuln1
-//      |
-//    avuln.VulnData.Vuln2
+//	        x.X
+//	      /  |  \
+//	     /  d.D1 avuln.VulnData.Vuln1
+//	    /  /  |
+//	   c.C1  d.internal.Vuln1
+//	    |
+//	  avuln.VulnData.Vuln2
 //
-//         --------------------y.Y-------------------------------
-//        /           /              \         \         \       \
-//       /           /                \         \         \       \
-//      /           /                  \         \         \       \
-//    c.C4 c.vulnWrap.V.Vuln1(=nil)   c.C2   bvuln.Vuln   c.C3   c.C3$1
-//      |                                       | |
-//  y.benign                                    e.E
+//	       --------------------y.Y-------------------------------
+//	      /           /              \         \         \       \
+//	     /           /                \         \         \       \
+//	    /           /                  \         \         \       \
+//	  c.C4 c.vulnWrap.V.Vuln1(=nil)   c.C2   bvuln.Vuln   c.C3   c.C3$1
+//	    |                                       | |
+//	y.benign                                    e.E
 //
 // and this slice
 //
-//          x.X
-//        /  |  \
-//       /  d.D1 avuln.VulnData.Vuln1
-//      /  /
-//     c.C1
-//      |
-//    avuln.VulnData.Vuln2
+//	        x.X
+//	      /  |  \
+//	     /  d.D1 avuln.VulnData.Vuln1
+//	    /  /
+//	   c.C1
+//	    |
+//	  avuln.VulnData.Vuln2
 //
-//     y.Y
-//      |
-//  bvuln.Vuln
-//     | |
-//     e.E
+//	   y.Y
+//	    |
+//	bvuln.Vuln
+//	   | |
+//	   e.E
+//
 // related to avuln.VulnData.{Vuln1, Vuln2} and bvuln.Vuln vulnerabilities.
 func TestCallGraph(t *testing.T) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{

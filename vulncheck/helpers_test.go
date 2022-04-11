@@ -25,8 +25,9 @@ func (mc *mockClient) GetByModule(ctx context.Context, a string) ([]*osv.Entry, 
 }
 
 // testClient contains the following test vulnerabilities
-//   golang.org/amod/avuln.{VulnData.Vuln1, vulnData.Vuln2}
-//   golang.org/bmod/bvuln.{Vuln}
+//
+//	golang.org/amod/avuln.{VulnData.Vuln1, vulnData.Vuln2}
+//	golang.org/bmod/bvuln.{Vuln}
 var testClient = &mockClient{
 	ret: map[string][]*osv.Entry{
 		"golang.org/amod": []*osv.Entry{

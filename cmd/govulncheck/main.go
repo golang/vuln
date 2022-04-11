@@ -11,7 +11,7 @@
 // It uses static analysis or the binary's symbol table to narrow down reports to only
 // those that potentially affect the application.
 //
-// WARNING WARNING WARNING
+// # WARNING WARNING WARNING
 //
 // govulncheck is still experimental and neither its output or the vulnerability
 // database should be relied on to be stable or comprehensive.
@@ -290,10 +290,11 @@ func latestFixed(as []osv.Affected) string {
 // summarizeCallStack returns a short description of the call stack.
 // It uses one of two forms, depending on what the lowest function F in topPkgs
 // calls:
-// - If it calls a function V from the vulnerable package, then summarizeCallStack
-//   returns "F calls V".
-// - If it calls a function G in some other package, which eventually calls V,
-//   it returns "F calls G, which eventually calls V".
+//   - If it calls a function V from the vulnerable package, then summarizeCallStack
+//     returns "F calls V".
+//   - If it calls a function G in some other package, which eventually calls V,
+//     it returns "F calls G, which eventually calls V".
+//
 // If it can't find any of these functions, summarizeCallStack returns the empty string.
 func summarizeCallStack(cs vulncheck.CallStack, topPkgs map[string]bool, vulnPkg string) string {
 	// Find the lowest function in the top packages.

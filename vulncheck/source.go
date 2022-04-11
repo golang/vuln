@@ -17,12 +17,12 @@ import (
 )
 
 // Source detects vulnerabilities in pkgs and computes slices of
-//  - imports graph related to an import of a package with some
-//    known vulnerabilities
-//  - requires graph related to a require of a module with a
-//    package that has some known vulnerabilities
-//  - call graph leading to the use of a known vulnerable function
-//    or method
+//   - imports graph related to an import of a package with some
+//     known vulnerabilities
+//   - requires graph related to a require of a module with a
+//     package that has some known vulnerabilities
+//   - call graph leading to the use of a known vulnerable function
+//     or method
 func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err error) {
 	defer derrors.Wrap(&err, "vulncheck.Source")
 

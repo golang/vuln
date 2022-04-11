@@ -12,7 +12,7 @@
 // was added. The index file is called indx.json, and has the
 // following format:
 //
-//   map[string]time.Time (DBIndex)
+//	map[string]time.Time (DBIndex)
 //
 // Each vulnerable module is represented by an individual JSON file
 // which contains all of the vulnerabilities in that module. The path
@@ -21,7 +21,7 @@
 // golang.org/x/crypto.json file. The per-module JSON files have
 // the following format:
 //
-//   []osv.Entry
+//	[]osv.Entry
 //
 // A single client.Client can be used to access multiple vulnerability
 // databases. When looking up vulnerable module each database is
