@@ -5,7 +5,7 @@ $ cdmodule novuln
 $ govulncheck .
 
 $ cdmodule vuln
-$ govulncheck . --> FAIL
+$ govulncheck . --> FAIL 3
 package:        golang.org/x/text/language
 your version:   v0.3.0
 fixed version:  v0.3.7

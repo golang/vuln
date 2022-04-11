@@ -27,7 +27,7 @@ databases are merged.
 
 
 # Same output as -h, but failure.
-$ govulncheck --> FAIL
+$ govulncheck --> FAIL 1
 govulncheck: identify known vulnerabilities by call graph traversal.
 
 Usage:
