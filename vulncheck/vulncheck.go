@@ -123,6 +123,9 @@ type Result struct {
 	// or whose packages are imported in Imports, or whose modules are required in
 	// Requires, have an entry in Vulns.
 	Vulns []*Vuln
+
+	// Modules are the modules that comprise the user code.
+	Modules []*Module
 }
 
 // Vuln provides information on how a vulnerability is affecting user code by

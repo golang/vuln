@@ -15,7 +15,21 @@ $ govulncheck -json .
 		"Modules": {},
 		"Entries": null
 	},
-	"Vulns": null
+	"Vulns": null,
+	"Modules": [
+		{
+			"Path": "golang.org/x/text",
+			"Version": "v0.3.7",
+			"Dir": "",
+			"Replace": null
+		},
+		{
+			"Path": "novuln",
+			"Version": "",
+			"Dir": "",
+			"Replace": null
+		}
+	]
 }
 
 $ cdmodule vuln
@@ -349,6 +363,20 @@ $ govulncheck -json . --> FAIL 3
 			"CallSink": 0,
 			"ImportSink": 1,
 			"RequireSink": 1
+		}
+	],
+	"Modules": [
+		{
+			"Path": "golang.org/x/text",
+			"Version": "v0.3.0",
+			"Dir": "",
+			"Replace": null
+		},
+		{
+			"Path": "vuln",
+			"Version": "",
+			"Dir": "",
+			"Replace": null
 		}
 	]
 }

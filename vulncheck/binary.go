@@ -26,12 +26,12 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 	if err != nil {
 		return nil, err
 	}
-	modVulns, err := fetchVulnerabilities(ctx, cfg.Client, convertModules(mods))
+	cmods := convertModules(mods)
+	modVulns, err := fetchVulnerabilities(ctx, cfg.Client, cmods)
 	if err != nil {
 		return nil, err
 	}
 	modVulns = modVulns.Filter(lookupEnv("GOOS", runtime.GOOS), lookupEnv("GOARCH", runtime.GOARCH))
-
 	result := &Result{}
 	for pkg, symbols := range packageSymbols {
 		if cfg.ImportsOnly {
@@ -40,6 +40,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 			addSymbolVulns(pkg, symbols, result, modVulns)
 		}
 	}
+	setModules(result, cmods)
 	return result, nil
 }
 

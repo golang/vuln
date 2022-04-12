@@ -43,7 +43,8 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 		}
 	}
 
-	modVulns, err := fetchVulnerabilities(ctx, cfg.Client, extractModules(pkgs))
+	mods := extractModules(pkgs)
+	modVulns, err := fetchVulnerabilities(ctx, cfg.Client, mods)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +57,7 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 	}
 
 	vulnPkgModSlice(pkgs, modVulns, result)
+	setModules(result, mods)
 	if cfg.ImportsOnly {
 		return result, nil
 	}
@@ -64,8 +66,21 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 	entries := entryPoints(ssaPkgs)
 	cg := callGraph(prog, entries)
 	vulnCallGraphSlice(entries, modVulns, cg, result)
-
 	return result, nil
+}
+
+// Set r.Modules to an adjusted list of modules.
+func setModules(r *Result, mods []*Module) {
+	// Remove Dirs from modules; they aren't needed and complicate testing.
+	for _, m := range mods {
+		m.Dir = ""
+		if m.Replace != nil {
+			m.Replace.Dir = ""
+		}
+	}
+	// Sort for determinism.
+	sort.Slice(mods, func(i, j int) bool { return mods[i].Path < mods[j].Path })
+	r.Modules = mods
 }
 
 // pkgID is an id counter for nodes of Imports graph.

@@ -9,8 +9,11 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/osv"
 )
@@ -165,6 +168,20 @@ func TestImportsOnly(t *testing.T) {
 
 	if rgStrMap := reqGraphToStrMap(result.Requires); !reflect.DeepEqual(wantRequires, rgStrMap) {
 		t.Errorf("want %v requires graph; got %v", wantRequires, rgStrMap)
+	}
+
+	// Check that the source's modules are returned.
+	wantMods := []*Module{
+		{Path: "golang.org/amod", Version: "v1.1.3"},
+		{Path: "golang.org/bmod", Version: "v0.5.0"},
+		{Path: "golang.org/entry"},
+		{Path: "golang.org/wmod", Version: "v0.0.0"},
+		{Path: "golang.org/zmod", Version: "v0.0.0"},
+	}
+	gotMods := result.Modules
+	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
+	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(Module{}, "Dir")); diff != "" {
+		t.Errorf("modules mismatch (-want, +got):\n%s", diff)
 	}
 }
 
