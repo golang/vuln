@@ -95,10 +95,9 @@ func main() {
 
 	patterns := flag.Args()
 	var (
-		r              *vulncheck.Result
-		pkgs           []*packages.Package
-		moduleVersions map[string]string
-		vulns          []*vulncheck.Vuln
+		r     *vulncheck.Result
+		pkgs  []*packages.Package
+		vulns []*vulncheck.Vuln
 	)
 	if len(patterns) == 1 && isFile(patterns[0]) {
 		f, err := os.Open(patterns[0])
@@ -121,21 +120,11 @@ func main() {
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
-		// Build a map from module paths to versions.
-		moduleVersions = map[string]string{}
-		packages.Visit(pkgs, nil, func(p *packages.Package) {
-			if m := packageModule(p); m != nil {
-				moduleVersions[m.Path] = m.Version
-			}
-		})
-
-		if len(moduleVersions) == 0 {
-			die("govulncheck: no modules found; are you in GOPATH mode? Module mode required.")
-		}
 		r, err = vulncheck.Source(ctx, vulncheck.Convert(pkgs), vcfg)
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
+
 		// Skip vulns that are in the import graph but have no calls to them.
 		for _, v := range r.Vulns {
 			if v.CallSink != 0 {
@@ -153,6 +142,7 @@ func main() {
 			topPackages[p.PkgPath] = true
 		}
 		vulnGroups := groupByIDAndPackage(vulns)
+		moduleVersions := moduleVersionMap(r.Requires)
 		if *htmlFlag {
 			if err := html(os.Stdout, r, callStacks, moduleVersions, topPackages, vulnGroups); err != nil {
 				die("writing HTML: %v", err)
@@ -169,6 +159,19 @@ func main() {
 	os.Exit(exitCode)
 }
 
+// moduleVersionMap builds a map from module paths to versions.
+func moduleVersionMap(rg *vulncheck.RequireGraph) map[string]string {
+	moduleVersions := map[string]string{}
+	for _, m := range rg.Modules {
+		v := m.Version
+		if m.Replace != 0 {
+			v = rg.Modules[m.Replace].Version
+		}
+		moduleVersions[m.Path] = v
+	}
+	return moduleVersions
+}
+
 func writeJSON(r *vulncheck.Result) {
 	b, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
@@ -179,6 +182,7 @@ func writeJSON(r *vulncheck.Result) {
 }
 
 func writeText(r *vulncheck.Result, callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, moduleVersions map[string]string, topPackages map[string]bool, vulnGroups [][]*vulncheck.Vuln) {
+
 	const labelWidth = 16
 	line := func(label, text string) {
 		fmt.Printf("%-*s%s\n", labelWidth, label, text)
