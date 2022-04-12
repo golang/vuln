@@ -9,6 +9,7 @@ package binscan
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -16,9 +17,10 @@ import (
 )
 
 func TestExtractPackagesAndSymbols(t *testing.T) {
-	for _, goos := range []string{"linux", "darwin", "windows"} {
-		t.Run(goos, func(t *testing.T) {
-			binary, done := buildtest.GoBuild(t, "testdata", "GOOS", goos)
+	for _, gg := range []string{"linux/amd64", "darwin/amd64", "windows/amd64"} {
+		t.Run(gg, func(t *testing.T) {
+			goos, goarch, _ := strings.Cut(gg, "/")
+			binary, done := buildtest.GoBuild(t, "testdata", "GOOS", goos, "GOARCH", goarch)
 			defer done()
 
 			f, err := os.Open(binary)
