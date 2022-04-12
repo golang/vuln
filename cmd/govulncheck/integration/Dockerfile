@@ -4,7 +4,7 @@ FROM golang:1.18-alpine
 # This assumes the build context, i.e., CWD is vuln/
 
 # ---- Step 0: Setup shared build tools. ----
-RUN apk update && apk add bash git
+RUN apk update && apk add bash git gcc musl-dev linux-headers
 
 # ---- Step 1: Build govulncheck ----
 COPY . /go/src/golang.org/x/vuln
