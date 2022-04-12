@@ -65,6 +65,20 @@ func TestCommand(t *testing.T) {
 		}
 		return out, err
 	}
+
+	// Build test module binaries.
+	moduleDirs, err := filepath.Glob("testdata/modules/*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, md := range moduleDirs {
+		binary, cleanup := buildtest.GoBuild(t, md)
+		defer cleanup()
+		// Set an environment variable to the path to the binary, so tests
+		// can refer to it.
+		varName := filepath.Base(md) + "_binary"
+		os.Setenv(varName, binary)
+	}
 	ts.Run(t, *update)
 }
 

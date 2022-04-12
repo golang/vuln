@@ -142,7 +142,7 @@ func main() {
 			topPackages[p.PkgPath] = true
 		}
 		vulnGroups := groupByIDAndPackage(vulns)
-		moduleVersions := moduleVersionMap(r.Requires)
+		moduleVersions := moduleVersionMap(r.Modules)
 		if *htmlFlag {
 			if err := html(os.Stdout, r, callStacks, moduleVersions, topPackages, vulnGroups); err != nil {
 				die("writing HTML: %v", err)
@@ -160,12 +160,12 @@ func main() {
 }
 
 // moduleVersionMap builds a map from module paths to versions.
-func moduleVersionMap(rg *vulncheck.RequireGraph) map[string]string {
+func moduleVersionMap(mods []*vulncheck.Module) map[string]string {
 	moduleVersions := map[string]string{}
-	for _, m := range rg.Modules {
+	for _, m := range mods {
 		v := m.Version
-		if m.Replace != 0 {
-			v = rg.Modules[m.Replace].Version
+		if m.Replace != nil {
+			v = m.Replace.Version
 		}
 		moduleVersions[m.Path] = v
 	}
