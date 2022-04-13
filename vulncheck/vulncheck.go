@@ -20,15 +20,15 @@ import (
 
 // Config is used for configuring vulncheck algorithms.
 type Config struct {
-	// ImportsOnly flag, if true, signals vulncheck to analyze import chains only.
+	// If ImportsOnly is true, vulncheck analyzes import chains only.
 	// Otherwise, call chains are analyzed too.
 	ImportsOnly bool
 	// Client is used for querying data from a vulnerability database.
 	Client client.Client
 }
 
-// Package models Go package for vulncheck analysis. A version
-// of packages.Package trimmed down to reduce memory consumption.
+// Package is a Go package for vulncheck analysis. It is a version of
+// packages.Package trimmed down to reduce memory consumption.
 type Package struct {
 	Name      string
 	PkgPath   string
@@ -40,7 +40,7 @@ type Package struct {
 	Module    *Module
 }
 
-// Module models Go module for vulncheck analysis.
+// Module is a Go module for vulncheck analysis.
 type Module struct {
 	Path    string
 	Version string
@@ -83,21 +83,22 @@ func Convert(pkgs []*packages.Package) []*Package {
 	return vpkgs
 }
 
-// Result contains information on which vulnerabilities are potentially affecting
-// user code and how are they affecting it via call graph, package imports graph,
-// and module requires graph.
+// Result contains information on which vulnerabilities are potentially
+// affecting user code and how are they affecting it via a call graph, package
+// imports graph, and module requires graph.
 type Result struct {
 	// Calls is a call graph whose roots are program entry functions/methods and
-	// sinks are vulnerable functions/methods. Empty when Config.ImportsOnly=true
-	// or when no vulnerable symbols are reachable via program call graph.
+	// sinks are vulnerable functions/methods. It is empty when
+	// Config.ImportsOnly is true or when no vulnerable symbols are reachable
+	// via the program call graph.
 	Calls *CallGraph
 	// Imports is a package dependency graph whose roots are entry user packages
-	// and sinks are the packages with some vulnerable symbols. Empty when no
-	// packages with some vulnerabilities are imported in the program.
+	// and sinks are packages with some vulnerable symbols. It is empty when no
+	// packages with vulnerabilities are imported in the program.
 	Imports *ImportGraph
 	// Requires is a module dependency graph whose roots are entry user modules
-	// and sinks are modules with some vulnerable packages. Empty when no modules
-	// with some vulnerabilities are required by the program.
+	// and sinks are modules with some vulnerable packages. It is empty when no
+	// modules with vulnerabilities are required by the program.
 	Requires *RequireGraph
 
 	// Vulns contains information on detected vulnerabilities and their place in
@@ -112,12 +113,12 @@ type Result struct {
 
 // Vuln provides information on how a vulnerability is affecting user code by
 // connecting it to the Result.{Calls,Imports,Requires} graphs. Vulnerabilities
-// detected in Go binaries do not have a place in the Result graphs.
+// detected in Go binaries do not appear in the Result graphs.
 type Vuln struct {
 	// The next four fields identify a vulnerability. Note that *osv.Entry
 	// describes potentially multiple symbols from multiple packages.
 
-	// OSV contains information on detected vulnerability in the shared
+	// OSV contains information on the detected vulnerability in the shared
 	// vulnerability format.
 	OSV *osv.Entry
 	// Symbol is the name of the detected vulnerable function or method.
@@ -127,9 +128,9 @@ type Vuln struct {
 	// ModPath is the module path corresponding to PkgPath.
 	ModPath string
 
-	// CallSink is the ID of the sink node in Calls graph corresponding to
+	// CallSink is the ID of the sink node in the Calls graph corresponding to
 	// the use of Symbol. ID is not available (denoted with 0) in binary mode,
-	// or if Symbol is not reachable, or if Config.ImportsOnly=true.
+	// or if Symbol is not reachable, or if Config.ImportsOnly is true.
 	CallSink int
 	// ImportSink is the ID of the sink node in the Imports graph corresponding
 	// to the import of PkgPath. ID is not available (denoted with 0) in binary
@@ -141,11 +142,11 @@ type Vuln struct {
 	RequireSink int
 }
 
-// CallGraph is a slice of a full program call graph whose sinks are conceptually
-// vulnerable functions and sources are entry points of user packages. In order to
-// support succinct traversal of the slice related to a particular vulnerability,
-// CallGraph is technically backwards directed, i.e., from a vulnerable function
-// towards the program entry functions (see FuncNode).
+// CallGraph is a slice of a full program call graph whose sinks are vulnerable
+// functions and sources are entry points of user packages. In order to support
+// succinct traversal of the slice related to a particular vulnerability,
+// CallGraph is directed from vulnerable functions towards program entry
+// functions (see FuncNode).
 type CallGraph struct {
 	// Functions contains all call graph nodes as a map: func node id -> func node.
 	Functions map[int]*FuncNode
@@ -153,6 +154,7 @@ type CallGraph struct {
 	Entries []int
 }
 
+// A FuncNode describes a function in the call graph.
 type FuncNode struct {
 	ID   int
 	Name string
@@ -171,6 +173,7 @@ func (fn *FuncNode) String() string {
 	return fmt.Sprintf("%s.%s", fn.RecvType, fn.Name)
 }
 
+// A CallSite describes a function call.
 type CallSite struct {
 	// Parent is ID of the enclosing function where the call is made.
 	Parent int
@@ -184,10 +187,10 @@ type CallSite struct {
 }
 
 // RequireGraph is a slice of a full program module requires graph whose sinks
-// are conceptually modules with some known vulnerabilities and sources are modules
-// of user entry packages. In order to support succinct traversal of the slice
-// related to a particular vulnerability, RequireGraph is technically backwards
-// directed, i.e., from a vulnerable module towards the program entry modules (see ModNode).
+// are modules with known vulnerabilities and sources are modules of user entry
+// packages. In order to support succinct traversal of the slice related to a
+// particular vulnerability, RequireGraph is directed from a vulnerable module
+// towards the program entry modules (see ModNode).
 type RequireGraph struct {
 	// Modules contains all module nodes as a map: module node id -> module node.
 	Modules map[int]*ModNode
@@ -195,21 +198,23 @@ type RequireGraph struct {
 	Entries []int
 }
 
+// A ModNode describes a module in the requires graph.
 type ModNode struct {
 	ID      int
 	Path    string
 	Version string
-	// Replace is the ID of the replacement module node, if any.
+	// Replace is the ID of the replacement module node.
+	// A zero value means there is no replacement.
 	Replace int
 	// RequiredBy contains IDs of the modules requiring this module.
 	RequiredBy []int
 }
 
 // ImportGraph is a slice of a full program package import graph whose sinks are
-// conceptually packages with some known vulnerabilities and sources are user
-// specified packages. In order to support succinct traversal of the slice related
-// to a particular vulnerability, ImportGraph is technically backwards directed,
-// i.e., from a vulnerable package towards the program entry packages (see PkgNode).
+// packages with some known vulnerabilities and sources are user specified
+// packages. In order to support succinct traversal of the slice related to a
+// particular vulnerability, ImportGraph is directed from a vulnerable package
+// towards the program entry packages (see PkgNode).
 type ImportGraph struct {
 	// Packages contains all package nodes as a map: package node id -> package node.
 	Packages map[int]*PkgNode
@@ -217,12 +222,13 @@ type ImportGraph struct {
 	Entries []int
 }
 
+// A PkgNode describes a package in the import graph.
 type PkgNode struct {
 	ID int
 	// Name is the package identifier as it appears in the source code.
 	Name string
 	Path string
-	// Module holds ID of the corresponding module (node) in Requires graph.
+	// Module holds ID of the corresponding module (node) in the Requires graph.
 	Module int
 	// ImportedBy contains IDs of packages directly importing this package.
 	ImportedBy []int
