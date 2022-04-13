@@ -260,7 +260,7 @@ type modVulns struct {
 	vulns []*osv.Entry
 }
 
-func (mv moduleVulnerabilities) Filter(os, arch string) moduleVulnerabilities {
+func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 	var filteredMod moduleVulnerabilities
 	for _, mod := range mv {
 		module := mod.mod
@@ -318,18 +318,11 @@ func matchesPlatform(os, arch string, e osv.EcosystemSpecific) bool {
 	}
 	return matchesOS && matchesArch
 }
-func (mv moduleVulnerabilities) Num() int {
-	var num int
-	for _, m := range mv {
-		num += len(m.vulns)
-	}
-	return num
-}
 
-// VulnsForPackage returns the vulnerabilities for the module which is the most
+// vulnsForPackage returns the vulnerabilities for the module which is the most
 // specific prefix of importPath, or nil if there is no matching module with
 // vulnerabilities.
-func (mv moduleVulnerabilities) VulnsForPackage(importPath string) []*osv.Entry {
+func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry {
 	var mostSpecificMod *modVulns
 	for _, mod := range mv {
 		md := mod
@@ -360,9 +353,9 @@ func (mv moduleVulnerabilities) VulnsForPackage(importPath string) []*osv.Entry 
 	return packageVulns
 }
 
-// VulnsForSymbol returns vulnerabilities for `symbol` in `mv.VulnsForPackage(importPath)`.
-func (mv moduleVulnerabilities) VulnsForSymbol(importPath, symbol string) []*osv.Entry {
-	vulns := mv.VulnsForPackage(importPath)
+// vulnsForSymbol returns vulnerabilities for `symbol` in `mv.VulnsForPackage(importPath)`.
+func (mv moduleVulnerabilities) vulnsForSymbol(importPath, symbol string) []*osv.Entry {
+	vulns := mv.vulnsForPackage(importPath)
 	if vulns == nil {
 		return nil
 	}
@@ -387,19 +380,4 @@ func (mv moduleVulnerabilities) VulnsForSymbol(importPath, symbol string) []*osv
 		}
 	}
 	return symbolVulns
-}
-
-// Vulns returns vulnerabilities for all modules in `mv`.
-func (mv moduleVulnerabilities) Vulns() []*osv.Entry {
-	var vulns []*osv.Entry
-	seen := make(map[string]bool)
-	for _, mv := range mv {
-		for _, v := range mv.vulns {
-			if !seen[v.ID] {
-				vulns = append(vulns, v)
-				seen[v.ID] = true
-			}
-		}
-	}
-	return vulns
 }

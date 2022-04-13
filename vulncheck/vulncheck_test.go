@@ -103,7 +103,7 @@ func TestFilterVulns(t *testing.T) {
 		},
 	}
 
-	filtered := mv.Filter("linux", "amd64")
+	filtered := mv.filter("linux", "amd64")
 	if !reflect.DeepEqual(filtered, expected) {
 		t.Fatalf("Filter returned unexpected results, got:\n%s\nwant:\n%s", moduleVulnerabilitiesToString(filtered), moduleVulnerabilitiesToString(expected))
 	}
@@ -140,7 +140,7 @@ func TestVulnsForPackage(t *testing.T) {
 		},
 	}
 
-	filtered := mv.VulnsForPackage("example.mod/a/b/c")
+	filtered := mv.vulnsForPackage("example.mod/a/b/c")
 	expected := []*osv.Entry{
 		{ID: "b", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a/b/c"}}}},
 	}
@@ -175,7 +175,7 @@ func TestVulnsForPackageReplaced(t *testing.T) {
 		},
 	}
 
-	filtered := mv.VulnsForPackage("example.mod/a/b/c")
+	filtered := mv.vulnsForPackage("example.mod/a/b/c")
 	expected := []*osv.Entry{
 		{ID: "c", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/b/c"}}}},
 	}
@@ -208,7 +208,7 @@ func TestVulnsForSymbol(t *testing.T) {
 		},
 	}
 
-	filtered := mv.VulnsForSymbol("example.mod/a/b/c", "a")
+	filtered := mv.vulnsForSymbol("example.mod/a/b/c", "a")
 	expected := []*osv.Entry{
 		{ID: "b", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a/b/c"}, EcosystemSpecific: osv.EcosystemSpecific{Symbols: []string{"a"}}}}},
 	}

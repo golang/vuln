@@ -48,7 +48,7 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 	if err != nil {
 		return nil, err
 	}
-	modVulns = modVulns.Filter(lookupEnv("GOOS", runtime.GOOS), lookupEnv("GOARCH", runtime.GOARCH))
+	modVulns = modVulns.filter(lookupEnv("GOOS", runtime.GOOS), lookupEnv("GOARCH", runtime.GOARCH))
 
 	result := &Result{
 		Imports:  &ImportGraph{Packages: make(map[int]*PkgNode)},
@@ -132,7 +132,7 @@ func vulnImportSlice(pkg *Package, modVulns moduleVulnerabilities, result *Resul
 	}
 
 	// Check if pkg has known vulnerabilities.
-	vulns := modVulns.VulnsForPackage(pkg.PkgPath)
+	vulns := modVulns.vulnsForPackage(pkg.PkgPath)
 
 	// If pkg is not vulnerable nor it transitively leads
 	// to vulnerabilities, jump out.
@@ -338,7 +338,7 @@ func vulnCallSlice(f *ssa.Function, modVulns moduleVulnerabilities, cg *callgrap
 	}
 
 	// Check if f has known vulnerabilities.
-	vulns := modVulns.VulnsForSymbol(pkgPath(f), dbFuncName(f))
+	vulns := modVulns.vulnsForSymbol(pkgPath(f), dbFuncName(f))
 
 	var funNode *FuncNode
 	// If there are vulnerabilities for f, create node for f and

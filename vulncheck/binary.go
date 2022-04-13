@@ -31,7 +31,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 	if err != nil {
 		return nil, err
 	}
-	modVulns = modVulns.Filter(lookupEnv("GOOS", runtime.GOOS), lookupEnv("GOARCH", runtime.GOARCH))
+	modVulns = modVulns.filter(lookupEnv("GOOS", runtime.GOOS), lookupEnv("GOARCH", runtime.GOARCH))
 	result := &Result{}
 	for pkg, symbols := range packageSymbols {
 		if cfg.ImportsOnly {
@@ -47,7 +47,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 // addImportsOnlyVulns adds Vuln entries to result in imports only mode, i.e., for each vulnerable symbol
 // of pkg.
 func addImportsOnlyVulns(pkg string, symbols []string, result *Result, modVulns moduleVulnerabilities) {
-	for _, osv := range modVulns.VulnsForPackage(pkg) {
+	for _, osv := range modVulns.vulnsForPackage(pkg) {
 		for _, affected := range osv.Affected {
 			if affected.Package.Name != pkg {
 				continue
@@ -81,7 +81,7 @@ func addImportsOnlyVulns(pkg string, symbols []string, result *Result, modVulns 
 // addSymbolVulns adds Vuln entries to result for every symbol of pkg in the binary that is vulnerable.
 func addSymbolVulns(pkg string, symbols []string, result *Result, modVulns moduleVulnerabilities) {
 	for _, symbol := range symbols {
-		for _, osv := range modVulns.VulnsForSymbol(pkg, symbol) {
+		for _, osv := range modVulns.vulnsForSymbol(pkg, symbol) {
 			for _, affected := range osv.Affected {
 				if affected.Package.Name != pkg {
 					continue
