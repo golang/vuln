@@ -33,6 +33,7 @@ func TestCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ts.DisableLogging = true
 	// Define a command that lets us cd into a module directory.
 	// The modules for these tests live under testdata/modules.
 	ts.Commands["cdmodule"] = func(args []string, inputFile string) ([]byte, error) {
