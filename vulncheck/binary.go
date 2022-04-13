@@ -103,19 +103,9 @@ func addSymbolVulns(pkg, mod string, symbols []string, result *Result, modVulns 
 
 func convertModules(mods []*packages.Module) []*Module {
 	vmods := make([]*Module, len(mods))
-	// TODO(github.com/golang/go/issues/50030): should we share unique
-	// modules? Not needed now as module info is not returned by Binary.
+	convertMod := newModuleConverter()
 	for i, mod := range mods {
-		vmods[i] = &Module{
-			Path:    mod.Path,
-			Version: mod.Version,
-		}
-		if mod.Replace != nil {
-			vmods[i].Replace = &Module{
-				Path:    mod.Replace.Path,
-				Version: mod.Replace.Version,
-			}
-		}
+		vmods[i] = convertMod(mod)
 	}
 	return vmods
 }

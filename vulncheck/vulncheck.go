@@ -51,25 +51,7 @@ type Module struct {
 // Convert converts a slice of packages.Package to
 // a slice of corresponding vulncheck.Package.
 func Convert(pkgs []*packages.Package) []*Package {
-	ms := make(map[*packages.Module]*Module)
-	var mod func(*packages.Module) *Module
-	mod = func(m *packages.Module) *Module {
-		if m == nil {
-			return nil
-		}
-		if vm, ok := ms[m]; ok {
-			return vm
-		}
-		vm := &Module{
-			Path:    m.Path,
-			Version: m.Version,
-			Dir:     m.Dir,
-			Replace: mod(m.Replace),
-		}
-		ms[m] = vm
-		return vm
-	}
-
+	convertMod := newModuleConverter()
 	ps := make(map[*packages.Package]*Package)
 	var pkg func(*packages.Package) *Package
 	pkg = func(p *packages.Package) *Package {
@@ -84,7 +66,7 @@ func Convert(pkgs []*packages.Package) []*Package {
 			Fset:      p.Fset,
 			Syntax:    p.Syntax,
 			TypesInfo: p.TypesInfo,
-			Module:    mod(p.Module),
+			Module:    convertMod(p.Module),
 		}
 		ps[p] = vp
 
@@ -380,4 +362,26 @@ func (mv moduleVulnerabilities) vulnsForSymbol(importPath, symbol string) []*osv
 		}
 	}
 	return symbolVulns
+}
+
+func newModuleConverter() func(m *packages.Module) *Module {
+	pmap := map[*packages.Module]*Module{}
+	var convert func(m *packages.Module) *Module
+	convert = func(m *packages.Module) *Module {
+		if m == nil {
+			return nil
+		}
+		if vm, ok := pmap[m]; ok {
+			return vm
+		}
+		vm := &Module{
+			Path:    m.Path,
+			Version: m.Version,
+			Dir:     m.Dir,
+			Replace: convert(m.Replace),
+		}
+		pmap[m] = vm
+		return vm
+	}
+	return convert
 }
