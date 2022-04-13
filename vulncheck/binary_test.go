@@ -118,8 +118,16 @@ func TestBinary(t *testing.T) {
 	// In importsOnly mode, all three vulnerable symbols
 	// {avuln.VulnData.Vuln1, avuln.VulnData.Vuln2, bvuln.Vuln}
 	// should be detected.
-	if len(res.Vulns) != 3 {
-		t.Errorf("expected 3 vuln symbols; got %d", len(res.Vulns))
+	wantVulns := []*Vuln{
+		{Symbol: "Vuln", PkgPath: "golang.org/bmod/bvuln", ModPath: "golang.org/bmod"},
+		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
+		{Symbol: "VulnData.Vuln2", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
+	}
+	diff := cmp.Diff(wantVulns, res.Vulns,
+		cmpopts.IgnoreFields(Vuln{}, "OSV"),
+		cmpopts.SortSlices(func(v1, v2 *Vuln) bool { return v1.Symbol < v2.Symbol }))
+	if diff != "" {
+		t.Errorf("vulns mismatch (-want, +got)\n%s", diff)
 	}
 
 	// Test the symbols (non-import mode)

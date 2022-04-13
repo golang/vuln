@@ -11,6 +11,7 @@ import (
 	"context"
 	"io"
 	"runtime"
+	"strings"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/derrors"
@@ -34,10 +35,11 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 	modVulns = modVulns.filter(lookupEnv("GOOS", runtime.GOOS), lookupEnv("GOARCH", runtime.GOARCH))
 	result := &Result{}
 	for pkg, symbols := range packageSymbols {
+		mod := findPackageModule(pkg, cmods)
 		if cfg.ImportsOnly {
-			addImportsOnlyVulns(pkg, symbols, result, modVulns)
+			addImportsOnlyVulns(pkg, mod, symbols, result, modVulns)
 		} else {
-			addSymbolVulns(pkg, symbols, result, modVulns)
+			addSymbolVulns(pkg, mod, symbols, result, modVulns)
 		}
 	}
 	setModules(result, cmods)
@@ -46,7 +48,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 
 // addImportsOnlyVulns adds Vuln entries to result in imports only mode, i.e., for each vulnerable symbol
 // of pkg.
-func addImportsOnlyVulns(pkg string, symbols []string, result *Result, modVulns moduleVulnerabilities) {
+func addImportsOnlyVulns(pkg, mod string, symbols []string, result *Result, modVulns moduleVulnerabilities) {
 	for _, osv := range modVulns.vulnsForPackage(pkg) {
 		for _, affected := range osv.Affected {
 			if affected.Package.Name != pkg {
@@ -70,7 +72,7 @@ func addImportsOnlyVulns(pkg string, symbols []string, result *Result, modVulns 
 					OSV:     osv,
 					Symbol:  symbol,
 					PkgPath: pkg,
-					// TODO(zpavlinovic): infer mod path from PkgPath and modules?
+					ModPath: mod,
 				}
 				result.Vulns = append(result.Vulns, vuln)
 			}
@@ -79,7 +81,7 @@ func addImportsOnlyVulns(pkg string, symbols []string, result *Result, modVulns 
 }
 
 // addSymbolVulns adds Vuln entries to result for every symbol of pkg in the binary that is vulnerable.
-func addSymbolVulns(pkg string, symbols []string, result *Result, modVulns moduleVulnerabilities) {
+func addSymbolVulns(pkg, mod string, symbols []string, result *Result, modVulns moduleVulnerabilities) {
 	for _, symbol := range symbols {
 		for _, osv := range modVulns.vulnsForSymbol(pkg, symbol) {
 			for _, affected := range osv.Affected {
@@ -90,7 +92,7 @@ func addSymbolVulns(pkg string, symbols []string, result *Result, modVulns modul
 					OSV:     osv,
 					Symbol:  symbol,
 					PkgPath: pkg,
-					// TODO(zpavlinovic): infer mod path from PkgPath and modules?
+					ModPath: mod,
 				}
 				result.Vulns = append(result.Vulns, vuln)
 				break
@@ -102,7 +104,7 @@ func addSymbolVulns(pkg string, symbols []string, result *Result, modVulns modul
 func convertModules(mods []*packages.Module) []*Module {
 	vmods := make([]*Module, len(mods))
 	// TODO(github.com/golang/go/issues/50030): should we share unique
-	// modules? Not needed nowas module info is not returned by Binary.
+	// modules? Not needed now as module info is not returned by Binary.
 	for i, mod := range mods {
 		vmods[i] = &Module{
 			Path:    mod.Path,
@@ -116,4 +118,17 @@ func convertModules(mods []*packages.Module) []*Module {
 		}
 	}
 	return vmods
+}
+
+// findPackageModule returns the path of a module that could contain the import
+// path pkg. It uses paths only. It is possible but unlikely for a package path
+// to match two or more different module paths. We just take the first one.
+// If no module path matches, findPackageModule returns the empty string.
+func findPackageModule(pkg string, mods []*Module) string {
+	for _, m := range mods {
+		if pkg == m.Path || strings.HasPrefix(pkg, m.Path+"/") {
+			return m.Path
+		}
+	}
+	return ""
 }
