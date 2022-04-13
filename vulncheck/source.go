@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"go/token"
 	"runtime"
+	"sort"
 
 	"golang.org/x/tools/go/callgraph"
 	"golang.org/x/tools/go/ssa"
@@ -178,7 +179,14 @@ func vulnModuleSlice(result *Result) {
 	// We first collect inverse requires by (predecessor)
 	// relation on module node ids.
 	modPredRelation := make(map[int]map[int]bool)
-	for _, pkgNode := range result.Imports.Packages {
+	// Sort keys so modules are assigned IDs deterministically, for tests.
+	var pkgIDs []int
+	for id := range result.Imports.Packages {
+		pkgIDs = append(pkgIDs, id)
+	}
+	sort.Ints(pkgIDs)
+	for _, id := range pkgIDs {
+		pkgNode := result.Imports.Packages[id]
 		// Create or get module node for pkgNode.
 		pkgModID := moduleNodeID(pkgNode, result, modNodeIDs)
 		pkgNode.Module = pkgModID
