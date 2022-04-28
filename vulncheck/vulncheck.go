@@ -46,7 +46,7 @@ type Module struct {
 	Replace *Module
 }
 
-// Convert converts a slice of packages.Package to
+// Convert transforms a slice of packages.Package to
 // a slice of corresponding vulncheck.Package.
 func Convert(pkgs []*packages.Package) []*Package {
 	convertMod := newModuleConverter()
@@ -81,18 +81,18 @@ func Convert(pkgs []*packages.Package) []*Package {
 	return vpkgs
 }
 
-// Result contains information on which vulnerabilities are potentially
-// affecting user code and how are they affecting it via a call graph, package
-// imports graph, and module requires graph.
+// Result contains information on how known vulnerabilities are reachable
+// in the call graph, package imports graph, and module requires graph of
+// the user code.
 type Result struct {
-	// Calls is a call graph whose roots are program entry functions/methods and
-	// sinks are vulnerable functions/methods. It is empty when
+	// Calls is a call graph whose roots are program entry functions and
+	// methods, and sinks are known vulnerable symbols. It is empty when
 	// Config.ImportsOnly is true or when no vulnerable symbols are reachable
 	// via the program call graph.
 	Calls *CallGraph
 	// Imports is a package dependency graph whose roots are entry user packages
-	// and sinks are packages with some vulnerable symbols. It is empty when no
-	// packages with vulnerabilities are imported in the program.
+	// and sinks are packages with some known vulnerable symbols. It is empty
+	// when no packages with vulnerabilities are imported in the program.
 	Imports *ImportGraph
 	// Requires is a module dependency graph whose roots are entry user modules
 	// and sinks are modules with some vulnerable packages. It is empty when no
@@ -127,24 +127,25 @@ type Vuln struct {
 	ModPath string
 
 	// CallSink is the ID of the sink node in the Calls graph corresponding to
-	// the use of Symbol. ID is not available (denoted with 0) in binary mode,
+	// the use of Symbol. ID is not available (denoted with 0) when analyzing binaries,
 	// or if Symbol is not reachable, or if Config.ImportsOnly is true.
 	CallSink int
 	// ImportSink is the ID of the sink node in the Imports graph corresponding
-	// to the import of PkgPath. ID is not available (denoted with 0) in binary
-	// mode or if PkgPath is not imported.
+	// to the import of PkgPath. ID is not available (denoted with 0) when analyzing
+	// binaries or when PkgPath is not imported.
 	ImportSink int
 	// RequireSink is the ID of the sink node in Requires graph corresponding
 	// to the require statement of ModPath. ID is not available (denoted with 0)
-	// in binary mode.
+	// when analyzing binaries.
 	RequireSink int
 }
 
 // CallGraph is a slice of a full program call graph whose sinks are vulnerable
-// functions and sources are entry points of user packages. In order to support
-// succinct traversal of the slice related to a particular vulnerability,
+// functions and sources are entry points of user packages.
+//
 // CallGraph is directed from vulnerable functions towards program entry
-// functions (see FuncNode).
+// functions (see FuncNode) for a more efficient traversal of the slice
+// related to a particular vulnerability.
 type CallGraph struct {
 	// Functions contains all call graph nodes as a map: func node id -> func node.
 	Functions map[int]*FuncNode
@@ -186,9 +187,11 @@ type CallSite struct {
 
 // RequireGraph is a slice of a full program module requires graph whose sinks
 // are modules with known vulnerabilities and sources are modules of user entry
-// packages. In order to support succinct traversal of the slice related to a
-// particular vulnerability, RequireGraph is directed from a vulnerable module
-// towards the program entry modules (see ModNode).
+// packages.
+//
+// RequireGraph is directed from a vulnerable module towards the program entry
+// modules (see ModNode) for a more efficient traversal of the slice related
+// to a particular vulnerability.
 type RequireGraph struct {
 	// Modules contains all module nodes as a map: module node id -> module node.
 	Modules map[int]*ModNode
@@ -210,9 +213,11 @@ type ModNode struct {
 
 // ImportGraph is a slice of a full program package import graph whose sinks are
 // packages with some known vulnerabilities and sources are user specified
-// packages. In order to support succinct traversal of the slice related to a
-// particular vulnerability, ImportGraph is directed from a vulnerable package
-// towards the program entry packages (see PkgNode).
+// packages.
+//
+// ImportGraph is directed from a vulnerable package towards the program entry
+// packages (see PkgNode) for a more efficient traversal of the slice related
+// to a particular vulnerability.
 type ImportGraph struct {
 	// Packages contains all package nodes as a map: package node id -> package node.
 	Packages map[int]*PkgNode

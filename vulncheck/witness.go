@@ -12,23 +12,24 @@ import (
 	"sync"
 )
 
-// ImportChain is sequence of import paths starting with
-// a client package and ending with a package with some
-// known vulnerabilities.
+// ImportChain is a slice of packages where each
+// subsequent package is imported by its immediate
+// predecessor. The chain starts with a client package
+// and ends in a package with some known vulnerabilities.
 type ImportChain []*PkgNode
 
-// ImportChains lists import chains for each vulnerability in res. The
-// reported chains are ordered by how seemingly easy is to understand
-// them. Shorter import chains appear earlier in the returned slices.
+// ImportChains returns a slice of representative import chains for
+// each vulnerability in res. The returned chains are ordered
+// increasingly by their length.
 //
-// ImportChains does not list all import chains for a vulnerability.
-// It performs a BFS search of res.RequireGraph starting at a vulnerable
-// package and going up until reaching an entry package in res.ImportGraph.Entries.
-// During this search, a package is visited only once to avoid analyzing
-// every possible import chain.
+// ImportChains performs a breadth-first search of res.RequireGraph starting
+// at a vulnerable package and going up until reaching an entry package
+// in res.ImportGraph.Entries. During this search, a package is visited
+// only once to avoid analyzing every possible import chain. Hence, not
+// all import chains are analyzed.
 //
-// Note that the resulting map produces an import chain for each Vuln. Vulns
-// with the same PkgPath will have the same list of identified import chains.
+// Note that vulnerabilities from the same package will have the same
+// slice of identified import chains.
 func ImportChains(res *Result) map[*Vuln][]ImportChain {
 	// Group vulns per package.
 	vPerPkg := make(map[int][]*Vuln)
@@ -115,31 +116,32 @@ func (r *importChain) ImportChain() ImportChain {
 	return append([]*PkgNode{r.pkg}, r.child.ImportChain()...)
 }
 
-// CallStack models a trace of function calls starting
-// with a client function or method and ending with a
-// call to a vulnerable symbol.
+// CallStack is a call stack starting with a client
+// function or method and ending with a call to a
+// vulnerable symbol.
 type CallStack []StackEntry
 
-// StackEntry models an element of a call stack.
+// StackEntry is an element of a call stack.
 type StackEntry struct {
-	// Function provides information on the function whose frame is on the stack.
+	// Function whose frame is on the stack.
 	Function *FuncNode
 
-	// Call provides information on the call site inducing this stack frame.
-	// nil when the frame represents an entry point of the stack.
+	// Call is the call site inducing the stack frame.
+	// nil when the frame represents the stack entry point.
 	Call *CallSite
 }
 
-// CallStacks lists call stacks for each vulnerability in res. The listed call
-// stacks are ordered by how seemingly easy is to understand them. In general,
-// shorter call stacks with less dynamic call sites appear earlier in the returned
-// call stack slices.
+// CallStacks returns representative call stacks for each
+// vulnerability in res. The returned call stacks are heuristically
+// ordered by how seemingly easy is to understand them: shorter
+// call stacks with less dynamic call sites appear earlier in the
+// returned slices.
 //
-// CallStacks does not report every possible call stack for a vulnerable symbol.
-// It performs a BFS search of res.CallGraph starting at the symbol and going up
-// until reaching an entry function or method in res.CallGraph.Entries. During
-// this search, each function is visited at most once to avoid potential
-// exponential explosion, thus skipping some call stacks.
+// CallStacks performs a breadth-first search of res.CallGraph starting
+// at the vulnerable symbol and going up until reaching an entry
+// function or method in res.CallGraph.Entries. During this search,
+// each function is visited at most once to avoid potential
+// exponential explosion. Hence, not all call stacks are analyzed.
 func CallStacks(res *Result) map[*Vuln][]CallStack {
 	var (
 		wg sync.WaitGroup
