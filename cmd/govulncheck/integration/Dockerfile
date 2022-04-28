@@ -10,3 +10,6 @@ RUN apk update && apk add bash git gcc musl-dev linux-headers
 COPY . /go/src/golang.org/x/vuln
 WORKDIR /go/src/golang.org/x/vuln/cmd/govulncheck/integration
 RUN go install golang.org/x/vuln/cmd/govulncheck
+
+# ---- Step 2: Build other test binaries ----
+RUN go install golang.org/x/vuln/cmd/govulncheck/integration/k8s

@@ -16,16 +16,13 @@ fi
 pushd $dir
 cd pkg
 git checkout tags/v1.15.11
-govulncheck ./...
+govulncheck --json ./... &> govulncheck.txt
+k8s govulncheck.txt
 exitcode=$?
 popd
 
-# There should be some findings, which govulncheck
-# indicates by exit code 3.
-#
-# TODO(zpavlinovic): check if findings are as expected.
-if [ ${exitcode} -ne 3 ]; then
-  echo "FAIL: got exit code $exitcode, want 3"
+if [ ${exitcode} -ne 0 ]; then
+  echo "FAIL: got exit code $exitcode, want 0"
   exit 1
 fi
 echo PASS
