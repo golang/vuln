@@ -3,15 +3,8 @@ $ govulncheck -html ${novuln_binary}
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="utf-8">
+<link href="/static/govulncheck.css" rel="stylesheet">
 <title>govulncheck Results</title>
-<style>
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-    'Helvetica Neue', Arial, sans-serif;
-}
-list-style-type: none;
-</style>
-
 
 <body>
   
@@ -26,15 +19,8 @@ $ govulncheck -html ${vuln_binary} --> FAIL 3
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="utf-8">
+<link href="/static/govulncheck.css" rel="stylesheet">
 <title>govulncheck Results</title>
-<style>
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-    'Helvetica Neue', Arial, sans-serif;
-}
-list-style-type: none;
-</style>
-
 
 <body>
   
