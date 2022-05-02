@@ -1,0 +1,40 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<title>govulncheck Results</title>
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+    'Helvetica Neue', Arial, sans-serif;
+}
+list-style-type: none;
+</style>
+
+
+<body>
+  {{range .}}
+    <h2>{{.ID}}</h2>
+    <table>
+      <tr><td>Package</td><td>{{.PkgPath}}</td></tr>
+      <tr><td>Your version</td><td>{{.CurrentVersion}}</td></tr>
+      <tr><td>Fixed version</td><td>{{.FixedVersion}}</td></tr>
+      <tr><td>Reference</td><td>{{.Reference}}</td></tr>
+      <tr><td>Description</td><td>{{.Details}}</td></tr>
+    </table>
+
+    {{range .Stacks}}
+      <details>
+        <summary>{{.Summary}}</summary>
+        <ul>
+          {{range .Stack}}
+            <li>{{.Function | funcName}}</li>
+          {{end}}
+        </ul>
+      </details>
+    {{end}}
+  {{else}}
+    No vulnerabilities found.
+  {{end}}
+</body>
+</html>

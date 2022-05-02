@@ -8,6 +8,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"html/template"
 	"io"
@@ -15,10 +16,13 @@ import (
 	"golang.org/x/vuln/vulncheck"
 )
 
+//go:embed static/*
+var staticContent embed.FS
+
 func html(w io.Writer, r *vulncheck.Result, callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, moduleVersions map[string]string, topPackages map[string]bool, vulnGroups [][]*vulncheck.Vuln) error {
-	tmpl, err := template.New("govulncheck").Funcs(template.FuncMap{
+	tmpl, err := template.New("govulncheck.tmpl").Funcs(template.FuncMap{
 		"funcName": funcName,
-	}).Parse(templateSource)
+	}).ParseFS(staticContent, "static/govulncheck.tmpl")
 	if err != nil {
 		return err
 	}
@@ -62,45 +66,3 @@ func html(w io.Writer, r *vulncheck.Result, callStacks map[*vulncheck.Vuln][]vul
 	}
 	return tmpl.Execute(w, vulns)
 }
-
-var templateSource = `
-<!DOCTYPE html>
-<html lang="en">
-<meta charset="utf-8">
-<title>govulncheck Results</title>
-<style>
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-    'Helvetica Neue', Arial, sans-serif;
-}
-list-style-type: none;
-</style>
-
-
-<body>
-  {{range .}}
-    <h2>{{.ID}}</h2>
-    <table>
-      <tr><td>Package</td><td>{{.PkgPath}}</td></tr>
-      <tr><td>Your version</td><td>{{.CurrentVersion}}</td></tr>
-      <tr><td>Fixed version</td><td>{{.FixedVersion}}</td></tr>
-      <tr><td>Reference</td><td>{{.Reference}}</td></tr>
-      <tr><td>Description</td><td>{{.Details}}</td></tr>
-    </table>
-
-    {{range .Stacks}}
-      <details>
-        <summary>{{.Summary}}</summary>
-        <ul>
-          {{range .Stack}}
-            <li>{{.Function | funcName}}</li>
-          {{end}}
-        </ul>
-      </details>
-    {{end}}
-  {{else}}
-    No vulnerabilities found.
-  {{end}}
-</body>
-</html>
-`
