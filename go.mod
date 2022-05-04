@@ -6,9 +6,9 @@ require (
 	github.com/client9/misspell v0.3.4
 	github.com/google/go-cmdtest v0.4.0
 	github.com/google/go-cmp v0.5.6
-	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/tools v0.1.8
+	golang.org/x/tools v0.1.11-0.20220504204054-4911e4af7dc7
 	honnef.co/go/tools v0.2.2
 	mvdan.cc/unparam v0.0.0-20211214103731-d0ef000c54e5
 )
