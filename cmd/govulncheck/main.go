@@ -5,16 +5,6 @@
 //go:build go1.18
 // +build go1.18
 
-// Command govulncheck reports known vulnerabilities filed in a vulnerability database
-// (see https://golang.org/design/draft-vulndb) that affect a given package or binary.
-//
-// It uses static analysis or the binary's symbol table to narrow down reports to only
-// those that potentially affect the application.
-//
-// # WARNING WARNING WARNING
-//
-// govulncheck is still experimental and neither its output or the vulnerability
-// database should be relied on to be stable or comprehensive.
 package main
 
 import (
