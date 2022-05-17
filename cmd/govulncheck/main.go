@@ -23,7 +23,6 @@ import (
 	"flag"
 	"fmt"
 	"go/build"
-	"log"
 	"os"
 	"sort"
 	"strings"
@@ -114,7 +113,7 @@ func main() {
 			Tests:      *testsFlag,
 			BuildFlags: []string{fmt.Sprintf("-tags=%s", strings.Join(build.Default.BuildTags, ","))},
 		}
-		pkgs, err = loadPackages(cfg, patterns)
+		pkgs, err = govulncheck.LoadPackages(cfg, patterns...)
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
@@ -153,46 +152,98 @@ func writeJSON(r *vulncheck.Result) {
 	fmt.Println()
 }
 
-func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo) {
+const labelWidth = 16
 
-	const labelWidth = 16
-	line := func(label, text string) {
-		fmt.Printf("%-*s%s\n", labelWidth, label, text)
-	}
+func writeLine(label, text string) {
+	fmt.Printf("%-*s%s\n", labelWidth, label, text)
+}
+
+func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo) {
 	for _, vg := range ci.VulnGroups {
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.
 		v0 := vg[0]
-		line("package:", v0.PkgPath)
-		line("your version:", ci.ModuleVersions[v0.ModPath])
-		line("fixed version:", "v"+govulncheck.LatestFixed(v0.OSV.Affected))
-		var summaries []string
-		for _, v := range vg {
-			if css := ci.CallStacks[v]; len(css) > 0 {
-				if sum := govulncheck.SummarizeCallStack(css[0], ci.TopPackages, v.PkgPath); sum != "" {
-					summaries = append(summaries, sum)
-				}
-			}
+		writeLine("package:", v0.PkgPath)
+		writeLine("your version:", ci.ModuleVersions[v0.ModPath])
+		writeLine("fixed version:", "v"+govulncheck.LatestFixed(v0.OSV.Affected))
+		if *verboseFlag {
+			writeCallStacksVerbose(vg, ci)
+		} else {
+			writeCallStacksDefault(vg, ci)
 		}
-		if len(summaries) > 0 {
-			sort.Strings(summaries)
-			summaries = compact(summaries)
-			line("sample call stacks:", "")
-			for _, s := range summaries {
-				line("", s)
-			}
-		}
-		line("reference:", fmt.Sprintf("https://pkg.go.dev/vuln/%s", v0.OSV.ID))
+		writeLine("reference:", fmt.Sprintf("https://pkg.go.dev/vuln/%s", v0.OSV.ID))
 		desc := strings.Split(wrap(v0.OSV.Details, 80-labelWidth), "\n")
 		for i, l := range desc {
 			if i == 0 {
-				line("description:", l)
+				writeLine("description:", l)
 			} else {
-				line("", l)
+				writeLine("", l)
 			}
 		}
 		fmt.Println()
 	}
+}
+
+func writeCallStacksDefault(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
+
+	var summaries []string
+	for _, v := range vg {
+		if css := ci.CallStacks[v]; len(css) > 0 {
+			if sum := govulncheck.SummarizeCallStack(css[0], ci.TopPackages, v.PkgPath); sum != "" {
+				summaries = append(summaries, sum)
+			}
+		}
+	}
+	if len(summaries) > 0 {
+		sort.Strings(summaries)
+		summaries = compact(summaries)
+		fmt.Println("sample call stacks:")
+		for _, s := range summaries {
+			writeLine("", s)
+		}
+	}
+}
+
+func writeCallStacksVerbose(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
+	// Display one full call stack for each vuln.
+	fmt.Println("call stacks:")
+	nMore := 0
+	i := 1
+	for _, v := range vg {
+		css := ci.CallStacks[v]
+		if len(css) == 0 {
+			continue
+		}
+		fmt.Printf("    #%d: for function %s\n", i, v.Symbol)
+		writeCallStack(css[0])
+		fmt.Println()
+		i++
+		nMore += len(css) - 1
+	}
+	if nMore > 0 {
+		fmt.Printf("    There are %d more call stacks available.\n", nMore)
+		fmt.Printf("To     see all of them, pass the -json or -html flags.\n")
+	}
+}
+
+func writeCallStack(cs vulncheck.CallStack) {
+	for _, e := range cs {
+		fmt.Printf("        %s\n", govulncheck.FuncName(e.Function))
+		if e.Call != nil && e.Call.Pos != nil {
+			fmt.Printf("            %s\n", e.Call.Pos.String())
+		}
+	}
+}
+
+func packageModule(p *packages.Package) *packages.Module {
+	m := p.Module
+	if m == nil {
+		return nil
+	}
+	if r := m.Replace; r != nil {
+		return r
+	}
+	return m
 }
 
 func isFile(path string) bool {
@@ -201,20 +252,6 @@ func isFile(path string) bool {
 		return false
 	}
 	return !s.IsDir()
-}
-
-func loadPackages(cfg *packages.Config, patterns []string) ([]*vulncheck.Package, error) {
-	if *verboseFlag {
-		log.Println("loading packages...")
-	}
-	pkgs, err := govulncheck.LoadPackages(cfg, patterns...)
-	if err != nil {
-		return nil, err
-	}
-	if *verboseFlag {
-		log.Printf("\t%d loaded packages\n", len(pkgs))
-	}
-	return pkgs, nil
 }
 
 // compact replaces consecutive runs of equal elements with a single copy.

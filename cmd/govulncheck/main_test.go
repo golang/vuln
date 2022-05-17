@@ -56,12 +56,7 @@ func TestCommand(t *testing.T) {
 		}
 		cmd.Env = append(os.Environ(), "GOVULNDB=file://"+testDir+"/testdata/vulndb")
 		out, err := cmd.CombinedOutput()
-		for _, arg := range args {
-			if arg == "-json" {
-				out = filterJSON(out)
-				break
-			}
-		}
+		out = filterGoFilePaths(out)
 		return out, err
 	}
 
@@ -81,15 +76,16 @@ func TestCommand(t *testing.T) {
 	ts.Run(t, *update)
 }
 
-var goFileRegexp = regexp.MustCompile(`"[^"]*\.go"`)
+var goFileRegexp = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
 
-// filterJSON  modifies paths to Go files by replacing their directory with "...".
-// For example, "/a/b/c.go" becomes ".../c.go".
-// This makes it possible to compare govulncheck JSON  output across systems, because
-// Go filenames in JSON output include setup-specific paths.
-func filterJSON(data []byte) []byte {
+// filterGoFilePaths  modifies paths to Go files by replacing their directory with "...".
+// For example,/a/b/c.go becomes .../c.go .
+// This makes it possible to compare govulncheck output across systems, because
+// Go filenames include setup-specific paths.
+func filterGoFilePaths(data []byte) []byte {
 	return goFileRegexp.ReplaceAllFunc(data, func(b []byte) []byte {
-		return []byte(fmt.Sprintf(`".../%s"`, filepath.Base(string(b)[1:len(b)-1])))
+		s := string(b)
+		return []byte(fmt.Sprintf(`.../%s%c`, filepath.Base(s[1:len(s)-1]), s[len(s)-1]))
 	})
 }
 
