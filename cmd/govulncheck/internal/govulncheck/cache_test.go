@@ -2,10 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build go1.18
-// +build go1.18
-
-package main
+package govulncheck
 
 import (
 	"fmt"
@@ -23,7 +20,7 @@ import (
 func TestCache(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	cache := &fsCache{rootDir: tmpDir}
+	cache := &FSCache{rootDir: tmpDir}
 	dbName := "vulndb.golang.org"
 
 	_, _, err := cache.ReadIndex(dbName)
@@ -85,7 +82,7 @@ func TestCache(t *testing.T) {
 func TestConcurrency(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	cache := &fsCache{rootDir: tmpDir}
+	cache := &FSCache{rootDir: tmpDir}
 	dbName := "vulndb.golang.org"
 
 	g := new(errgroup.Group)

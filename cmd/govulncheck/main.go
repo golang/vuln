@@ -32,6 +32,7 @@ import (
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/cmd/govulncheck/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
@@ -86,7 +87,9 @@ func main() {
 	if GOVULNDB := os.Getenv("GOVULNDB"); GOVULNDB != "" {
 		dbs = strings.Split(GOVULNDB, ",")
 	}
-	dbClient, err := client.NewClient(dbs, client.Options{HTTPCache: defaultCache()})
+	dbClient, err := client.NewClient(dbs, client.Options{
+		HTTPCache: govulncheck.DefaultCache(),
+	})
 	if err != nil {
 		die("govulncheck: %s", err)
 	}
