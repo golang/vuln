@@ -22,7 +22,7 @@ var staticContent embed.FS
 
 func html(w io.Writer, r *vulncheck.Result, ci *govulncheck.CallInfo) error {
 	tmpl, err := template.New("govulncheck.tmpl").Funcs(template.FuncMap{
-		"funcName": funcName,
+		"funcName": govulncheck.FuncName,
 	}).ParseFS(staticContent, "static/govulncheck.tmpl")
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func html(w io.Writer, r *vulncheck.Result, ci *govulncheck.CallInfo) error {
 			ID:             v0.OSV.ID,
 			PkgPath:        v0.PkgPath,
 			CurrentVersion: ci.ModuleVersions[v0.ModPath],
-			FixedVersion:   "v" + latestFixed(v0.OSV.Affected),
+			FixedVersion:   "v" + govulncheck.LatestFixed(v0.OSV.Affected),
 			Reference:      fmt.Sprintf("https://pkg.go.dev/vuln/%s", v0.OSV.ID),
 			Details:        v0.OSV.Details,
 		}
@@ -58,7 +58,7 @@ func html(w io.Writer, r *vulncheck.Result, ci *govulncheck.CallInfo) error {
 		for _, v := range vg {
 			if css := ci.CallStacks[v]; len(css) > 0 {
 				vn.Stacks = append(vn.Stacks, callstack{
-					Summary: summarizeCallStack(css[0], ci.TopPackages, v.PkgPath),
+					Summary: govulncheck.SummarizeCallStack(css[0], ci.TopPackages, v.PkgPath),
 					Stack:   css[0],
 				})
 			}
