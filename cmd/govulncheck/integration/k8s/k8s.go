@@ -35,8 +35,8 @@ func main() {
 		log.Fatal("Failed to load json into vulncheck.Result:", err)
 	}
 
-	if len(r.Vulns) != 326 {
-		log.Fatal("want 326 vulns; got", len(r.Vulns))
+	if len(r.Vulns) != 19 {
+		log.Fatal("want 19 vulns; got", len(r.Vulns))
 	}
 
 	type vuln struct {
@@ -45,9 +45,7 @@ func main() {
 	}
 	calledVulns := make(map[vuln]bool)
 	for _, v := range r.Vulns {
-		if v.CallSink != 0 {
-			calledVulns[vuln{v.PkgPath, v.Symbol}] = true
-		}
+		calledVulns[vuln{v.PkgPath, v.Symbol}] = true
 	}
 
 	want := map[vuln]bool{
@@ -73,6 +71,6 @@ func main() {
 	}
 
 	if !cmp.Equal(calledVulns, want) {
-		log.Fatalf("want %v called symbols;\ngot%v\n", want, calledVulns)
+		log.Fatalf("want %v called symbols;\ngot %v\n", want, calledVulns)
 	}
 }
