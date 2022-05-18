@@ -128,20 +128,14 @@ func main() {
 	if *jsonFlag {
 		writeJSON(r)
 	} else {
-		callStacks := vulncheck.CallStacks(r)
-		// Create set of top-level packages, used to find representative symbols
-		topPackages := map[string]bool{}
-		for _, p := range pkgs {
-			topPackages[p.PkgPath] = true
-		}
-		vulnGroups := groupByIDAndPackage(r.Vulns)
-		moduleVersions := moduleVersionMap(r.Modules)
+		// set of top-level packages, used to find representative symbols
+		ci := govulncheck.GetCallInfo(r, pkgs)
 		if *htmlFlag {
-			if err := html(os.Stdout, r, callStacks, moduleVersions, topPackages, vulnGroups); err != nil {
+			if err := html(os.Stdout, r, ci); err != nil {
 				die("writing HTML: %v", err)
 			}
 		} else {
-			writeText(r, callStacks, moduleVersions, topPackages, vulnGroups)
+			writeText(r, ci)
 		}
 	}
 	exitCode := 0
@@ -150,19 +144,6 @@ func main() {
 		exitCode = 3
 	}
 	os.Exit(exitCode)
-}
-
-// moduleVersionMap builds a map from module paths to versions.
-func moduleVersionMap(mods []*vulncheck.Module) map[string]string {
-	moduleVersions := map[string]string{}
-	for _, m := range mods {
-		v := m.Version
-		if m.Replace != nil {
-			v = m.Replace.Version
-		}
-		moduleVersions[m.Path] = v
-	}
-	return moduleVersions
 }
 
 func writeJSON(r *vulncheck.Result) {
@@ -174,23 +155,23 @@ func writeJSON(r *vulncheck.Result) {
 	fmt.Println()
 }
 
-func writeText(r *vulncheck.Result, callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, moduleVersions map[string]string, topPackages map[string]bool, vulnGroups [][]*vulncheck.Vuln) {
+func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo) {
 
 	const labelWidth = 16
 	line := func(label, text string) {
 		fmt.Printf("%-*s%s\n", labelWidth, label, text)
 	}
-	for _, vg := range vulnGroups {
+	for _, vg := range ci.VulnGroups {
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.
 		v0 := vg[0]
 		line("package:", v0.PkgPath)
-		line("your version:", moduleVersions[v0.ModPath])
+		line("your version:", ci.ModuleVersions[v0.ModPath])
 		line("fixed version:", "v"+latestFixed(v0.OSV.Affected))
 		var summaries []string
 		for _, v := range vg {
-			if css := callStacks[v]; len(css) > 0 {
-				if sum := summarizeCallStack(css[0], topPackages, v.PkgPath); sum != "" {
+			if css := ci.CallStacks[v]; len(css) > 0 {
+				if sum := summarizeCallStack(css[0], ci.TopPackages, v.PkgPath); sum != "" {
 					summaries = append(summaries, sum)
 				}
 			}
@@ -214,34 +195,6 @@ func writeText(r *vulncheck.Result, callStacks map[*vulncheck.Vuln][]vulncheck.C
 		}
 		fmt.Println()
 	}
-}
-
-func groupByIDAndPackage(vs []*vulncheck.Vuln) [][]*vulncheck.Vuln {
-	groups := map[[2]string][]*vulncheck.Vuln{}
-	for _, v := range vs {
-		key := [2]string{v.OSV.ID, v.PkgPath}
-		groups[key] = append(groups[key], v)
-	}
-
-	var res [][]*vulncheck.Vuln
-	for _, g := range groups {
-		res = append(res, g)
-	}
-	sort.Slice(res, func(i, j int) bool {
-		return res[i][0].PkgPath < res[j][0].PkgPath
-	})
-	return res
-}
-
-func packageModule(p *packages.Package) *packages.Module {
-	m := p.Module
-	if m == nil {
-		return nil
-	}
-	if r := m.Replace; r != nil {
-		return r
-	}
-	return m
 }
 
 func isFile(path string) bool {

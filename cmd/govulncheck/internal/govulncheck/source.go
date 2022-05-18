@@ -7,6 +7,7 @@ package govulncheck
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -69,4 +70,57 @@ func Source(ctx context.Context, pkgs []*vulncheck.Package, c client.Client) (*v
 	}
 	r.Vulns = vulns
 	return r, nil
+}
+
+// CallInfo is information about calls to vulnerable functions.
+type CallInfo struct {
+	CallStacks     map[*vulncheck.Vuln][]vulncheck.CallStack // all call stacks
+	VulnGroups     [][]*vulncheck.Vuln                       // vulns grouped by ID and package
+	ModuleVersions map[string]string                         // map from module paths to versions
+	TopPackages    map[string]bool                           // top-level packages
+}
+
+// GetCallInfo computes call stacks and related information from a vulncheck.Result.
+// I also makes a set of top-level packages from pkgs.
+func GetCallInfo(r *vulncheck.Result, pkgs []*vulncheck.Package) *CallInfo {
+	pset := map[string]bool{}
+	for _, p := range pkgs {
+		pset[p.PkgPath] = true
+	}
+	return &CallInfo{
+		CallStacks:     vulncheck.CallStacks(r),
+		VulnGroups:     groupByIDAndPackage(r.Vulns),
+		ModuleVersions: moduleVersionMap(r.Modules),
+		TopPackages:    pset,
+	}
+}
+
+func groupByIDAndPackage(vs []*vulncheck.Vuln) [][]*vulncheck.Vuln {
+	groups := map[[2]string][]*vulncheck.Vuln{}
+	for _, v := range vs {
+		key := [2]string{v.OSV.ID, v.PkgPath}
+		groups[key] = append(groups[key], v)
+	}
+
+	var res [][]*vulncheck.Vuln
+	for _, g := range groups {
+		res = append(res, g)
+	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i][0].PkgPath < res[j][0].PkgPath
+	})
+	return res
+}
+
+// moduleVersionMap builds a map from module paths to versions.
+func moduleVersionMap(mods []*vulncheck.Module) map[string]string {
+	moduleVersions := map[string]string{}
+	for _, m := range mods {
+		v := m.Version
+		if m.Replace != nil {
+			v = m.Replace.Version
+		}
+		moduleVersions[m.Path] = v
+	}
+	return moduleVersions
 }

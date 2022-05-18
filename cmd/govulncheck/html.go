@@ -13,13 +13,14 @@ import (
 	"html/template"
 	"io"
 
+	"golang.org/x/vuln/cmd/govulncheck/internal/govulncheck"
 	"golang.org/x/vuln/vulncheck"
 )
 
 //go:embed static/*
 var staticContent embed.FS
 
-func html(w io.Writer, r *vulncheck.Result, callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, moduleVersions map[string]string, topPackages map[string]bool, vulnGroups [][]*vulncheck.Vuln) error {
+func html(w io.Writer, r *vulncheck.Result, ci *govulncheck.CallInfo) error {
 	tmpl, err := template.New("govulncheck.tmpl").Funcs(template.FuncMap{
 		"funcName": funcName,
 	}).ParseFS(staticContent, "static/govulncheck.tmpl")
@@ -43,21 +44,21 @@ func html(w io.Writer, r *vulncheck.Result, callStacks map[*vulncheck.Vuln][]vul
 	}
 
 	var vulns []*vuln
-	for _, vg := range vulnGroups {
+	for _, vg := range ci.VulnGroups {
 		v0 := vg[0]
 		vn := &vuln{
 			ID:             v0.OSV.ID,
 			PkgPath:        v0.PkgPath,
-			CurrentVersion: moduleVersions[v0.ModPath],
+			CurrentVersion: ci.ModuleVersions[v0.ModPath],
 			FixedVersion:   "v" + latestFixed(v0.OSV.Affected),
 			Reference:      fmt.Sprintf("https://pkg.go.dev/vuln/%s", v0.OSV.ID),
 			Details:        v0.OSV.Details,
 		}
 		// Keep first call stack for each vuln.
 		for _, v := range vg {
-			if css := callStacks[v]; len(css) > 0 {
+			if css := ci.CallStacks[v]; len(css) > 0 {
 				vn.Stacks = append(vn.Stacks, callstack{
-					Summary: summarizeCallStack(css[0], topPackages, v.PkgPath),
+					Summary: summarizeCallStack(css[0], ci.TopPackages, v.PkgPath),
 					Stack:   css[0],
 				})
 			}
