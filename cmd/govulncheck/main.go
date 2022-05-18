@@ -98,9 +98,8 @@ func main() {
 
 	patterns := flag.Args()
 	var (
-		r     *vulncheck.Result
-		pkgs  []*vulncheck.Package
-		vulns []*vulncheck.Vuln
+		r    *vulncheck.Result
+		pkgs []*vulncheck.Package
 	)
 	if len(patterns) == 1 && isFile(patterns[0]) {
 		f, err := os.Open(patterns[0])
@@ -112,7 +111,6 @@ func main() {
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
-		vulns = r.Vulns
 	} else {
 		cfg := &packages.Config{
 			Tests:      *testsFlag,
@@ -122,16 +120,9 @@ func main() {
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
-		r, err = vulncheck.Source(ctx, pkgs, vcfg)
+		r, err = govulncheck.Source(ctx, pkgs, dbClient)
 		if err != nil {
 			die("govulncheck: %v", err)
-		}
-
-		// Skip vulns that are in the import graph but have no calls to them.
-		for _, v := range r.Vulns {
-			if v.CallSink != 0 {
-				vulns = append(vulns, v)
-			}
 		}
 	}
 	if *jsonFlag {
@@ -143,7 +134,7 @@ func main() {
 		for _, p := range pkgs {
 			topPackages[p.PkgPath] = true
 		}
-		vulnGroups := groupByIDAndPackage(vulns)
+		vulnGroups := groupByIDAndPackage(r.Vulns)
 		moduleVersions := moduleVersionMap(r.Modules)
 		if *htmlFlag {
 			if err := html(os.Stdout, r, callStacks, moduleVersions, topPackages, vulnGroups); err != nil {
@@ -155,7 +146,7 @@ func main() {
 	}
 	exitCode := 0
 	// Following go vet, fail with 3 if there are findings (in this case, vulns).
-	if len(vulns) > 0 {
+	if len(r.Vulns) > 0 {
 		exitCode = 3
 	}
 	os.Exit(exitCode)
