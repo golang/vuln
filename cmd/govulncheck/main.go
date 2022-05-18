@@ -99,7 +99,7 @@ func main() {
 	patterns := flag.Args()
 	var (
 		r     *vulncheck.Result
-		pkgs  []*packages.Package
+		pkgs  []*vulncheck.Package
 		vulns []*vulncheck.Vuln
 	)
 	if len(patterns) == 1 && isFile(patterns[0]) {
@@ -115,7 +115,6 @@ func main() {
 		vulns = r.Vulns
 	} else {
 		cfg := &packages.Config{
-			Mode:       packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps | packages.NeedModule,
 			Tests:      *testsFlag,
 			BuildFlags: []string{fmt.Sprintf("-tags=%s", strings.Join(build.Default.BuildTags, ","))},
 		}
@@ -123,7 +122,7 @@ func main() {
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
-		r, err = vulncheck.Source(ctx, vulncheck.Convert(pkgs), vcfg)
+		r, err = vulncheck.Source(ctx, pkgs, vcfg)
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
@@ -262,16 +261,13 @@ func isFile(path string) bool {
 	return !s.IsDir()
 }
 
-func loadPackages(cfg *packages.Config, patterns []string) ([]*packages.Package, error) {
+func loadPackages(cfg *packages.Config, patterns []string) ([]*vulncheck.Package, error) {
 	if *verboseFlag {
 		log.Println("loading packages...")
 	}
-	pkgs, err := packages.Load(cfg, patterns...)
+	pkgs, err := govulncheck.LoadPackages(cfg, patterns...)
 	if err != nil {
 		return nil, err
-	}
-	if packages.PrintErrors(pkgs) > 0 {
-		return nil, fmt.Errorf("packages contain errors")
 	}
 	if *verboseFlag {
 		log.Printf("\t%d loaded packages\n", len(pkgs))
