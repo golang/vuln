@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Package osv implements the OSV shared vulnerability
-// format, as defined by https://github.com/ossf/osv-schema.
+// format, as defined by https://ossf.github.io/osv-schema.
 //
 // As this package is intended for use with the Go vulnerability
 // database, only the subset of features which are used by that
@@ -119,10 +119,33 @@ type DatabaseSpecific struct {
 	URL string `json:"url"`
 }
 
+// EcosystemSpecific contains additional information about the vulnerability
+// for the Go ecosystem.
 type EcosystemSpecific struct {
+	// Symbols is the collection of functions and methods names affected by
+	// this vulnerability. Methods are listed as <recv>.<method>.
+	//
+	// If included, only programs which use these symbols will be marked as
+	// vulnerable. If omitted, any program which imports this module will be
+	// marked vulnerable.
+	//
+	// These should be the symbols initially detected or identified in the CVE
+	// or other source.
 	Symbols []string `json:"symbols,omitempty"`
-	GOOS    []string `json:"goos,omitempty"`
-	GOARCH  []string `json:"goarch,omitempty"`
+
+	// GOOS is the execution operating system where the symbols appear, if
+	// known.
+	//
+	// At the moment, this information is not provided by the Go
+	// vulnerability database.
+	GOOS []string `json:"goos,omitempty"`
+
+	// GOARCH specifies the execution architecture where the symbols appear, if
+	// known.
+	//
+	// At the moment, this information is not provided by the Go
+	// vulnerability database.
+	GOARCH []string `json:"goarch,omitempty"`
 }
 
 // Entry represents a OSV style JSON vulnerability database
