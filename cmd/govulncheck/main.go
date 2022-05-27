@@ -81,12 +81,18 @@ func main() {
 		die("govulncheck: %s", err)
 	}
 	vcfg := &vulncheck.Config{Client: dbClient}
-	ctx := context.Background()
 
 	patterns := flag.Args()
+	if !(*jsonFlag || *htmlFlag) {
+		fmt.Printf(`govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Scanning for dependencies with known vulnerabilities...
+`)
+	}
 	var (
 		r    *vulncheck.Result
 		pkgs []*vulncheck.Package
+		ctx  = context.Background()
 	)
 	if len(patterns) == 1 && isFile(patterns[0]) {
 		f, err := os.Open(patterns[0])
@@ -149,6 +155,22 @@ func writeLine(label, text string) {
 }
 
 func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo) {
+	uniqueVulns := map[string]bool{}
+	for _, v := range r.Vulns {
+		uniqueVulns[v.OSV.ID] = true
+	}
+	switch len(uniqueVulns) {
+	case 0:
+		fmt.Println("No vulnerabilities found.")
+		return
+	case 1:
+		fmt.Println("Found 1 known vulnerability.")
+	default:
+		fmt.Printf("Found %d known vulnerabilities.\n", len(uniqueVulns))
+	}
+	fmt.Println(strings.Repeat("-", 55))
+	fmt.Println()
+
 	for _, vg := range ci.VulnGroups {
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.

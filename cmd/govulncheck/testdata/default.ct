@@ -3,9 +3,19 @@
 # No vulnerabilities, no output.
 $ cdmodule novuln
 $ govulncheck .
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Scanning for dependencies with known vulnerabilities...
+No vulnerabilities found.
 
 $ cdmodule vuln
 $ govulncheck . --> FAIL 3
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Scanning for dependencies with known vulnerabilities...
+Found 1 known vulnerability.
+-------------------------------------------------------
+
 package:        golang.org/x/text/language
 your version:   v0.3.0
 fixed version:  v0.3.7
