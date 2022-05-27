@@ -19,7 +19,7 @@ Flags:
 
 govulncheck can be used with either one or more package patterns (i.e. golang.org/x/crypto/...
 or ./...) or with a single path to a Go binary. In the latter case module and symbol
-information will be extracted from the binary in order to detect vulnerable symbols.
+information will be extracted from the binary to detect vulnerable symbols.
 
 The environment variable GOVULNDB can be set to a comma-separated list of vulnerability
 database URLs, with http://, https://, or file:// protocols. Entries from multiple
@@ -48,7 +48,7 @@ Flags:
 
 govulncheck can be used with either one or more package patterns (i.e. golang.org/x/crypto/...
 or ./...) or with a single path to a Go binary. In the latter case module and symbol
-information will be extracted from the binary in order to detect vulnerable symbols.
+information will be extracted from the binary to detect vulnerable symbols.
 
 The environment variable GOVULNDB can be set to a comma-separated list of vulnerability
 database URLs, with http://, https://, or file:// protocols. Entries from multiple

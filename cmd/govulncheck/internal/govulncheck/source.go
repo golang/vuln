@@ -77,14 +77,21 @@ func Source(ctx context.Context, pkgs []*vulncheck.Package, c client.Client) (*v
 
 // CallInfo is information about calls to vulnerable functions.
 type CallInfo struct {
-	CallStacks     map[*vulncheck.Vuln][]vulncheck.CallStack // all call stacks
-	VulnGroups     [][]*vulncheck.Vuln                       // vulns grouped by ID and package
-	ModuleVersions map[string]string                         // map from module paths to versions
-	TopPackages    map[string]bool                           // top-level packages
+	// CallStacks contains all call stacks to vulnerable functions.
+	CallStacks map[*vulncheck.Vuln][]vulncheck.CallStack
+
+	// VulnGroups contains vulnerabilities grouped by ID and package.
+	VulnGroups [][]*vulncheck.Vuln
+
+	// ModuleVersions is a map of module paths to versions.
+	ModuleVersions map[string]string
+
+	// TopPackages contains the top-level packages in the call info.
+	TopPackages map[string]bool
 }
 
 // GetCallInfo computes call stacks and related information from a vulncheck.Result.
-// I also makes a set of top-level packages from pkgs.
+// It also makes a set of top-level packages from pkgs.
 func GetCallInfo(r *vulncheck.Result, pkgs []*vulncheck.Package) *CallInfo {
 	pset := map[string]bool{}
 	for _, p := range pkgs {

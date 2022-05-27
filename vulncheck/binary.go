@@ -18,8 +18,8 @@ import (
 	"golang.org/x/vuln/vulncheck/internal/binscan"
 )
 
-// Binary detects presence of vulnerable symbols in exe. The
-// imports, require, and call graph are all unavailable (nil).
+// Binary detects presence of vulnerable symbols in exe.
+// The Calls, Imports, and Requires fields on Result will be empty.
 func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err error) {
 	defer derrors.Wrap(&err, "vulncheck.Binary")
 

@@ -21,6 +21,7 @@ type Config struct {
 	// If ImportsOnly is true, vulncheck analyzes import chains only.
 	// Otherwise, call chains are analyzed too.
 	ImportsOnly bool
+
 	// Client is used for querying data from a vulnerability database.
 	Client client.Client
 }
@@ -90,10 +91,12 @@ type Result struct {
 	// Config.ImportsOnly is true or when no vulnerable symbols are reachable
 	// via the program call graph.
 	Calls *CallGraph
+
 	// Imports is a package dependency graph whose roots are entry user packages
 	// and sinks are packages with some known vulnerable symbols. It is empty
 	// when no packages with vulnerabilities are imported in the program.
 	Imports *ImportGraph
+
 	// Requires is a module dependency graph whose roots are entry user modules
 	// and sinks are modules with some vulnerable packages. It is empty when no
 	// modules with vulnerabilities are required by the program.
@@ -113,30 +116,42 @@ type Result struct {
 // connecting it to the Result.{Calls,Imports,Requires} graphs. Vulnerabilities
 // detected in Go binaries do not appear in the Result graphs.
 type Vuln struct {
-	// The next four fields identify a vulnerability. Note that *osv.Entry
-	// describes potentially multiple symbols from multiple packages.
-
 	// OSV contains information on the detected vulnerability in the shared
 	// vulnerability format.
+	//
+	// OSV, Symbol, PkgPath, and ModPath identify a vulnerability.
+	//
+	// Note that *osv.Entry may describe multiple symbols from multiple
+	// packages.
 	OSV *osv.Entry
+
 	// Symbol is the name of the detected vulnerable function or method.
 	Symbol string
+
 	// PkgPath is the package path of the detected Symbol.
 	PkgPath string
+
 	// ModPath is the module path corresponding to PkgPath.
 	ModPath string
 
-	// CallSink is the ID of the sink node in the Calls graph corresponding to
-	// the use of Symbol. ID is not available (denoted with 0) when analyzing binaries,
-	// or if Symbol is not reachable, or if Config.ImportsOnly is true.
+	// CallSink is the ID of the FuncNode in Result.Calls corresponding to
+	// Symbol.
+	//
+	// When analyzing binaries, Symbol is not reachable, or Config.ImportsOnly
+	// is true, CallSink will be unavailable and set to 0.
 	CallSink int
-	// ImportSink is the ID of the sink node in the Imports graph corresponding
-	// to the import of PkgPath. ID is not available (denoted with 0) when analyzing
-	// binaries or when PkgPath is not imported.
+
+	// ImportSink is the ID of the PkgNode in Result.Imports corresponding to
+	// PkgPath.
+	//
+	// When analyzing binaries or PkgPath is not imported, ImportSink will be
+	// unavailable and set to 0.
 	ImportSink int
-	// RequireSink is the ID of the sink node in Requires graph corresponding
-	// to the require statement of ModPath. ID is not available (denoted with 0)
-	// when analyzing binaries.
+
+	// RequireSink is the ID of the ModNode in Result.Requires corresponding to
+	// ModPath.
+	//
+	// When analyzing binaries, RequireSink will be unavailable and set to 0.
 	RequireSink int
 }
 
@@ -147,20 +162,30 @@ type Vuln struct {
 // functions (see FuncNode) for a more efficient traversal of the slice
 // related to a particular vulnerability.
 type CallGraph struct {
-	// Functions contains all call graph nodes as a map: func node id -> func node.
+	// Functions contains all call graph nodes as a map: FuncNode.ID -> FuncNode.
 	Functions map[int]*FuncNode
+
 	// Entries are IDs of a subset of Functions representing vulncheck entry points.
 	Entries []int
 }
 
 // A FuncNode describes a function in the call graph.
 type FuncNode struct {
-	ID   int
+	// ID is the id used to identify the FuncNode in CallGraph.
+	ID int
+
+	// Name is the name of the function.
 	Name string
+
 	// RecvType is the receiver object type of this function, if any.
 	RecvType string
-	PkgPath  string
-	Pos      *token.Position
+
+	// PkgPath is the import path of the package containing the function.
+	PkgPath string
+
+	// Position describes the position of the function in the file.
+	Pos *token.Position
+
 	// CallSites is a set of call sites where this function is called.
 	CallSites []*CallSite
 }
@@ -176,11 +201,16 @@ func (fn *FuncNode) String() string {
 type CallSite struct {
 	// Parent is ID of the enclosing function where the call is made.
 	Parent int
+
 	// Name stands for the name of the function (variable) being called.
 	Name string
+
 	// RecvType is the full path of the receiver object type, if any.
 	RecvType string
-	Pos      *token.Position
+
+	// Position describes the position of the function in the file.
+	Pos *token.Position
+
 	// Resolved indicates if the called function can be statically resolved.
 	Resolved bool
 }
@@ -195,18 +225,26 @@ type CallSite struct {
 type RequireGraph struct {
 	// Modules contains all module nodes as a map: module node id -> module node.
 	Modules map[int]*ModNode
+
 	// Entries are IDs of a subset of Modules representing modules of vulncheck entry points.
 	Entries []int
 }
 
 // A ModNode describes a module in the requires graph.
 type ModNode struct {
-	ID      int
-	Path    string
+	// ID is the id used to identify the ModNode in CallGraph.
+	ID int
+
+	// Path is the module path.
+	Path string
+
+	// Version is the module version.
 	Version string
+
 	// Replace is the ID of the replacement module node.
 	// A zero value means there is no replacement.
 	Replace int
+
 	// RequiredBy contains IDs of the modules requiring this module.
 	RequiredBy []int
 }
@@ -221,18 +259,25 @@ type ModNode struct {
 type ImportGraph struct {
 	// Packages contains all package nodes as a map: package node id -> package node.
 	Packages map[int]*PkgNode
+
 	// Entries are IDs of a subset of Packages representing packages of vulncheck entry points.
 	Entries []int
 }
 
 // A PkgNode describes a package in the import graph.
 type PkgNode struct {
+	// ID is the id used to identify the PkgNode in ImportGraph.
 	ID int
+
 	// Name is the package identifier as it appears in the source code.
 	Name string
+
+	// Path is the package path.
 	Path string
+
 	// Module holds ID of the corresponding module (node) in the Requires graph.
 	Module int
+
 	// ImportedBy contains IDs of packages directly importing this package.
 	ImportedBy []int
 
