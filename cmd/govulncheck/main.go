@@ -90,9 +90,10 @@ Scanning for dependencies with known vulnerabilities...
 `)
 	}
 	var (
-		r    *vulncheck.Result
-		pkgs []*vulncheck.Package
-		ctx  = context.Background()
+		r              *vulncheck.Result
+		pkgs           []*vulncheck.Package
+		unaffectedMods map[string][]string
+		ctx            = context.Background()
 	)
 	if len(patterns) == 1 && isFile(patterns[0]) {
 		f, err := os.Open(patterns[0])
@@ -117,6 +118,7 @@ Scanning for dependencies with known vulnerabilities...
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
+		unaffectedMods = filterUnaffected(r.Vulns)
 		r.Vulns = filterCalled(r)
 	}
 
@@ -130,7 +132,7 @@ Scanning for dependencies with known vulnerabilities...
 				die("writing HTML: %v", err)
 			}
 		} else {
-			writeText(r, ci)
+			writeText(r, ci, unaffectedMods)
 		}
 	}
 	exitCode := 0
@@ -152,6 +154,38 @@ func filterCalled(r *vulncheck.Result) []*vulncheck.Vuln {
 	return vulns
 }
 
+// filterUnaffected returns vulnerabilities where no symbols are called,
+// grouped by module.
+func filterUnaffected(vulns []*vulncheck.Vuln) map[string][]string {
+	// It is possible that the same vuln.OSV.ID has vuln.CallSink != 0
+	// for one symbol, but vuln.CallSink == 0 for a different one, so
+	// we need to filter out ones that have been called.
+	called := map[string]bool{}
+	for _, vuln := range vulns {
+		if vuln.CallSink != 0 {
+			called[vuln.OSV.ID] = true
+		}
+	}
+
+	modToIDs := map[string]map[string]bool{}
+	for _, vuln := range vulns {
+		if !called[vuln.OSV.ID] {
+			if _, ok := modToIDs[vuln.ModPath]; !ok {
+				modToIDs[vuln.ModPath] = map[string]bool{}
+			}
+			modToIDs[vuln.ModPath][vuln.OSV.ID] = true
+		}
+	}
+	output := map[string][]string{}
+	for m, idSet := range modToIDs {
+		for id := range idSet {
+			output[m] = append(output[m], id)
+		}
+		sort.Strings(output[m])
+	}
+	return output
+}
+
 func writeJSON(r *vulncheck.Result) {
 	b, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
@@ -167,7 +201,9 @@ func writeLine(label, text string) {
 	fmt.Printf("%-*s%s\n", labelWidth, label, text)
 }
 
-func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo) {
+const lineLength = 55
+
+func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map[string][]string) {
 	uniqueVulns := map[string]bool{}
 	for _, v := range r.Vulns {
 		uniqueVulns[v.OSV.ID] = true
@@ -181,7 +217,7 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo) {
 	default:
 		fmt.Printf("Found %d known vulnerabilities.\n", len(uniqueVulns))
 	}
-	fmt.Println(strings.Repeat("-", 55))
+	fmt.Println(strings.Repeat("-", lineLength))
 	fmt.Println()
 
 	for _, vg := range ci.VulnGroups {
@@ -207,6 +243,18 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo) {
 		}
 		fmt.Println()
 	}
+	if len(unaffectedMods) > 0 {
+		fmt.Println()
+		fmt.Println(strings.Repeat("-", lineLength))
+		fmt.Println()
+		fmt.Println(wrap("These vulnerabilities exist in required modules, but no vulnerable symbols are used. No action is required. For more information, visit https://pkg.go.dev/vuln.", 80-labelWidth))
+		fmt.Println()
+		for m, ids := range unaffectedMods {
+			fmt.Printf("%s (%s)", m, strings.Join(ids, ", "))
+		}
+		fmt.Println()
+	}
+	fmt.Println()
 }
 
 func writeCallStacksDefault(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
