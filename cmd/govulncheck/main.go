@@ -113,11 +113,13 @@ Scanning for dependencies with known vulnerabilities...
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
-		r, err = govulncheck.Source(ctx, pkgs, dbClient)
+		r, err = vulncheck.Source(ctx, pkgs, &vulncheck.Config{Client: dbClient})
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
+		r.Vulns = filterCalled(r)
 	}
+
 	if *jsonFlag {
 		writeJSON(r)
 	} else {
@@ -137,6 +139,17 @@ Scanning for dependencies with known vulnerabilities...
 		exitCode = 3
 	}
 	os.Exit(exitCode)
+}
+
+// filterCalled returns vulnerabilities where the symbols are actually called.
+func filterCalled(r *vulncheck.Result) []*vulncheck.Vuln {
+	var vulns []*vulncheck.Vuln
+	for _, v := range r.Vulns {
+		if v.CallSink != 0 {
+			vulns = append(vulns, v)
+		}
+	}
+	return vulns
 }
 
 func writeJSON(r *vulncheck.Result) {

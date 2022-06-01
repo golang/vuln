@@ -59,6 +59,8 @@ func LoadPackages(cfg *packages.Config, patterns ...string) ([]*vulncheck.Packag
 
 // Source calls vulncheck.Source on the Go source in pkgs. It returns the result
 // with Vulns trimmed to those that are actually called.
+//
+// This function is being used by the Go IDE team.
 func Source(ctx context.Context, pkgs []*vulncheck.Package, c client.Client) (*vulncheck.Result, error) {
 	r, err := vulncheck.Source(ctx, pkgs, &vulncheck.Config{Client: c})
 	if err != nil {
