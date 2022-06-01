@@ -218,30 +218,25 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map
 		fmt.Printf("Found %d known vulnerabilities.\n", len(uniqueVulns))
 	}
 	fmt.Println(strings.Repeat("-", lineLength))
-	fmt.Println()
-
 	for _, vg := range ci.VulnGroups {
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.
 		v0 := vg[0]
-		writeLine("package:", v0.PkgPath)
-		writeLine("your version:", ci.ModuleVersions[v0.ModPath])
-		writeLine("fixed version:", "v"+govulncheck.LatestFixed(v0.OSV.Affected))
+		fmt.Printf(`
+%s
+%s
+`, v0.OSV.ID, v0.OSV.Details)
 		if *verboseFlag {
 			writeCallStacksVerbose(vg, ci)
 		} else {
 			writeCallStacksDefault(vg, ci)
 		}
-		writeLine("reference:", fmt.Sprintf("https://pkg.go.dev/vuln/%s", v0.OSV.ID))
-		desc := strings.Split(wrap(v0.OSV.Details, 80-labelWidth), "\n")
-		for i, l := range desc {
-			if i == 0 {
-				writeLine("description:", l)
-			} else {
-				writeLine("", l)
-			}
-		}
-		fmt.Println()
+		fmt.Printf(`
+Found in:  %s@%s
+Fixed in:  %s@v%s
+More info: https://pkg.go.dev/vuln/%s
+
+`, v0.PkgPath, ci.ModuleVersions[v0.ModPath], v0.PkgPath, govulncheck.LatestFixed(v0.OSV.Affected), v0.OSV.ID)
 	}
 	if len(unaffectedMods) > 0 {
 		fmt.Println()
@@ -258,7 +253,6 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map
 }
 
 func writeCallStacksDefault(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
-
 	var summaries []string
 	for _, v := range vg {
 		if css := ci.CallStacks[v]; len(css) > 0 {
@@ -270,16 +264,16 @@ func writeCallStacksDefault(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
 	if len(summaries) > 0 {
 		sort.Strings(summaries)
 		summaries = compact(summaries)
-		fmt.Println("sample call stacks:")
+		fmt.Println("Call stacks in your code:")
 		for _, s := range summaries {
-			writeLine("", s)
+			fmt.Println("", s)
 		}
 	}
 }
 
 func writeCallStacksVerbose(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
 	// Display one full call stack for each vuln.
-	fmt.Println("call stacks:")
+	fmt.Println("Call stacks in your code:")
 	nMore := 0
 	i := 1
 	for _, v := range vg {
