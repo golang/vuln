@@ -74,7 +74,10 @@ func callGraph(prog *ssa.Program, entries []*ssa.Function) *callgraph.Graph {
 	fslice = forwardReachableFrom(entrySlice, vtaCg)
 	pruneSet(fslice, allFuncs)
 
-	return vta.CallGraph(fslice, vtaCg)
+	cg := vta.CallGraph(fslice, vtaCg)
+	// TODO(#53206): can we do the same for intermediate call graphs?
+	cg.DeleteSyntheticNodes()
+	return cg
 }
 
 // siteCallees computes a set of callees for call site `call` given program `callgraph`.

@@ -568,3 +568,84 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 		}
 	}
 }
+
+// TestNoSyntheticNodes checks that removing synthetic wrappers from
+// call graph still produces correct results.
+func TestNoSyntheticNodes(t *testing.T) {
+	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
+		{
+			Name: "golang.org/entry",
+			Files: map[string]interface{}{
+				"x/x.go": `
+			package x
+
+			import "golang.org/amod/avuln"
+
+			type i interface {
+				Vuln1()
+			}
+
+			func X() {
+				v := &avuln.VulnData{}
+				var x i = v // to force creatation of wrapper method *avuln.VulnData.Vuln1
+				x.Vuln1()
+			}`,
+			},
+		},
+		{
+			Name: "golang.org/amod@v1.1.3",
+			Files: map[string]interface{}{"avuln/avuln.go": `
+			package avuln
+
+			type VulnData struct {}
+			func (v VulnData) Vuln1() {}
+			func (v VulnData) Vuln2() {}
+			`},
+		},
+	})
+	defer e.Cleanup()
+
+	// Load x as entry package.
+	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pkgs) != 1 {
+		t.Fatal("failed to load x test package")
+	}
+
+	cfg := &Config{
+		Client: testClient,
+	}
+	result, err := Source(context.Background(), Convert(pkgs), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(result.Vulns) != 2 {
+		t.Errorf("want 2 Vulns, got %d", len(result.Vulns))
+	}
+
+	var vuln *Vuln
+	for _, v := range result.Vulns {
+		if v.Symbol == "VulnData.Vuln1" && v.CallSink != 0 {
+			vuln = v
+		}
+	}
+
+	if vuln == nil {
+		t.Fatal("VulnData.Vuln1 should be deemed a called vulnerability")
+	}
+
+	stacks := CallStacks(result)[vuln]
+	if len(stacks) != 1 {
+		t.Fatalf("want 1 stack for VulnData.Vuln1; got %v stacks", len(stacks))
+	}
+
+	stack := stacks[0]
+	// We don't want the call stack X -> *VulnData.Vuln1 (wrapper) -> VulnData.Vuln1.
+	// We want X -> VulnData.Vuln1.
+	if len(stack) != 2 {
+		t.Errorf("want stack of length 2; got stack of length %v", len(stack))
+	}
+}
