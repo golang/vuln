@@ -649,3 +649,61 @@ func TestNoSyntheticNodes(t *testing.T) {
 		t.Errorf("want stack of length 2; got stack of length %v", len(stack))
 	}
 }
+
+func TestRecursion(t *testing.T) {
+	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
+		{
+			Name: "golang.org/entry",
+			Files: map[string]interface{}{
+				"x/x.go": `
+			package x
+
+			import "golang.org/bmod/bvuln"
+
+
+			func X() {
+				y()
+				bvuln.Vuln()
+				z()
+			}
+
+			func y() {
+				X()
+			}
+
+			func z() {}
+			`,
+			},
+		},
+		{
+			Name: "golang.org/bmod@v0.5.0",
+			Files: map[string]interface{}{"bvuln/bvuln.go": `
+			package bvuln
+
+			func Vuln() {}
+			`},
+		},
+	})
+	defer e.Cleanup()
+
+	// Load x as entry package.
+	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pkgs) != 1 {
+		t.Fatal("failed to load x test package")
+	}
+
+	cfg := &Config{
+		Client: testClient,
+	}
+	result, err := Source(context.Background(), Convert(pkgs), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if l := len(result.Calls.Functions); l != 3 {
+		t.Errorf("want 3 functions (X, y, Vuln) in vulnerability graph; got %v", l)
+	}
+}

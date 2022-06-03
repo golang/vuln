@@ -39,6 +39,19 @@ $ govulncheck -json . --> FAIL 3
 		"Functions": {
 			"1": {
 				"ID": 1,
+				"Name": "main",
+				"RecvType": "",
+				"PkgPath": "vuln",
+				"Pos": {
+					"Filename": ".../vuln.go",
+					"Offset": 69,
+					"Line": 9,
+					"Column": 6
+				},
+				"CallSites": null
+			},
+			"2": {
+				"ID": 2,
 				"Name": "Parse",
 				"RecvType": "",
 				"PkgPath": "golang.org/x/text/language",
@@ -50,7 +63,7 @@ $ govulncheck -json . --> FAIL 3
 				},
 				"CallSites": [
 					{
-						"Parent": 2,
+						"Parent": 1,
 						"Name": "Parse",
 						"RecvType": "",
 						"Pos": {
@@ -62,23 +75,10 @@ $ govulncheck -json . --> FAIL 3
 						"Resolved": true
 					}
 				]
-			},
-			"2": {
-				"ID": 2,
-				"Name": "main",
-				"RecvType": "",
-				"PkgPath": "vuln",
-				"Pos": {
-					"Filename": ".../vuln.go",
-					"Offset": 69,
-					"Line": 9,
-					"Column": 6
-				},
-				"CallSites": null
 			}
 		},
 		"Entries": [
-			2
+			1
 		]
 	},
 	"Imports": {
@@ -183,7 +183,7 @@ $ govulncheck -json . --> FAIL 3
 			"Symbol": "Parse",
 			"PkgPath": "golang.org/x/text/language",
 			"ModPath": "golang.org/x/text",
-			"CallSink": 1,
+			"CallSink": 2,
 			"ImportSink": 1,
 			"RequireSink": 1
 		}
