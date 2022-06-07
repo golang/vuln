@@ -6,7 +6,6 @@ package vulncheck
 
 import (
 	"container/list"
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -280,26 +279,10 @@ func stackLess(s1, s2 CallStack) bool {
 	if w1, w2 := weight(s1), weight(s2); w1 != w2 {
 		return w1 < w2
 	}
-	// At this point we just need to make sure the ordering is deterministic.
-	// TODO(zpavlinovic): is there a more meaningful additional ordering?
-	return stackStrLess(s1, s2)
-}
 
-// stackStrLess compares string representation of stacks.
-func stackStrLess(s1, s2 CallStack) bool {
-	// Creates a unique string representation of a call stack
-	// for comparison purposes only.
-	stackStr := func(stack CallStack) string {
-		var stackStr []string
-		for _, cs := range stack {
-			s := cs.Function.String()
-			if cs.Call != nil && cs.Call.Pos != nil {
-				p := cs.Call.Pos
-				s = fmt.Sprintf("%s[%s:%d:%d:%d]", s, p.Filename, p.Line, p.Column, p.Offset)
-			}
-			stackStr = append(stackStr, s)
-		}
-		return strings.Join(stackStr, "->")
-	}
-	return strings.Compare(stackStr(s1), stackStr(s2)) <= 0
+	// At this point, the stableness/determinism of
+	// sorting is guaranteed by the determinism of
+	// the underlying call graph and the call stack
+	// search algorithm.
+	return true
 }
