@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build go1.18
-// +build go1.18
-
 package main
 
 import (
@@ -37,7 +34,7 @@ Usage:
 
 	govulncheck [flags] {package pattern...}
 
-	govulncheck [flags] {binary path}
+	govulncheck [flags] {binary path} (if built with Go 1.18 or higher)
 
 Flags:
 
@@ -101,7 +98,7 @@ Scanning for dependencies with known vulnerabilities...
 			die("govulncheck: %v", err)
 		}
 		defer f.Close()
-		r, err = vulncheck.Binary(ctx, f, vcfg)
+		r, err = binary(ctx, f, vcfg)
 		if err != nil {
 			die("govulncheck: %v", err)
 		}

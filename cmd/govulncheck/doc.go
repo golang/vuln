@@ -2,15 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build go1.18
-// +build go1.18
-
 /*
 Command govulncheck reports known vulnerabilities that affect Go code. It uses
 static analysis or a binary's symbol table to narrow down reports to only those
 that potentially affect the application. For more information about the API
 behind govulncheck, see https://go.dev/security/vulncheck.
-
 
 By default, govulncheck uses the Go vulnerability database at
 https://vuln.go.dev. Set the GOVULNDB environment variable to specify a different database.
@@ -21,7 +17,7 @@ Govulncheck requires Go version 1.18 or higher to run.
 WARNING: govulncheck is still EXPERIMENTAL and neither its output or the vulnerability
 database should be relied on to be stable or comprehensive.
 
-Usage
+# Usage
 
 To analyze source code, run govulncheck from the module directory, using the
 same package path syntax that the go command uses:
@@ -52,7 +48,7 @@ Govulncheck uses the binary's symbol information to find mentions of vulnerable 
 Its output and exit codes are as described above, except that without source it cannot
 produce call stacks.
 
-Other Modes
+# Other Modes
 
 A few flags control govulncheck's output. Regardless of output, govulncheck
 exits with code 0 if there are no vulnerabilities and 3 if there are.
@@ -65,7 +61,7 @@ The -html flag outputs HTML instead of plain text.
 The -json flag outputs a JSON object with vulnerability information. The output
 corresponds to the type golang.org/x/vuln/vulncheck.Result.
 
-Weaknesses
+# Weaknesses
 
 Govulncheck uses static analysis, which is inherently imprecise. If govulncheck
 identifies a sequence of calls in your program that leads to a vulnerable
