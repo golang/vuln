@@ -20,7 +20,7 @@ import (
 //go:embed static/*
 var staticContent embed.FS
 
-func html(w io.Writer, r *vulncheck.Result, ci *govulncheck.CallInfo) error {
+func html(w io.Writer, ci *govulncheck.CallInfo) error {
 	tmpl, err := template.New("govulncheck.tmpl").Funcs(template.FuncMap{
 		"funcName": govulncheck.FuncName,
 	}).ParseFS(staticContent, "static/govulncheck.tmpl")

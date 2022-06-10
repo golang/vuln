@@ -128,7 +128,7 @@ Scanning for dependencies with known vulnerabilities...
 		// set of top-level packages, used to find representative symbols
 		ci := govulncheck.GetCallInfo(r, pkgs)
 		if *htmlFlag {
-			if err := html(os.Stdout, r, ci); err != nil {
+			if err := html(os.Stdout, ci); err != nil {
 				die("writing HTML: %v", err)
 			}
 		} else {
@@ -195,13 +195,10 @@ func writeJSON(r *vulncheck.Result) {
 	fmt.Println()
 }
 
-const labelWidth = 16
-
-func writeLine(label, text string) {
-	fmt.Printf("%-*s%s\n", labelWidth, label, text)
-}
-
-const lineLength = 55
+const (
+	labelWidth = 16
+	lineLength = 55
+)
 
 func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map[string][]string) {
 	uniqueVulns := map[string]bool{}
@@ -300,17 +297,6 @@ func writeCallStack(cs vulncheck.CallStack) {
 			fmt.Printf("            %s\n", e.Call.Pos.String())
 		}
 	}
-}
-
-func packageModule(p *packages.Package) *packages.Module {
-	m := p.Module
-	if m == nil {
-		return nil
-	}
-	if r := m.Replace; r != nil {
-		return r
-	}
-	return m
 }
 
 func isFile(path string) bool {
