@@ -245,7 +245,7 @@ More info: https://pkg.go.dev/vuln/%s
 		fmt.Println(wrap("These vulnerabilities exist in required modules, but no vulnerable symbols are used. No action is required. For more information, visit https://pkg.go.dev/vuln.", 80-labelWidth))
 		fmt.Println()
 		for m, ids := range unaffectedMods {
-			fmt.Printf("%s (%s)", m, strings.Join(ids, ", "))
+			fmt.Printf("%s (%s)\n", m, strings.Join(ids, ", "))
 		}
 		fmt.Println()
 	}
