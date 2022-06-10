@@ -427,9 +427,6 @@ func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.E
 		}
 		visited[n] = true
 
-		// make the resulting graph deterministic
-		// in the ordering of call graph edges.
-		sortEdges(n.In)
 		for _, edge := range n.In {
 			nCallee := createNode(edge.Callee.Func)
 			nCaller := createNode(edge.Caller.Func)
@@ -451,15 +448,6 @@ func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.E
 	for s := range sinks {
 		visit(s)
 	}
-}
-
-// sortEdges sorts edges by their string representation that takes
-// into account caller, callee, and the call site.
-func sortEdges(edges []*callgraph.Edge) {
-	str := func(e *callgraph.Edge) string {
-		return fmt.Sprintf("%v[%v]%v", e.Caller, e.Site, e.Callee)
-	}
-	sort.SliceStable(edges, func(i, j int) bool { return str(edges[i]) < str(edges[j]) })
 }
 
 // vulnFuncs returns vulnerability information for vulnerable functions in cg.
