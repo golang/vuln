@@ -226,7 +226,7 @@ func TestConvert(t *testing.T) {
 				"x/x.go": `
 			package x
 
-			import "golang.org/amod/avuln"
+			import _ "golang.org/amod/avuln"
 		`}},
 		{
 			Name: "golang.org/zmod@v0.0.0",
@@ -239,7 +239,7 @@ func TestConvert(t *testing.T) {
 			Files: map[string]interface{}{"avuln/avuln.go": `
 			package avuln
 
-			import "golang.org/wmod/w"
+			import _ "golang.org/wmod/w"
 			`},
 		},
 		{
@@ -253,14 +253,14 @@ func TestConvert(t *testing.T) {
 			Files: map[string]interface{}{"w/w.go": `
 			package w
 
-			import "golang.org/bmod/bvuln"
+			import _ "golang.org/bmod/bvuln"
 			`},
 		},
 	})
 	defer e.Cleanup()
 
-	// Load x and y as entry packages.
-	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y"))
+	// Load x as entry package.
+	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,7 +271,6 @@ func TestConvert(t *testing.T) {
 		"golang.org/amod/avuln": {"golang.org/wmod/w"},
 		"golang.org/bmod/bvuln": nil,
 		"golang.org/entry/x":    {"golang.org/amod/avuln"},
-		"golang.org/entry/y":    nil,
 		"golang.org/wmod/w":     {"golang.org/bmod/bvuln"},
 	}
 	if got := pkgPathToImports(vpkgs); !reflect.DeepEqual(got, wantPkgs) {

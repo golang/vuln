@@ -104,7 +104,6 @@ func TestImportsOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if len(pkgs) != 2 {
 		t.Fatal("failed to load x and y test packages")
 	}
@@ -362,7 +361,6 @@ func TestCallGraph(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if len(pkgs) != 2 {
 		t.Fatal("failed to load x and y test packages")
 	}

@@ -175,9 +175,23 @@ func sortStrMap(m map[string][]string) {
 	}
 }
 
+// loadPackages loads packages for patterns. Returns error if the loading failed
+// or some of the specified packages have issues. In the latter case, the error
+// message will contain information only for the first observed package with issues.
 func loadPackages(e *packagestest.Exported, patterns ...string) ([]*packages.Package, error) {
 	e.Config.Mode |= packages.NeedModule | packages.NeedName | packages.NeedFiles |
 		packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes |
 		packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps
-	return packages.Load(e.Config, patterns...)
+	pkgs, err := packages.Load(e.Config, patterns...)
+	if err != nil {
+		return pkgs, err
+	}
+
+	for _, p := range pkgs {
+		if len(p.Errors) > 0 {
+			return pkgs, fmt.Errorf("%v", p.Errors)
+		}
+	}
+
+	return pkgs, nil
 }
