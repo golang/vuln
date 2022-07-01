@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"go/build"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -77,7 +78,7 @@ func main() {
 	if err != nil {
 		die("govulncheck: %s", err)
 	}
-	vcfg := &vulncheck.Config{Client: dbClient}
+	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: goVersion()}
 
 	patterns := flag.Args()
 	if !(*jsonFlag || *htmlFlag) {
@@ -111,7 +112,7 @@ Scanning for dependencies with known vulnerabilities...
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
-		r, err = vulncheck.Source(ctx, pkgs, &vulncheck.Config{Client: dbClient})
+		r, err = vulncheck.Source(ctx, pkgs, vcfg)
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
@@ -323,6 +324,14 @@ func compact(s []string) []string {
 		}
 	}
 	return s[:i]
+}
+
+func goVersion() string {
+	if v := os.Getenv("GOVERSION"); v != "" {
+		// Unlikely to happen in practice, mostly used for testing.
+		return v
+	}
+	return runtime.Version()
 }
 
 func die(format string, args ...interface{}) {

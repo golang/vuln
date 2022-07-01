@@ -18,12 +18,17 @@ import (
 
 // Config is used for configuring vulncheck algorithms.
 type Config struct {
-	// If ImportsOnly is true, vulncheck analyzes import chains only.
+	// ImportsOnly instructs vulncheck to analyze import chains only.
 	// Otherwise, call chains are analyzed too.
 	ImportsOnly bool
 
 	// Client is used for querying data from a vulnerability database.
 	Client client.Client
+
+	// SourceGoVersion is Go version used to build Source inputs passed
+	// to vulncheck. If not provided, the current underlying Go version
+	// is used to detect vulnerabilities in Go standard library.
+	SourceGoVersion string
 }
 
 // Package is a Go package for vulncheck analysis. It is a version of
@@ -99,7 +104,9 @@ type Result struct {
 
 	// Requires is a module dependency graph whose roots are entry user modules
 	// and sinks are modules with some vulnerable packages. It is empty when no
-	// modules with vulnerabilities are required by the program.
+	// modules with vulnerabilities are required by the program. If used, the
+	// standard library is modeled as an artificial "stdlib" module whose version
+	// is the Go version used to build the code under analysis.
 	Requires *RequireGraph
 
 	// Vulns contains information on detected vulnerabilities and their place in
@@ -359,10 +366,15 @@ func matchesPlatform(os, arch string, e osv.EcosystemSpecific) bool {
 // specific prefix of importPath, or nil if there is no matching module with
 // vulnerabilities.
 func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry {
+	isStd := isStdPackage(importPath)
 	var mostSpecificMod *modVulns
 	for _, mod := range mv {
 		md := mod
-		if strings.HasPrefix(importPath, md.mod.Path) {
+		if isStd && mod.mod == stdlibModule {
+			// standard library packages do not have an associated module,
+			// so we relate them to the artificial stdlib module.
+			mostSpecificMod = &md
+		} else if strings.HasPrefix(importPath, md.mod.Path) {
 			if mostSpecificMod == nil || len(mostSpecificMod.mod.Path) < len(md.mod.Path) {
 				mostSpecificMod = &md
 			}
@@ -374,6 +386,7 @@ func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry 
 	}
 
 	if mostSpecificMod.mod.Replace != nil {
+		// standard libraries do not have a module nor replace module
 		importPath = fmt.Sprintf("%s%s", mostSpecificMod.mod.Replace.Path, strings.TrimPrefix(importPath, mostSpecificMod.mod.Path))
 	}
 	vulns := mostSpecificMod.vulns

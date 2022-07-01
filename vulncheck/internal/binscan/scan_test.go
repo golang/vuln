@@ -28,7 +28,7 @@ func TestExtractPackagesAndSymbols(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer f.Close()
-			_, syms, err := ExtractPackagesAndSymbols(f)
+			_, syms, _, err := ExtractPackagesAndSymbols(f)
 			if err != nil {
 				t.Fatal(err)
 			}

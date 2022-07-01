@@ -45,6 +45,14 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 		}
 	}
 
+	// set the stdlib version for detection of vulns in the standard library
+	// TODO(#53740): what if Go version is not in semver format?
+	if cfg.SourceGoVersion != "" {
+		stdlibModule.Version = goTagToSemver(cfg.SourceGoVersion)
+	} else {
+		stdlibModule.Version = goTagToSemver(runtime.Version())
+	}
+
 	mods := extractModules(pkgs)
 	modVulns, err := fetchVulnerabilities(ctx, cfg.Client, mods)
 	if err != nil {
@@ -82,7 +90,13 @@ func setModules(r *Result, mods []*Module) {
 	}
 	// Sort for determinism.
 	sort.Slice(mods, func(i, j int) bool { return mods[i].Path < mods[j].Path })
-	r.Modules = mods
+	for _, m := range mods {
+		// stdlib is not a module per se, so we don't
+		// save it as module comprising user code.
+		if m != stdlibModule {
+			r.Modules = append(r.Modules, m)
+		}
+	}
 }
 
 // pkgID is an id counter for nodes of Imports graph.
@@ -265,6 +279,10 @@ func nextModID() int {
 // node is stored to result.
 func moduleNodeID(pkgNode *PkgNode, result *Result, modNodeIDs map[string]int) int {
 	mod := pkgNode.pkg.Module
+	if isStdPackage(pkgNode.Path) {
+		// standard library packages don't have a module.
+		mod = stdlibModule
+	}
 	if mod == nil {
 		return 0
 	}

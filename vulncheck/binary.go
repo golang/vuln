@@ -23,11 +23,19 @@ import (
 func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err error) {
 	defer derrors.Wrap(&err, "vulncheck.Binary")
 
-	mods, packageSymbols, err := binscan.ExtractPackagesAndSymbols(exe)
+	mods, packageSymbols, goVersion, err := binscan.ExtractPackagesAndSymbols(exe)
 	if err != nil {
 		return nil, err
 	}
+
 	cmods := convertModules(mods)
+	// set the stdlib version for detection of vulns in the standard library
+	// TODO(#53740): what if Go version is not in semver format?
+	stdlibModule.Version = goTagToSemver(goVersion)
+	// Add "stdlib" module. Even if stdlib is not used, which is unlikely, it
+	// won't appear in vulncheck.Modules nor other results.
+	cmods = append(cmods, stdlibModule)
+
 	modVulns, err := fetchVulnerabilities(ctx, cfg.Client, cmods)
 	if err != nil {
 		return nil, err
@@ -115,6 +123,10 @@ func convertModules(mods []*packages.Module) []*Module {
 // to match two or more different module paths. We just take the first one.
 // If no module path matches, findPackageModule returns the empty string.
 func findPackageModule(pkg string, mods []*Module) string {
+	if isStdPackage(pkg) {
+		return stdlibModule.Path
+	}
+
 	for _, m := range mods {
 		if pkg == m.Path || strings.HasPrefix(pkg, m.Path+"/") {
 			return m.Path

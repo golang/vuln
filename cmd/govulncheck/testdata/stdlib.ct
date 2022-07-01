@@ -1,0 +1,18 @@
+# Test of stdlib vuln detection.
+
+$ cdmodule stdvuln
+$ govulncheck . --> FAIL 3
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Scanning for dependencies with known vulnerabilities...
+Found 1 known vulnerability.
+-------------------------------------------------------
+
+STD
+
+Call stacks in your code:
+ golang.org/stdvuln.main calls archive/zip.OpenReader
+
+Found in:  archive/zip@
+Fixed in:  archive/zip@v
+More info: https://pkg.go.dev/vuln/STD

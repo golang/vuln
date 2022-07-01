@@ -7,6 +7,7 @@ package vulncheck
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"sort"
 
 	"golang.org/x/tools/go/packages"
@@ -27,7 +28,8 @@ func (mc *mockClient) GetByModule(ctx context.Context, a string) ([]*osv.Entry, 
 // testClient contains the following test vulnerabilities
 //
 //	golang.org/amod/avuln.{VulnData.Vuln1, vulnData.Vuln2}
-//	golang.org/bmod/bvuln.{Vuln}
+//	golang.org/bmod/bvuln.Vuln
+//	archive/zip.OpenReader
 var testClient = &mockClient{
 	ret: map[string][]*osv.Entry{
 		"golang.org/amod": []*osv.Entry{
@@ -47,6 +49,18 @@ var testClient = &mockClient{
 					Package:           osv.Package{Name: "golang.org/bmod/bvuln"},
 					Ranges:            osv.Affects{{Type: osv.TypeSemver}},
 					EcosystemSpecific: osv.EcosystemSpecific{Symbols: []string{"Vuln"}},
+				}},
+			},
+		},
+		"stdlib": []*osv.Entry{
+			{
+				ID: "STD",
+				Affected: []osv.Affected{{
+					Package: osv.Package{Name: "archive/zip"},
+					// Range is populated also using runtime info for testing binaries since
+					// setting fixed Go version for binaries is very difficult.
+					Ranges:            osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.18"}, {Introduced: goTagToSemver(runtime.Version())}}}},
+					EcosystemSpecific: osv.EcosystemSpecific{Symbols: []string{"OpenReader"}},
 				}},
 			},
 		},

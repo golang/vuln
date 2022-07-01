@@ -1,4 +1,6 @@
 # Test of the -json flag.
+# TODO(zpavlinovic): add test for stdlib that works
+# on all underlying Go build systems.
 
 $ cdmodule novuln
 $ govulncheck -json .
@@ -18,14 +20,14 @@ $ govulncheck -json .
 	"Vulns": null,
 	"Modules": [
 		{
-			"Path": "golang.org/x/text",
-			"Version": "v0.3.7",
+			"Path": "golang.org/novuln",
+			"Version": "",
 			"Dir": "",
 			"Replace": null
 		},
 		{
-			"Path": "novuln",
-			"Version": "",
+			"Path": "golang.org/x/text",
+			"Version": "v0.3.7",
 			"Dir": "",
 			"Replace": null
 		}
@@ -41,7 +43,7 @@ $ govulncheck -json . --> FAIL 3
 				"ID": 1,
 				"Name": "main",
 				"RecvType": "",
-				"PkgPath": "vuln",
+				"PkgPath": "golang.org/vuln",
 				"Pos": {
 					"Filename": ".../vuln.go",
 					"Offset": 69,
@@ -95,7 +97,7 @@ $ govulncheck -json . --> FAIL 3
 			"2": {
 				"ID": 2,
 				"Name": "main",
-				"Path": "vuln",
+				"Path": "golang.org/vuln",
 				"Module": 2,
 				"ImportedBy": null
 			}
@@ -117,7 +119,7 @@ $ govulncheck -json . --> FAIL 3
 			},
 			"2": {
 				"ID": 2,
-				"Path": "vuln",
+				"Path": "golang.org/vuln",
 				"Version": "",
 				"Replace": 0,
 				"RequiredBy": null
@@ -190,14 +192,14 @@ $ govulncheck -json . --> FAIL 3
 	],
 	"Modules": [
 		{
-			"Path": "golang.org/x/text",
-			"Version": "v0.3.0",
+			"Path": "golang.org/vuln",
+			"Version": "",
 			"Dir": "",
 			"Replace": null
 		},
 		{
-			"Path": "vuln",
-			"Version": "",
+			"Path": "golang.org/x/text",
+			"Version": "v0.3.0",
 			"Dir": "",
 			"Replace": null
 		}

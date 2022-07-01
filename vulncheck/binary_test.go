@@ -9,6 +9,7 @@ package vulncheck
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,6 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/vulncheck/internal/binscan"
 )
 
 // TODO: we build binary programatically, so what if the underlying tool chain changes?
@@ -36,6 +38,7 @@ func TestBinary(t *testing.T) {
 			package main
 
 			import (
+				"archive/zip"
 				"golang.org/cmod/c"
 				"golang.org/bmod/bvuln"
 			)
@@ -43,7 +46,9 @@ func TestBinary(t *testing.T) {
 			func main() {
 				c.C()
 				bvuln.NoVuln() // no vuln use
-				print("done")
+
+				_, err := zip.OpenReader("file.zip")
+				print(err)
 			}
 			`,
 			}},
@@ -115,7 +120,9 @@ func TestBinary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// In importsOnly mode, all three vulnerable symbols
+
+	hasGo := hasGoVersion(bin)
+	// In importsOnly mode, vulnerable symbols
 	// {avuln.VulnData.Vuln1, avuln.VulnData.Vuln2, bvuln.Vuln}
 	// should be detected.
 	wantVulns := []*Vuln{
@@ -123,6 +130,12 @@ func TestBinary(t *testing.T) {
 		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
 		{Symbol: "VulnData.Vuln2", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
 	}
+	if hasGo {
+		// If binary has recognizable Go version available,
+		// then archive/zip.OpenReader should be detected too.
+		wantVulns = append(wantVulns, &Vuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
+	}
+
 	diff := cmp.Diff(wantVulns, res.Vulns,
 		cmpopts.IgnoreFields(Vuln{}, "OSV"),
 		cmpopts.SortSlices(func(v1, v2 *Vuln) bool { return v1.Symbol < v2.Symbol }))
@@ -136,9 +149,21 @@ func TestBinary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// In non-importsOnly mode, only one symbol avuln.VulnData.Vuln1 should be detected.
-	if len(res.Vulns) != 1 {
-		t.Errorf("expected 1 vuln symbols got %d", len(res.Vulns))
+
+	wantVulns = []*Vuln{
+		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
+	}
+	if hasGo {
+		// If binary has recognizable Go version available,
+		// then archive/zip.OpenReader should be detected too.
+		wantVulns = append(wantVulns, &Vuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
+	}
+
+	diff = cmp.Diff(wantVulns, res.Vulns,
+		cmpopts.IgnoreFields(Vuln{}, "OSV"),
+		cmpopts.SortSlices(func(v1, v2 *Vuln) bool { return v1.Symbol < v2.Symbol }))
+	if diff != "" {
+		t.Errorf("vulns mismatch (-want, +got)\n%s", diff)
 	}
 
 	// Check that the binary's modules are returned.
@@ -168,4 +193,9 @@ func hasGoBuild() bool {
 		return false
 	}
 	return true
+}
+
+func hasGoVersion(exe io.ReaderAt) bool {
+	_, _, goVersion, _ := binscan.ExtractPackagesAndSymbols(exe)
+	return goTagToSemver(goVersion) != ""
 }

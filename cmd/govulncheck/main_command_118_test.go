@@ -55,7 +55,8 @@ func TestCommand(t *testing.T) {
 		if inputFile != "" {
 			return nil, errors.New("input redirection makes no sense")
 		}
-		cmd.Env = append(os.Environ(), "GOVULNDB=file://"+testDir+"/testdata/vulndb")
+		// We set GOVERSION to always get the same results regardless of the underlying Go build system.
+		cmd.Env = append(os.Environ(), "GOVULNDB=file://"+testDir+"/testdata/vulndb", "GOVERSION=go1.18")
 		out, err := cmd.CombinedOutput()
 		out = filterGoFilePaths(out)
 		return out, err

@@ -63,7 +63,11 @@ func TestImportsOnly(t *testing.T) {
 			Files: map[string]interface{}{"z/z.go": `
 			package z
 
-			func Z() {}
+			import "archive/zip"
+
+			func Z() {
+				_, _ = zip.OpenReader("filename")
+			}
 			`},
 		},
 		{
@@ -83,7 +87,15 @@ func TestImportsOnly(t *testing.T) {
 			Files: map[string]interface{}{"bvuln/bvuln.go": `
 			package bvuln
 
+			import _ "golang.org/cmod/c"
+
 			func Vuln() {}
+			`},
+		},
+		{
+			Name: "golang.org/cmod@v0.3.0",
+			Files: map[string]interface{}{"c/c.go": `
+			package c
 			`},
 		},
 		{
@@ -109,19 +121,22 @@ func TestImportsOnly(t *testing.T) {
 	}
 
 	cfg := &Config{
-		Client:      testClient,
-		ImportsOnly: true,
+		Client:          testClient,
+		ImportsOnly:     true,
+		SourceGoVersion: "go1.18",
 	}
+
 	result, err := Source(context.Background(), Convert(pkgs), cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Check that we find the right number of vulnerabilities.
-	// There should be three entries as there are three vulnerable
-	// symbols in the two import-reachable OSVs.
-	if len(result.Vulns) != 3 {
-		t.Errorf("want 3 Vulns, got %d", len(result.Vulns))
+	// There should be four entries as there are three vulnerable
+	// symbols in the two import-reachable OSVs and one standard
+	// library vulnerability.
+	if len(result.Vulns) != 4 {
+		t.Errorf("want 4 Vulns, got %d", len(result.Vulns))
 	}
 
 	// Check that vulnerabilities are connected to the imports
@@ -143,13 +158,14 @@ func TestImportsOnly(t *testing.T) {
 	// The imports slice should include import chains:
 	//   x -> avuln -> w -> bvuln
 	//         |
-	//   y ---->
-	// That is, z package shoud not appear in the slice.
+	//   y ---- ------> z
+	// That is, c package shoud not appear in the slice.
 	wantImports := map[string][]string{
 		"golang.org/entry/x":    {"golang.org/amod/avuln"},
-		"golang.org/entry/y":    {"golang.org/amod/avuln"},
+		"golang.org/entry/y":    {"golang.org/amod/avuln", "golang.org/zmod/z"},
 		"golang.org/amod/avuln": {"golang.org/wmod/w"},
 		"golang.org/wmod/w":     {"golang.org/bmod/bvuln"},
+		"golang.org/zmod/z":     {"archive/zip"},
 	}
 
 	if igStrMap := impGraphToStrMap(result.Imports); !reflect.DeepEqual(wantImports, igStrMap) {
@@ -158,11 +174,13 @@ func TestImportsOnly(t *testing.T) {
 
 	// The requires slice should include requires chains:
 	//   entry -> amod -> wmod -> bmod
-	// That is, zmod module shoud not appear in the slice.
+	//    |
+	//     -----> zmod -> stdlib
 	wantRequires := map[string][]string{
-		"golang.org/entry": {"golang.org/amod"},
+		"golang.org/entry": {"golang.org/amod", "golang.org/zmod"},
 		"golang.org/amod":  {"golang.org/wmod"},
 		"golang.org/wmod":  {"golang.org/bmod"},
+		"golang.org/zmod":  {"stdlib"},
 	}
 
 	if rgStrMap := reqGraphToStrMap(result.Requires); !reflect.DeepEqual(wantRequires, rgStrMap) {
@@ -173,6 +191,7 @@ func TestImportsOnly(t *testing.T) {
 	wantMods := []*Module{
 		{Path: "golang.org/amod", Version: "v1.1.3"},
 		{Path: "golang.org/bmod", Version: "v0.5.0"},
+		{Path: "golang.org/cmod", Version: "v0.3.0"},
 		{Path: "golang.org/entry"},
 		{Path: "golang.org/wmod", Version: "v0.0.0"},
 		{Path: "golang.org/zmod", Version: "v0.0.0"},

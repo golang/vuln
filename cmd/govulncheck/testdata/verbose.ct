@@ -23,7 +23,7 @@ this may be used as a vector for a denial of service attack.
 
 Call stacks in your code:
     #1: for function Parse
-        vuln.main
+        golang.org/vuln.main
             .../vuln.go:11:16
         golang.org/x/text/language.Parse
 
