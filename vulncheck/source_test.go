@@ -18,20 +18,19 @@ import (
 	"golang.org/x/vuln/osv"
 )
 
-// TestImportsOnly checks for module and imports graph correctness
-// for the Config.ImportsOnly=true mode. The inlined test code has
-// the following package (left) and module (right) imports graphs:
+// TestImports checks for imports graph correctness. The inlined
+// test code has the following package imports graphs:
 //
-//	entry/x        entry/y                     entry
-//	       \     /        \                   /     \
-//	     amod/avuln      zmod/z           amod       zmod
-//	         |                              |
-//	       wmod/w                         wmod
-//	         |                              |
-//	     bmod/bvuln                       bmod
+//	entry/x        entry/y
+//	       \     /        \
+//	     amod/avuln      zmod/z
+//	         |
+//	       wmod/w
+//	         |
+//	     bmod/bvuln
 //
 // Packages ending in "vuln" have some known vulnerabilities.
-func TestImportsOnly(t *testing.T) {
+func TestImports(t *testing.T) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name: "golang.org/entry",
@@ -139,20 +138,16 @@ func TestImportsOnly(t *testing.T) {
 		t.Errorf("want 4 Vulns, got %d", len(result.Vulns))
 	}
 
-	// Check that vulnerabilities are connected to the imports
-	// and requires graph.
+	// Check that vulnerabilities are connected to the imports graph.
 	for _, v := range result.Vulns {
-		if v.ImportSink == 0 || v.RequireSink == 0 {
-			t.Errorf("want ImportSink !=0 and RequireSink !=0 for %v:%v; got %v and %v", v.Symbol, v.PkgPath, v.ImportSink, v.RequireSink)
+		if v.ImportSink == 0 {
+			t.Errorf("want ImportSink !=0 for %v:%v; got %v", v.Symbol, v.PkgPath, v.ImportSink)
 		}
 	}
 
-	// Check that module and package entry points are collected.
+	// Check that the package entry points are collected.
 	if got := len(result.Imports.Entries); got != 2 {
 		t.Errorf("want 2 package entry points; got %v", got)
-	}
-	if got := len(result.Requires.Entries); got != 1 {
-		t.Errorf("want 1 module entry point; got %v", got)
 	}
 
 	// The imports slice should include import chains:
@@ -172,21 +167,6 @@ func TestImportsOnly(t *testing.T) {
 		t.Errorf("want %v imports graph; got %v", wantImports, igStrMap)
 	}
 
-	// The requires slice should include requires chains:
-	//   entry -> amod -> wmod -> bmod
-	//    |
-	//     -----> zmod -> stdlib
-	wantRequires := map[string][]string{
-		"golang.org/entry": {"golang.org/amod", "golang.org/zmod"},
-		"golang.org/amod":  {"golang.org/wmod"},
-		"golang.org/wmod":  {"golang.org/bmod"},
-		"golang.org/zmod":  {"stdlib"},
-	}
-
-	if rgStrMap := reqGraphToStrMap(result.Requires); !reflect.DeepEqual(wantRequires, rgStrMap) {
-		t.Errorf("want %v requires graph; got %v", wantRequires, rgStrMap)
-	}
-
 	// Check that the source's modules are returned.
 	wantMods := []*Module{
 		{Path: "golang.org/amod", Version: "v1.1.3"},
@@ -203,7 +183,139 @@ func TestImportsOnly(t *testing.T) {
 	}
 }
 
-// TestCallGraph checks for call graph vuln slicing correctness.
+// TestRequires checks for module requires graph correctness. The
+// inlined test code has the following import/requires graphs:
+//
+//		entry/x		        entry
+//		/     \                 /   \
+//	 imod1/i    imod2/i         imod1   imod2
+//	    |          |                \   /
+//	  amod/a1 -> amod/a2            amod
+//		       |                  |
+//	            bmod/bvuln          bmod
+//
+// Packages ending in "vuln" have some known vulnerabilities.
+func TestRequires(t *testing.T) {
+	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
+		{
+			Name: "golang.org/entry",
+			Files: map[string]interface{}{
+				"x/x.go": `
+			package x
+
+			import (
+				_ "golang.org/imod1/i"
+				_ "golang.org/imod2/i"
+			)
+			`},
+		},
+		{
+			Name: "golang.org/imod1@v0.0.0",
+			Files: map[string]interface{}{
+				"i/i.go": `
+			package i
+
+			import _ "golang.org/amod/a1"
+			`},
+		},
+		{
+			Name: "golang.org/imod2@v0.0.0",
+			Files: map[string]interface{}{
+				"i/i.go": `
+			package i
+
+			import _ "golang.org/amod/a2"
+			`},
+		},
+		{
+			Name: "golang.org/amod@v0.0.1",
+			Files: map[string]interface{}{"a1/a1.go": `
+			package a1
+
+			import _ "golang.org/amod/a2"
+
+			`,
+				"a2/a2.go": `
+			package a2
+
+			import _ "golang.org/bmod/bvuln"
+		`}},
+		{
+			Name: "golang.org/bmod@v0.5.0",
+			Files: map[string]interface{}{"bvuln/bvuln.go": `
+			package bvuln
+
+			func Vuln() {}
+			`},
+		},
+	})
+	defer e.Cleanup()
+
+	// Load x as entry package.
+	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pkgs) != 1 {
+		t.Fatal("failed to load x test package")
+	}
+
+	cfg := &Config{
+		Client:      testClient,
+		ImportsOnly: true,
+	}
+	result, err := Source(context.Background(), Convert(pkgs), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// There should be only one vulnerability bvuln.Vuln.
+	if len(result.Vulns) != 1 {
+		t.Errorf("want 1 Vuln, got %d", len(result.Vulns))
+	}
+
+	// Check that vulnerabilities are connected to the requires graph.
+	if v := result.Vulns[0]; v.RequireSink == 0 {
+		t.Errorf("want RequireSink !=0 for %v:%v; got %v", v.Symbol, v.PkgPath, v.RequireSink)
+	}
+
+	// Check that the module entry points are collected.
+	if got := len(result.Requires.Entries); got != 1 {
+		t.Errorf("want 1 module entry point; got %v", got)
+	}
+
+	// The requires slice should include requires chains:
+	//   entry -> imod1 -> amod -> bmod
+	//     |                |
+	//     -----> imod2 ---->
+	// That is, zmod module shoud not appear in the slice.
+	wantRequires := map[string][]string{
+		"golang.org/entry": {"golang.org/imod1", "golang.org/imod2"},
+		"golang.org/imod1": {"golang.org/amod"},
+		"golang.org/imod2": {"golang.org/amod"},
+		"golang.org/amod":  {"golang.org/bmod"},
+	}
+
+	if rgStrMap := reqGraphToStrMap(result.Requires); !reflect.DeepEqual(wantRequires, rgStrMap) {
+		t.Errorf("want %v requires graph; got %v", wantRequires, rgStrMap)
+	}
+
+	// Check that the source's modules are returned.
+	wantMods := []*Module{
+		{Path: "golang.org/amod", Version: "v0.0.1"},
+		{Path: "golang.org/bmod", Version: "v0.5.0"},
+		{Path: "golang.org/entry"},
+		{Path: "golang.org/imod1", Version: "v0.0.0"},
+		{Path: "golang.org/imod2", Version: "v0.0.0"},
+	}
+	gotMods := result.Modules
+	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
+	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(Module{}, "Dir")); diff != "" {
+		t.Errorf("modules mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+// TestCalls checks for call graph vuln slicing correctness.
 // The inlined test code has the following call graph
 //
 //	        x.X
@@ -239,7 +351,7 @@ func TestImportsOnly(t *testing.T) {
 //	   e.E
 //
 // related to avuln.VulnData.{Vuln1, Vuln2} and bvuln.Vuln vulnerabilities.
-func TestCallGraph(t *testing.T) {
+func TestCalls(t *testing.T) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name: "golang.org/entry",

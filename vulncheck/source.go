@@ -219,16 +219,25 @@ func vulnModuleSlice(result *Result) {
 	for _, id := range pkgIDs {
 		pkgNode := result.Imports.Packages[id]
 		// Create or get module node for pkgNode.
-		pkgModID := moduleNodeID(pkgNode, result, modNodeIDs)
-		pkgNode.Module = pkgModID
+		modID := moduleNodeID(pkgNode, result, modNodeIDs)
+		pkgNode.Module = modID
 
-		// Get the set of predecessors.
-		predSet := make(map[int]bool)
+		// Update the set of predecessors.
+		if _, ok := modPredRelation[modID]; !ok {
+			modPredRelation[modID] = make(map[int]bool)
+		}
+		predSet := modPredRelation[modID]
+
 		for _, predPkgID := range pkgNode.ImportedBy {
 			predModID := moduleNodeID(result.Imports.Packages[predPkgID], result, modNodeIDs)
+			// We don't add module edges for imports
+			// of packages in the same module as that
+			// will create self-loops in Requires graphs.
+			if predModID == modID {
+				continue
+			}
 			predSet[predModID] = true
 		}
-		modPredRelation[pkgModID] = predSet
 	}
 
 	// Add entry module IDs.
