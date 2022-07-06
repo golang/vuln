@@ -35,8 +35,8 @@ func main() {
 		log.Fatal("Failed to load json into vulncheck.Result:", err)
 	}
 
-	if len(r.Vulns) != 19 {
-		log.Fatal("want 19 vulns; got", len(r.Vulns))
+	if len(r.Vulns) != 41 {
+		log.Fatalf("want 41 vulns; got %d", len(r.Vulns))
 	}
 
 	type vuln struct {
@@ -49,6 +49,7 @@ func main() {
 	}
 
 	want := map[vuln]bool{
+		{"github.com/containernetworking/cni/pkg/invoke", "FindInPath"}:               true,
 		{"github.com/evanphx/json-patch", "partialArray.add"}:                         true,
 		{"github.com/opencontainers/selinux/go-selinux", "CurrentLabel"}:              true,
 		{"github.com/opencontainers/selinux/go-selinux", "FileLabel"}:                 true,
@@ -63,6 +64,27 @@ func main() {
 		{"github.com/opencontainers/selinux/go-selinux", "selinuxState.setEnable"}:    true,
 		{"github.com/opencontainers/selinux/go-selinux", "selinuxState.setSELinuxfs"}: true,
 		{"github.com/satori/go.uuid", "init"}:                                         true,
+		{"golang.org/x/crypto/cryptobyte", "Builder.AddBytes"}:                        true,
+		{"golang.org/x/crypto/cryptobyte", "Builder.AddUint16LengthPrefixed"}:         true,
+		{"golang.org/x/crypto/cryptobyte", "Builder.Bytes"}:                           true,
+		{"golang.org/x/crypto/cryptobyte", "Builder.add"}:                             true,
+		{"golang.org/x/crypto/cryptobyte", "Builder.addLengthPrefixed"}:               true,
+		{"golang.org/x/crypto/cryptobyte", "Builder.callContinuation"}:                true,
+		{"golang.org/x/crypto/cryptobyte", "Builder.flushChild"}:                      true,
+		{"golang.org/x/crypto/cryptobyte", "NewBuilder"}:                              true,
+		{"golang.org/x/crypto/cryptobyte", "String.Empty"}:                            true,
+		{"golang.org/x/crypto/cryptobyte", "String.PeekASN1Tag"}:                      true,
+		{"golang.org/x/crypto/cryptobyte", "String.ReadASN1"}:                         true,
+		{"golang.org/x/crypto/cryptobyte", "String.ReadAnyASN1"}:                      true,
+		{"golang.org/x/crypto/cryptobyte", "String.ReadBytes"}:                        true,
+		{"golang.org/x/crypto/cryptobyte", "String.ReadOptionalASN1"}:                 true,
+		{"golang.org/x/crypto/cryptobyte", "String.ReadUint16LengthPrefixed"}:         true,
+		{"golang.org/x/crypto/cryptobyte", "String.Skip"}:                             true,
+		{"golang.org/x/crypto/cryptobyte", "String.read"}:                             true,
+		{"golang.org/x/crypto/cryptobyte", "String.readASN1"}:                         true,
+		{"golang.org/x/crypto/cryptobyte", "String.readLengthPrefixed"}:               true,
+		{"golang.org/x/crypto/cryptobyte", "String.readUnsigned"}:                     true,
+		{"golang.org/x/crypto/salsa20/salsa", "XORKeyStream"}:                         true,
 		{"golang.org/x/crypto/ssh", "NewPublicKey"}:                                   true,
 		{"golang.org/x/crypto/ssh", "ed25519PublicKey.Verify"}:                        true,
 		{"golang.org/x/crypto/ssh", "parseED25519"}:                                   true,
@@ -70,7 +92,7 @@ func main() {
 		{"golang.org/x/text/encoding/unicode", "utf16Decoder.Transform"}:              true,
 	}
 
-	if !cmp.Equal(calledVulns, want) {
-		log.Fatalf("want %v called symbols;\ngot %v\n", want, calledVulns)
+	if diff := cmp.Diff(want, calledVulns); diff != "" {
+		log.Fatalf("reachable vulnerable symbols mismatch (-want, +got):\n%s", diff)
 	}
 }
