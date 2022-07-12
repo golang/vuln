@@ -226,12 +226,17 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map
 		} else {
 			writeCallStacksDefault(vg, ci)
 		}
-		fmt.Printf(`
-Found in:  %s@%s
-Fixed in:  %s@v%s
-More info: https://pkg.go.dev/vuln/%s
-
-`, v0.PkgPath, ci.ModuleVersions[v0.ModPath], v0.PkgPath, govulncheck.LatestFixed(v0.OSV.Affected), v0.OSV.ID)
+		fmt.Println()
+		found := v0.PkgPath
+		if v := ci.ModuleVersions[v0.ModPath]; v != "" {
+			found += "@" + v
+		}
+		fmt.Printf("Found in:  %v\n", found)
+		if fixed := govulncheck.LatestFixed(v0.OSV.Affected); fixed != "" {
+			fmt.Printf("Fixed in:  %s@v%s\n", v0.PkgPath, fixed)
+		}
+		fmt.Printf("More info: https://pkg.go.dev/vuln/%s\n", v0.OSV.ID)
+		fmt.Println()
 	}
 	if len(unaffectedMods) > 0 {
 		fmt.Println()
