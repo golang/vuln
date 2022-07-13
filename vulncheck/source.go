@@ -68,7 +68,10 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 
 	vulnPkgModSlice(pkgs, modVulns, result)
 	setModules(result, mods)
-	if cfg.ImportsOnly {
+	// Return result immediately if in ImportsOnly mode or
+	// if there are no vulnerable packages, as there is no
+	// need to build the call graph.
+	if cfg.ImportsOnly || len(result.Imports.Packages) == 0 {
 		return result, nil
 	}
 
