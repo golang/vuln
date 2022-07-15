@@ -5,13 +5,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"go/build"
 	"os"
-	"runtime"
+	"os/exec"
 	"sort"
 	"strings"
 
@@ -336,7 +337,12 @@ func goVersion() string {
 		// Unlikely to happen in practice, mostly used for testing.
 		return v
 	}
-	return runtime.Version()
+	out, err := exec.Command("go", "env", "GOVERSION").Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to determine go version; skipping stdlib scanning: %v\n", err)
+		return ""
+	}
+	return string(bytes.TrimSpace(out))
 }
 
 func die(format string, args ...interface{}) {
