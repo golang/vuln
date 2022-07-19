@@ -230,11 +230,11 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map
 		fmt.Println()
 		found := v0.PkgPath
 		if v := ci.ModuleVersions[v0.ModPath]; v != "" {
-			found += "@" + v
+			found = packageVersionString(v0.PkgPath, v[1:])
 		}
 		fmt.Printf("Found in:  %v\n", found)
 		if fixed := govulncheck.LatestFixed(v0.OSV.Affected); fixed != "" {
-			fmt.Printf("Fixed in:  %s@v%s\n", v0.PkgPath, fixed)
+			fmt.Printf("Fixed in:  %s\n", packageVersionString(v0.PkgPath, fixed))
 		}
 		fmt.Printf("More info: https://pkg.go.dev/vuln/%s\n", v0.OSV.ID)
 		fmt.Println()
@@ -343,6 +343,14 @@ func goVersion() string {
 		return ""
 	}
 	return string(bytes.TrimSpace(out))
+}
+
+func packageVersionString(packagePath, version string) string {
+	v := "v" + version
+	if importPathInStdlib(packagePath) {
+		v = semverToGoTag(v)
+	}
+	return fmt.Sprintf("%s@%s", packagePath, v)
 }
 
 func die(format string, args ...interface{}) {
