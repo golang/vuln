@@ -59,6 +59,7 @@ func TestCommand(t *testing.T) {
 		cmd.Env = append(os.Environ(), "GOVULNDB=file://"+testDir+"/testdata/vulndb", "GOVERSION=go1.18")
 		out, err := cmd.CombinedOutput()
 		out = filterGoFilePaths(out)
+		out = filterStdlibVersions(out)
 		return out, err
 	}
 
@@ -78,9 +79,12 @@ func TestCommand(t *testing.T) {
 	ts.Run(t, *update)
 }
 
-var goFileRegexp = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
+var (
+	goFileRegexp        = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
+	stdlibVersionRegexp = regexp.MustCompile(`("Path": "stdlib",\s*"Version": ")v[^\s]+"`)
+)
 
-// filterGoFilePaths  modifies paths to Go files by replacing their directory with "...".
+// filterGoFilePaths modifies paths to Go files by replacing their directory with "...".
 // For example,/a/b/c.go becomes .../c.go .
 // This makes it possible to compare govulncheck output across systems, because
 // Go filenames include setup-specific paths.
@@ -89,4 +93,12 @@ func filterGoFilePaths(data []byte) []byte {
 		s := string(b)
 		return []byte(fmt.Sprintf(`.../%s%c`, filepath.Base(s[1:len(s)-1]), s[len(s)-1]))
 	})
+}
+
+// filterStdlibVersions removes Go standard library versions from JSON output,
+// since they depend on the system running the test. Some have different
+// versions than others, and on some we are unable to extract a version from
+// the binary so the version is empty.
+func filterStdlibVersions(data []byte) []byte {
+	return stdlibVersionRegexp.ReplaceAll(data, []byte(`${1}"`))
 }

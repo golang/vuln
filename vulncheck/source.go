@@ -93,13 +93,7 @@ func setModules(r *Result, mods []*Module) {
 	}
 	// Sort for determinism.
 	sort.Slice(mods, func(i, j int) bool { return mods[i].Path < mods[j].Path })
-	for _, m := range mods {
-		// stdlib is not a module per se, so we don't
-		// save it as module comprising user code.
-		if m != stdlibModule {
-			r.Modules = append(r.Modules, m)
-		}
-	}
+	r.Modules = append(r.Modules, mods...)
 }
 
 // pkgID is an id counter for nodes of Imports graph.

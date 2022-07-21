@@ -13,5 +13,5 @@ STD
 Call stacks in your code:
  golang.org/stdvuln.main calls archive/zip.OpenReader
 
-Found in:  archive/zip
+Found in:  archive/zip@v1.18.0
 More info: https://pkg.go.dev/vuln/STD

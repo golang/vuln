@@ -175,6 +175,7 @@ func TestImports(t *testing.T) {
 		{Path: "golang.org/entry"},
 		{Path: "golang.org/wmod", Version: "v0.0.0"},
 		{Path: "golang.org/zmod", Version: "v0.0.0"},
+		{Path: "stdlib", Version: "v1.18.0"},
 	}
 	gotMods := result.Modules
 	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
@@ -307,6 +308,7 @@ func TestRequires(t *testing.T) {
 		{Path: "golang.org/entry"},
 		{Path: "golang.org/imod1", Version: "v0.0.0"},
 		{Path: "golang.org/imod2", Version: "v0.0.0"},
+		stdlibModule,
 	}
 	gotMods := result.Modules
 	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })

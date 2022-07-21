@@ -172,6 +172,7 @@ func TestBinary(t *testing.T) {
 		{Path: "golang.org/amod", Version: "v1.1.3"},
 		{Path: "golang.org/bmod", Version: "v0.5.0"},
 		{Path: "golang.org/cmod", Version: "v1.1.3"},
+		stdlibModule,
 	}
 	gotMods := res.Modules
 	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })

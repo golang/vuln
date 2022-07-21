@@ -30,6 +30,12 @@ $ govulncheck -json .
 			"Version": "v0.3.7",
 			"Dir": "",
 			"Replace": null
+		},
+		{
+			"Path": "stdlib",
+			"Version": "",
+			"Dir": "",
+			"Replace": null
 		}
 	]
 }
@@ -200,6 +206,12 @@ $ govulncheck -json . --> FAIL 3
 		{
 			"Path": "golang.org/x/text",
 			"Version": "v0.3.0",
+			"Dir": "",
+			"Replace": null
+		},
+		{
+			"Path": "stdlib",
+			"Version": "",
 			"Dir": "",
 			"Replace": null
 		}

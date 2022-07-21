@@ -32,8 +32,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 	// set the stdlib version for detection of vulns in the standard library
 	// TODO(#53740): what if Go version is not in semver format?
 	stdlibModule.Version = goTagToSemver(goVersion)
-	// Add "stdlib" module. Even if stdlib is not used, which is unlikely, it
-	// won't appear in vulncheck.Modules nor other results.
+	// Add "stdlib" module.
 	cmods = append(cmods, stdlibModule)
 
 	modVulns, err := fetchVulnerabilities(ctx, cfg.Client, cmods)
