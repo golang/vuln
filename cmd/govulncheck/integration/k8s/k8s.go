@@ -6,7 +6,6 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -25,7 +24,7 @@ func main() {
 	}
 	out := os.Args[1]
 
-	outJson, err := ioutil.ReadFile(out)
+	outJson, err := os.ReadFile(out)
 	if err != nil {
 		log.Fatal("Failed to read:", out)
 	}

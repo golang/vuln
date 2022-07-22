@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -116,7 +115,7 @@ func createDirAndFile(dir, file, content string) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path.Join(dir, file), []byte(content), 0644)
+	return os.WriteFile(path.Join(dir, file), []byte(content), 0644)
 }
 
 // localDB creates a local db with testVulns and index as contents.

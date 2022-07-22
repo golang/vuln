@@ -8,7 +8,6 @@ package govulncheck
 import (
 	"encoding/json"
 	"go/build"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -63,7 +62,7 @@ func (c *FSCache) ReadIndex(dbName string) (client.DBIndex, time.Time, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	b, err := ioutil.ReadFile(filepath.Join(c.rootDir, dbName, "index.json"))
+	b, err := os.ReadFile(filepath.Join(c.rootDir, dbName, "index.json"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, time.Time{}, nil
@@ -92,7 +91,7 @@ func (c *FSCache) WriteIndex(dbName string, index client.DBIndex, retrieved time
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(path, "index.json"), j, 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(path, "index.json"), j, 0666); err != nil {
 		return err
 	}
 	return nil
@@ -102,7 +101,7 @@ func (c *FSCache) ReadEntries(dbName string, p string) ([]*osv.Entry, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	b, err := ioutil.ReadFile(filepath.Join(c.rootDir, dbName, p, "vulns.json"))
+	b, err := os.ReadFile(filepath.Join(c.rootDir, dbName, p, "vulns.json"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -128,7 +127,7 @@ func (c *FSCache) WriteEntries(dbName string, p string, entries []*osv.Entry) er
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(path, "vulns.json"), j, 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(path, "vulns.json"), j, 0666); err != nil {
 		return err
 	}
 	return nil

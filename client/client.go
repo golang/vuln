@@ -32,7 +32,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -84,7 +84,7 @@ func (*localSource) unexported() {}
 
 func (ls *localSource) GetByModule(_ context.Context, module string) (_ []*osv.Entry, err error) {
 	defer derrors.Wrap(&err, "GetByModule(%q)", module)
-	content, err := ioutil.ReadFile(filepath.Join(ls.dir, module+".json"))
+	content, err := os.ReadFile(filepath.Join(ls.dir, module+".json"))
 	if os.IsNotExist(err) {
 		return nil, nil
 	} else if err != nil {
@@ -99,7 +99,7 @@ func (ls *localSource) GetByModule(_ context.Context, module string) (_ []*osv.E
 
 func (ls *localSource) GetByID(_ context.Context, id string) (_ *osv.Entry, err error) {
 	defer derrors.Wrap(&err, "GetByID(%q)", id)
-	content, err := ioutil.ReadFile(filepath.Join(ls.dir, internal.IDDirectory, id+".json"))
+	content, err := os.ReadFile(filepath.Join(ls.dir, internal.IDDirectory, id+".json"))
 	if os.IsNotExist(err) {
 		return nil, nil
 	} else if err != nil {
@@ -114,7 +114,7 @@ func (ls *localSource) GetByID(_ context.Context, id string) (_ *osv.Entry, err 
 
 func (ls *localSource) ListIDs(context.Context) (_ []string, err error) {
 	defer derrors.Wrap(&err, "ListIDs()")
-	content, err := ioutil.ReadFile(filepath.Join(ls.dir, internal.IDDirectory, "index.json"))
+	content, err := os.ReadFile(filepath.Join(ls.dir, internal.IDDirectory, "index.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error
 func (ls *localSource) Index(context.Context) (_ DBIndex, err error) {
 	defer derrors.Wrap(&err, "Index()")
 	var index DBIndex
-	b, err := ioutil.ReadFile(filepath.Join(ls.dir, "index.json"))
+	b, err := os.ReadFile(filepath.Join(ls.dir, "index.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +337,7 @@ func (hs *httpSource) readBody(ctx context.Context, url string) ([]byte, error) 
 		return nil, nil
 	}
 	// might want this to be a LimitedReader
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 type client struct {
