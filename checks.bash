@@ -6,8 +6,6 @@
 # This file will be run by `go test`.
 # See all_test.go in this directory.
 
-go version
-
 # Ensure that installed go binaries are on the path.
 # This bash expression follows the algorithm described at the top of
 # `go install help`: first try $GOBIN, then $GOPATH/bin, then $HOME/go/bin.
@@ -86,6 +84,37 @@ check_misspell() {
   runcmd misspell -error .
 }
 
+clean_workspace() {
+  [[ $(git status --porcelain) == '' ]]
+}
+
+# If any vulncheck tests have changed, then either the ResultVersion
+# should be different, or "Results unchanged." should be its own
+# line in the commit message.
+check_vulncheck_result_version() {
+  if clean_workspace; then
+    fs=$(git diff --name-only HEAD^)
+  else
+    fs=$(git diff --name-only)
+  fi
+  tests_modified=false
+  for f in $fs; do
+    if [[ $f = vulncheck/*_test.go ]]; then
+      tests_modified=true
+      break
+    fi
+  done
+  if $tests_modified; then
+    if git show -s --format=%B | grep -q '^Results unchanged\.'; then
+      info 'OK: vulncheck test file modified but commit message says "Results unchanged."'
+      return
+    fi
+    if ! git diff | grep -q 'const ResultVersion'; then
+      err "vulncheck test file modified but ResultVersion not changed"
+    fi
+  fi
+}
+
 go_linters() {
   check_vet
   check_staticcheck
@@ -119,6 +148,9 @@ main() {
       ;;
     "")
       runchecks
+      ;;
+    v)
+      check_vulncheck_result_version
       ;;
     *)
       usage
