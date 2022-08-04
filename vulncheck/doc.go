@@ -18,7 +18,7 @@ contain known vulnerable functions and methods.
 
 A broader overview of vulncheck can be found at https://go.dev/security/vulncheck.
 
-Inputs
+# Inputs
 
 Source accepts a list of vulncheck.Package objects, which
 are a trimmed version of packages.Package objects to reduce
@@ -32,14 +32,14 @@ vulnerabilities in the form of a vulnerability database
 https://golang.org/x/vuln/client#Client. The vulnerabilities
 are modeled using the shared https://golang.org/x/vuln/osv format.
 
-Results
+# Results
 
 The result of vulncheck are slices of the call graph, package
 imports graph, and module requires graph leading to the use
 of an identified vulnerability. Parts of these graphs not
 related to any vulnerabilities are omitted.
 
-Vulnerability Witnesses
+# Vulnerability Witnesses
 
 CallStacks and ImportChains APIs search the returned slices
 for user-friendly representative call stacks and import chains.
@@ -47,12 +47,8 @@ Clients of vulncheck can use these stacks and chains as a
 witness of a vulnerability use during, for instance, security
 review.
 
-Limitations
+# Limitations
 
-Note that since statically constructing an exact call graph of
-a program is impossible, the produced call graph information
-is over-approximate: the results might contain call stacks not
-realizable in practice. On the other hand, vulncheck might
-miss some call graph edges in the presence of unsafe and reflect.
+Please see https://go.dev/security/vulncheck#limitations.
 */
 package vulncheck

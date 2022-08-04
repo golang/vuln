@@ -63,13 +63,7 @@ corresponds to the type golang.org/x/vuln/vulncheck.Result.
 
 # Weaknesses
 
-Govulncheck uses static analysis, which is inherently imprecise. If govulncheck
-identifies a sequence of calls in your program that leads to a vulnerable
-function, that path may never be executed because of conditions in the code, or
-it may call the vulnerable function with harmless input.
-
-The call graph analysis that govulncheck performs cannot find calls that use
-Go's reflect or unsafe packages. It is possible for govulncheck to miss
-vulnerabilities in programs that call functions in these unusual ways.
+Govulncheck is built on top of golang.org/x/vuln/vulncheck library and thus shares
+its limitations described at https://go.dev/security/vulncheck#limitations.
 */
 package main
