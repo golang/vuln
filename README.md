@@ -11,6 +11,11 @@ This repository contains the following:
 The code in this repository is under active development and not to be
 considered stable.
 
+## Privacy Policy
+
+The privacy policy for `govulncheck` can be found at
+[https://vuln.go.dev/privacy](https://vuln.go.dev/privacy.html).
+
 ## License
 
 Unless otherwise noted, the Go source files are distributed under
