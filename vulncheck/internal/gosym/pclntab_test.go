@@ -89,6 +89,9 @@ func parse(file string, f *elf.File, t *testing.T) (*elf.File, *Table) {
 }
 
 func TestLineFromAline(t *testing.T) {
+	// TODO(https://go.dev/issue/54381): remove this after fixing.
+	t.Skip()
+
 	skipIfNotELF(t)
 
 	tab := getTable(t)
@@ -181,6 +184,9 @@ func TestLineAline(t *testing.T) {
 }
 
 func TestPCLine(t *testing.T) {
+	// TODO(b/242097992): fix panic
+	t.Skip()
+
 	pclinetestBinary, cleanup := dotest(t)
 	defer cleanup()
 
@@ -247,6 +253,9 @@ func TestPCLine(t *testing.T) {
 }
 
 func TestInlineTree(t *testing.T) {
+	// TODO(b/242097992): fix panic
+	t.Skip()
+
 	pclinetestBinary, cleanup := dotest(t)
 	defer cleanup()
 

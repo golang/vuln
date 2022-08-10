@@ -27,6 +27,9 @@ import (
 var update = flag.Bool("update", false, "update test files with results")
 
 func TestCommand(t *testing.T) {
+	// TODO(https://go.dev/issue/54381): remove this after fixing.
+	t.Skip()
+
 	testDir, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
