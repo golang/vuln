@@ -89,9 +89,6 @@ func parse(file string, f *elf.File, t *testing.T) (*elf.File, *Table) {
 }
 
 func TestLineFromAline(t *testing.T) {
-	// TODO(https://go.dev/issue/54381): remove this after fixing.
-	t.Skip()
-
 	skipIfNotELF(t)
 
 	tab := getTable(t)
@@ -184,9 +181,6 @@ func TestLineAline(t *testing.T) {
 }
 
 func TestPCLine(t *testing.T) {
-	// TODO(b/242097992): fix panic
-	t.Skip()
-
 	pclinetestBinary, cleanup := dotest(t)
 	defer cleanup()
 
@@ -207,6 +201,7 @@ func TestPCLine(t *testing.T) {
 			break
 		}
 		wantLine += int(textdat[off])
+		t.Logf("off is %d %#x (max %d)", off, textdat[off], sym.End-pc)
 		file, line, fn := tab.PCToLine(pc)
 		if fn == nil {
 			t.Errorf("failed to get line of PC %#x", pc)
@@ -252,10 +247,21 @@ func TestPCLine(t *testing.T) {
 	}
 }
 
-func TestInlineTree(t *testing.T) {
-	// TODO(b/242097992): fix panic
-	t.Skip()
+func TestSymVersion(t *testing.T) {
+	skipIfNotELF(t)
 
+	table := getTable(t)
+	if table.go12line == nil {
+		t.Skip("not relevant to Go 1.2+ symbol table")
+	}
+	for _, fn := range table.Funcs {
+		if fn.goVersion == verUnknown {
+			t.Fatalf("unexpected symbol version: %v", fn)
+		}
+	}
+}
+
+func TestInlineTree(t *testing.T) {
 	pclinetestBinary, cleanup := dotest(t)
 	defer cleanup()
 
@@ -268,7 +274,8 @@ func TestInlineTree(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reading %s gopclntab: %v", pclinetestBinary, err)
 	}
-	goFunc := lookupSymbol(f, "go.func.*")
+
+	goFunc := lookupSymbol(f, FuncSymName)
 	if goFunc == nil {
 		t.Fatal("couldn't find go.func.*")
 	}

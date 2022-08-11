@@ -81,7 +81,7 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 			return nil, nil, "", err
 		}
 		packageSymbols[pkgName] = append(packageSymbols[pkgName], symName)
-		value, base, r, err := x.SymbolInfo("go.func.*")
+		value, base, r, err := x.SymbolInfo(gosym.FuncSymName)
 		if err != nil {
 			return nil, nil, "", fmt.Errorf("reading go.func.*: %v", err)
 		}
