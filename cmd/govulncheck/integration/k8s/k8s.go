@@ -34,8 +34,8 @@ func main() {
 		log.Fatal("Failed to load json into vulncheck.Result:", err)
 	}
 
-	if len(r.Vulns) != 50 {
-		log.Fatalf("want 50 vulns; got %d", len(r.Vulns))
+	if len(r.Vulns) != 48 {
+		log.Fatalf("want 48 vulns; got %d", len(r.Vulns))
 	}
 
 	type vuln struct {
@@ -66,8 +66,6 @@ func main() {
 		{"github.com/prometheus/client_golang/prometheus/promhttp", "HandlerFor"}:               true,
 		{"github.com/prometheus/client_golang/prometheus/promhttp", "InstrumentHandlerCounter"}: true,
 		{"github.com/prometheus/client_golang/prometheus/promhttp", "InstrumentMetricHandler"}:  true,
-		{"github.com/prometheus/client_golang/prometheus/promhttp", "init"}:                     true,
-		{"github.com/satori/go.uuid", "init"}:                                                   true,
 		{"golang.org/x/crypto/cryptobyte", "Builder.AddBytes"}:                                  true,
 		{"golang.org/x/crypto/cryptobyte", "Builder.AddUint16LengthPrefixed"}:                   true,
 		{"golang.org/x/crypto/cryptobyte", "Builder.Bytes"}:                                     true,
