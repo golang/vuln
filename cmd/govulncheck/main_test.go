@@ -73,6 +73,30 @@ func TestLatestFixed(t *testing.T) {
 			},
 			"v1.5.6",
 		},
+		{
+			"no v prefix",
+			[]osv.Affected{
+				{
+					Ranges: osv.Affects{
+						{
+							Type: osv.TypeSemver,
+							Events: []osv.RangeEvent{
+								{Fixed: "1.17.2"},
+							},
+						}},
+				},
+				{
+					Ranges: osv.Affects{
+						{
+							Type: osv.TypeSemver,
+							Events: []osv.RangeEvent{
+								{Introduced: "1.18.0", Fixed: "1.18.4"},
+							},
+						}},
+				},
+			},
+			"1.18.4",
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			got := govulncheck.LatestFixed(test.in)
