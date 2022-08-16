@@ -31,7 +31,20 @@ var (
 	htmlFlag    = flag.Bool("html", false, "")
 )
 
-const usage = `govulncheck: identify known vulnerabilities by call graph traversal.
+const usage = `Command govulncheck identifies functions and methods in Go
+source code with known vulnerabilities.
+
+govulncheck can be used to analyze source code with one or more package
+patterns (for example, golang.org/x/crypto/...  or ./...), or on a single Go
+binary. For Go binaries, module and symbol information will be extracted from
+the binary to detect vulnerable symbols.
+
+By default, govulncheck makes requests to the Go vulnerability database
+(https://vuln.go.dev). The environment variable GOVULNDB can be set to a
+comma-separated list of vulnerability database URLs, with http://, https://, or
+file:// protocols. Entries from multiple databases are merged.
+
+For more information, visit https://go.dev/security/vulndb.
 
 Usage:
 
@@ -41,6 +54,8 @@ Usage:
 
 Flags:
 
+	-v	Print a full call stack for each vulnerability.
+
 	-json	Print vulnerability findings in JSON format.
 
 	-html	Generate HTML with the vulnerability findings.
@@ -48,14 +63,6 @@ Flags:
 	-tags	Comma-separated list of build tags.
 
 	-tests	Boolean flag indicating if test files should be analyzed too.
-
-govulncheck can be used with either one or more package patterns (i.e. golang.org/x/crypto/...
-or ./...) or with a single path to a Go binary. In the latter case module and symbol
-information will be extracted from the binary to detect vulnerable symbols.
-
-The environment variable GOVULNDB can be set to a comma-separated list of vulnerability
-database URLs, with http://, https://, or file:// protocols. Entries from multiple
-databases are merged.
 `
 
 func init() {
