@@ -226,31 +226,23 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map
 	default:
 		fmt.Printf("Found %d known vulnerabilities.\n", len(uniqueVulns))
 	}
-	fmt.Println(strings.Repeat("-", lineLength))
-	for _, vg := range ci.VulnGroups {
+	fmt.Println()
+	for idx, vg := range ci.VulnGroups {
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.
 		v0 := vg[0]
-		fmt.Printf(`
-%s
-%s
-`, v0.OSV.ID, v0.OSV.Details)
-		if *verboseFlag {
-			writeCallStacksVerbose(vg, ci)
-		} else {
-			writeCallStacksDefault(vg, ci)
-		}
-		fmt.Println()
-		found := v0.PkgPath
+		id := v0.OSV.ID
+		details := v0.OSV.Details
+
+		var found string
 		if v := ci.ModuleVersions[v0.ModPath]; v != "" {
 			found = packageVersionString(v0.PkgPath, v[1:])
 		}
-		fmt.Printf("Found in:  %v\n", found)
-		if fixed := govulncheck.LatestFixed(v0.OSV.Affected); fixed != "" {
-			fmt.Printf("Fixed in:  %s\n", packageVersionString(v0.PkgPath, fixed))
+		fixed := govulncheck.LatestFixed(v0.OSV.Affected)
+		if fixed != "" {
+			fixed = packageVersionString(v0.PkgPath, fixed)
 		}
-		fmt.Printf("More info: https://pkg.go.dev/vuln/%s\n", v0.OSV.ID)
-		fmt.Println()
+		writeVulnerability(idx+1, id, details, found, fixed, vg, ci)
 	}
 	if len(unaffectedMods) > 0 {
 		fmt.Println()
@@ -266,6 +258,22 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map
 	fmt.Println()
 }
 
+func writeVulnerability(idx int, id, details, found, fixed string, vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
+	fmt.Printf(`Vulnerability #%d: %s
+%s`, idx, id, indent(details, 2))
+	if *verboseFlag {
+		writeCallStacksVerbose(vg, ci)
+	} else {
+		writeCallStacksDefault(vg, ci)
+	}
+	fmt.Printf(`  Found in: %s
+  Fixed in: %s
+  More info: https://pkg.go.dev/vuln/%s
+
+
+`, found, fixed, id)
+}
+
 func writeCallStacksDefault(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
 	var summaries []string
 	for _, v := range vg {
@@ -278,16 +286,19 @@ func writeCallStacksDefault(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
 	if len(summaries) > 0 {
 		sort.Strings(summaries)
 		summaries = compact(summaries)
-		fmt.Println("Call stacks in your code:")
+		fmt.Println()
+		fmt.Println("    Call stacks in your code:")
 		for _, s := range summaries {
-			fmt.Println("", s)
+			fmt.Println(indent(s, 6))
 		}
 	}
+	fmt.Println()
 }
 
 func writeCallStacksVerbose(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
 	// Display one full call stack for each vuln.
-	fmt.Println("Call stacks in your code:")
+	fmt.Println()
+	fmt.Println("    Call stacks in your code:")
 	nMore := 0
 	i := 1
 	for _, v := range vg {
@@ -295,7 +306,7 @@ func writeCallStacksVerbose(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
 		if len(css) == 0 {
 			continue
 		}
-		fmt.Printf("    #%d: for function %s\n", i, v.Symbol)
+		fmt.Printf("      #%d: for function %s\n", i, v.Symbol)
 		writeCallStack(css[0])
 		fmt.Println()
 		i++
@@ -383,4 +394,21 @@ func packageVersionString(packagePath, version string) string {
 func die(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)
+}
+
+// indent returns the output of prefixing n spaces to s at every line break,
+// except for empty lines. See TestIndent for examples.
+func indent(s string, n int) string {
+	b := []byte(s)
+	var result []byte
+	shouldAppend := true
+	prefix := strings.Repeat(" ", n)
+	for _, c := range b {
+		if shouldAppend && c != '\n' {
+			result = append(result, prefix...)
+		}
+		result = append(result, c)
+		shouldAppend = c == '\n'
+	}
+	return string(result)
 }

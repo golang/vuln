@@ -6,12 +6,12 @@ govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulnch
 
 Scanning for dependencies with known vulnerabilities...
 Found 1 known vulnerability.
--------------------------------------------------------
 
-STD
+Vulnerability #1: STD
 
-Call stacks in your code:
- golang.org/stdvuln.main calls archive/zip.OpenReader
+    Call stacks in your code:
+      golang.org/stdvuln.main calls archive/zip.OpenReader
 
-Found in:  archive/zip@go1.18
-More info: https://pkg.go.dev/vuln/STD
+  Found in: archive/zip@go1.18
+  Fixed in: 
+  More info: https://pkg.go.dev/vuln/STD
