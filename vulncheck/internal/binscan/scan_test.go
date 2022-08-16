@@ -17,9 +17,6 @@ import (
 )
 
 func TestExtractPackagesAndSymbols(t *testing.T) {
-	// TODO(https://go.dev/issue/54381): remove this after fixing.
-	t.Skip()
-
 	for _, gg := range []string{"linux/amd64", "darwin/amd64", "windows/amd64"} {
 		t.Run(gg, func(t *testing.T) {
 			goos, goarch, _ := strings.Cut(gg, "/")

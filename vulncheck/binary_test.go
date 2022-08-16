@@ -25,9 +25,6 @@ import (
 
 // TODO: we build binary programatically, so what if the underlying tool chain changes?
 func TestBinary(t *testing.T) {
-	// TODO(https://go.dev/issue/54381): remove this after fixing.
-	t.Skip()
-
 	// TODO(#52160): investigate why Binary does not process plan9 binaries
 	if !hasGoBuild() || runtime.GOOS == "plan9" {
 		t.Skip("fails on android and plan9")
