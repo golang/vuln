@@ -173,25 +173,25 @@ func vulnImportSlice(pkg *Package, modVulns moduleVulnerabilities, result *Resul
 	// Create Vuln entry for each symbol of known OSV entries for pkg.
 	for _, osv := range vulns {
 		for _, affected := range osv.Affected {
-			if affected.Package.Name != pkgNode.Path {
-				continue
-			}
-
-			var symbols []string
-			if len(affected.EcosystemSpecific.Symbols) != 0 {
-				symbols = affected.EcosystemSpecific.Symbols
-			} else {
-				symbols = allSymbols(pkg.Pkg)
-			}
-
-			for _, symbol := range symbols {
-				vuln := &Vuln{
-					OSV:        osv,
-					Symbol:     symbol,
-					PkgPath:    pkgNode.Path,
-					ImportSink: id,
+			for _, p := range affected.EcosystemSpecific.Imports {
+				if p.Path != pkgNode.Path {
+					continue
 				}
-				result.Vulns = append(result.Vulns, vuln)
+
+				symbols := p.Symbols
+				if len(symbols) == 0 {
+					symbols = allSymbols(pkg.Pkg)
+				}
+
+				for _, symbol := range symbols {
+					vuln := &Vuln{
+						OSV:        osv,
+						Symbol:     symbol,
+						PkgPath:    pkgNode.Path,
+						ImportSink: id,
+					}
+					result.Vulns = append(result.Vulns, vuln)
+				}
 			}
 		}
 	}
@@ -434,10 +434,7 @@ func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.E
 
 		// Populate CallSink field for each detected vuln symbol.
 		for _, osv := range vulns {
-			for _, affected := range osv.Affected {
-				if affected.Package.Name != funNode.PkgPath {
-					continue
-				}
+			if vulnMatchesPackage(osv, funNode.PkgPath) {
 				addCallSinkForVuln(funNode.ID, osv, dbFuncName(f), funNode.PkgPath, result)
 			}
 		}

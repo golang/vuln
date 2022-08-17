@@ -38,7 +38,7 @@ $ govulncheck -json ${vuln_binary} --> FAIL 3
 				"affected": [
 					{
 						"package": {
-							"name": "golang.org/x/text/language",
+							"name": "golang.org/x/text",
 							"ecosystem": "Go"
 						},
 						"ranges": [
@@ -58,11 +58,16 @@ $ govulncheck -json ${vuln_binary} --> FAIL 3
 							"url": "https://pkg.go.dev/vuln/GO-2021-0113"
 						},
 						"ecosystem_specific": {
-							"symbols": [
-								"Parse",
-								"MatchStrings",
-								"MustParse",
-								"ParseAcceptLanguage"
+							"imports": [
+								{
+									"path": "golang.org/x/text/language",
+									"symbols": [
+										"MatchStrings",
+										"MustParse",
+										"Parse",
+										"ParseAcceptLanguage"
+									]
+								}
 							]
 						}
 					}
@@ -70,11 +75,15 @@ $ govulncheck -json ${vuln_binary} --> FAIL 3
 				"references": [
 					{
 						"type": "FIX",
-						"url": "https://go-review.googlesource.com/c/text/+/340830"
+						"url": "https://go.dev/cl/340830"
 					},
 					{
 						"type": "FIX",
 						"url": "https://go.googlesource.com/text/+/383b2e75a7a4198c42f8f87833eefb772868a56f"
+					},
+					{
+						"type": "WEB",
+						"url": "https://nvd.nist.gov/vuln/detail/CVE-2021-38561"
 					}
 				]
 			},

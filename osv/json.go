@@ -109,9 +109,11 @@ type DatabaseSpecific struct {
 	URL string `json:"url"`
 }
 
-// EcosystemSpecific contains additional information about the vulnerability
-// for the Go ecosystem.
-type EcosystemSpecific struct {
+// EcosytemSpecificImport contains additional information about an affected package.
+type EcosystemSpecificImport struct {
+	// Path is the package import path.
+	Path string `json:"path,omitempty"`
+
 	// Symbols is the collection of functions and methods names affected by
 	// this vulnerability. Methods are listed as <recv>.<method>.
 	//
@@ -122,6 +124,13 @@ type EcosystemSpecific struct {
 	// These should be the symbols initially detected or identified in the CVE
 	// or other source.
 	Symbols []string `json:"symbols,omitempty"`
+}
+
+// EcosystemSpecific contains additional information about the vulnerability
+// for the Go ecosystem.
+type EcosystemSpecific struct {
+	// Imports is the list of affected packages within the module.
+	Imports []EcosystemSpecificImport `json:"imports,omitempty"`
 
 	// GOOS is the execution operating system where the symbols appear, if
 	// known.

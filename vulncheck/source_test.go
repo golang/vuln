@@ -572,12 +572,15 @@ func TestFiltering(t *testing.T) {
 				{
 					ID: "V",
 					Affected: []osv.Affected{{
-						Package: osv.Package{Name: "golang.org/vmod/vuln"},
+						Package: osv.Package{Name: "golang.org/vmod"},
 						Ranges:  osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
 						EcosystemSpecific: osv.EcosystemSpecific{
-							Symbols: []string{"V"},
-							GOOS:    []string{"linux"},
-							GOARCH:  []string{"amd64"},
+							GOOS:   []string{"linux"},
+							GOARCH: []string{"amd64"},
+							Imports: []osv.EcosystemSpecificImport{{
+								Path:    "golang.org/vmod/vuln",
+								Symbols: []string{"V"},
+							}},
 						},
 					}},
 				},
@@ -661,9 +664,14 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 				{
 					ID: "V",
 					Affected: []osv.Affected{{
-						Package:           osv.Package{Name: "golang.org/vmod/vuln"},
-						Ranges:            osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
-						EcosystemSpecific: osv.EcosystemSpecific{Symbols: []string{}},
+						Package: osv.Package{Name: "golang.org/vmod"},
+						Ranges:  osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
+						EcosystemSpecific: osv.EcosystemSpecific{
+							Imports: []osv.EcosystemSpecificImport{{
+								Path:    "golang.org/vmod/vuln",
+								Symbols: []string{},
+							}},
+						},
 					}},
 				},
 			},

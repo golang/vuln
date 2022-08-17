@@ -58,30 +58,30 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 func addImportsOnlyVulns(pkg, mod string, symbols []string, result *Result, modVulns moduleVulnerabilities) {
 	for _, osv := range modVulns.vulnsForPackage(pkg) {
 		for _, affected := range osv.Affected {
-			if affected.Package.Name != pkg {
-				continue
-			}
-
-			var syms []string
-			if len(affected.EcosystemSpecific.Symbols) == 0 {
-				// If every symbol of pkg is vulnerable, we would ideally compute
-				// every symbol mentioned in the pkg and then add Vuln entry for it,
-				// just as we do in Source. However, we don't have code of pkg here
-				// so we have to do best we can, which is the symbols of pkg actually
-				// appearing in the binary.
-				syms = symbols
-			} else {
-				syms = affected.EcosystemSpecific.Symbols
-			}
-
-			for _, symbol := range syms {
-				vuln := &Vuln{
-					OSV:     osv,
-					Symbol:  symbol,
-					PkgPath: pkg,
-					ModPath: mod,
+			for _, p := range affected.EcosystemSpecific.Imports {
+				if p.Path != pkg {
+					continue
 				}
-				result.Vulns = append(result.Vulns, vuln)
+				syms := p.Symbols
+				if len(syms) == 0 {
+					// If every symbol of pkg is vulnerable, we would ideally
+					// compute every symbol mentioned in the pkg and then add
+					// Vuln entry for it, just as we do in Source. However,
+					// we don't have code of pkg here so we have to do best
+					// we can, which is the symbols of pkg actually appearing
+					// in the binary.
+					syms = symbols
+				}
+
+				for _, symbol := range syms {
+					vuln := &Vuln{
+						OSV:     osv,
+						Symbol:  symbol,
+						PkgPath: pkg,
+						ModPath: mod,
+					}
+					result.Vulns = append(result.Vulns, vuln)
+				}
 			}
 		}
 	}
@@ -91,19 +91,13 @@ func addImportsOnlyVulns(pkg, mod string, symbols []string, result *Result, modV
 func addSymbolVulns(pkg, mod string, symbols []string, result *Result, modVulns moduleVulnerabilities) {
 	for _, symbol := range symbols {
 		for _, osv := range modVulns.vulnsForSymbol(pkg, symbol) {
-			for _, affected := range osv.Affected {
-				if affected.Package.Name != pkg {
-					continue
-				}
-				vuln := &Vuln{
-					OSV:     osv,
-					Symbol:  symbol,
-					PkgPath: pkg,
-					ModPath: mod,
-				}
-				result.Vulns = append(result.Vulns, vuln)
-				break
+			vuln := &Vuln{
+				OSV:     osv,
+				Symbol:  symbol,
+				PkgPath: pkg,
+				ModPath: mod,
 			}
+			result.Vulns = append(result.Vulns, vuln)
 		}
 	}
 }

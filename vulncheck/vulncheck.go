@@ -11,6 +11,7 @@ import (
 	"go/types"
 	"strings"
 
+	"golang.org/x/exp/slices"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/osv"
@@ -380,7 +381,6 @@ func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry 
 			}
 		}
 	}
-
 	if mostSpecificMod == nil {
 		return nil
 	}
@@ -391,11 +391,14 @@ func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry 
 	}
 	vulns := mostSpecificMod.vulns
 	packageVulns := []*osv.Entry{}
+Vuln:
 	for _, v := range vulns {
 		for _, a := range v.Affected {
-			if a.Package.Name == importPath {
-				packageVulns = append(packageVulns, v)
-				break
+			for _, p := range a.EcosystemSpecific.Imports {
+				if p.Path == importPath {
+					packageVulns = append(packageVulns, v)
+					continue Vuln
+				}
 			}
 		}
 	}
@@ -410,21 +413,18 @@ func (mv moduleVulnerabilities) vulnsForSymbol(importPath, symbol string) []*osv
 	}
 
 	symbolVulns := []*osv.Entry{}
+vulnLoop:
 	for _, v := range vulns {
-	vulnLoop:
 		for _, a := range v.Affected {
-			if a.Package.Name != importPath {
-				continue
-			}
-			if len(a.EcosystemSpecific.Symbols) == 0 {
+			for _, p := range a.EcosystemSpecific.Imports {
+				if p.Path != importPath {
+					continue
+				}
+				if len(p.Symbols) > 0 && !slices.Contains(p.Symbols, symbol) {
+					continue
+				}
 				symbolVulns = append(symbolVulns, v)
 				continue vulnLoop
-			}
-			for _, s := range a.EcosystemSpecific.Symbols {
-				if s == symbol {
-					symbolVulns = append(symbolVulns, v)
-					continue vulnLoop
-				}
 			}
 		}
 	}

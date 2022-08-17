@@ -117,7 +117,14 @@ func TestVulnsForPackage(t *testing.T) {
 				Version: "v1.0.0",
 			},
 			vulns: []*osv.Entry{
-				{ID: "a", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a/b/c"}}}},
+				{ID: "a", Affected: []osv.Affected{{
+					Package: osv.Package{Name: "example.mod/a"},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							Path: "example.mod/a/b/c",
+						}},
+					},
+				}}},
 			},
 		},
 		{
@@ -126,7 +133,14 @@ func TestVulnsForPackage(t *testing.T) {
 				Version: "v1.0.0",
 			},
 			vulns: []*osv.Entry{
-				{ID: "b", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a/b/c"}}}},
+				{ID: "b", Affected: []osv.Affected{{
+					Package: osv.Package{Name: "example.mod/a/b"},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							Path: "example.mod/a/b/c",
+						}},
+					},
+				}}},
 			},
 		},
 		{
@@ -135,14 +149,28 @@ func TestVulnsForPackage(t *testing.T) {
 				Version: "v0.0.1",
 			},
 			vulns: []*osv.Entry{
-				{ID: "d", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/d"}}}},
+				{ID: "d", Affected: []osv.Affected{{
+					Package: osv.Package{Name: "example.mod/d"},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							Path: "example.mod/d",
+						}},
+					},
+				}}},
 			},
 		},
 	}
 
 	filtered := mv.vulnsForPackage("example.mod/a/b/c")
 	expected := []*osv.Entry{
-		{ID: "b", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a/b/c"}}}},
+		{ID: "b", Affected: []osv.Affected{{
+			Package: osv.Package{Name: "example.mod/a/b"},
+			EcosystemSpecific: osv.EcosystemSpecific{
+				Imports: []osv.EcosystemSpecificImport{{
+					Path: "example.mod/a/b/c",
+				}},
+			},
+		}}},
 	}
 
 	if !reflect.DeepEqual(filtered, expected) {
@@ -158,7 +186,14 @@ func TestVulnsForPackageReplaced(t *testing.T) {
 				Version: "v1.0.0",
 			},
 			vulns: []*osv.Entry{
-				{ID: "a", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a/b/c"}}}},
+				{ID: "a", Affected: []osv.Affected{{
+					Package: osv.Package{Name: "example.mod/a"},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							Path: "example.mod/a/b/c",
+						}},
+					},
+				}}},
 			},
 		},
 		{
@@ -170,14 +205,28 @@ func TestVulnsForPackageReplaced(t *testing.T) {
 				Version: "v1.0.0",
 			},
 			vulns: []*osv.Entry{
-				{ID: "c", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/b/c"}}}},
+				{ID: "c", Affected: []osv.Affected{{
+					Package: osv.Package{Name: "example.mod/b"},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							Path: "example.mod/b/c",
+						}},
+					},
+				}}},
 			},
 		},
 	}
 
 	filtered := mv.vulnsForPackage("example.mod/a/b/c")
 	expected := []*osv.Entry{
-		{ID: "c", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/b/c"}}}},
+		{ID: "c", Affected: []osv.Affected{{
+			Package: osv.Package{Name: "example.mod/b"},
+			EcosystemSpecific: osv.EcosystemSpecific{
+				Imports: []osv.EcosystemSpecificImport{{
+					Path: "example.mod/b/c",
+				}},
+			},
+		}}},
 	}
 
 	if !reflect.DeepEqual(filtered, expected) {
@@ -193,7 +242,14 @@ func TestVulnsForSymbol(t *testing.T) {
 				Version: "v1.0.0",
 			},
 			vulns: []*osv.Entry{
-				{ID: "a", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a/b/c"}}}},
+				{ID: "a", Affected: []osv.Affected{{
+					Package: osv.Package{Name: "example.mod/a"},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							Path: "example.mod/a/b/c",
+						}},
+					},
+				}}},
 			},
 		},
 		{
@@ -202,15 +258,39 @@ func TestVulnsForSymbol(t *testing.T) {
 				Version: "v1.0.0",
 			},
 			vulns: []*osv.Entry{
-				{ID: "b", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a/b/c"}, EcosystemSpecific: osv.EcosystemSpecific{Symbols: []string{"a"}}}}},
-				{ID: "c", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a/b/c"}, EcosystemSpecific: osv.EcosystemSpecific{Symbols: []string{"b"}}}}},
+				{ID: "b", Affected: []osv.Affected{{
+					Package: osv.Package{Name: "example.mod/a/b"},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							Path:    "example.mod/a/b/c",
+							Symbols: []string{"a"},
+						}},
+					},
+				}}},
+				{ID: "c", Affected: []osv.Affected{{
+					Package: osv.Package{Name: "example.mod/a/b"},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							Path:    "example.mod/a/b/c",
+							Symbols: []string{"b"},
+						}},
+					},
+				}}},
 			},
 		},
 	}
 
 	filtered := mv.vulnsForSymbol("example.mod/a/b/c", "a")
 	expected := []*osv.Entry{
-		{ID: "b", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a/b/c"}, EcosystemSpecific: osv.EcosystemSpecific{Symbols: []string{"a"}}}}},
+		{ID: "b", Affected: []osv.Affected{{
+			Package: osv.Package{Name: "example.mod/a/b"},
+			EcosystemSpecific: osv.EcosystemSpecific{
+				Imports: []osv.EcosystemSpecificImport{{
+					Path:    "example.mod/a/b/c",
+					Symbols: []string{"a"},
+				}},
+			},
+		}}},
 	}
 
 	if !reflect.DeepEqual(filtered, expected) {
