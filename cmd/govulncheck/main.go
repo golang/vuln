@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"go/build"
@@ -111,6 +112,11 @@ Scanning for dependencies with known vulnerabilities...
 		}
 		pkgs, err = govulncheck.LoadPackages(cfg, patterns...)
 		if err != nil {
+			// Check if the error is due to the fact that
+			// the current project is not a module.
+			if !fileExists("go.mod") {
+				die("govulncheck: missing go.mod file?")
+			}
 			die("govulncheck: %v", err)
 		}
 		r, err = vulncheck.Source(ctx, pkgs, vcfg)
@@ -309,6 +315,20 @@ func isFile(path string) bool {
 		return false
 	}
 	return !s.IsDir()
+}
+
+// fileExists checks if file path exists. Returns true
+// if the file exists or it cannot prove that it does
+// not exist. Otherwise, returns false.
+func fileExists(path string) bool {
+	if _, err := os.Stat(path); err == nil {
+		return true
+	} else if errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	// Conservatively return true if os.Stat fails
+	// for some other reason.
+	return true
 }
 
 // compact replaces consecutive runs of equal elements with a single copy.
