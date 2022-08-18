@@ -114,6 +114,14 @@ type EcosystemSpecificImport struct {
 	// Path is the package import path.
 	Path string `json:"path,omitempty"`
 
+	// GOOS is the execution operating system where the symbols appear, if
+	// known.
+	GOOS []string `json:"goos,omitempty"`
+
+	// GOARCH specifies the execution architecture where the symbols appear, if
+	// known.
+	GOARCH []string `json:"goarch,omitempty"`
+
 	// Symbols is the collection of functions and methods names affected by
 	// this vulnerability. Methods are listed as <recv>.<method>.
 	//
@@ -131,20 +139,6 @@ type EcosystemSpecificImport struct {
 type EcosystemSpecific struct {
 	// Imports is the list of affected packages within the module.
 	Imports []EcosystemSpecificImport `json:"imports,omitempty"`
-
-	// GOOS is the execution operating system where the symbols appear, if
-	// known.
-	//
-	// At the moment, this information is not provided by the Go
-	// vulnerability database.
-	GOOS []string `json:"goos,omitempty"`
-
-	// GOARCH specifies the execution architecture where the symbols appear, if
-	// known.
-	//
-	// At the moment, this information is not provided by the Go
-	// vulnerability database.
-	GOARCH []string `json:"goarch,omitempty"`
 }
 
 // Entry represents a OSV style JSON vulnerability database

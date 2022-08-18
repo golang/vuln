@@ -575,11 +575,11 @@ func TestFiltering(t *testing.T) {
 						Package: osv.Package{Name: "golang.org/vmod"},
 						Ranges:  osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
 						EcosystemSpecific: osv.EcosystemSpecific{
-							GOOS:   []string{"linux"},
-							GOARCH: []string{"amd64"},
 							Imports: []osv.EcosystemSpecificImport{{
 								Path:    "golang.org/vmod/vuln",
 								Symbols: []string{"V"},
+								GOOS:    []string{"linux"},
+								GOARCH:  []string{"amd64"},
 							}},
 						},
 					}},

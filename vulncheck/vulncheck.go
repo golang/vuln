@@ -320,13 +320,26 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 				// A module version is affected if
 				//  - it is included in one of the affected version ranges
 				//  - and module version is not ""
-				//  The latter means the module version is not available, so
-				//  we don't want to spam users with potential false alarms.
-				//  TODO: issue warning for "" cases above?
-				affected := modVersion != "" && a.Ranges.AffectsSemver(modVersion) && matchesPlatform(os, arch, a.EcosystemSpecific)
-				if affected {
-					filteredAffected = append(filteredAffected, a)
+				if modVersion == "" {
+					// Module version of "" means the module version is not available,
+					// and so we don't want to spam users with potential false alarms.
+					// TODO: issue warning for "" cases above?
+					continue
 				}
+				if !a.Ranges.AffectsSemver(modVersion) {
+					continue
+				}
+				var filteredImports []osv.EcosystemSpecificImport
+				for _, p := range a.EcosystemSpecific.Imports {
+					if matchesPlatform(os, arch, p) {
+						filteredImports = append(filteredImports, p)
+					}
+				}
+				if len(a.EcosystemSpecific.Imports) != 0 && len(filteredImports) == 0 {
+					continue
+				}
+				a.EcosystemSpecific.Imports = filteredImports
+				filteredAffected = append(filteredAffected, a)
 			}
 			if len(filteredAffected) == 0 {
 				continue
@@ -345,7 +358,7 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 	return filteredMod
 }
 
-func matchesPlatform(os, arch string, e osv.EcosystemSpecific) bool {
+func matchesPlatform(os, arch string, e osv.EcosystemSpecificImport) bool {
 	matchesOS := len(e.GOOS) == 0
 	matchesArch := len(e.GOARCH) == 0
 	for _, o := range e.GOOS {
