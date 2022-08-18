@@ -16,13 +16,6 @@ import (
 	"golang.org/x/vuln/osv"
 )
 
-// ResultVersion should change when the results of this package change
-// for any input. It is intended to be used to cache results.
-// The field should begin with a date in YYYY-MM-DD format.
-// Experimental versions of the package should follow that with
-// a brief description. E.g. "2022-08-03 CHA only".
-const ResultVersion = "2022-07-21"
-
 // Config is used for configuring vulncheck algorithms.
 type Config struct {
 	// ImportsOnly instructs vulncheck to analyze import chains only.
