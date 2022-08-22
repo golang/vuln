@@ -21,6 +21,7 @@ import (
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/cmd/govulncheck/internal/govulncheck"
+	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
 
@@ -233,16 +234,21 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map
 		v0 := vg[0]
 		id := v0.OSV.ID
 		details := v0.OSV.Details
+		found := foundVersion(v0.ModPath, v0.PkgPath, ci)
+		fixed := fixedVersion(v0.PkgPath, v0.OSV.Affected)
 
-		var found string
-		if v := ci.ModuleVersions[v0.ModPath]; v != "" {
-			found = packageVersionString(v0.PkgPath, v[1:])
+		var stacks string
+		if !*verboseFlag {
+			stacks = defaultCallStacks(vg, ci)
+		} else {
+			stacks = verboseCallStacks(vg, ci)
 		}
-		fixed := govulncheck.LatestFixed(v0.OSV.Affected)
-		if fixed != "" {
-			fixed = packageVersionString(v0.PkgPath, fixed)
+		var b strings.Builder
+		if len(stacks) > 0 {
+			b.WriteString(indent("\nCall stacks in your code:\n", 4))
+			b.WriteString(indent(stacks, 6))
 		}
-		writeVulnerability(idx+1, id, details, found, fixed, vg, ci)
+		writeVulnerability(idx+1, id, details, b.String(), found, fixed)
 	}
 	if len(unaffectedMods) > 0 {
 		fmt.Println()
@@ -258,73 +264,77 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map
 	fmt.Println()
 }
 
-func writeVulnerability(idx int, id, details, found, fixed string, vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
+func writeVulnerability(idx int, id, details, callstack, found, fixed string) {
 	fmt.Printf(`Vulnerability #%d: %s
-%s`, idx, id, indent(details, 2))
-	if *verboseFlag {
-		writeCallStacksVerbose(vg, ci)
-	} else {
-		writeCallStacksDefault(vg, ci)
-	}
-	fmt.Printf(`  Found in: %s
+%s%s
+  Found in: %s
   Fixed in: %s
   More info: https://pkg.go.dev/vuln/%s
-
-
-`, found, fixed, id)
+`, idx, id, indent(details, 2), callstack, found, fixed, id)
 }
 
-func writeCallStacksDefault(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
+func foundVersion(modulePath, pkgPath string, ci *govulncheck.CallInfo) string {
+	var found string
+	if v := ci.ModuleVersions[modulePath]; v != "" {
+		found = packageVersionString(pkgPath, v[1:])
+	}
+	return found
+}
+
+func fixedVersion(pkgPath string, affected []osv.Affected) string {
+	fixed := govulncheck.LatestFixed(affected)
+	if fixed != "" {
+		fixed = packageVersionString(pkgPath, fixed)
+	}
+	return fixed
+}
+
+func defaultCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) string {
 	var summaries []string
 	for _, v := range vg {
 		if css := ci.CallStacks[v]; len(css) > 0 {
 			if sum := govulncheck.SummarizeCallStack(css[0], ci.TopPackages, v.PkgPath); sum != "" {
-				summaries = append(summaries, sum)
+				summaries = append(summaries, strings.TrimSpace(sum))
 			}
 		}
 	}
 	if len(summaries) > 0 {
 		sort.Strings(summaries)
 		summaries = compact(summaries)
-		fmt.Println()
-		fmt.Println("    Call stacks in your code:")
-		for _, s := range summaries {
-			fmt.Println(indent(s, 6))
-		}
 	}
-	fmt.Println()
+	var b strings.Builder
+	for _, s := range summaries {
+		b.WriteString(s)
+		b.WriteString("\n")
+	}
+	return b.String()
 }
 
-func writeCallStacksVerbose(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) {
+func verboseCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) string {
 	// Display one full call stack for each vuln.
-	fmt.Println()
-	fmt.Println("    Call stacks in your code:")
-	nMore := 0
 	i := 1
+	nMore := 0
+	var b strings.Builder
 	for _, v := range vg {
 		css := ci.CallStacks[v]
 		if len(css) == 0 {
 			continue
 		}
-		fmt.Printf("      #%d: for function %s\n", i, v.Symbol)
-		writeCallStack(css[0])
-		fmt.Println()
+		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, v.Symbol))
+		for _, e := range css[0] {
+			b.WriteString(fmt.Sprintf("  %s\n", govulncheck.FuncName(e.Function)))
+			if e.Call != nil && e.Call.Pos != nil {
+				b.WriteString(fmt.Sprintf("      %s\n", e.Call.Pos.String()))
+			}
+		}
 		i++
 		nMore += len(css) - 1
 	}
 	if nMore > 0 {
-		fmt.Printf("    There are %d more call stacks available.\n", nMore)
-		fmt.Printf("To     see all of them, pass the -json or -html flags.\n")
+		b.WriteString(fmt.Sprintf("    There are %d more call stacks available.\n", nMore))
+		b.WriteString(fmt.Sprintf("To see all of them, pass the -json or -html flags.\n"))
 	}
-}
-
-func writeCallStack(cs vulncheck.CallStack) {
-	for _, e := range cs {
-		fmt.Printf("        %s\n", govulncheck.FuncName(e.Function))
-		if e.Call != nil && e.Call.Pos != nil {
-			fmt.Printf("            %s\n", e.Call.Pos.String())
-		}
-	}
+	return b.String()
 }
 
 func isFile(path string) bool {
