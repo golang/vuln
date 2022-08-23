@@ -265,6 +265,9 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map
 }
 
 func writeVulnerability(idx int, id, details, callstack, found, fixed string) {
+	if fixed == "" {
+		fixed = "N/A"
+	}
 	fmt.Printf(`Vulnerability #%d: %s
 %s%s
   Found in: %s

@@ -13,5 +13,5 @@ Vulnerability #1: STD
       golang.org/stdvuln.main calls archive/zip.OpenReader
 
   Found in: archive/zip@go1.18
-  Fixed in: 
+  Fixed in: N/A
   More info: https://pkg.go.dev/vuln/STD
