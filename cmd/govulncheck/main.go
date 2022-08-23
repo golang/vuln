@@ -127,6 +127,17 @@ Scanning for dependencies with known vulnerabilities...
 			}
 			die("govulncheck: %v", err)
 		}
+
+		// Sort pkgs so that the PkgNodes returned by vulncheck.Source will be
+		// deterministic.
+		sort.Slice(pkgs, func(i, j int) bool {
+			return pkgs[i].PkgPath < pkgs[j].PkgPath
+		})
+		for _, pkg := range pkgs {
+			sort.Slice(pkg.Imports, func(i, j int) bool {
+				return pkg.Imports[i].PkgPath < pkg.Imports[j].PkgPath
+			})
+		}
 		r, err = vulncheck.Source(ctx, pkgs, vcfg)
 		if err != nil {
 			die("govulncheck: %v", err)

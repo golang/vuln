@@ -97,6 +97,24 @@ $ govulncheck -json ${vuln_binary} --> FAIL 3
 	],
 	"Modules": [
 		{
+			"Path": "github.com/tidwall/gjson",
+			"Version": "v1.9.2",
+			"Dir": "",
+			"Replace": null
+		},
+		{
+			"Path": "github.com/tidwall/match",
+			"Version": "v1.1.0",
+			"Dir": "",
+			"Replace": null
+		},
+		{
+			"Path": "github.com/tidwall/pretty",
+			"Version": "v1.2.0",
+			"Dir": "",
+			"Replace": null
+		},
+		{
 			"Path": "golang.org/x/text",
 			"Version": "v0.3.0",
 			"Dir": "",

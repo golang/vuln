@@ -52,8 +52,8 @@ $ govulncheck -json . --> FAIL 3
 				"PkgPath": "golang.org/vuln",
 				"Pos": {
 					"Filename": ".../vuln.go",
-					"Offset": 69,
-					"Line": 9,
+					"Offset": 97,
+					"Line": 10,
 					"Column": 6
 				},
 				"CallSites": null
@@ -76,8 +76,8 @@ $ govulncheck -json . --> FAIL 3
 						"RecvType": "",
 						"Pos": {
 							"Filename": ".../vuln.go",
-							"Offset": 115,
-							"Line": 11,
+							"Offset": 143,
+							"Line": 12,
 							"Column": 16
 						},
 						"Resolved": true
@@ -93,15 +93,24 @@ $ govulncheck -json . --> FAIL 3
 		"Packages": {
 			"1": {
 				"ID": 1,
-				"Name": "language",
-				"Path": "golang.org/x/text/language",
+				"Name": "gjson",
+				"Path": "github.com/tidwall/gjson",
 				"Module": 1,
 				"ImportedBy": [
-					2
+					3
 				]
 			},
 			"2": {
 				"ID": 2,
+				"Name": "language",
+				"Path": "golang.org/x/text/language",
+				"Module": 3,
+				"ImportedBy": [
+					3
+				]
+			},
+			"3": {
+				"ID": 3,
 				"Name": "main",
 				"Path": "golang.org/vuln",
 				"Module": 2,
@@ -109,15 +118,15 @@ $ govulncheck -json . --> FAIL 3
 			}
 		},
 		"Entries": [
-			2
+			3
 		]
 	},
 	"Requires": {
 		"Modules": {
 			"1": {
 				"ID": 1,
-				"Path": "golang.org/x/text",
-				"Version": "v0.3.0",
+				"Path": "github.com/tidwall/gjson",
+				"Version": "v1.9.2",
 				"Replace": 0,
 				"RequiredBy": [
 					2
@@ -129,6 +138,15 @@ $ govulncheck -json . --> FAIL 3
 				"Version": "",
 				"Replace": 0,
 				"RequiredBy": null
+			},
+			"3": {
+				"ID": 3,
+				"Path": "golang.org/x/text",
+				"Version": "v0.3.0",
+				"Replace": 0,
+				"RequiredBy": [
+					2
+				]
 			}
 		},
 		"Entries": [
@@ -201,11 +219,29 @@ $ govulncheck -json . --> FAIL 3
 			"PkgPath": "golang.org/x/text/language",
 			"ModPath": "golang.org/x/text",
 			"CallSink": 2,
-			"ImportSink": 1,
-			"RequireSink": 1
+			"ImportSink": 2,
+			"RequireSink": 3
 		}
 	],
 	"Modules": [
+		{
+			"Path": "github.com/tidwall/gjson",
+			"Version": "v1.9.2",
+			"Dir": "",
+			"Replace": null
+		},
+		{
+			"Path": "github.com/tidwall/match",
+			"Version": "v1.1.0",
+			"Dir": "",
+			"Replace": null
+		},
+		{
+			"Path": "github.com/tidwall/pretty",
+			"Version": "v1.2.0",
+			"Dir": "",
+			"Replace": null
+		},
 		{
 			"Path": "golang.org/vuln",
 			"Version": "",
