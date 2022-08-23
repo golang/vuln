@@ -344,8 +344,8 @@ func verboseCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) string {
 		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, v.Symbol))
 		for _, e := range css[0] {
 			b.WriteString(fmt.Sprintf("  %s\n", govulncheck.FuncName(e.Function)))
-			if e.Call != nil && e.Call.Pos != nil {
-				b.WriteString(fmt.Sprintf("      %s\n", e.Call.Pos.String()))
+			if pos := govulncheck.FuncPos(e.Call); pos != "" {
+				b.WriteString(fmt.Sprintf("      %s\n", pos))
 			}
 		}
 		i++
