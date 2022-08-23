@@ -233,7 +233,7 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffectedMods map
 		// All have a non-zero CallSink.
 		v0 := vg[0]
 		id := v0.OSV.ID
-		details := v0.OSV.Details
+		details := wrap(v0.OSV.Details, 80-labelWidth)
 		found := foundVersion(v0.ModPath, v0.PkgPath, ci)
 		fixed := fixedVersion(v0.PkgPath, v0.OSV.Affected)
 
