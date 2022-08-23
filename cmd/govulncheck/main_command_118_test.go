@@ -68,7 +68,20 @@ func TestCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// skipBuild contains names of module directories
+	// that should not be Go built. For instance, they
+	// might contain expected build errors.
+	skipBuild := map[string]bool{
+		"nogomod": true,
+		"nogosum": true,
+	}
+
 	for _, md := range moduleDirs {
+		if skipBuild[filepath.Base(md)] {
+			continue
+		}
+
 		binary, cleanup := buildtest.GoBuild(t, md)
 		defer cleanup()
 		// Set an environment variable to the path to the binary, so tests

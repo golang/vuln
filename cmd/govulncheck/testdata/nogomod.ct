@@ -1,0 +1,12 @@
+# Test of missing go.mod error message.
+
+$ cdmodule nogomod
+$ govulncheck . --> FAIL 1
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Scanning for dependencies with known vulnerabilities...
+govulncheck: no go.mod file
+
+govulncheck only works Go with modules. To make your project a module, run go mod init.
+
+See https://go.dev/doc/modules/managing-dependencies for more information.
