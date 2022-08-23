@@ -27,10 +27,21 @@ Vulnerability #1: GO-2021-0113
   Fixed in: golang.org/x/text/language@v0.3.7
   More info: https://pkg.go.dev/vuln/GO-2021-0113
 
--------------------------------------------------------
 
-These vulnerabilities exist in required modules, but no
-vulnerable symbols are used. No action is required. For more
-information, visit https://pkg.go.dev/vuln.
+=== Informational ===
 
-github.com/tidwall/gjson (GO-2021-0265, GO-2022-0592)
+The vulnerabilities below are in packages that you import, but your code
+doesn't appear to call any vulnerable functions. You may not need to take any
+action. See https://go.dev/security/vulncheck for details.
+
+Vulnerability #1: GO-2021-0265
+  GJSON allowed a ReDoS (regular expression denial of service) attack.
+  Found in: github.com/tidwall/gjson@v1.9.2
+  Fixed in: github.com/tidwall/gjson@v1.9.3
+  More info: https://pkg.go.dev/vuln/GO-2021-0265
+
+Vulnerability #2: GO-2022-0592
+  A maliciously crafted path can cause Get and other query functions to consume excessive amounts of CPU and time.
+  Found in: github.com/tidwall/gjson@v1.9.2
+  Fixed in: github.com/tidwall/gjson@v1.9.3
+  More info: https://pkg.go.dev/vuln/GO-2022-0592
