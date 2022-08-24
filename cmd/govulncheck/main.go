@@ -130,14 +130,7 @@ Scanning for dependencies with known vulnerabilities...
 
 		// Sort pkgs so that the PkgNodes returned by vulncheck.Source will be
 		// deterministic.
-		sort.Slice(pkgs, func(i, j int) bool {
-			return pkgs[i].PkgPath < pkgs[j].PkgPath
-		})
-		for _, pkg := range pkgs {
-			sort.Slice(pkg.Imports, func(i, j int) bool {
-				return pkg.Imports[i].PkgPath < pkg.Imports[j].PkgPath
-			})
-		}
+		sortPackages(pkgs)
 		r, err = vulncheck.Source(ctx, pkgs, vcfg)
 		if err != nil {
 			die("govulncheck: %v", err)
@@ -209,6 +202,17 @@ func sortVulns(vulns []*vulncheck.Vuln) {
 	sort.Slice(vulns, func(i, j int) bool {
 		return vulns[i].OSV.ID > vulns[j].OSV.ID
 	})
+}
+
+func sortPackages(pkgs []*vulncheck.Package) {
+	sort.Slice(pkgs, func(i, j int) bool {
+		return pkgs[i].PkgPath < pkgs[j].PkgPath
+	})
+	for _, pkg := range pkgs {
+		sort.Slice(pkg.Imports, func(i, j int) bool {
+			return pkg.Imports[i].PkgPath < pkg.Imports[j].PkgPath
+		})
+	}
 }
 
 func writeJSON(r *vulncheck.Result) {
