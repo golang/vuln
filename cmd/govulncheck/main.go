@@ -175,6 +175,7 @@ func filterCalled(r *vulncheck.Result) []*vulncheck.Vuln {
 			vulns = append(vulns, v)
 		}
 	}
+	sortVulns(vulns)
 	return vulns
 }
 
@@ -200,7 +201,14 @@ func filterUnaffected(r *vulncheck.Result) []*vulncheck.Vuln {
 	for _, vuln := range idToVuln {
 		output = append(output, vuln)
 	}
+	sortVulns(output)
 	return output
+}
+
+func sortVulns(vulns []*vulncheck.Vuln) {
+	sort.Slice(vulns, func(i, j int) bool {
+		return vulns[i].OSV.ID > vulns[j].OSV.ID
+	})
 }
 
 func writeJSON(r *vulncheck.Result) {
