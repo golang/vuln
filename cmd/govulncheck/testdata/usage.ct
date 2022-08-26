@@ -26,8 +26,6 @@ Flags:
 
 	-json	Print vulnerability findings in JSON format.
 
-	-html	Generate HTML with the vulnerability findings.
-
 	-tags	Comma-separated list of build tags.
 
 	-tests	Boolean flag indicating if test files should be analyzed too.
@@ -61,8 +59,6 @@ Flags:
 	-v	Print a full call stack for each vulnerability.
 
 	-json	Print vulnerability findings in JSON format.
-
-	-html	Generate HTML with the vulnerability findings.
 
 	-tags	Comma-separated list of build tags.
 

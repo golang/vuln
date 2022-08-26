@@ -28,7 +28,6 @@ var (
 	jsonFlag    = flag.Bool("json", false, "")
 	verboseFlag = flag.Bool("v", false, "")
 	testsFlag   = flag.Bool("tests", false, "")
-	htmlFlag    = flag.Bool("html", false, "")
 )
 
 const usage = `Command govulncheck identifies functions and methods in Go
@@ -57,8 +56,6 @@ Flags:
 	-v	Print a full call stack for each vulnerability.
 
 	-json	Print vulnerability findings in JSON format.
-
-	-html	Generate HTML with the vulnerability findings.
 
 	-tags	Comma-separated list of build tags.
 
@@ -90,7 +87,7 @@ func main() {
 	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: goVersion()}
 
 	patterns := flag.Args()
-	if !(*jsonFlag || *htmlFlag) {
+	if !*jsonFlag {
 		fmt.Printf(`govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...
@@ -144,13 +141,7 @@ Scanning for dependencies with known vulnerabilities...
 	} else {
 		// set of top-level packages, used to find representative symbols
 		ci := govulncheck.GetCallInfo(r, pkgs)
-		if *htmlFlag {
-			if err := html(os.Stdout, ci); err != nil {
-				die("writing HTML: %v", err)
-			}
-		} else {
-			writeText(r, ci, unaffected)
-		}
+		writeText(r, ci, unaffected)
 	}
 	exitCode := 0
 	// Following go vet, fail with 3 if there are findings (in this case, vulns).
@@ -357,7 +348,7 @@ func verboseCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) string {
 	}
 	if nMore > 0 {
 		b.WriteString(fmt.Sprintf("    There are %d more call stacks available.\n", nMore))
-		b.WriteString(fmt.Sprintf("To see all of them, pass the -json or -html flags.\n"))
+		b.WriteString(fmt.Sprintf("To see all of them, pass the -json flags.\n"))
 	}
 	return b.String()
 }

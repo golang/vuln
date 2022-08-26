@@ -56,8 +56,6 @@ exits with code 0 if there are no vulnerabilities and 3 if there are.
 The -v flag outputs more information about call stacks when run on source. It has
 no effect when run on a binary.
 
-The -html flag outputs HTML instead of plain text.
-
 The -json flag outputs a JSON object with vulnerability information. The output
 corresponds to the type golang.org/x/vuln/vulncheck.Result.
 
