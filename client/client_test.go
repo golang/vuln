@@ -7,40 +7,20 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/osv"
-)
-
-var (
-	testVuln = `
-	{"ID":"ID","Package":{"Name":"golang.org/example/one","Ecosystem":"go"}, "Summary":"",
-	 "Severity":2,"Affects":{"Ranges":[{"Type":"SEMVER","Introduced":"","Fixed":"v2.2.0"}]},
-	 "ecosystem_specific":{"Symbols":["some_symbol_1"]
-	}}`
-
-	testVulns = "[" + testVuln + "]"
-)
-
-var (
-	// index containing timestamps for package in testVuln.
-	index string = `{
-	"golang.org/example/one": "2020-03-09T10:00:00.81362141-07:00"
-	}`
-	// index of IDs
-	idIndex string = `["ID"]`
 )
 
 // testCache for testing purposes
@@ -50,7 +30,7 @@ type testCache struct {
 	vulnMap    map[string]map[string][]*osv.Entry
 }
 
-func freshTestCache() *testCache {
+func newTestCache() *testCache {
 	return &testCache{
 		indexMap:   make(map[string]DBIndex),
 		indexStamp: make(map[string]time.Time),
@@ -90,71 +70,24 @@ func (tc *testCache) WriteEntries(db, module string, entries []*osv.Entry) error
 		mMap = make(map[string][]*osv.Entry)
 		tc.vulnMap[db] = mMap
 	}
-	mMap[module] = append(mMap[module], entries...)
+	mMap[module] = nil
+	for _, e := range entries {
+		e2 := *e
+		e2.Details = "cached: " + e2.Details
+		mMap[module] = append(mMap[module], &e2)
+	}
 	return nil
 }
 
-// cachedTestVuln returns a function creating a local cache
-// for db with `dbName` with a version of testVuln where
-// Summary="cached" and LastModified happened after entry
-// in the `index` for the same pkg.
-func cachedTestVuln(dbName string) Cache {
-	c := freshTestCache()
-	e := &osv.Entry{
-		ID:       "ID1",
-		Details:  "cached",
-		Modified: time.Now(),
-	}
-	c.WriteEntries(dbName, "golang.org/example/one", []*osv.Entry{e})
-	return c
-}
-
-// createDirAndFile creates a directory `dir` if such directory does
-// not exist and creates a `file` with `content` in the directory.
-func createDirAndFile(dir, file, content string) error {
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-	return os.WriteFile(path.Join(dir, file), []byte(content), 0644)
-}
-
-// localDB creates a local db with testVulns and index as contents.
-func localDB(t *testing.T) (string, error) {
-	dbName := t.TempDir()
-	for _, f := range []struct {
-		dir, filename, content string
-	}{
-		{"golang.org/example", "one.json", testVulns},
-		{"", "index.json", index},
-		{internal.IDDirectory, "ID.json", testVuln},
-		{internal.IDDirectory, "index.json", idIndex},
-	} {
-		if err := createDirAndFile(path.Join(dbName, f.dir), f.filename, f.content); err != nil {
-			return "", err
-		}
-	}
-	return dbName, nil
-}
-
 func newTestServer() *httptest.Server {
-	dataHandler := func(data string) http.HandlerFunc {
-		return func(w http.ResponseWriter, _ *http.Request) {
-			w.Header().Set("Last-Modified", time.Now().In(time.UTC).Format(lastModifiedFormat))
-			io.WriteString(w, data)
-		}
-	}
-
 	mux := http.NewServeMux()
-	mux.HandleFunc("/golang.org/example/one.json", dataHandler(testVulns))
-	mux.HandleFunc("/index.json", dataHandler(index))
-	mux.HandleFunc(fmt.Sprintf("/%s/ID.json", internal.IDDirectory), dataHandler(testVuln))
-	mux.HandleFunc("/ID/index.json", func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, idIndex)
-	})
+	mux.Handle("/", http.FileServer(http.Dir("testdata/vulndb")))
 	return httptest.NewServer(mux)
 }
 
-func TestClient(t *testing.T) {
+const localURL = "file://testdata/vulndb"
+
+func TestByModule(t *testing.T) {
 	if runtime.GOOS == "js" {
 		t.Skip("skipping test: no network on js")
 	}
@@ -162,55 +95,53 @@ func TestClient(t *testing.T) {
 	// Create a local http database.
 	srv := newTestServer()
 	defer srv.Close()
-	u, err := url.Parse(srv.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	dbName := u.Hostname()
 
-	// Create a local file database.
-	localDBName, err := localDB(t)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(localDBName)
-
+	const (
+		modulePath  = "github.com/beego/beego"
+		detailStart = "Routes in the beego HTTP router"
+	)
 	for _, test := range []struct {
-		name   string
-		source string
-		cache  Cache
-		// cache summary for testVuln
-		summary string
+		name         string
+		source       string
+		cache        Cache
+		detailPrefix string
 	}{
 		// Test the http client without any cache.
-		{name: "http-no-cache", source: srv.URL, cache: nil, summary: ""},
-		// Test the http client with empty cache.
-		{name: "http-empty-cache", source: srv.URL, cache: freshTestCache(), summary: ""},
-		// Test the client with non-stale cache containing a version of testVuln2 where Summary="cached".
-		{name: "http-cache", source: srv.URL, cache: cachedTestVuln(dbName), summary: "cached"},
+		{name: "http-no-cache", source: srv.URL, cache: nil, detailPrefix: detailStart},
+		// TODO(golang/go#54698): uncomment when caching is fixed.
+		// {name: "http-cache", source: srv.URL, cache: newTestCache(), detailPrefix: "cached: Route"},
 		// Repeat the same for local file client.
-		{name: "file-no-cache", source: "file://" + localDBName, cache: nil, summary: ""},
-		{name: "file-empty-cache", source: "file://" + localDBName, cache: freshTestCache(), summary: ""},
+		{name: "file-no-cache", source: localURL, cache: nil, detailPrefix: detailStart},
 		// Cache does not play a role in local file databases.
-		{name: "file-cache", source: "file://" + localDBName, cache: cachedTestVuln(localDBName), summary: ""},
+		{name: "file-cache", source: localURL, cache: newTestCache(), detailPrefix: detailStart},
 	} {
-		client, err := NewClient([]string{test.source}, Options{HTTPCache: test.cache})
-		if err != nil {
-			t.Fatal(err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			client, err := NewClient([]string{test.source}, Options{HTTPCache: test.cache})
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		vulns, err := client.GetByModule(ctx, "golang.org/example/one")
-		if err != nil {
-			t.Fatal(err)
-		}
+			// First call fills cache, if present.
+			if _, err := client.GetByModule(ctx, modulePath); err != nil {
+				t.Fatal(err)
+			}
+			vulns, err := client.GetByModule(ctx, modulePath)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if len(vulns) != 1 {
-			t.Errorf("%s: want 1 vuln for golang.org/example/one; got %v", test.name, len(vulns))
-		}
+			if got, want := len(vulns), 3; got != want {
+				t.Errorf("got %d vulns for %s, want %d", got, modulePath, want)
+			}
 
-		if v := vulns[0]; v.Details != test.summary {
-			t.Errorf("%s: want '%s' summary for testVuln; got '%s'", test.name, test.summary, v.Details)
-		}
+			if v := vulns[0]; !strings.HasPrefix(v.Details, test.detailPrefix) {
+				got := v.Details
+				if len(got) > len(test.detailPrefix) {
+					got = got[:len(test.detailPrefix)] + "..."
+				}
+				t.Errorf("got\n\t%s\nbut should start with\n\t%s", got, test.detailPrefix)
+			}
+		})
 	}
 }
 
@@ -257,11 +188,12 @@ func TestCorrectFetchesNoChangeIndex(t *testing.T) {
 	// i.e., more than two hours old.
 	timeStamp := time.Now().Add(time.Hour * (-3))
 	index := DBIndex{"a": timeStamp}
-	cache := freshTestCache()
+	cache := newTestCache()
 	cache.WriteIndex(url.Hostname(), index, timeStamp)
 
 	e := &osv.Entry{
 		ID:       "ID1",
+		Details:  "details",
 		Modified: timeStamp,
 	}
 	cache.WriteEntries(url.Hostname(), "a", []*osv.Entry{e})
@@ -270,12 +202,19 @@ func TestCorrectFetchesNoChangeIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vulns, err := client.GetByModule(context.Background(), "a")
+	gots, err := client.GetByModule(context.Background(), "a")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(vulns, []*osv.Entry{e}) {
-		t.Errorf("want %v vuln; got %v", e, vulns)
+	if len(gots) != 1 {
+		t.Errorf("got %d vulns, want 1", len(gots))
+	} else {
+		got := gots[0]
+		want := *e
+		want.Details = "cached: " + want.Details
+		if !cmp.Equal(got, &want) {
+			t.Errorf("\ngot %+v\nwant %+v", got, &want)
+		}
 	}
 }
 
@@ -284,38 +223,37 @@ func TestClientByID(t *testing.T) {
 		t.Skip("skipping test: no network on js")
 	}
 
-	srv := newTestServer()
-	defer srv.Close()
-
-	// Create a local file database.
-	localDBName, err := localDB(t)
+	const vulnID = "GO-2022-0463"
+	var want *osv.Entry
+	wantData, err := os.ReadFile(filepath.Join("testdata", "vulndb", internal.IDDirectory, vulnID+".json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(localDBName)
-
-	var want osv.Entry
-	if err := json.Unmarshal([]byte(testVuln), &want); err != nil {
+	if err := json.Unmarshal(wantData, &want); err != nil {
 		t.Fatal(err)
 	}
+
+	srv := newTestServer()
+	defer srv.Close()
+
 	for _, test := range []struct {
 		name   string
 		source string
 	}{
 		{name: "http", source: srv.URL},
-		{name: "file", source: "file://" + localDBName},
+		{name: "file", source: localURL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, err := NewClient([]string{test.source}, Options{})
 			if err != nil {
 				t.Fatal(err)
 			}
-			got, err := client.GetByID(context.Background(), "ID")
+			got, err := client.GetByID(context.Background(), vulnID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !cmp.Equal(got, &want) {
-				t.Errorf("got\n%+v\nwant\n%+v", got, &want)
+			if !cmp.Equal(got, want) {
+				t.Errorf("got\n%+v\nwant\n%+v", got, want)
 			}
 		})
 	}
@@ -329,20 +267,13 @@ func TestListIDs(t *testing.T) {
 	srv := newTestServer()
 	defer srv.Close()
 
-	// Create a local file database.
-	localDBName, err := localDB(t)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(localDBName)
-
-	want := []string{"ID"}
+	want := []string{"GO-2022-0463", "GO-2022-0569", "GO-2022-0572"}
 	for _, test := range []struct {
 		name   string
 		source string
 	}{
 		{name: "http", source: srv.URL},
-		{name: "file", source: "file://" + localDBName},
+		{name: "file", source: localURL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, err := NewClient([]string{test.source}, Options{})
@@ -368,19 +299,17 @@ func TestLastModifiedTime(t *testing.T) {
 	srv := newTestServer()
 	defer srv.Close()
 
-	// Create a local file database.
-	localDBName, err := localDB(t)
+	info, err := os.Stat(filepath.Join("testdata", "vulndb", "index.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(localDBName)
-
+	want := info.ModTime().Round(time.Second).In(time.UTC)
 	for _, test := range []struct {
 		name   string
 		source string
 	}{
 		{name: "http", source: srv.URL},
-		{name: "file", source: "file://" + localDBName},
+		{name: "file", source: localURL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, err := NewClient([]string{test.source}, Options{})
@@ -391,10 +320,9 @@ func TestLastModifiedTime(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// Time should be a little before now.
-			diff := time.Since(got)
-			if diff < 0 || diff > 10*time.Second {
-				t.Errorf("got difference from now of %s, wanted something positive under 10s", diff)
+			got = got.Round(time.Second)
+			if !got.Equal(want) {
+				t.Errorf("got %s, want %s", got, want)
 			}
 		})
 	}
