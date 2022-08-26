@@ -10,7 +10,7 @@
 // The expected database layout is the same for both HTTP and local
 // databases. The database index is located at the root of the
 // database, and contains a list of all of the vulnerable modules
-// documented in the databse and the time the most recent vulnerability
+// documented in the database and the time the most recent vulnerability
 // was added. The index file is called index.json, and has the
 // following format:
 //
@@ -61,6 +61,10 @@ type Client interface {
 	// GetByID returns the entry with the given ID, or (nil, nil) if there isn't
 	// one.
 	GetByID(context.Context, string) (*osv.Entry, error)
+
+	// GetByAlias returns the entries that have the given aliases, or (nil, nil)
+	// if there are none.
+	GetByAlias(context.Context, string) ([]*osv.Entry, error)
 
 	// ListIDs returns the IDs of all entries in the database.
 	ListIDs(context.Context) ([]string, error)
@@ -116,6 +120,32 @@ func (ls *localSource) GetByID(_ context.Context, id string) (_ *osv.Entry, err 
 		return nil, err
 	}
 	return &e, nil
+}
+
+func (ls *localSource) GetByAlias(ctx context.Context, alias string) (entries []*osv.Entry, err error) {
+	defer derrors.Wrap(&err, "localSource.GetByAlias(%q)", alias)
+
+	aliasToIDs, err := localReadJSON[map[string][]string](ctx, ls, "aliases.json")
+	if err != nil {
+		return nil, err
+	}
+	ids := aliasToIDs[alias]
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	return getByIDs(ctx, ls, ids)
+}
+
+func getByIDs(ctx context.Context, s source, ids []string) ([]*osv.Entry, error) {
+	var entries []*osv.Entry
+	for _, id := range ids {
+		e, err := s.GetByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
 }
 
 func (ls *localSource) ListIDs(ctx context.Context) (_ []string, err error) {
@@ -304,6 +334,20 @@ func (hs *httpSource) GetByID(ctx context.Context, id string) (_ *osv.Entry, err
 	return httpReadJSON[*osv.Entry](ctx, hs, fmt.Sprintf("%s/%s.json", internal.IDDirectory, id))
 }
 
+func (hs *httpSource) GetByAlias(ctx context.Context, alias string) (entries []*osv.Entry, err error) {
+	defer derrors.Wrap(&err, "httpSource.GetByAlias(%q)", alias)
+
+	aliasToIDs, err := httpReadJSON[map[string][]string](ctx, hs, "aliases.json")
+	if err != nil {
+		return nil, err
+	}
+	ids := aliasToIDs[alias]
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	return getByIDs(ctx, hs, ids)
+}
+
 func (hs *httpSource) ListIDs(ctx context.Context) (_ []string, err error) {
 	defer derrors.Wrap(&err, "ListIDs()")
 
@@ -422,15 +466,35 @@ func NewClient(sources []string, opts Options) (_ Client, err error) {
 func (*client) unexported() {}
 
 func (c *client) GetByModule(ctx context.Context, module string) (_ []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "client.GetByModule(%q)", module)
+	defer derrors.Wrap(&err, "GetByModule(%q)", module)
+	return c.unionEntries(ctx, func(c Client) ([]*osv.Entry, error) {
+		return c.GetByModule(ctx, module)
+	})
+}
+
+func (c *client) GetByAlias(ctx context.Context, alias string) (entries []*osv.Entry, err error) {
+	defer derrors.Wrap(&err, "GetByAlias(%q)", alias)
+	return c.unionEntries(ctx, func(c Client) ([]*osv.Entry, error) {
+		return c.GetByAlias(ctx, alias)
+	})
+}
+
+// unionEntries returns the union of all entries obtained by calling get on the client's sources.
+func (c *client) unionEntries(ctx context.Context, get func(Client) ([]*osv.Entry, error)) ([]*osv.Entry, error) {
 	var entries []*osv.Entry
 	// probably should be parallelized
+	seen := map[string]bool{}
 	for _, s := range c.sources {
-		e, err := s.GetByModule(ctx, module)
+		es, err := get(s)
 		if err != nil {
 			return nil, err // be failure tolerant?
 		}
-		entries = append(entries, e...)
+		for _, e := range es {
+			if !seen[e.ID] {
+				entries = append(entries, e)
+				seen[e.ID] = true
+			}
+		}
 	}
 	return entries, nil
 }

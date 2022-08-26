@@ -270,15 +270,7 @@ func TestClientByID(t *testing.T) {
 	}
 
 	const vulnID = "GO-2022-0463"
-	var want *osv.Entry
-	wantData, err := os.ReadFile(filepath.Join("testdata", "vulndb", internal.IDDirectory, vulnID+".json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := json.Unmarshal(wantData, &want); err != nil {
-		t.Fatal(err)
-	}
-
+	want := mustReadEntry(t, vulnID)
 	srv := newTestServer()
 	defer srv.Close()
 
@@ -299,6 +291,50 @@ func TestClientByID(t *testing.T) {
 				t.Fatal(err)
 			}
 			got, err := client.GetByID(context.Background(), vulnID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !cmp.Equal(got, want) {
+				t.Errorf("got\n%+v\nwant\n%+v", got, want)
+			}
+		})
+	}
+}
+
+func mustReadEntry(t *testing.T, vulnID string) *osv.Entry {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join("testdata", "vulndb", internal.IDDirectory, vulnID+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var e *osv.Entry
+	if err := json.Unmarshal(data, &e); err != nil {
+		t.Fatal(err)
+	}
+	return e
+}
+
+func TestClientByAlias(t *testing.T) {
+	if runtime.GOOS == "js" {
+		t.Skip("skipping test: no network on js")
+	}
+	const alias = "CVE-2015-5739"
+	want := []*osv.Entry{mustReadEntry(t, "GO-2021-0157"), mustReadEntry(t, "GO-2021-0159")}
+	srv := newTestServer()
+	defer srv.Close()
+	for _, test := range []struct {
+		name   string
+		source string
+	}{
+		{name: "http", source: srv.URL},
+		{name: "file", source: localURL},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			client, err := NewClient([]string{test.source}, Options{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			got, err := client.GetByAlias(context.Background(), alias)
 			if err != nil {
 				t.Fatal(err)
 			}
