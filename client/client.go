@@ -83,7 +83,7 @@ type localSource struct {
 func (*localSource) unexported() {}
 
 func (ls *localSource) GetByModule(_ context.Context, module string) (_ []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "GetByModule(%q)", module)
+	defer derrors.Wrap(&err, "localSource.GetByModule(%q)", module)
 	content, err := os.ReadFile(filepath.Join(ls.dir, module+".json"))
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -223,7 +223,7 @@ func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
 func (*httpSource) unexported() {}
 
 func (hs *httpSource) GetByModule(ctx context.Context, module string) (_ []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "GetByModule(%q)", module)
+	defer derrors.Wrap(&err, "httpSource.GetByModule(%q)", module)
 
 	index, err := hs.Index(ctx)
 	if err != nil {
@@ -236,19 +236,12 @@ func (hs *httpSource) GetByModule(ctx context.Context, module string) (_ []*osv.
 	}
 
 	if hs.cache != nil {
-		if cached, err := hs.cache.ReadEntries(hs.dbName, module); err != nil {
+		cached, err := hs.cache.ReadEntries(hs.dbName, module)
+		if err != nil {
 			return nil, err
-		} else if len(cached) != 0 {
-			var stale bool
-			for _, c := range cached {
-				if c.Modified.Before(lastModified) {
-					stale = true
-					break
-				}
-			}
-			if !stale {
-				return cached, nil
-			}
+		}
+		if len(cached) > 0 && !latestModifiedTime(cached).Before(lastModified) {
+			return cached, nil
 		}
 	}
 
@@ -269,6 +262,16 @@ func (hs *httpSource) GetByModule(ctx context.Context, module string) (_ []*osv.
 		}
 	}
 	return e, nil
+}
+
+func latestModifiedTime(entries []*osv.Entry) time.Time {
+	var t time.Time
+	for _, e := range entries {
+		if e.Modified.After(t) {
+			t = e.Modified
+		}
+	}
+	return t
 }
 
 func (hs *httpSource) GetByID(ctx context.Context, id string) (_ *osv.Entry, err error) {
@@ -336,6 +339,9 @@ func (hs *httpSource) readBody(ctx context.Context, url string) ([]byte, error) 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
 	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("got HTTP status %s", resp.Status)
+	}
 	// might want this to be a LimitedReader
 	return io.ReadAll(resp.Body)
 }
@@ -392,7 +398,7 @@ func NewClient(sources []string, opts Options) (_ Client, err error) {
 func (*client) unexported() {}
 
 func (c *client) GetByModule(ctx context.Context, module string) (_ []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "GetByModule(%q)", module)
+	defer derrors.Wrap(&err, "client.GetByModule(%q)", module)
 	var entries []*osv.Entry
 	// probably should be parallelized
 	for _, s := range c.sources {

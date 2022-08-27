@@ -108,8 +108,7 @@ func TestByModule(t *testing.T) {
 	}{
 		// Test the http client without any cache.
 		{name: "http-no-cache", source: srv.URL, cache: nil, detailPrefix: detailStart},
-		// TODO(golang/go#54698): uncomment when caching is fixed.
-		// {name: "http-cache", source: srv.URL, cache: newTestCache(), detailPrefix: "cached: Route"},
+		{name: "http-cache", source: srv.URL, cache: newTestCache(), detailPrefix: "cached: Route"},
 		// Repeat the same for local file client.
 		{name: "file-no-cache", source: localURL, cache: nil, detailPrefix: detailStart},
 		// Cache does not play a role in local file databases.
