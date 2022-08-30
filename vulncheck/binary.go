@@ -15,6 +15,7 @@ import (
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/vulncheck/internal/binscan"
 )
 
@@ -31,7 +32,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 	cmods := convertModules(mods)
 	// set the stdlib version for detection of vulns in the standard library
 	// TODO(#53740): what if Go version is not in semver format?
-	stdlibModule.Version = goTagToSemver(goVersion)
+	stdlibModule.Version = semver.GoTagToSemver(goVersion)
 	// Add "stdlib" module.
 	cmods = append(cmods, stdlibModule)
 

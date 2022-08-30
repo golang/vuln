@@ -51,6 +51,11 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 		return nil, nil, "", err
 	}
 
+	funcSymName := gosym.FuncSymName(bi.GoVersion)
+	if funcSymName == "" {
+		return nil, nil, "", fmt.Errorf("binary built using unsupported Go Version: %v", bi.GoVersion)
+	}
+
 	x, err := openExe(bin)
 	if err != nil {
 		return nil, nil, "", err
@@ -81,9 +86,9 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 			return nil, nil, "", err
 		}
 		packageSymbols[pkgName] = append(packageSymbols[pkgName], symName)
-		value, base, r, err := x.SymbolInfo(gosym.FuncSymName)
+		value, base, r, err := x.SymbolInfo(funcSymName)
 		if err != nil {
-			return nil, nil, "", fmt.Errorf("reading go.func.*: %v", err)
+			return nil, nil, "", fmt.Errorf("reading %v: %v", funcSymName, err)
 		}
 		it, err := lineTab.InlineTree(&f, value, base, r)
 		if err != nil {

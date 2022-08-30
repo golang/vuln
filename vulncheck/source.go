@@ -14,6 +14,7 @@ import (
 	"golang.org/x/tools/go/callgraph"
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/osv"
 )
 
@@ -48,9 +49,9 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 	// set the stdlib version for detection of vulns in the standard library
 	// TODO(#53740): what if Go version is not in semver format?
 	if cfg.SourceGoVersion != "" {
-		stdlibModule.Version = goTagToSemver(cfg.SourceGoVersion)
+		stdlibModule.Version = semver.GoTagToSemver(cfg.SourceGoVersion)
 	} else {
-		stdlibModule.Version = goTagToSemver(runtime.Version())
+		stdlibModule.Version = semver.GoTagToSemver(runtime.Version())
 	}
 
 	mods := extractModules(pkgs)

@@ -13,6 +13,7 @@ import (
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/osv"
 )
 
@@ -67,7 +68,7 @@ var testClient = &mockClient{
 					Package: osv.Package{Name: "stdlib"},
 					// Range is populated also using runtime info for testing binaries since
 					// setting fixed Go version for binaries is very difficult.
-					Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.18"}, {Introduced: goTagToSemver(runtime.Version())}}}},
+					Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.18"}, {Introduced: semver.GoTagToSemver(runtime.Version())}}}},
 					EcosystemSpecific: osv.EcosystemSpecific{
 						Imports: []osv.EcosystemSpecificImport{{
 							Path:    "archive/zip",

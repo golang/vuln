@@ -275,7 +275,9 @@ func TestInlineTree(t *testing.T) {
 		t.Fatalf("reading %s gopclntab: %v", pclinetestBinary, err)
 	}
 
-	goFunc := lookupSymbol(f, FuncSymName)
+	// The test binaries will be compiled with the same Go version
+	// used to run the tests.
+	goFunc := lookupSymbol(f, FuncSymName(runtime.Version()))
 	if goFunc == nil {
 		t.Fatal("couldn't find go.func.*")
 	}

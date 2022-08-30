@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/vulncheck/internal/binscan"
 )
 
@@ -198,5 +199,5 @@ func hasGoBuild() bool {
 
 func hasGoVersion(exe io.ReaderAt) bool {
 	_, _, goVersion, _ := binscan.ExtractPackagesAndSymbols(exe)
-	return goTagToSemver(goVersion) != ""
+	return semver.GoTagToSemver(goVersion) != ""
 }
