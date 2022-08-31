@@ -36,6 +36,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -112,17 +113,10 @@ func (ls *localSource) GetByID(_ context.Context, id string) (_ *osv.Entry, err 
 	return &e, nil
 }
 
-func (ls *localSource) ListIDs(context.Context) (_ []string, err error) {
+func (ls *localSource) ListIDs(ctx context.Context) (_ []string, err error) {
 	defer derrors.Wrap(&err, "ListIDs()")
-	content, err := os.ReadFile(filepath.Join(ls.dir, internal.IDDirectory, "index.json"))
-	if err != nil {
-		return nil, err
-	}
-	var ids []string
-	if err := json.Unmarshal(content, &ids); err != nil {
-		return nil, err
-	}
-	return ids, nil
+
+	return localReadJSON[[]string](ctx, ls, filepath.Join(internal.IDDirectory, "index.json"))
 }
 
 func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error) {
@@ -136,17 +130,23 @@ func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error
 	return info.ModTime(), nil
 }
 
-func (ls *localSource) Index(context.Context) (_ DBIndex, err error) {
+func (ls *localSource) Index(ctx context.Context) (_ DBIndex, err error) {
 	defer derrors.Wrap(&err, "Index()")
-	var index DBIndex
-	b, err := os.ReadFile(filepath.Join(ls.dir, "index.json"))
+
+	return localReadJSON[DBIndex](ctx, ls, "index.json")
+}
+
+func localReadJSON[T any](_ context.Context, ls *localSource, relativePath string) (T, error) {
+	var zero T
+	content, err := os.ReadFile(filepath.Join(ls.dir, relativePath))
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
-	if err = json.Unmarshal(b, &index); err != nil {
-		return nil, err
+	var t T
+	if err := json.Unmarshal(content, &t); err != nil {
+		return zero, err
 	}
-	return index, nil
+	return t, nil
 }
 
 type httpSource struct {
@@ -245,23 +245,18 @@ func (hs *httpSource) GetByModule(ctx context.Context, module string) (_ []*osv.
 		}
 	}
 
-	content, err := hs.readBody(ctx, fmt.Sprintf("%s/%s.json", hs.url, module))
-	if err != nil || content == nil {
+	entries, err := httpReadJSON[[]*osv.Entry](ctx, hs, module+".json")
+	if err != nil || entries == nil {
 		return nil, err
 	}
-	var e []*osv.Entry
 	// TODO: we may want to check that the returned entries actually match
 	// the module we asked about, so that the cache cannot be poisoned
-	if err = json.Unmarshal(content, &e); err != nil {
-		return nil, err
-	}
-
 	if hs.cache != nil {
-		if err := hs.cache.WriteEntries(hs.dbName, module, e); err != nil {
+		if err := hs.cache.WriteEntries(hs.dbName, module, entries); err != nil {
 			return nil, err
 		}
 	}
-	return e, nil
+	return entries, nil
 }
 
 func latestModifiedTime(entries []*osv.Entry) time.Time {
@@ -277,29 +272,26 @@ func latestModifiedTime(entries []*osv.Entry) time.Time {
 func (hs *httpSource) GetByID(ctx context.Context, id string) (_ *osv.Entry, err error) {
 	defer derrors.Wrap(&err, "GetByID(%q)", id)
 
-	content, err := hs.readBody(ctx, fmt.Sprintf("%s/%s/%s.json", hs.url, internal.IDDirectory, id))
-	if err != nil || content == nil {
-		return nil, err
-	}
-	var e osv.Entry
-	if err := json.Unmarshal(content, &e); err != nil {
-		return nil, err
-	}
-	return &e, nil
+	return httpReadJSON[*osv.Entry](ctx, hs, fmt.Sprintf("%s/%s.json", internal.IDDirectory, id))
 }
 
 func (hs *httpSource) ListIDs(ctx context.Context) (_ []string, err error) {
 	defer derrors.Wrap(&err, "ListIDs()")
 
-	content, err := hs.readBody(ctx, fmt.Sprintf("%s/%s/index.json", hs.url, internal.IDDirectory))
+	return httpReadJSON[[]string](ctx, hs, path.Join(internal.IDDirectory, "index.json"))
+}
+
+func httpReadJSON[T any](ctx context.Context, hs *httpSource, relativePath string) (T, error) {
+	var zero T
+	content, err := hs.readBody(ctx, fmt.Sprintf("%s/%s", hs.url, relativePath))
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
-	var ids []string
-	if err := json.Unmarshal(content, &ids); err != nil {
-		return nil, err
+	var t T
+	if err := json.Unmarshal(content, &t); err != nil {
+		return zero, err
 	}
-	return ids, nil
+	return t, nil
 }
 
 // This is the format for the last-modified header, as described at
