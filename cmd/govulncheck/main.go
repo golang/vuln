@@ -270,10 +270,10 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffected []*vuln
 			b.WriteString(indent(stacks, 6))
 		}
 		writeVulnerability(idx+1, id, details, b.String(), found, fixed)
+		fmt.Println()
 	}
 	if len(unaffected) > 0 {
 		fmt.Printf(`
-
 === Informational ===
 
 The vulnerabilities below are in packages that you import, but your code
