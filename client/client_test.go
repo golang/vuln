@@ -303,7 +303,7 @@ func TestLastModifiedTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := info.ModTime().Round(time.Second).In(time.UTC)
+	want := info.ModTime().Truncate(time.Second).In(time.UTC)
 	for _, test := range []struct {
 		name   string
 		source string
@@ -320,7 +320,7 @@ func TestLastModifiedTime(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got = got.Round(time.Second)
+			got = got.Truncate(time.Second)
 			if !got.Equal(want) {
 				t.Errorf("got %s, want %s", got, want)
 			}
