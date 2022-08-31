@@ -1,4 +1,4 @@
-module module3
+module manystacks
 
 go 1.18
 

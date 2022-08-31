@@ -1,0 +1,19 @@
+$ cdmodule manystacks
+$ govulncheck . --> FAIL 3
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Scanning for dependencies with known vulnerabilities...
+Found 1 known vulnerability.
+
+Vulnerability #1: GO-2020-0040
+  Due to unchecked type assertions, maliciously crafted messages
+  can cause panics, which may be used as a denial of service
+  vector.
+    Call stacks in your code:
+      .../main.go:16:14: manystacks.main calls github.com/shiyanhui/dht.New
+      .../main.go:30:28: manystacks.main$2 calls manystacks/otherpkg.GetPeers, which eventually calls github.com/shiyanhui/dht.DHT.GetPeers
+      .../main.go:44:7: manystacks.main calls github.com/shiyanhui/dht.DHT.Run
+
+  Found in: github.com/shiyanhui/dht@v0.0.0-20201219151056-5a20f3199263
+  Fixed in: N/A
+  More info: https://pkg.go.dev/vuln/GO-2020-0040
