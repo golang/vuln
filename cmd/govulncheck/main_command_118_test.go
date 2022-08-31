@@ -106,7 +106,7 @@ var (
 func filterGoFilePaths(data []byte) []byte {
 	return goFileRegexp.ReplaceAllFunc(data, func(b []byte) []byte {
 		s := string(b)
-		return []byte(fmt.Sprintf(`.../%s%c`, filepath.Base(s[1:len(s)-1]), s[len(s)-1]))
+		return []byte(fmt.Sprintf(`.../%s%c`, filepath.Base(s[:len(s)-1]), s[len(s)-1]))
 	})
 }
 

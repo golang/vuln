@@ -59,7 +59,7 @@ func SummarizeCallStack(cs vulncheck.CallStack, topPkgs map[string]bool, vulnPkg
 	}
 	iVuln += iTop + 1 // adjust for slice in call to highest.
 	topName := FuncName(cs[iTop].Function)
-	topPos := FuncPos(cs[iTop].Call)
+	topPos := AbsRelShorter(FuncPos(cs[iTop].Call))
 	if topPos != "" {
 		topPos += ": "
 	}
