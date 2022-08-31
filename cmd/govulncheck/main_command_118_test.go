@@ -60,6 +60,7 @@ func TestCommand(t *testing.T) {
 		out, err := cmd.CombinedOutput()
 		out = filterGoFilePaths(out)
 		out = filterStdlibVersions(out)
+		out = filterHeapGo(out)
 		return out, err
 	}
 
@@ -95,6 +96,7 @@ func TestCommand(t *testing.T) {
 var (
 	goFileRegexp        = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
 	stdlibVersionRegexp = regexp.MustCompile(`("Path": "stdlib",\s*"Version": ")v[^\s]+"`)
+	heapGoRegexp        = regexp.MustCompile(`heap\.go:(\d+)`)
 )
 
 // filterGoFilePaths modifies paths to Go files by replacing their directory with "...".
@@ -114,4 +116,10 @@ func filterGoFilePaths(data []byte) []byte {
 // the binary so the version is empty.
 func filterStdlibVersions(data []byte) []byte {
 	return stdlibVersionRegexp.ReplaceAll(data, []byte(`${1}"`))
+}
+
+// There was a one-line change in container/heap/heap.go between 1.18
+// and 1.19 that makes the stack traces different. Ignore it.
+func filterHeapGo(data []byte) []byte {
+	return heapGoRegexp.ReplaceAll(data, []byte(`N`))
 }
