@@ -30,36 +30,44 @@ var (
 	testsFlag   = flag.Bool("tests", false, "")
 )
 
-const usage = `Command govulncheck identifies functions and methods in Go
-source code with known vulnerabilities.
+const usage = `
+usage:
+	govulncheck [flags] packages
+	govulncheck [flags] binary
 
-govulncheck can be used to analyze source code with one or more package
-patterns (for example, golang.org/x/crypto/...  or ./...), or on a single Go
-binary. For Go binaries, module and symbol information will be extracted from
-the binary to detect vulnerable symbols.
+govulncheck finds vulnerabilities in Go code.
+
+In the first form, govulncheck accepts one or more packages in the form
+described by "go help packages" (for example, golang.org/x/crypto/... or ./...)
+and analyzes the source code in those packages.
+
+If there is only one argument and it is a filename, govulncheck analyzes the Go
+binary in that file. Both govulncheck itself and the binary under analysis must
+have been built with Go 1.18 or later.
 
 By default, govulncheck makes requests to the Go vulnerability database
 (https://vuln.go.dev). The environment variable GOVULNDB can be set to a
 comma-separated list of vulnerability database URLs, with http://, https://, or
 file:// protocols. Entries from multiple databases are merged.
 
+Requests to the vulnerability database contain only module paths, not code or
+other properties of your program. See https://vuln.go.dev/privacy.html for more.
+
 For more information, visit https://go.dev/security/vulndb.
-
-Usage:
-
-	govulncheck [flags] {package pattern...}
-
-	govulncheck [flags] {binary path} (if built with Go 1.18 or higher)
 
 Flags:
 
-	-v	Print a full call stack for each vulnerability.
+	-v
+		verbose: print a full call stack for each vulnerability.
 
-	-json	Print vulnerability findings in JSON format.
+	-json
+		print vulnerability findings in JSON format.
 
-	-tags	Comma-separated list of build tags.
+	-tags t1,t2,...
+		comma-separated list of build tags. Only valid for source code.
 
-	-tests	Boolean flag indicating if test files should be analyzed too.
+	-tests
+		analyze test files (default false). Only valid for source code.
 `
 
 func init() {
@@ -100,6 +108,12 @@ Scanning for dependencies with known vulnerabilities...
 		ctx        = context.Background()
 	)
 	if len(patterns) == 1 && isFile(patterns[0]) {
+		if *testsFlag {
+			die("govulncheck: the -tests flag is invalid for binaries")
+		}
+		if build.Default.BuildTags != nil {
+			die("govulncheck: the -tags flag is invalid for binaries")
+		}
 		f, err := os.Open(patterns[0])
 		if err != nil {
 			die("govulncheck: %v", err)
