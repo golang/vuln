@@ -97,22 +97,36 @@ func TestByModule(t *testing.T) {
 	defer srv.Close()
 
 	const (
-		modulePath  = "github.com/beego/beego"
+		modulePath  = "github.com/BeeGo/beego"
 		detailStart = "Routes in the beego HTTP router"
+
+		modulePathLowercase  = "github.com/tidwall/gjson"
+		detailStartLowercase = "Due to improper bounds checking"
 	)
 	for _, test := range []struct {
 		name         string
 		source       string
+		module       string
 		cache        Cache
 		detailPrefix string
+		wantVulns    int
 	}{
 		// Test the http client without any cache.
-		{name: "http-no-cache", source: srv.URL, cache: nil, detailPrefix: detailStart},
-		{name: "http-cache", source: srv.URL, cache: newTestCache(), detailPrefix: "cached: Route"},
+		{name: "http-no-cache", source: srv.URL, module: modulePath,
+			cache: nil, detailPrefix: detailStart, wantVulns: 3},
+		{name: "http-cache", source: srv.URL, module: modulePath,
+			cache: newTestCache(), detailPrefix: "cached: Route", wantVulns: 3},
 		// Repeat the same for local file client.
-		{name: "file-no-cache", source: localURL, cache: nil, detailPrefix: detailStart},
+		{name: "file-no-cache", source: localURL, module: modulePath,
+			cache: nil, detailPrefix: detailStart, wantVulns: 3},
 		// Cache does not play a role in local file databases.
-		{name: "file-cache", source: localURL, cache: newTestCache(), detailPrefix: detailStart},
+		{name: "file-cache", source: localURL, module: modulePath,
+			cache: newTestCache(), detailPrefix: detailStart, wantVulns: 3},
+		// Test all-lowercase module path.
+		{name: "lower-http", source: srv.URL, module: modulePathLowercase,
+			cache: nil, detailPrefix: detailStartLowercase, wantVulns: 4},
+		{name: "lower-file", source: localURL, module: modulePathLowercase,
+			cache: nil, detailPrefix: detailStartLowercase, wantVulns: 4},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, err := NewClient([]string{test.source}, Options{HTTPCache: test.cache})
@@ -121,16 +135,16 @@ func TestByModule(t *testing.T) {
 			}
 
 			// First call fills cache, if present.
-			if _, err := client.GetByModule(ctx, modulePath); err != nil {
+			if _, err := client.GetByModule(ctx, test.module); err != nil {
 				t.Fatal(err)
 			}
-			vulns, err := client.GetByModule(ctx, modulePath)
+			vulns, err := client.GetByModule(ctx, test.module)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if got, want := len(vulns), 3; got != want {
-				t.Errorf("got %d vulns for %s, want %d", got, modulePath, want)
+			if got, want := len(vulns), test.wantVulns; got != want {
+				t.Fatalf("got %d vulns for %s, want %d", got, test.module, want)
 			}
 
 			if v := vulns[0]; !strings.HasPrefix(v.Details, test.detailPrefix) {
@@ -139,6 +153,38 @@ func TestByModule(t *testing.T) {
 					got = got[:len(test.detailPrefix)] + "..."
 				}
 				t.Errorf("got\n\t%s\nbut should start with\n\t%s", got, test.detailPrefix)
+			}
+		})
+
+	}
+}
+
+func TestSpecialPaths(t *testing.T) {
+	if runtime.GOOS == "js" {
+		t.Skip("skipping test: no network on js")
+	}
+	ctx := context.Background()
+	srv := newTestServer()
+	defer srv.Close()
+
+	for _, test := range []struct {
+		name   string
+		source string
+	}{
+		{"local", localURL},
+		{"http", srv.URL},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			client, err := NewClient([]string{test.source}, Options{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for specialPath := range specialCaseModulePaths {
+				t.Run(test.name+"-"+specialPath, func(t *testing.T) {
+					if _, err := client.GetByModule(ctx, specialPath); err != nil {
+						t.Fatal(err)
+					}
+				})
 			}
 		})
 	}
@@ -150,8 +196,8 @@ func TestCorrectFetchesNoCache(t *testing.T) {
 		fetches[r.URL.Path]++
 		if r.URL.Path == "/index.json" {
 			j, _ := json.Marshal(DBIndex{
-				"a": time.Now(),
-				"b": time.Now(),
+				"m.com/a": time.Now(),
+				"m.com/b": time.Now(),
 			})
 			w.Write(j)
 		} else {
@@ -161,12 +207,13 @@ func TestCorrectFetchesNoCache(t *testing.T) {
 	defer ts.Close()
 
 	hs := &httpSource{url: ts.URL, c: new(http.Client)}
-	for _, module := range []string{"a", "b", "c"} {
+	for _, module := range []string{"m.com/a", "m.com/b", "m.com/c"} {
 		if _, err := hs.GetByModule(context.Background(), module); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
 	}
-	expectedFetches := map[string]int{"/index.json": 3, "/a.json": 1, "/b.json": 1}
+	expectedFetches := map[string]int{"/index.json": 3,
+		"/m.com/a.json": 1, "/m.com/b.json": 1}
 	if !reflect.DeepEqual(fetches, expectedFetches) {
 		t.Errorf("unexpected fetches, got %v, want %v", fetches, expectedFetches)
 	}

@@ -1,4 +1,4 @@
-module manystacks
+module example.com/manystacks
 
 go 1.18
 

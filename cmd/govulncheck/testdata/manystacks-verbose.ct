@@ -11,15 +11,15 @@ Vulnerability #1: GO-2020-0040
   vector.
     Call stacks in your code:
       #1: for function DHT.GetPeers
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
       #2: for function DHT.IsCrawlMode
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -27,7 +27,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:524:23
         github.com/shiyanhui/dht.DHT.IsCrawlMode
       #3: for function DHT.IsStandardMode
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -39,11 +39,11 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:232:23
         github.com/shiyanhui/dht.DHT.IsStandardMode
       #4: for function DHT.Run
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
       #5: for function DHT.id
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -53,25 +53,25 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:343:22
         github.com/shiyanhui/dht.DHT.id
       #6: for function DHT.init
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
         github.com/shiyanhui/dht.DHT.init
       #7: for function DHT.join
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
         github.com/shiyanhui/dht.DHT.join
       #8: for function DHT.listen
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:269:12
         github.com/shiyanhui/dht.DHT.listen
       #9: for function Decode
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -81,7 +81,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:771:22
         github.com/shiyanhui/dht.Decode
       #10: for function DecodeDict
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -95,7 +95,7 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:93:25
         github.com/shiyanhui/dht.DecodeDict
       #11: for function DecodeInt
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -109,7 +109,7 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:93:25
         github.com/shiyanhui/dht.DecodeInt
       #12: for function DecodeList
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -123,7 +123,7 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:93:25
         github.com/shiyanhui/dht.DecodeList
       #13: for function DecodeString
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -137,7 +137,7 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:93:25
         github.com/shiyanhui/dht.DecodeString
       #14: for function Encode
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -151,7 +151,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:131:45
         github.com/shiyanhui/dht.Encode
       #15: for function EncodeDict
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -167,7 +167,7 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:259:20
         github.com/shiyanhui/dht.EncodeDict
       #16: for function EncodeInt
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -183,7 +183,7 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:255:19
         github.com/shiyanhui/dht.EncodeInt
       #17: for function EncodeList
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -199,7 +199,7 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:257:20
         github.com/shiyanhui/dht.EncodeList
       #18: for function EncodeString
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -215,17 +215,17 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:253:22
         github.com/shiyanhui/dht.EncodeString
       #19: for function New
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
       #20: for function NewStandardConfig
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:135:29
         github.com/shiyanhui/dht.NewStandardConfig
       #21: for function ParseKey
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -239,7 +239,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:401:21
         github.com/shiyanhui/dht.ParseKey
       #22: for function ParseKeys
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -251,7 +251,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:416:21
         github.com/shiyanhui/dht.ParseKeys
       #23: for function bitmap.Bit
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -263,11 +263,11 @@ Vulnerability #1: GO-2020-0040
             .../bitmap.go:144:42
         github.com/shiyanhui/dht.bitmap.Bit
       #24: for function bitmap.Compare
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:256:44
@@ -277,7 +277,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:583:28
         github.com/shiyanhui/dht.bitmap.Compare
       #25: for function bitmap.RawString
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -285,7 +285,7 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:209:25
         github.com/shiyanhui/dht.bitmap.RawString
       #26: for function bitmap.String
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -295,11 +295,11 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:351:50
         github.com/shiyanhui/dht.bitmap.String
       #27: for function bitmap.Xor
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:256:44
@@ -309,7 +309,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:580:21
         github.com/shiyanhui/dht.bitmap.Xor
       #28: for function blackList.clear
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -317,7 +317,7 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:195:2
         github.com/shiyanhui/dht.blackList.clear
       #29: for function blackList.genKey
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:152:21
@@ -325,7 +325,7 @@ Vulnerability #1: GO-2020-0040
             .../blacklist.go:47:23
         github.com/shiyanhui/dht.blackList.genKey
       #30: for function blackList.in
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -335,13 +335,13 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:767:22
         github.com/shiyanhui/dht.blackList.in
       #31: for function blackList.insert
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:152:21
         github.com/shiyanhui/dht.blackList.insert
       #32: for function decodeItem
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -353,7 +353,7 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:193:29
         github.com/shiyanhui/dht.decodeItem
       #33: for function encodeItem
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -371,7 +371,7 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:229:25
         github.com/shiyanhui/dht.encodeItem
       #34: for function find
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -387,7 +387,7 @@ Vulnerability #1: GO-2020-0040
             .../bencode.go:32:11
         github.com/shiyanhui/dht.find
       #35: for function genAddress
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:152:21
@@ -397,7 +397,7 @@ Vulnerability #1: GO-2020-0040
             .../blacklist.go:36:19
         github.com/shiyanhui/dht.genAddress
       #36: for function getLocalIPs
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:155:2
@@ -405,7 +405,7 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:156:33
         github.com/shiyanhui/dht.getLocalIPs
       #37: for function getRemoteIP
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:155:2
@@ -413,11 +413,11 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:160:25
         github.com/shiyanhui/dht.getRemoteIP
       #38: for function getTopK
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:256:44
@@ -425,13 +425,13 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:426:22
         github.com/shiyanhui/dht.getTopK
       #39: for function handle
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
         github.com/shiyanhui/dht.handle
       #40: for function int2bytes
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -445,7 +445,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:180:25
         github.com/shiyanhui/dht.int2bytes
       #41: for function kbucket.LastChanged
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -453,7 +453,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:508:32
         github.com/shiyanhui/dht.kbucket.LastChanged
       #42: for function kbucket.RandomChildID
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -461,7 +461,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:517:64
         github.com/shiyanhui/dht.kbucket.RandomChildID
       #43: for function kbucket.Replace
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -471,7 +471,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:488:17
         github.com/shiyanhui/dht.kbucket.Replace
       #44: for function kbucket.UpdateTimestamp
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -483,7 +483,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:209:24
         github.com/shiyanhui/dht.kbucket.UpdateTimestamp
       #45: for function syncedList.Back
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -495,7 +495,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:215:54
         github.com/shiyanhui/dht.syncedList.Back
       #46: for function keyedDeque.Delete
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -507,7 +507,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:208:21
         github.com/shiyanhui/dht.keyedDeque.Delete
       #47: for function keyedDeque.Get
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -519,7 +519,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:461:37
         github.com/shiyanhui/dht.keyedDeque.Get
       #48: for function syncedList.InsertBefore
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -531,7 +531,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:222:29
         github.com/shiyanhui/dht.syncedList.InsertBefore
       #49: for function syncedList.Iter
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -539,7 +539,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:506:39
         github.com/shiyanhui/dht.syncedList.Iter
       #50: for function syncedList.Len
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -547,7 +547,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:509:20
         github.com/shiyanhui/dht.syncedList.Len
       #51: for function keyedDeque.Push
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -557,7 +557,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:351:24
         github.com/shiyanhui/dht.keyedDeque.Push
       #52: for function syncedList.PushBack
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -565,7 +565,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:518:27
         github.com/shiyanhui/dht.syncedList.PushBack
       #53: for function keyedDeque.Remove
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -577,7 +577,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:215:31
         github.com/shiyanhui/dht.keyedDeque.Remove
       #54: for function makeQuery
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -589,7 +589,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:326:19
         github.com/shiyanhui/dht.makeQuery
       #55: for function newBitmap
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -599,7 +599,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:339:39
         github.com/shiyanhui/dht.newBitmap
       #56: for function newBitmapFromBytes
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:138:22
@@ -609,7 +609,7 @@ Vulnerability #1: GO-2020-0040
             .../bitmap.go:57:27
         github.com/shiyanhui/dht.newBitmapFromBytes
       #57: for function newBitmapFromString
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:138:22
@@ -617,13 +617,13 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:33:34
         github.com/shiyanhui/dht.newBitmapFromString
       #58: for function newBlackList
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:146:29
         github.com/shiyanhui/dht.newBlackList
       #59: for function newKBucket
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -635,7 +635,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:253:23
         github.com/shiyanhui/dht.newKBucket
       #60: for function newKeyedDeque
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -645,13 +645,13 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:346:32
         github.com/shiyanhui/dht.newKeyedDeque
       #61: for function newNode
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:138:22
         github.com/shiyanhui/dht.newNode
       #62: for function newPeersManager
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -659,7 +659,7 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:188:36
         github.com/shiyanhui/dht.newPeersManager
       #63: for function newRoutingTable
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -667,7 +667,7 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:187:36
         github.com/shiyanhui/dht.newRoutingTable
       #64: for function newRoutingTableNode
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -677,7 +677,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:339:29
         github.com/shiyanhui/dht.newRoutingTableNode
       #65: for function newSyncedList
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -687,7 +687,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:348:32
         github.com/shiyanhui/dht.newSyncedList
       #66: for function newSyncedMap
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:146:29
@@ -695,7 +695,7 @@ Vulnerability #1: GO-2020-0040
             .../blacklist.go:25:29
         github.com/shiyanhui/dht.newSyncedMap
       #67: for function newTokenManager
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -703,7 +703,7 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:189:36
         github.com/shiyanhui/dht.newTokenManager
       #68: for function newTransactionManager
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -711,7 +711,7 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:190:48
         github.com/shiyanhui/dht.newTransactionManager
       #69: for function parseMessage
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -721,29 +721,29 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:776:32
         github.com/shiyanhui/dht.parseMessage
       #70: for function randomString
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:138:35
         github.com/shiyanhui/dht.randomString
       #71: for function routingTable.Fresh
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
         github.com/shiyanhui/dht.routingTable.Fresh
       #72: for function routingTable.GetNeighbors
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:256:44
         github.com/shiyanhui/dht.routingTable.GetNeighbors
       #73: for function routingTable.GetNodeKBucktByID
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -753,13 +753,13 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:487:39
         github.com/shiyanhui/dht.routingTable.GetNodeKBucktByID
       #74: for function routingTable.Len
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:282:27
         github.com/shiyanhui/dht.routingTable.Len
       #75: for function routingTable.Remove
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -767,7 +767,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:526:13
         github.com/shiyanhui/dht.routingTable.Remove
       #76: for function routingTable.RemoveByAddr
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -779,7 +779,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:299:35
         github.com/shiyanhui/dht.routingTable.RemoveByAddr
       #77: for function routingTableNode.Child
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -791,7 +791,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:459:20
         github.com/shiyanhui/dht.routingTableNode.Child
       #78: for function routingTableNode.KBucket
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -803,7 +803,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:461:25
         github.com/shiyanhui/dht.routingTableNode.KBucket
       #79: for function send
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -815,7 +815,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:285:17
         github.com/shiyanhui/dht.send
       #80: for function syncedList.Clear
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -823,7 +823,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:530:21
         github.com/shiyanhui/dht.syncedList.Clear
       #81: for function syncedList.Remove
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -835,7 +835,7 @@ Vulnerability #1: GO-2020-0040
             .../container.go:229:26
         github.com/shiyanhui/dht.syncedList.Remove
       #82: for function syncedMap.Delete
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:285:5
@@ -845,7 +845,7 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:489:24
         github.com/shiyanhui/dht.syncedMap.Delete
       #83: for function syncedMap.DeleteMulti
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -855,7 +855,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:82:17
         github.com/shiyanhui/dht.syncedMap.DeleteMulti
       #84: for function syncedMap.Get
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:280:10
@@ -867,7 +867,7 @@ Vulnerability #1: GO-2020-0040
             .../blacklist.go:61:25
         github.com/shiyanhui/dht.syncedMap.Get
       #85: for function syncedMap.Iter
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -877,7 +877,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:76:28
         github.com/shiyanhui/dht.syncedMap.Iter
       #86: for function syncedMap.Len
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:284:40
@@ -885,7 +885,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:229:28
         github.com/shiyanhui/dht.syncedMap.Len
       #87: for function syncedMap.Set
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:16:14
         github.com/shiyanhui/dht.New
             .../dht.go:152:21
@@ -893,7 +893,7 @@ Vulnerability #1: GO-2020-0040
             .../blacklist.go:47:13
         github.com/shiyanhui/dht.syncedMap.Set
       #88: for function tokenManager.clear
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -901,11 +901,11 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:194:2
         github.com/shiyanhui/dht.tokenManager.clear
       #89: for function topKHeap.Len
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:256:44
@@ -915,11 +915,11 @@ Vulnerability #1: GO-2020-0040
             .../routingtable.go:581:18
         github.com/shiyanhui/dht.topKHeap.Len
       #90: for function topKHeap.Less
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:256:44
@@ -933,11 +933,11 @@ Vulnerability #1: GO-2020-0040
             .../N:23
         github.com/shiyanhui/dht.topKHeap.Less
       #91: for function topKHeap.Pop
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:256:44
@@ -949,11 +949,11 @@ Vulnerability #1: GO-2020-0040
             .../N:14
         github.com/shiyanhui/dht.topKHeap.Pop
       #92: for function topKHeap.Push
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:256:44
@@ -965,11 +965,11 @@ Vulnerability #1: GO-2020-0040
             .../N:8
         github.com/shiyanhui/dht.topKHeap.Push
       #93: for function topKHeap.Swap
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:256:44
@@ -981,7 +981,7 @@ Vulnerability #1: GO-2020-0040
             .../N:8
         github.com/shiyanhui/dht.topKHeap.Swap
       #94: for function transactionManager.delete
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -993,7 +993,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:281:2
         github.com/shiyanhui/dht.transactionManager.delete
       #95: for function transactionManager.findNode
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -1001,7 +1001,7 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:207:34
         github.com/shiyanhui/dht.transactionManager.findNode
       #96: for function transactionManager.genIndexKey
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -1013,7 +1013,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:321:31
         github.com/shiyanhui/dht.transactionManager.genIndexKey
       #97: for function transactionManager.genIndexKeyByTrans
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -1027,7 +1027,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:209:36
         github.com/shiyanhui/dht.transactionManager.genIndexKeyByTrans
       #98: for function transactionManager.genTransID
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -1039,7 +1039,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:326:33
         github.com/shiyanhui/dht.transactionManager.genTransID
       #99: for function transactionManager.getByIndex
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -1051,17 +1051,17 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:321:16
         github.com/shiyanhui/dht.transactionManager.getByIndex
       #100: for function transactionManager.getPeers
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:260:34
         github.com/shiyanhui/dht.transactionManager.getPeers
       #101: for function transactionManager.insert
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -1073,13 +1073,13 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:280:11
         github.com/shiyanhui/dht.transactionManager.insert
       #102: for function transactionManager.len
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:284:40
         github.com/shiyanhui/dht.transactionManager.len
       #103: for function transactionManager.newTransaction
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -1091,7 +1091,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:278:28
         github.com/shiyanhui/dht.transactionManager.newTransaction
       #104: for function transactionManager.query
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -1101,7 +1101,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:310:4
         github.com/shiyanhui/dht.transactionManager.query
       #105: for function transactionManager.run
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:268:10
@@ -1109,7 +1109,7 @@ Vulnerability #1: GO-2020-0040
             .../dht.go:193:2
         github.com/shiyanhui/dht.transactionManager.run
       #106: for function transactionManager.sendQuery
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -1119,7 +1119,7 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:342:14
         github.com/shiyanhui/dht.transactionManager.sendQuery
       #107: for function transactionManager.transaction
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:44:7
         github.com/shiyanhui/dht.DHT.Run
             .../dht.go:270:10
@@ -1133,11 +1133,11 @@ Vulnerability #1: GO-2020-0040
             .../krpc.go:257:23
         github.com/shiyanhui/dht.transactionManager.transaction
       #108: for function xor
-        manystacks.main
+        example.com/manystacks.main
             .../main.go:27:2
-        manystacks.main$2
+        example.com/manystacks.main$2
             .../main.go:30:28
-        manystacks/otherpkg.GetPeers
+        example.com/manystacks/otherpkg.GetPeers
             .../otherpkg.go:6:19
         github.com/shiyanhui/dht.DHT.GetPeers
             .../dht.go:256:44

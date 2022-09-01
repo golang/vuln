@@ -101,7 +101,11 @@ func (c *FSCache) ReadEntries(dbName string, p string) ([]*osv.Entry, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	b, err := os.ReadFile(filepath.Join(c.rootDir, dbName, p, "vulns.json"))
+	ep, err := client.EscapeModulePath(p)
+	if err != nil {
+		return nil, err
+	}
+	b, err := os.ReadFile(filepath.Join(c.rootDir, dbName, ep, "vulns.json"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -119,7 +123,11 @@ func (c *FSCache) WriteEntries(dbName string, p string, entries []*osv.Entry) er
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	path := filepath.Join(c.rootDir, dbName, p)
+	ep, err := client.EscapeModulePath(p)
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(c.rootDir, dbName, ep)
 	if err := os.MkdirAll(path, 0777); err != nil {
 		return err
 	}

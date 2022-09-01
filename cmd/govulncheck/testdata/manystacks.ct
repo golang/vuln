@@ -10,9 +10,9 @@ Vulnerability #1: GO-2020-0040
   can cause panics, which may be used as a denial of service
   vector.
     Call stacks in your code:
-      .../main.go:16:14: manystacks.main calls github.com/shiyanhui/dht.New
-      .../main.go:30:28: manystacks.main$2 calls manystacks/otherpkg.GetPeers, which eventually calls github.com/shiyanhui/dht.DHT.GetPeers
-      .../main.go:44:7: manystacks.main calls github.com/shiyanhui/dht.DHT.Run
+      .../main.go:16:14: example.com/manystacks.main calls github.com/shiyanhui/dht.New
+      .../main.go:30:28: example.com/manystacks.main$2 calls example.com/manystacks/otherpkg.GetPeers, which eventually calls github.com/shiyanhui/dht.DHT.GetPeers
+      .../main.go:44:7: example.com/manystacks.main calls github.com/shiyanhui/dht.DHT.Run
 
   Found in: github.com/shiyanhui/dht@v0.0.0-20201219151056-5a20f3199263
   Fixed in: N/A

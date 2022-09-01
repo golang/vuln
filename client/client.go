@@ -42,6 +42,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/mod/module"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/osv"
@@ -83,9 +84,13 @@ type localSource struct {
 
 func (*localSource) unexported() {}
 
-func (ls *localSource) GetByModule(_ context.Context, module string) (_ []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "localSource.GetByModule(%q)", module)
-	content, err := os.ReadFile(filepath.Join(ls.dir, module+".json"))
+func (ls *localSource) GetByModule(_ context.Context, modulePath string) (_ []*osv.Entry, err error) {
+	defer derrors.Wrap(&err, "localSource.GetByModule(%q)", modulePath)
+	epath, err := EscapeModulePath(modulePath)
+	if err != nil {
+		return nil, err
+	}
+	content, err := os.ReadFile(filepath.Join(ls.dir, epath+".json"))
 	if os.IsNotExist(err) {
 		return nil, nil
 	} else if err != nil {
@@ -222,21 +227,21 @@ func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
 
 func (*httpSource) unexported() {}
 
-func (hs *httpSource) GetByModule(ctx context.Context, module string) (_ []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "httpSource.GetByModule(%q)", module)
+func (hs *httpSource) GetByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
+	defer derrors.Wrap(&err, "httpSource.GetByModule(%q)", modulePath)
 
 	index, err := hs.Index(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	lastModified, present := index[module]
+	lastModified, present := index[modulePath]
 	if !present {
 		return nil, nil
 	}
 
 	if hs.cache != nil {
-		cached, err := hs.cache.ReadEntries(hs.dbName, module)
+		cached, err := hs.cache.ReadEntries(hs.dbName, modulePath)
 		if err != nil {
 			return nil, err
 		}
@@ -245,18 +250,42 @@ func (hs *httpSource) GetByModule(ctx context.Context, module string) (_ []*osv.
 		}
 	}
 
-	entries, err := httpReadJSON[[]*osv.Entry](ctx, hs, module+".json")
+	epath, err := EscapeModulePath(modulePath)
+	if err != nil {
+		return nil, err
+	}
+	entries, err := httpReadJSON[[]*osv.Entry](ctx, hs, epath+".json")
 	if err != nil || entries == nil {
 		return nil, err
 	}
 	// TODO: we may want to check that the returned entries actually match
 	// the module we asked about, so that the cache cannot be poisoned
 	if hs.cache != nil {
-		if err := hs.cache.WriteEntries(hs.dbName, module, entries); err != nil {
+		if err := hs.cache.WriteEntries(hs.dbName, modulePath, entries); err != nil {
 			return nil, err
 		}
 	}
 	return entries, nil
+}
+
+// Pseudo-module paths used for parts of the Go system.
+// These are technically not valid module paths, so we
+// mustn't pass them to module.EscapePath.
+// Keep in sync with vulndb/internal/database/generate.go.
+var specialCaseModulePaths = map[string]bool{
+	"stdlib":    true,
+	"toolchain": true,
+}
+
+// EscapeModulePath should be called by cache implementations or other users of
+// this package that want to use module paths as filesystem paths. It is like
+// golang.org/x/mod/module, but accounts for special paths used by the
+// vulnerability database.
+func EscapeModulePath(path string) (string, error) {
+	if specialCaseModulePaths[path] {
+		return path, nil
+	}
+	return module.EscapePath(path)
 }
 
 func latestModifiedTime(entries []*osv.Entry) time.Time {

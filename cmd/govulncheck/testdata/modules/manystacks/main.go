@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"manystacks/otherpkg"
+	"example.com/manystacks/otherpkg"
 
 	"github.com/shiyanhui/dht"
 )
