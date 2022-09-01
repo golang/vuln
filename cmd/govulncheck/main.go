@@ -25,61 +25,33 @@ import (
 )
 
 var (
-	jsonFlag    = flag.Bool("json", false, "")
-	verboseFlag = flag.Bool("v", false, "")
-	testFlag    = flag.Bool("test", false, "")
+	jsonFlag    = flag.Bool("json", false, "output JSON")
+	verboseFlag = flag.Bool("v", false, "print a full call stack for each vulnerability")
+	testFlag    = flag.Bool("test", false, "analyze test files. Only valid for source code.")
 )
 
-const usage = `
-usage:
-	govulncheck [flags] packages
-	govulncheck [flags] binary
-
-govulncheck finds vulnerabilities in Go code.
-
-In the first form, govulncheck accepts one or more packages in the form
-described by "go help packages" (for example, golang.org/x/crypto/... or ./...)
-and analyzes the source code in those packages.
-
-If there is only one argument and it is a filename, govulncheck analyzes the Go
-binary in that file. Both govulncheck itself and the binary under analysis must
-have been built with Go 1.18 or later.
-
-By default, govulncheck makes requests to the Go vulnerability database
-(https://vuln.go.dev). The environment variable GOVULNDB can be set to a
-comma-separated list of vulnerability database URLs, with http://, https://, or
-file:// protocols. Entries from multiple databases are merged.
-
-Requests to the vulnerability database contain only module paths, not code or
-other properties of your program. See https://vuln.go.dev/privacy.html for more.
-
-For more information, visit https://go.dev/security/vulndb.
-
-Flags:
-
-	-v
-		verbose: print a full call stack for each vulnerability.
-
-	-json
-		print vulnerability findings in JSON format.
-
-	-tags t1,t2,...
-		comma-separated list of build tags. Only valid for source code.
-
-	-test
-		analyze test files (default false). Only valid for source code.
-`
-
 func init() {
-	flag.Var((*buildutil.TagsFlag)(&build.Default.BuildTags), "tags", buildutil.TagsFlagDoc)
+	flag.Var((*buildutil.TagsFlag)(&build.Default.BuildTags), "tags",
+		"comma-separated `list` of build tags")
 }
 
 func main() {
-	flag.Usage = func() { fmt.Fprint(os.Stderr, usage) }
+	flag.Usage = func() {
+		fmt.Fprint(os.Stderr, `usage:
+	govulncheck [flags] package...
+	govulncheck [flags] binary
+
+`)
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, `
+For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
+`)
+	}
 	flag.Parse()
 
 	if len(flag.Args()) == 0 {
-		die("%s", usage)
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	dbs := []string{"https://vuln.go.dev"}
