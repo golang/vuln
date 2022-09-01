@@ -27,7 +27,7 @@ import (
 var (
 	jsonFlag    = flag.Bool("json", false, "")
 	verboseFlag = flag.Bool("v", false, "")
-	testsFlag   = flag.Bool("tests", false, "")
+	testFlag    = flag.Bool("test", false, "")
 )
 
 const usage = `
@@ -66,7 +66,7 @@ Flags:
 	-tags t1,t2,...
 		comma-separated list of build tags. Only valid for source code.
 
-	-tests
+	-test
 		analyze test files (default false). Only valid for source code.
 `
 
@@ -108,8 +108,8 @@ Scanning for dependencies with known vulnerabilities...
 		ctx        = context.Background()
 	)
 	if len(patterns) == 1 && isFile(patterns[0]) {
-		if *testsFlag {
-			die("govulncheck: the -tests flag is invalid for binaries")
+		if *testFlag {
+			die("govulncheck: the -test flag is invalid for binaries")
 		}
 		if build.Default.BuildTags != nil {
 			die("govulncheck: the -tags flag is invalid for binaries")
@@ -125,7 +125,7 @@ Scanning for dependencies with known vulnerabilities...
 		}
 	} else {
 		cfg := &packages.Config{
-			Tests:      *testsFlag,
+			Tests:      *testFlag,
 			BuildFlags: []string{fmt.Sprintf("-tags=%s", strings.Join(build.Default.BuildTags, ","))},
 		}
 		pkgs, err = govulncheck.LoadPackages(cfg, patterns...)

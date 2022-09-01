@@ -35,7 +35,7 @@ Flags:
 	-tags t1,t2,...
 		comma-separated list of build tags. Only valid for source code.
 
-	-tests
+	-test
 		analyze test files (default false). Only valid for source code.
 
 
@@ -77,5 +77,5 @@ Flags:
 	-tags t1,t2,...
 		comma-separated list of build tags. Only valid for source code.
 
-	-tests
+	-test
 		analyze test files (default false). Only valid for source code.
