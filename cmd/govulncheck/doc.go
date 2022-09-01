@@ -81,11 +81,9 @@ Govulncheck uses [golang.org/x/vuln/vulncheck], which has these limitations:
   - Calls to functions made using package reflect are not visible to static
     analysis. Vulnerable code reachable only through those calls will not be
     reported.
-  - Because Go binaries do not contain detailed call information, vulncheck
+  - Because Go binaries do not contain detailed call information, govulncheck
     cannot show the call graphs for detected vulnerabilities. It may also
     report false positives for code that is in the binary but unreachable.
-  - Govulncheck does not report vulnerabilities in
-    vendored packages for binaries.
   - There is no support for silencing vulnerability findings.
   - Govulncheck only reads binaries compiled with Go 1.18 and later.
 
