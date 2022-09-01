@@ -5,8 +5,8 @@ usage:
 
   -json
     	output JSON
-  -tags value
-    	comma-separated list of build tags. Only valid for source code. For more information, see the description of build constraints in the documentation for the go/build package.
+  -tags list
+    	comma-separated list of build tags
   -test
     	analyze test files. Only valid for source code.
   -v	print a full call stack for each vulnerability
@@ -22,8 +22,8 @@ usage:
 
   -json
     	output JSON
-  -tags value
-    	comma-separated list of build tags. Only valid for source code. For more information, see the description of build constraints in the documentation for the go/build package.
+  -tags list
+    	comma-separated list of build tags
   -test
     	analyze test files. Only valid for source code.
   -v	print a full call stack for each vulnerability

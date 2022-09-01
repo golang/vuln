@@ -33,7 +33,8 @@ Vulnerability #2: GO-2021-0113
 
 The vulnerabilities below are in packages that you import, but your code
 doesn't appear to call any vulnerable functions. You may not need to take any
-action. See https://go.dev/security/vulncheck for details.
+action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+for details.
 
 Vulnerability #1: GO-2021-0265
   GJSON allowed a ReDoS (regular expression denial of service) attack.

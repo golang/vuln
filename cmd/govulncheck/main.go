@@ -250,7 +250,8 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffected []*vuln
 
 The vulnerabilities below are in packages that you import, but your code
 doesn't appear to call any vulnerable functions. You may not need to take any
-action. See https://go.dev/security/vulncheck for details.
+action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+for details.
 `)
 		for idx, vuln := range unaffected {
 			found := foundVersion(vuln.ModPath, vuln.PkgPath, ci)
