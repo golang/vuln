@@ -84,10 +84,13 @@ Govulncheck uses [golang.org/x/vuln/vulncheck], which has these limitations:
     report false positives for code that is in the binary but unreachable.
   - There is no support for silencing vulnerability findings.
   - Govulncheck only reads binaries compiled with Go 1.18 and later.
-  - Govulncheck only reports vulnerabilities that apply to the current build
-    configuration (GOOS/GOARCH settings). For example, a vulnerability that
-    only applies to Linux will not be reported if govulncheck is run on a
-    Windows machine. See https://go.dev/issue/54841 for details.
+  - Govulncheck only reports vulnerabilities that apply to the current Go build
+    system and configuration (GOOS/GOARCH settings). For example, a
+    vulnerability that only applies to Linux will not be reported if
+    govulncheck is run on a Windows machine. A standard library vulnerability
+    that only applies for Go 1.18 will not be reported if the current Go
+    version is 1.19. See https://go.dev/issue/54841 for updates to this
+    limitation.
 
 # Feedback
 
