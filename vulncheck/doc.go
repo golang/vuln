@@ -41,7 +41,7 @@ The parts of these graphs not related to any vulnerabilities are omitted.
 
 The [CallStacks] and [ImportChains] functions search the returned slices for
 user-friendly representative call stacks and import chains. These call stacks
-and import chains are provided as examples of vulnerabilities in the client
+and import chains are provided as examples of vulnerability uses in the client
 code.
 
 # Limitations
