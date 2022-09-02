@@ -9,7 +9,8 @@ Found 1 known vulnerability.
 
 Vulnerability #1: STD
 
-    Call stacks in your code:
+
+  Call stacks in your code:
       .../stdvuln.go:9:26: golang.org/stdvuln.main calls archive/zip.OpenReader
 
   Found in: archive/zip@go1.18

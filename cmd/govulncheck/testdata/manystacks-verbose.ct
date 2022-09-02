@@ -9,7 +9,8 @@ Vulnerability #1: GO-2020-0040
   Due to unchecked type assertions, maliciously crafted messages
   can cause panics, which may be used as a denial of service
   vector.
-    Call stacks in your code:
+
+  Call stacks in your code:
       #1: for function DHT.GetPeers
         example.com/manystacks.main
             .../main.go:27:2
@@ -1154,4 +1155,3 @@ Vulnerability #1: GO-2020-0040
   Found in: github.com/shiyanhui/dht@v0.0.0-20201219151056-5a20f3199263
   Fixed in: N/A
   More info: https://pkg.go.dev/vuln/GO-2020-0040
-

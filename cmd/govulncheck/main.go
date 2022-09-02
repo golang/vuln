@@ -220,8 +220,8 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffected []*vuln
 	default:
 		fmt.Printf("Found %d known vulnerabilities.\n", len(uniqueVulns))
 	}
-	fmt.Println()
 	for idx, vg := range ci.VulnGroups {
+		fmt.Println()
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.
 		v0 := vg[0]
@@ -238,11 +238,10 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffected []*vuln
 		}
 		var b strings.Builder
 		if len(stacks) > 0 {
-			b.WriteString(indent("\nCall stacks in your code:\n", 4))
+			b.WriteString(indent("\n\nCall stacks in your code:\n", 2))
 			b.WriteString(indent(stacks, 6))
 		}
 		writeVulnerability(idx+1, id, details, b.String(), found, fixed)
-		fmt.Println()
 	}
 	if len(unaffected) > 0 {
 		fmt.Printf(`
@@ -259,9 +258,7 @@ for details.
 			fmt.Println()
 			writeVulnerability(idx+1, vuln.OSV.ID, vuln.OSV.Details, "", found, fixed)
 		}
-		fmt.Println()
 	}
-	fmt.Println()
 }
 
 func writeVulnerability(idx int, id, details, callstack, found, fixed string) {
