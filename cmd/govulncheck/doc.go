@@ -34,10 +34,8 @@ same package path syntax that the go command uses:
 
 If no vulnerabilities are found, govulncheck will display a short message. If
 there are vulnerabilities, each is displayed briefly, with a summary of a call
-stack.
-
-The call stack summary shows in brief how the package calls a vulnerable
-function. For example, it might say
+stack. The summary shows in brief how the package calls a vulnerable function.
+For example, it might say
 
 	main.go:[line]:[column]: mypackage.main calls golang.org/x/text/language.Parse
 
