@@ -23,10 +23,9 @@ The two main APIs of vulncheck, [Source] and [Binary], allow vulnerability
 detection in Go source code and binaries, respectively.
 
 [Source] accepts a list of [Package] objects, which
-are a trimmed version of [golang.org/x/tools/go/packages.Package] objects to reduce
-memory consumption. [Binary] accepts a path to a Go binary file
-that must have been compiled with Go 1.18 or greater. Govulncheck currently
-only includes a parser for binaries compiled with Go 1.18 and later.
+are a trimmed version of [golang.org/x/tools/go/packages.Package] objects to
+reduce memory consumption. [Binary] accepts a path to a Go binary file that
+must have been compiled with Go 1.18 or greater.
 
 Both [Source] and [Binary] require information about known
 vulnerabilities in the form of a vulnerability database,
@@ -36,18 +35,14 @@ are modeled using the [golang.org/x/vuln/osv] format.
 
 # Results
 
-The results of vulncheck are slices of the call graph, package
-imports graph, and module requires graph leading to the use
-of an identified vulnerability. The parts of these graphs not
-related to any vulnerabilities are omitted.
+The results of vulncheck are slices of the call graph, package imports graph,
+and module requires graph leading to the use of an identified vulnerability.
+The parts of these graphs not related to any vulnerabilities are omitted.
 
-# Vulnerability Witnesses
-
-[CallStacks] and [ImportChains] APIs search the returned slices
-for user-friendly representative call stacks and import chains.
-Clients of vulncheck can use these stacks and chains as a
-witness of a vulnerability use during, for instance, security
-review.
+The [CallStacks] and [ImportChains] functions search the returned slices for
+user-friendly representative call stacks and import chains. These call stacks
+and import chains are provided as examples of vulnerabilities in the client
+code.
 
 # Limitations
 
