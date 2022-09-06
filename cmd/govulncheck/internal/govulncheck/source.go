@@ -32,8 +32,7 @@ func (e *PackageError) Error() string {
 // If the packages contain errors, a PackageError is returned containing a list of the errors,
 // along with the packages themselves.
 func LoadPackages(cfg *packages.Config, patterns ...string) ([]*vulncheck.Package, error) {
-	cfg.Mode |= packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles |
-		packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes |
+	cfg.Mode |= packages.NeedName | packages.NeedImports | packages.NeedTypes |
 		packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps |
 		packages.NeedModule
 
