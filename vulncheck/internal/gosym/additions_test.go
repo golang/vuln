@@ -57,10 +57,10 @@ func TestInlineTree(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []InlinedCall{
-		{Parent: -1, FuncID: 0, File: 1, Name: "main.inline1"},
-		{Parent: 0, FuncID: 0, File: 1, Name: "main.inline2"},
+		{FuncID: 0, Name: "main.inline1"},
+		{FuncID: 0, Name: "main.inline2"},
 	}
-	if !cmp.Equal(got, want, cmpopts.IgnoreFields(InlinedCall{}, "Line", "ParentPC")) {
+	if !cmp.Equal(got, want, cmpopts.IgnoreFields(InlinedCall{}, "ParentPC")) {
 		t.Errorf("got\n%+v\nwant\n%+v", got, want)
 	}
 }

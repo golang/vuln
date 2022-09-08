@@ -41,40 +41,56 @@ func (t *LineTable) InlineTree(f *Func, goFuncValue, baseAddr uint64, progReader
 	r := io.NewSectionReader(progReader, offset, 1<<32) // pick a size larger than we need
 	var ics []InlinedCall
 	for i := 0; i < f.inlineTreeCount; i++ {
-		var ric rawInlinedCall
-		if err := binary.Read(r, t.binary, &ric); err != nil {
-			return nil, err
+		if t.version >= ver120 {
+			var ric rawInlinedCall120
+			if err := binary.Read(r, t.binary, &ric); err != nil {
+				return nil, err
+			}
+			ics = append(ics, InlinedCall{
+				FuncID:   ric.FuncID,
+				Name:     t.funcName(uint32(ric.NameOff)),
+				ParentPC: ric.ParentPC,
+			})
+		} else {
+			var ric rawInlinedCall112
+			if err := binary.Read(r, t.binary, &ric); err != nil {
+				return nil, err
+			}
+			ics = append(ics, InlinedCall{
+				FuncID:   ric.FuncID,
+				Name:     t.funcName(uint32(ric.Func_)),
+				ParentPC: ric.ParentPC,
+			})
 		}
-		ics = append(ics, InlinedCall{
-			Parent:   ric.Parent,
-			FuncID:   ric.FuncID,
-			File:     ric.File,
-			Line:     ric.Line,
-			Name:     t.funcName(uint32(ric.Func_)),
-			ParentPC: ric.ParentPC,
-		})
 	}
 	return ics, nil
 }
 
-// An InlinedCall describes a call to an inlined function.
+// InlinedCall describes a call to an inlined function.
 type InlinedCall struct {
-	Parent   int16  // index of parent in the inltree, or < 0
 	FuncID   uint8  // type of the called function
-	File     int32  // perCU file index for inlined call. See cmd/link:pcln.go
-	Line     int32  // line number of the call site
 	Name     string // name of called function
 	ParentPC int32  // position of an instruction whose source position is the call site (offset from entry)
 }
 
-// rawInlinedCall is the encoding of entries in the FUNCDATA_InlTree table.
-type rawInlinedCall struct {
+// rawInlinedCall112 is the encoding of entries in the FUNCDATA_InlTree table
+// from Go 1.12 through 1.19. It is equivalent to runtime.inlinedCall.
+type rawInlinedCall112 struct {
 	Parent   int16 // index of parent in the inltree, or < 0
 	FuncID   uint8 // type of the called function
 	_        byte
 	File     int32 // perCU file index for inlined call. See cmd/link:pcln.go
 	Line     int32 // line number of the call site
 	Func_    int32 // offset into pclntab for name of called function
+	ParentPC int32 // position of an instruction whose source position is the call site (offset from entry)
+}
+
+// rawInlinedCall120 is the encoding of entries in the FUNCDATA_InlTree table
+// from Go 1.20. It is equivalent to runtime.inlinedCall.
+type rawInlinedCall120 struct {
+	FuncID   uint8 // type of the called function
+	_        [3]byte
+	NameOff  int32 // offset into pclntab for name of called function
 	ParentPC int32 // position of an instruction whose source position is the call site (offset from entry)
 }
 
