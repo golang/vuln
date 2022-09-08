@@ -45,35 +45,35 @@ func debugModulesToPackagesModules(debugModules []*debug.Module) []*packages.Mod
 // ExtractPackagesAndSymbols extracts the symbols, packages, their
 // associated module versions from a Go binary, and Go version used
 // to build the binary.
-func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string][]string, string, error) {
+func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string][]string, *debug.BuildInfo, error) {
 	bi, err := buildinfo.Read(bin)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, nil, nil, err
 	}
 
 	funcSymName := gosym.FuncSymName(bi.GoVersion)
 	if funcSymName == "" {
-		return nil, nil, "", fmt.Errorf("binary built using unsupported Go Version: %v", bi.GoVersion)
+		return nil, nil, nil, fmt.Errorf("binary built using unsupported Go Version: %v", bi.GoVersion)
 	}
 
 	x, err := openExe(bin)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, nil, nil, err
 	}
 
 	pclntab, textOffset := x.PCLNTab()
 	if pclntab == nil {
 		// TODO(roland): if we have build information, but not PCLN table, we should be able to
 		// fall back to much higher granularity vulnerability checking.
-		return nil, nil, "", errors.New("unable to load the PCLN table")
+		return nil, nil, nil, errors.New("unable to load the PCLN table")
 	}
 	lineTab := gosym.NewLineTable(pclntab, textOffset)
 	if lineTab == nil {
-		return nil, nil, "", errors.New("invalid line table")
+		return nil, nil, nil, errors.New("invalid line table")
 	}
 	tab, err := gosym.NewTable(nil, lineTab)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, nil, nil, err
 	}
 
 	packageSymbols := map[string][]string{}
@@ -83,27 +83,27 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 		}
 		pkgName, symName, err := parseName(f.Func.Sym)
 		if err != nil {
-			return nil, nil, "", err
+			return nil, nil, nil, err
 		}
 		packageSymbols[pkgName] = append(packageSymbols[pkgName], symName)
 		value, base, r, err := x.SymbolInfo(funcSymName)
 		if err != nil {
-			return nil, nil, "", fmt.Errorf("reading %v: %v", funcSymName, err)
+			return nil, nil, nil, fmt.Errorf("reading %v: %v", funcSymName, err)
 		}
 		it, err := lineTab.InlineTree(&f, value, base, r)
 		if err != nil {
-			return nil, nil, "", fmt.Errorf("InlineTree: %v", err)
+			return nil, nil, nil, fmt.Errorf("InlineTree: %v", err)
 		}
 		for _, ic := range it {
 			pkgName, symName, err := parseName(&gosym.Sym{Name: ic.Name})
 			if err != nil {
-				return nil, nil, "", err
+				return nil, nil, nil, err
 			}
 			packageSymbols[pkgName] = append(packageSymbols[pkgName], symName)
 		}
 	}
 
-	return debugModulesToPackagesModules(bi.Deps), packageSymbols, bi.GoVersion, nil
+	return debugModulesToPackagesModules(bi.Deps), packageSymbols, bi, nil
 }
 
 func parseName(s *gosym.Sym) (pkg, sym string, err error) {

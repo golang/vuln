@@ -9,8 +9,9 @@ package vulncheck
 
 import (
 	"context"
+	"fmt"
 	"io"
-	"runtime"
+	"runtime/debug"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -24,7 +25,7 @@ import (
 func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err error) {
 	defer derrors.Wrap(&err, "vulncheck.Binary")
 
-	mods, packageSymbols, goVersion, err := binscan.ExtractPackagesAndSymbols(exe)
+	mods, packageSymbols, bi, err := binscan.ExtractPackagesAndSymbols(exe)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +33,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 	cmods := convertModules(mods)
 	// set the stdlib version for detection of vulns in the standard library
 	// TODO(#53740): what if Go version is not in semver format?
-	stdlibModule.Version = semver.GoTagToSemver(goVersion)
+	stdlibModule.Version = semver.GoTagToSemver(bi.GoVersion)
 	// Add "stdlib" module.
 	cmods = append(cmods, stdlibModule)
 
@@ -40,7 +41,14 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 	if err != nil {
 		return nil, err
 	}
-	modVulns = modVulns.filter(lookupEnv("GOOS", runtime.GOOS), lookupEnv("GOARCH", runtime.GOARCH))
+
+	goos := findSetting("GOOS", bi)
+	goarch := findSetting("GOARCH", bi)
+	if goos == "" || goarch == "" {
+		fmt.Printf("warning: failed to extract build system specification GOOS: %s GOARCH: %s\n", goos, goarch)
+	}
+
+	modVulns = modVulns.filter(goos, goarch)
 	result := &Result{}
 	for pkg, symbols := range packageSymbols {
 		mod := findPackageModule(pkg, cmods)
@@ -124,6 +132,17 @@ func findPackageModule(pkg string, mods []*Module) string {
 	for _, m := range mods {
 		if pkg == m.Path || strings.HasPrefix(pkg, m.Path+"/") {
 			return m.Path
+		}
+	}
+	return ""
+}
+
+// findSetting returns value of setting from bi if present.
+// Otherwise, returns "".
+func findSetting(setting string, bi *debug.BuildInfo) string {
+	for _, s := range bi.Settings {
+		if s.Key == setting {
+			return s.Value
 		}
 	}
 	return ""

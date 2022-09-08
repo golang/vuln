@@ -198,6 +198,6 @@ func hasGoBuild() bool {
 }
 
 func hasGoVersion(exe io.ReaderAt) bool {
-	_, _, goVersion, _ := binscan.ExtractPackagesAndSymbols(exe)
-	return semver.GoTagToSemver(goVersion) != ""
+	_, _, bi, _ := binscan.ExtractPackagesAndSymbols(exe)
+	return semver.GoTagToSemver(bi.GoVersion) != ""
 }
