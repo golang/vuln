@@ -131,14 +131,13 @@ func (s *Sym) BaseName() string {
 type Func struct {
 	Entry uint64
 	*Sym
-	End              uint64
-	Params           []*Sym // nil for Go 1.3 and later binaries
-	Locals           []*Sym // nil for Go 1.3 and later binaries
-	FrameSize        int
-	LineTable        *LineTable
-	Obj              *Obj
-	inlineTreeOffset uint32 // offset from go.func.* symbol
-	inlineTreeCount  int    // number of entries in inline tree
+	End       uint64
+	Params    []*Sym // nil for Go 1.3 and later binaries
+	Locals    []*Sym // nil for Go 1.3 and later binaries
+	FrameSize int
+	LineTable *LineTable
+	Obj       *Obj
+	inlTree
 }
 
 // An Obj represents a collection of functions in a symbol table.
@@ -763,7 +762,7 @@ func (e *UnknownLineError) Error() string {
 type DecodingError struct {
 	off int
 	msg string
-	val interface{}
+	val any
 }
 
 func (e *DecodingError) Error() string {
