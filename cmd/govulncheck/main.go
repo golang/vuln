@@ -214,7 +214,6 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffected []*vuln
 	switch len(uniqueVulns) {
 	case 0:
 		fmt.Println("No vulnerabilities found.")
-		return
 	case 1:
 		fmt.Println("Found 1 known vulnerability.")
 	default:
