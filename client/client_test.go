@@ -285,9 +285,13 @@ func TestClientByID(t *testing.T) {
 	for _, test := range []struct {
 		name   string
 		source string
+		in     string
+		want   *osv.Entry
 	}{
-		{name: "http", source: srv.URL},
-		{name: "file", source: localURL},
+		{name: "http", in: vulnID, source: srv.URL, want: want},
+		{name: "file", in: vulnID, source: localURL, want: want},
+		{name: "http", in: "NO-SUCH-VULN", source: srv.URL, want: nil},
+		{name: "http", in: "NO-SUCH-VULN", source: localURL, want: nil},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, err := NewClient([]string{test.source}, Options{})

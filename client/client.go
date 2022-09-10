@@ -316,6 +316,9 @@ func httpReadJSON[T any](ctx context.Context, hs *httpSource, relativePath strin
 	if err != nil {
 		return zero, err
 	}
+	if len(content) == 0 {
+		return zero, nil
+	}
 	var t T
 	if err := json.Unmarshal(content, &t); err != nil {
 		return zero, err
