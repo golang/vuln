@@ -77,6 +77,22 @@ func TestAffectsSemver(t *testing.T) {
 			want:    true,
 		},
 		{
+			affects: []AffectsRange{{Type: TypeSemver, Events: []RangeEvent{{Introduced: "0"}, {Fixed: "1.18.6"}, {Introduced: "1.19.0"}, {Fixed: "1.19.1"}}}},
+			version: "v1.18.6",
+			want:    false,
+		},
+		{
+			affects: []AffectsRange{{Type: TypeSemver, Events: []RangeEvent{{Introduced: "0"}, {Introduced: "1.19.0"}, {Fixed: "1.19.1"}}}},
+			version: "v1.18.6",
+			want:    true,
+		},
+		{
+			// Multiple non-sorted ranges.
+			affects: []AffectsRange{{Type: TypeSemver, Events: []RangeEvent{{Introduced: "1.19.0"}, {Fixed: "1.19.1"}, {Introduced: "0"}, {Fixed: "1.18.6"}}}},
+			version: "v1.18.1",
+			want:    true,
+		},
+		{
 			// Wrong type range
 			affects: []AffectsRange{{Type: TypeUnspecified, Events: []RangeEvent{{Introduced: "3.0.0"}}}},
 			version: "v3.0.0",

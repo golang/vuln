@@ -12,6 +12,7 @@
 package osv
 
 import (
+	"sort"
 	"time"
 
 	"golang.org/x/mod/semver"
@@ -45,6 +46,16 @@ type AffectsRange struct {
 	Events []RangeEvent     `json:"events"`
 }
 
+// containsSemver checks if semver version v is in the
+// range encoded by ar. If ar is not a semver range,
+// returns false.
+//
+// Assumes that
+//   - exactly one of Introduced or Fixed fields is set
+//   - ranges in ar are not overlapping
+//   - beginning of time is encoded with .Introduced="0"
+//   - no-fix is not an event, as opposed to being an
+//     event where Introduced="" and Fixed=""
 func (ar AffectsRange) containsSemver(v string) bool {
 	if ar.Type != TypeSemver {
 		return false
@@ -57,11 +68,37 @@ func (ar AffectsRange) containsSemver(v string) bool {
 	// versions prefixed with 'v', and versions prefixed with 'go'.
 	v = isem.CanonicalizeSemverPrefix(v)
 
+	// Sort events by semver versions. Event for beginning
+	// of time, if present, always comes first.
+	sort.SliceStable(ar.Events, func(i, j int) bool {
+		e1 := ar.Events[i]
+		v1 := e1.Introduced
+		if v1 == "0" {
+			// -inf case.
+			return true
+		}
+		if e1.Fixed != "" {
+			v1 = e1.Fixed
+		}
+
+		e2 := ar.Events[j]
+		v2 := e2.Introduced
+		if v2 == "0" {
+			// -inf case.
+			return false
+		}
+		if e2.Fixed != "" {
+			v2 = e2.Fixed
+		}
+
+		return semver.Compare(isem.CanonicalizeSemverPrefix(v1), isem.CanonicalizeSemverPrefix(v2)) < 0
+	})
+
 	var affected bool
 	for _, e := range ar.Events {
 		if !affected && e.Introduced != "" {
 			affected = e.Introduced == "0" || semver.Compare(v, isem.CanonicalizeSemverPrefix(e.Introduced)) >= 0
-		} else if e.Fixed != "" {
+		} else if affected && e.Fixed != "" {
 			affected = semver.Compare(v, isem.CanonicalizeSemverPrefix(e.Fixed)) < 0
 		}
 	}

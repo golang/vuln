@@ -23,15 +23,15 @@ func TestFilterVulns(t *testing.T) {
 			},
 			vulns: []*osv.Entry{
 				{ID: "a", Affected: []osv.Affected{
-					{Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}},
-					{Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "1.0.0"}}}}}, // should be filtered out
+					{Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.0.0"}, {Fixed: "2.0.0"}}}}},
+					{Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "0"}, {Fixed: "0.9.0"}}}}}, // should be filtered out
 				}},
 				{ID: "b", Affected: []osv.Affected{{Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.0.1"}}}}, EcosystemSpecific: osv.EcosystemSpecific{
 					Imports: []osv.EcosystemSpecificImport{{
 						GOOS: []string{"windows", "linux"},
 					}},
 				}}}},
-				{ID: "c", Affected: []osv.Affected{{Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.0.1"}, {Fixed: "1.0.1"}}}}, EcosystemSpecific: osv.EcosystemSpecific{
+				{ID: "c", Affected: []osv.Affected{{Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.0.0"}, {Fixed: "1.0.1"}}}}, EcosystemSpecific: osv.EcosystemSpecific{
 					Imports: []osv.EcosystemSpecificImport{{
 						GOARCH: []string{"arm64", "amd64"},
 					}},
@@ -118,12 +118,12 @@ func TestFilterVulns(t *testing.T) {
 				Version: "v1.0.0",
 			},
 			vulns: []*osv.Entry{
-				{ID: "a", Affected: []osv.Affected{{Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
+				{ID: "a", Affected: []osv.Affected{{Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.0.0"}, {Fixed: "2.0.0"}}}}}}},
 				{ID: "c", Affected: []osv.Affected{{EcosystemSpecific: osv.EcosystemSpecific{
 					Imports: []osv.EcosystemSpecificImport{{
 						GOARCH: []string{"arm64", "amd64"},
 					}},
-				}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.0.1"}, {Fixed: "1.0.1"}}}}}}},
+				}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.0.0"}, {Fixed: "1.0.1"}}}}}}},
 			},
 		},
 		{
