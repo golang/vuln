@@ -34,8 +34,8 @@ func main() {
 		log.Fatal("Failed to load json into vulncheck.Result:", err)
 	}
 
-	if len(r.Vulns) != 53 {
-		log.Fatalf("want 53 vulns; got %d", len(r.Vulns))
+	if len(r.Vulns) != 54 {
+		log.Fatalf("want 54 vulns; got %d", len(r.Vulns))
 	}
 
 	type vuln struct {
@@ -83,6 +83,7 @@ func main() {
 		{"golang.org/x/crypto/cryptobyte", "String.readLengthPrefixed"}:               true,
 		{"golang.org/x/crypto/cryptobyte", "String.readUnsigned"}:                     true,
 		{"golang.org/x/crypto/salsa20/salsa", "XORKeyStream"}:                         true,
+		{"golang.org/x/crypto/ssh", "NewClientConn"}:                                  true,
 		{"golang.org/x/crypto/ssh", "NewPublicKey"}:                                   true,
 		{"golang.org/x/crypto/ssh", "ed25519PublicKey.Verify"}:                        true,
 		{"golang.org/x/crypto/ssh", "parseED25519"}:                                   true,
