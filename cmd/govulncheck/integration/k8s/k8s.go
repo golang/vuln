@@ -34,8 +34,8 @@ func main() {
 		log.Fatal("Failed to load json into vulncheck.Result:", err)
 	}
 
-	if len(r.Vulns) != 44 {
-		log.Fatalf("want 44 vulns; got %d", len(r.Vulns))
+	if len(r.Vulns) != 53 {
+		log.Fatalf("want 53 vulns; got %d", len(r.Vulns))
 	}
 
 	type vuln struct {
@@ -90,8 +90,16 @@ func main() {
 		{"golang.org/x/net/http/httpguts", "headerValueContainsToken"}:                true,
 		{"golang.org/x/net/http2", "Server.ServeConn"}:                                true,
 		{"golang.org/x/net/http2", "serverConn.canonicalHeader"}:                      true,
+		{"golang.org/x/net/http2", "serverConn.goAway"}:                               true,
 		{"golang.org/x/text/encoding/unicode", "bomOverride.Transform"}:               true,
 		{"golang.org/x/text/encoding/unicode", "utf16Decoder.Transform"}:              true,
+		{"net/http", "ListenAndServe"}:                                                true,
+		{"net/http", "Server.ListenAndServe"}:                                         true,
+		{"net/http", "Server.ListenAndServeTLS"}:                                      true,
+		{"net/http", "Server.Serve"}:                                                  true,
+		{"net/http", "Server.ServeTLS"}:                                               true,
+		{"net/http", "http2Server.ServeConn"}:                                         true,
+		{"net/http", "http2serverConn.goAway"}:                                        true,
 	}
 
 	if diff := cmp.Diff(want, calledVulns); diff != "" {
