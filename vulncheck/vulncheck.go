@@ -317,6 +317,16 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 		for _, v := range mod.vulns {
 			var filteredAffected []osv.Affected
 			for _, a := range v.Affected {
+				// Vulnerabilities from some databases might contain
+				// information on related but different modules that
+				// were, say, reported in the same CVE. We filter such
+				// information out as it might lead to incorrect results:
+				// Computing a latest fix could consider versions of these
+				// different packages.
+				if a.Package.Name != module.Path {
+					continue
+				}
+
 				// A module version is affected if
 				//  - it is included in one of the affected version ranges
 				//  - and module version is not ""

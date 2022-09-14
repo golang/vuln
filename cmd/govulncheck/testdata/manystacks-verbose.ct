@@ -1155,3 +1155,19 @@ Vulnerability #1: GO-2020-0040
   Found in: github.com/shiyanhui/dht@v0.0.0-20201219151056-5a20f3199263
   Fixed in: N/A
   More info: https://pkg.go.dev/vuln/GO-2020-0040
+
+=== Informational ===
+
+The vulnerabilities below are in packages that you import, but your code
+doesn't appear to call any vulnerable functions. You may not need to take any
+action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+for details.
+
+Vulnerability #1: GO-2022-0969
+  HTTP/2 server connections can hang forever waiting for a clean shutdown
+  that was preempted by a fatal error. This condition can be exploited
+  by a malicious client to cause a denial of service.
+
+  Found in: net/http@go1.18
+  Fixed in: net/http@go1.19.1
+  More info: https://pkg.go.dev/vuln/GO-2022-0969

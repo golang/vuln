@@ -1,0 +1,24 @@
+# Test fix correctness for vulns affecting multiple modules
+
+$ cdmodule multimodvuln
+$ govulncheck .
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Scanning for dependencies with known vulnerabilities...
+No vulnerabilities found.
+
+=== Informational ===
+
+The vulnerabilities below are in packages that you import, but your code
+doesn't appear to call any vulnerable functions. You may not need to take any
+action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+for details.
+
+Vulnerability #1: GO-2022-0969
+  HTTP/2 server connections can hang forever waiting for a clean shutdown
+  that was preempted by a fatal error. This condition can be exploited
+  by a malicious client to cause a denial of service.
+
+  Found in: golang.org/x/net/http2@v0.0.0-20220425223048-2871e0cb64e4
+  Fixed in: golang.org/x/net/http2@v0.0.0-20220906165146-f3363e06e74c
+  More info: https://pkg.go.dev/vuln/GO-2022-0969
