@@ -182,8 +182,8 @@ type EcosystemSpecific struct {
 // entry
 type Entry struct {
 	ID         string      `json:"id"`
-	Published  time.Time   `json:"published"`
-	Modified   time.Time   `json:"modified"`
+	Published  time.Time   `json:"published,omitempty"`
+	Modified   time.Time   `json:"modified,omitempty"`
 	Withdrawn  *time.Time  `json:"withdrawn,omitempty"`
 	Aliases    []string    `json:"aliases,omitempty"`
 	Details    string      `json:"details"`
