@@ -130,7 +130,8 @@ Scanning for dependencies with known vulnerabilities...
 		writeText(r, ci, unaffected)
 	}
 	exitCode := 0
-	// Following go vet, fail with 3 if there are findings (in this case, vulns).
+	// Following golang.org/x/tools/go/analysis/singlechecker,
+	// fail with 3 if there are findings (in this case, vulns).
 	if len(r.Vulns) > 0 {
 		exitCode = 3
 	}
