@@ -15,12 +15,10 @@ variable to specify a different database, which must implement the
 specification at https://go.dev/security/vuln/database.
 
 Govulncheck looks for vulnerabilities in Go programs using a specific build
-configuration. For analyzing source code, that configuration is the operating
-system, architecture, and Go version specified by GOOS, GOARCH, and the “go”
-command found on the PATH. For binaries, the build configuration is the one
-used to build the binary. Note that different build configurations may have
-different known vulnerabilities. For example, a dependency with a
-Windows-specific vulnerability will not be reported for a Linux build.
+configuration. For analyzing source code, that configuration is the Go version
+specified by the “go” command found on the PATH. For binaries, the build
+configuration is the one used to build the binary. Note that different build
+configurations may have different known vulnerabilities.
 
 Govulncheck must be built with Go version 1.18 or later.
 
@@ -86,13 +84,10 @@ Govulncheck uses [golang.org/x/vuln/vulncheck], which has these limitations:
     report false positives for code that is in the binary but unreachable.
   - There is no support for silencing vulnerability findings.
   - Govulncheck only reads binaries compiled with Go 1.18 and later.
-  - Govulncheck only reports vulnerabilities that apply to the current Go build
-    system and configuration (GOOS/GOARCH settings). For example, a
-    vulnerability that only applies to Linux will not be reported if
-    govulncheck is run on a Windows machine. A standard library vulnerability
-    that only applies for Go 1.18 will not be reported if the current Go
-    version is 1.19. See https://go.dev/issue/54841 for updates to this
-    limitation.
+  - Govulncheck only reports vulnerabilities that apply to the current Go
+    version. For example, a standard library vulnerability that only applies for
+    Go 1.18 will not be reported if the current Go version is 1.19. See
+    https://go.dev/issue/54841 for updates to this limitation.
 
 # Feedback
 

@@ -17,6 +17,7 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/exp/maps"
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
@@ -248,7 +249,7 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffected []*vuln
 			b.WriteString(indent("\n\nCall stacks in your code:\n", 2))
 			b.WriteString(indent(stacks, 6))
 		}
-		writeVulnerability(idx+1, id, details, b.String(), found, fixed)
+		writeVulnerability(idx+1, id, details, b.String(), found, fixed, platforms(v0.OSV))
 	}
 	if len(unaffected) > 0 {
 		fmt.Printf(`
@@ -263,21 +264,24 @@ for details.
 			found := foundVersion(vuln.ModPath, vuln.PkgPath, ci)
 			fixed := fixedVersion(vuln.PkgPath, vuln.OSV.Affected)
 			fmt.Println()
-			writeVulnerability(idx+1, vuln.OSV.ID, vuln.OSV.Details, "", found, fixed)
+			writeVulnerability(idx+1, vuln.OSV.ID, vuln.OSV.Details, "", found, fixed, platforms(vuln.OSV))
 		}
 	}
 }
 
-func writeVulnerability(idx int, id, details, callstack, found, fixed string) {
+func writeVulnerability(idx int, id, details, callstack, found, fixed, platforms string) {
 	if fixed == "" {
 		fixed = "N/A"
+	}
+	if platforms != "" {
+		platforms = "  Platforms: " + platforms + "\n"
 	}
 	fmt.Printf(`Vulnerability #%d: %s
 %s%s
   Found in: %s
   Fixed in: %s
-  More info: https://pkg.go.dev/vuln/%s
-`, idx, id, indent(details, 2), callstack, found, fixed, id)
+%s  More info: https://pkg.go.dev/vuln/%s
+`, idx, id, indent(details, 2), callstack, found, fixed, platforms, id)
 }
 
 func foundVersion(modulePath, pkgPath string, ci *govulncheck.CallInfo) string {
@@ -342,6 +346,24 @@ func verboseCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) string {
 		b.WriteString(fmt.Sprintf("To see all of them, pass the -json flags.\n"))
 	}
 	return b.String()
+}
+
+// platforms returns a string describing the GOOS/GOARCH pairs that the vuln affects.
+// If it affects all of them, it returns the empty string.
+func platforms(e *osv.Entry) string {
+	platforms := map[string]bool{}
+	for _, a := range e.Affected {
+		for _, p := range a.EcosystemSpecific.Imports {
+			for _, os := range p.GOOS {
+				for _, arch := range p.GOARCH {
+					platforms[os+"/"+arch] = true
+				}
+			}
+		}
+	}
+	keys := maps.Keys(platforms)
+	sort.Strings(keys)
+	return strings.Join(keys, ", ")
 }
 
 func isFile(path string) bool {

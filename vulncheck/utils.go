@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"go/token"
 	"go/types"
-	"os"
 	"strings"
 
 	"golang.org/x/tools/go/callgraph"
@@ -231,13 +230,6 @@ func funcRecvType(f *ssa.Function) string {
 	buf := new(bytes.Buffer)
 	types.WriteType(buf, v.Type(), nil)
 	return buf.String()
-}
-
-func lookupEnv(key, defaultValue string) string {
-	if v, ok := os.LookupEnv(key); ok {
-		return v
-	}
-	return defaultValue
 }
 
 // allSymbols returns all top-level functions and methods defined in pkg.

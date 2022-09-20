@@ -30,6 +30,11 @@ type Config struct {
 	// to vulncheck. If not provided, the current underlying Go version
 	// is used to detect vulnerabilities in Go standard library.
 	SourceGoVersion string
+
+	// Consider only vulnerabilities that apply to this OS and architecture.
+	// An empty string means "all" (don't filter).
+	// Applies only to Source.
+	GOOS, GOARCH string
 }
 
 // Package is a Go package for vulncheck analysis. It is a version of
@@ -369,21 +374,23 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 }
 
 func matchesPlatform(os, arch string, e osv.EcosystemSpecificImport) bool {
-	matchesOS := len(e.GOOS) == 0
-	matchesArch := len(e.GOARCH) == 0
-	for _, o := range e.GOOS {
-		if os == o {
-			matchesOS = true
-			break
+	return matchesPlatformComponent(os, e.GOOS) &&
+		matchesPlatformComponent(arch, e.GOARCH)
+}
+
+// matchesPlatformComponent reports whether a GOOS (or GOARCH)
+// matches a list of GOOS (or GOARCH) values from an osv.EcosystemSpecificImport.
+func matchesPlatformComponent(s string, ps []string) bool {
+	// An empty input or an empty GOOS or GOARCH list means "matches everything."
+	if s == "" || len(ps) == 0 {
+		return true
+	}
+	for _, p := range ps {
+		if s == p {
+			return true
 		}
 	}
-	for _, a := range e.GOARCH {
-		if arch == a {
-			matchesArch = true
-			break
-		}
-	}
-	return matchesOS && matchesArch
+	return false
 }
 
 // vulnsForPackage returns the vulnerabilities for the module which is the most

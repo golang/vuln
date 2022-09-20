@@ -610,8 +610,8 @@ func TestFiltering(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(result.Vulns) != 1 {
-		t.Errorf("want 1 Vuln, got %d", len(result.Vulns))
+	if g, w := len(result.Vulns), 1; g != w {
+		t.Errorf("got %d Vulns, want %d", g, w)
 	}
 
 	os.Setenv("GOOS", "freebsd")
@@ -622,8 +622,9 @@ func TestFiltering(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(result.Vulns) != 0 {
-		t.Errorf("want 0 Vulns, got %d", len(result.Vulns))
+	// GOOS and GOARCH no longer affect the vulns.
+	if g, w := len(result.Vulns), 1; g != w {
+		t.Errorf("got %d Vulns, want %d", g, w)
 	}
 }
 

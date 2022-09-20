@@ -108,6 +108,63 @@ func TestLatestFixed(t *testing.T) {
 	}
 }
 
+func TestPlatforms(t *testing.T) {
+	for _, test := range []struct {
+		entry *osv.Entry
+		want  string
+	}{
+		{
+			entry: &osv.Entry{ID: "All"},
+			want:  "",
+		},
+		{
+			entry: &osv.Entry{
+				ID: "one-import",
+				Affected: []osv.Affected{{
+					Package: osv.Package{Name: "golang.org/vmod"},
+					Ranges:  osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							GOOS:   []string{"windows", "linux"},
+							GOARCH: []string{"amd64", "wasm"},
+						}},
+					},
+				}},
+			},
+			want: "linux/amd64, linux/wasm, windows/amd64, windows/wasm",
+		},
+		{
+			entry: &osv.Entry{
+				ID: "two-imports",
+				Affected: []osv.Affected{{
+					Package: osv.Package{Name: "golang.org/vmod"},
+					Ranges:  osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{
+							{
+								GOOS:   []string{"windows"},
+								GOARCH: []string{"amd64"},
+							},
+							{
+								GOOS:   []string{"linux"},
+								GOARCH: []string{"amd64"},
+							},
+						},
+					},
+				}},
+			},
+			want: "linux/amd64, windows/amd64",
+		},
+	} {
+		t.Run(test.entry.ID, func(t *testing.T) {
+			got := platforms(test.entry)
+			if got != test.want {
+				t.Errorf("got %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
 func TestIndent(t *testing.T) {
 	for _, test := range []struct {
 		name string
