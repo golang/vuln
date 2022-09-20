@@ -20,7 +20,7 @@ $ govulncheck -json ${novuln_binary}
 	]
 }
 
-$ govulncheck -json ${vuln_binary} --> FAIL 3
+$ govulncheck -json ${vuln_binary}
 {
 	"Calls": null,
 	"Imports": null,

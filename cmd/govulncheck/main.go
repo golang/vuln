@@ -123,15 +123,19 @@ Scanning for dependencies with known vulnerabilities...
 	}
 
 	if *jsonFlag {
+		// Following golang.org/x/tools/go/analysis/singlechecker,
+		// return 0 exit code in -json mode.
 		writeJSON(r)
-	} else {
-		// set of top-level packages, used to find representative symbols
-		ci := govulncheck.GetCallInfo(r, pkgs)
-		writeText(r, ci, unaffected)
+		os.Exit(0)
 	}
-	exitCode := 0
+
+	// set of top-level packages, used to find representative symbols
+	ci := govulncheck.GetCallInfo(r, pkgs)
+	writeText(r, ci, unaffected)
+
 	// Following golang.org/x/tools/go/analysis/singlechecker,
 	// fail with 3 if there are findings (in this case, vulns).
+	exitCode := 0
 	if len(r.Vulns) > 0 {
 		exitCode = 3
 	}

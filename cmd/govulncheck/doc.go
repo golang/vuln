@@ -53,7 +53,8 @@ Govulncheck uses the binary's symbol information to find mentions of vulnerable
 functions. Its output omits call stacks, which require source code analysis.
 
 Govulncheck exits successfully (exit code 0) if there are no vulnerabilities,
-and exits unsuccessfully if there are.
+and exits unsuccessfully if there are. It also exits successfully if -json flag
+is provided, regardless of the number of detected vulnerabilities.
 
 # Flags
 
@@ -63,7 +64,8 @@ The -v flag causes govulncheck to output more information about call stacks
 when run on source. It has no effect when run on a binary.
 
 The -json flag causes govulncheck to print its output as a JSON object
-corresponding to the type [golang.org/x/vuln/vulncheck.Result].
+corresponding to the type [golang.org/x/vuln/vulncheck.Result]. The exit code
+of govulncheck is 0 when this flag is provided.
 
 The -tags flag accepts a comma-separated list of build tags to control which
 files should be included in loaded packages for source analysis.

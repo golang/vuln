@@ -41,7 +41,7 @@ $ govulncheck -json .
 }
 
 $ cdmodule vuln
-$ govulncheck -json . --> FAIL 3
+$ govulncheck -json .
 {
 	"Calls": {
 		"Functions": {
