@@ -21,7 +21,10 @@ var (
 	verboseFlag = flag.Bool("v", false, "print a full call stack for each vulnerability")
 	testFlag    = flag.Bool("test", false, "analyze test files. Only valid for source code.")
 	tagsFlag    buildutil.TagsFlag
-	dirFlag     string
+
+	// testmode flags. See main_testmode.go.
+	dirFlag         string
+	summaryJSONFlag bool
 )
 
 func init() {
@@ -58,6 +61,8 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 	outputType := "text"
 	if *jsonFlag {
 		outputType = "json"
+	} else if summaryJSONFlag { // accessible only in testmode.
+		outputType = "summary"
 	}
 	if outputType == "text" && *verboseFlag {
 		outputType = "verbose"

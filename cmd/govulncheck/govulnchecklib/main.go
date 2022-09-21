@@ -35,6 +35,7 @@ type Config struct {
 	//  "text": print human readable compact text output to STDOUT.
 	//  "verbose": print human readable verbose text output to STDOUT.
 	//  "json": print JSON-encoded vulncheck.Result.
+	//  "summary": print JSON-encoded Summary.
 	OutputFormat string
 
 	// Patterns are either the binary path for "binary" analysis mode, or
@@ -120,6 +121,10 @@ Scanning for dependencies with known vulnerabilities...
 		// set of top-level packages, used to find representative symbols
 		ci := govulncheck.GetCallInfo(r, pkgs)
 		writeText(r, ci, unaffected, format == "verbose")
+	case "summary":
+		ci := govulncheck.GetCallInfo(r, pkgs)
+		writeJSON(summary(ci, unaffected))
+		os.Exit(0)
 	default:
 		die("govulncheck: unrecognized output type %q", cfg.OutputFormat)
 	}
@@ -188,7 +193,7 @@ func sortPackages(pkgs []*vulncheck.Package) {
 	}
 }
 
-func writeJSON(r *vulncheck.Result) {
+func writeJSON(r any) {
 	b, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
 		die("govulncheck: %s", err)
