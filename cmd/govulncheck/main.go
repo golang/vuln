@@ -56,6 +56,71 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 		os.Exit(1)
 	}
 
+	patterns := flag.Args()
+
+	mode := "source"
+	if len(patterns) == 1 && isFile(patterns[0]) {
+		mode = "binary"
+	}
+	validateFlags(mode)
+
+	outputType := "text"
+	if *jsonFlag {
+		outputType = "json"
+	}
+	if outputType == "text" && *verboseFlag {
+		outputType = "verbose"
+	}
+
+	var buildFlags []string
+	if tagsFlag != nil {
+		buildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(tagsFlag, ","))}
+	}
+
+	Main(Config{
+		Analysis:     mode,
+		OutputFormat: outputType,
+		Patterns:     patterns,
+		SourceLoadConfig: packages.Config{
+			Dir:        filepath.FromSlash(dirFlag),
+			Tests:      *testFlag,
+			BuildFlags: buildFlags,
+		},
+	})
+}
+
+func validateFlags(mode string) {
+	switch mode {
+	case "binary":
+		if *testFlag {
+			die("govulncheck: the -test flag is invalid for binaries")
+		}
+		if tagsFlag != nil {
+			die("govulncheck: the -tags flag is invalid for binaries")
+		}
+	}
+}
+
+// Config is the configuration for Main.
+type Config struct {
+	// Analysis specifies the vulncheck analysis type. Valid types are "source" and "binary"
+	Analysis string
+	// OutputFormat specifies the result type. Valid types are:
+	//  "text": print human readable compact text output to STDOUT.
+	//  "verbose": print human readable verbose text output to STDOUT.
+	//  "json": print JSON-encoded vulncheck.Result.
+	OutputFormat string
+
+	// Patterns are either the binary path for "binary" analysis mode, or
+	// go package patterns for "source" analysis mode.
+	Patterns []string
+
+	// SourceLoadConfig specifies the package loading configuration.
+	SourceLoadConfig packages.Config
+}
+
+// Main is the main function for the govulncheck command line tool.
+func Main(cfg Config) {
 	dbs := []string{"https://vuln.go.dev"}
 	if GOVULNDB := os.Getenv("GOVULNDB"); GOVULNDB != "" {
 		dbs = strings.Split(GOVULNDB, ",")
@@ -68,8 +133,9 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 	}
 	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: goVersion()}
 
-	patterns := flag.Args()
-	if !*jsonFlag {
+	patterns := cfg.Patterns
+	format := cfg.OutputFormat
+	if format == "text" || format == "verbose" {
 		fmt.Printf(`govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...
@@ -81,13 +147,8 @@ Scanning for dependencies with known vulnerabilities...
 		unaffected []*vulncheck.Vuln
 		ctx        = context.Background()
 	)
-	if len(patterns) == 1 && isFile(patterns[0]) {
-		if *testFlag {
-			die("govulncheck: the -test flag is invalid for binaries")
-		}
-		if tagsFlag != nil {
-			die("govulncheck: the -tags flag is invalid for binaries")
-		}
+	switch cfg.Analysis {
+	case "binary":
 		f, err := os.Open(patterns[0])
 		if err != nil {
 			die("govulncheck: %v", err)
@@ -97,18 +158,14 @@ Scanning for dependencies with known vulnerabilities...
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
-	} else {
-		cfg := &packages.Config{
-			Dir:        filepath.FromSlash(dirFlag),
-			Tests:      *testFlag,
-			BuildFlags: []string{fmt.Sprintf("-tags=%s", strings.Join(tagsFlag, ","))},
-		}
+	case "source":
+		cfg := &cfg.SourceLoadConfig
 		pkgs, err = govulncheck.LoadPackages(cfg, patterns...)
 		if err != nil {
 			// Try to provide a meaningful and actionable error message.
-			if !fileExists(filepath.Join(dirFlag, "go.mod")) {
+			if !fileExists(filepath.Join(cfg.Dir, "go.mod")) {
 				die(noGoModErrorMessage)
-			} else if !fileExists(filepath.Join(dirFlag, "go.sum")) {
+			} else if !fileExists(filepath.Join(cfg.Dir, "go.sum")) {
 				die(noGoSumErrorMessage)
 			}
 			die("govulncheck: %v", err)
@@ -123,18 +180,23 @@ Scanning for dependencies with known vulnerabilities...
 		}
 		unaffected = filterUnaffected(r)
 		r.Vulns = filterCalled(r)
+	default:
+		die("govulncheck: invalid analysis mode %q", cfg.Analysis)
 	}
 
-	if *jsonFlag {
+	switch format {
+	case "json":
 		// Following golang.org/x/tools/go/analysis/singlechecker,
 		// return 0 exit code in -json mode.
 		writeJSON(r)
 		os.Exit(0)
+	case "text", "verbose":
+		// set of top-level packages, used to find representative symbols
+		ci := govulncheck.GetCallInfo(r, pkgs)
+		writeText(r, ci, unaffected, format == "verbose")
+	default:
+		die("govulncheck: unrecognized output type %q", cfg.OutputFormat)
 	}
-
-	// set of top-level packages, used to find representative symbols
-	ci := govulncheck.GetCallInfo(r, pkgs)
-	writeText(r, ci, unaffected)
 
 	// Following golang.org/x/tools/go/analysis/singlechecker,
 	// fail with 3 if there are findings (in this case, vulns).
@@ -214,7 +276,7 @@ const (
 	lineLength = 55
 )
 
-func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffected []*vulncheck.Vuln) {
+func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffected []*vulncheck.Vuln, verbose bool) {
 	uniqueVulns := map[string]bool{}
 	for _, v := range r.Vulns {
 		uniqueVulns[v.OSV.ID] = true
@@ -238,7 +300,7 @@ func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffected []*vuln
 		fixed := fixedVersion(v0.PkgPath, v0.OSV.Affected)
 
 		var stacks string
-		if !*verboseFlag {
+		if !verbose {
 			stacks = defaultCallStacks(vg, ci)
 		} else {
 			stacks = verboseCallStacks(vg, ci)
