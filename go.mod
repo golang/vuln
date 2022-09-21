@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/client9/misspell v0.3.4
-	github.com/google/go-cmdtest v0.4.0
+	github.com/google/go-cmdtest v0.4.1-0.20220921163831-55ab3332a786
 	github.com/google/go-cmp v0.5.8
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
@@ -19,3 +19,4 @@ require (
 	github.com/google/renameio v0.1.0 // indirect
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 )
+

@@ -86,7 +86,7 @@ func TestCommand(t *testing.T) {
 		varName := filepath.Base(md) + "_binary"
 		os.Setenv(varName, binary)
 	}
-	ts.Run(t, *update)
+	ts.RunParallel(t, *update)
 }
 
 var (
