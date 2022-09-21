@@ -1,7 +1,6 @@
 # Test of stdlib vuln detection.
 
-$ cdmodule stdvuln
-$ govulncheck . --> FAIL 3
+$ govulncheck -dir ${moddir}/stdvuln . --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...

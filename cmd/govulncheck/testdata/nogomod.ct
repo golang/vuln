@@ -1,7 +1,6 @@
 # Test of missing go.mod error message.
 
-$ cdmodule nogomod
-$ govulncheck . --> FAIL 1
+$ govulncheck -dir ${moddir}/nogomod . --> FAIL 1
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...

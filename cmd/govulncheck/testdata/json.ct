@@ -2,8 +2,7 @@
 # TODO(zpavlinovic): add test for stdlib that works
 # on all underlying Go build systems.
 
-$ cdmodule novuln
-$ govulncheck -json .
+$ govulncheck -dir ${moddir}/novuln -json .
 {
 	"Calls": {
 		"Functions": {},
@@ -40,8 +39,7 @@ $ govulncheck -json .
 	]
 }
 
-$ cdmodule vuln
-$ govulncheck -json .
+$ govulncheck -dir ${moddir}/vuln -json .
 {
 	"Calls": {
 		"Functions": {

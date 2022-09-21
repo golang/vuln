@@ -1,8 +1,7 @@
 # Test of default mode.
 
 # All vulnerabilities imported, but never called.
-$ cdmodule vuln3
-$ govulncheck .
+$ govulncheck -dir ${moddir}/vuln3 .
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...

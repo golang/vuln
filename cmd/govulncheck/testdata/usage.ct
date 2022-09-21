@@ -3,6 +3,8 @@ usage:
 	govulncheck [flags] package...
 	govulncheck [flags] binary
 
+  -dir string
+    	directory to use for loading source files
   -json
     	output JSON
   -tags list
@@ -20,6 +22,8 @@ usage:
 	govulncheck [flags] package...
 	govulncheck [flags] binary
 
+  -dir string
+    	directory to use for loading source files
   -json
     	output JSON
   -tags list

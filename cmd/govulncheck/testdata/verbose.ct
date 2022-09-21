@@ -1,15 +1,13 @@
 # Test of verbose mode.
 
 # No vulnerabilities, no output.
-$ cdmodule novuln
-$ govulncheck -v .
+$ govulncheck -dir ${moddir}/novuln -v .
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...
 No vulnerabilities found.
 
-$ cdmodule vuln
-$ govulncheck -v . --> FAIL 3
+$ govulncheck -dir ${moddir}/vuln -v . --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...

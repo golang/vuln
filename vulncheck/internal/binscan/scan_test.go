@@ -20,7 +20,7 @@ func TestExtractPackagesAndSymbols(t *testing.T) {
 	for _, gg := range []string{"linux/amd64", "darwin/amd64", "windows/amd64"} {
 		t.Run(gg, func(t *testing.T) {
 			goos, goarch, _ := strings.Cut(gg, "/")
-			binary, done := buildtest.GoBuild(t, "testdata", "GOOS", goos, "GOARCH", goarch)
+			binary, done := buildtest.GoBuild(t, "testdata", "", "GOOS", goos, "GOARCH", goarch)
 			defer done()
 
 			f, err := os.Open(binary)

@@ -13,6 +13,7 @@ import (
 	"go/build"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -28,6 +29,7 @@ var (
 	jsonFlag    = flag.Bool("json", false, "output JSON")
 	verboseFlag = flag.Bool("v", false, "print a full call stack for each vulnerability")
 	testFlag    = flag.Bool("test", false, "analyze test files. Only valid for source code.")
+	dirFlag     string
 )
 
 func init() {
@@ -97,15 +99,16 @@ Scanning for dependencies with known vulnerabilities...
 		}
 	} else {
 		cfg := &packages.Config{
+			Dir:        filepath.FromSlash(dirFlag),
 			Tests:      *testFlag,
 			BuildFlags: []string{fmt.Sprintf("-tags=%s", strings.Join(build.Default.BuildTags, ","))},
 		}
 		pkgs, err = govulncheck.LoadPackages(cfg, patterns...)
 		if err != nil {
 			// Try to provide a meaningful and actionable error message.
-			if !fileExists("go.mod") {
+			if !fileExists(filepath.Join(dirFlag, "go.mod")) {
 				die(noGoModErrorMessage)
-			} else if !fileExists("go.sum") {
+			} else if !fileExists(filepath.Join(dirFlag, "go.sum")) {
 				die(noGoSumErrorMessage)
 			}
 			die("govulncheck: %v", err)

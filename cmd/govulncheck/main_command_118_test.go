@@ -36,20 +36,15 @@ func TestCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	ts.DisableLogging = false
-	// Define a command that lets us cd into a module directory.
-	// The modules for these tests live under testdata/modules.
-	ts.Commands["cdmodule"] = func(args []string, inputFile string) ([]byte, error) {
-		if len(args) != 1 {
-			return nil, errors.New("need exactly 1 argument")
-		}
-		return nil, os.Chdir(filepath.Join(testDir, "testdata", "modules", args[0]))
-	}
 	// Define a command that runs govulncheck with our local DB. We can't use
 	// cmdtest.Program for this because it doesn't let us set the environment,
 	// and that is the only way to tell govulncheck about an alternative vuln
 	// database.
-	binary, cleanup := buildtest.GoBuild(t, ".") // build govulncheck
-	defer cleanup()
+	binary, cleanup := buildtest.GoBuild(t, ".", "testmode") // build govulncheck
+	// Use Cleanup instead of defer, because when subtests are parallel, defer
+	// runs too early.
+	t.Cleanup(cleanup)
+
 	ts.Commands["govulncheck"] = func(args []string, inputFile string) ([]byte, error) {
 		cmd := exec.Command(binary, args...)
 		if inputFile != "" {
@@ -78,13 +73,14 @@ func TestCommand(t *testing.T) {
 		"nogosum": true,
 	}
 
+	os.Setenv("moddir", filepath.Join(testDir, "testdata", "modules"))
 	for _, md := range moduleDirs {
 		if skipBuild[filepath.Base(md)] {
 			continue
 		}
 
-		binary, cleanup := buildtest.GoBuild(t, md)
-		defer cleanup()
+		binary, cleanup := buildtest.GoBuild(t, md, "")
+		t.Cleanup(cleanup)
 		// Set an environment variable to the path to the binary, so tests
 		// can refer to it.
 		varName := filepath.Base(md) + "_binary"

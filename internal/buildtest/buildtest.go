@@ -25,7 +25,7 @@ var unsupportedGoosGoarch = map[string]bool{
 // envVarVals, which should be an alternating list of variables and values.
 // It returns the path to the resulting binary, and a function
 // to call when finished with the binary.
-func GoBuild(t *testing.T, dir string, envVarVals ...string) (binaryPath string, cleanup func()) {
+func GoBuild(t *testing.T, dir, tags string, envVarVals ...string) (binaryPath string, cleanup func()) {
 	switch runtime.GOOS {
 	case "android", "js", "ios":
 		t.Skipf("skipping on OS without 'go build' %s", runtime.GOOS)
@@ -65,7 +65,11 @@ func GoBuild(t *testing.T, dir string, envVarVals ...string) (binaryPath string,
 	if _, err := os.Stat(goCommandPath); err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(goCommandPath, "build", "-o", binaryPath+exeSuffix)
+	args := []string{"build", "-o", binaryPath + exeSuffix}
+	if tags != "" {
+		args = append(args, "-tags", tags)
+	}
+	cmd := exec.Command(goCommandPath, args...)
 	cmd.Dir = dir
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
