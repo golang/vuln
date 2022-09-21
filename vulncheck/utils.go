@@ -76,7 +76,6 @@ func callGraph(prog *ssa.Program, entries []*ssa.Function) *callgraph.Graph {
 	pruneSet(fslice, allFuncs)
 
 	cg := vta.CallGraph(fslice, vtaCg)
-	// TODO(#53206): can we do the same for intermediate call graphs?
 	cg.DeleteSyntheticNodes()
 	return cg
 }
