@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"go/build"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -30,12 +29,12 @@ var (
 	jsonFlag    = flag.Bool("json", false, "output JSON")
 	verboseFlag = flag.Bool("v", false, "print a full call stack for each vulnerability")
 	testFlag    = flag.Bool("test", false, "analyze test files. Only valid for source code.")
+	tagsFlag    buildutil.TagsFlag
 	dirFlag     string
 )
 
 func init() {
-	flag.Var((*buildutil.TagsFlag)(&build.Default.BuildTags), "tags",
-		"comma-separated `list` of build tags")
+	flag.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
 }
 
 func main() {
@@ -86,7 +85,7 @@ Scanning for dependencies with known vulnerabilities...
 		if *testFlag {
 			die("govulncheck: the -test flag is invalid for binaries")
 		}
-		if build.Default.BuildTags != nil {
+		if tagsFlag != nil {
 			die("govulncheck: the -tags flag is invalid for binaries")
 		}
 		f, err := os.Open(patterns[0])
@@ -102,7 +101,7 @@ Scanning for dependencies with known vulnerabilities...
 		cfg := &packages.Config{
 			Dir:        filepath.FromSlash(dirFlag),
 			Tests:      *testFlag,
-			BuildFlags: []string{fmt.Sprintf("-tags=%s", strings.Join(build.Default.BuildTags, ","))},
+			BuildFlags: []string{fmt.Sprintf("-tags=%s", strings.Join(tagsFlag, ","))},
 		}
 		pkgs, err = govulncheck.LoadPackages(cfg, patterns...)
 		if err != nil {
