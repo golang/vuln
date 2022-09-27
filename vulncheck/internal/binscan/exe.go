@@ -46,21 +46,21 @@ func openExe(r io.ReaderAt) (exe, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &elfExe{e}, nil
+		return &elfExe{f: e}, nil
 	}
 	if bytes.HasPrefix(data, []byte("MZ")) {
 		e, err := pe.NewFile(r)
 		if err != nil {
 			return nil, err
 		}
-		return &peExe{r, e}, nil
+		return &peExe{r: r, f: e}, nil
 	}
 	if bytes.HasPrefix(data, []byte("\xFE\xED\xFA")) || bytes.HasPrefix(data[1:], []byte("\xFA\xED\xFE")) {
 		e, err := macho.NewFile(r)
 		if err != nil {
 			return nil, err
 		}
-		return &machoExe{e}, nil
+		return &machoExe{f: e}, nil
 	}
 	// TODO(rolandshoemaker): we cannot support XCOFF files due to the usage of internal/xcoff.
 	// Once this code is moved into the stdlib, this support can be re-enabled.
@@ -77,7 +77,8 @@ func openExe(r io.ReaderAt) (exe, error) {
 
 // elfExe is the ELF implementation of the exe interface.
 type elfExe struct {
-	f *elf.File
+	f       *elf.File
+	symbols map[string]*elf.Symbol
 }
 
 func (x *elfExe) ReadData(addr, size uint64) ([]byte, error) {
@@ -125,16 +126,15 @@ func (x *elfExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
 }
 
 func (x *elfExe) lookupSymbol(name string) *elf.Symbol {
-	syms, err := x.f.Symbols()
-	if err != nil {
-		return nil
-	}
-	for _, s := range syms {
-		if s.Name == name {
-			return &s
+	if x.symbols == nil {
+		syms, _ := x.f.Symbols()
+		x.symbols = make(map[string]*elf.Symbol, len(syms))
+		for _, s := range syms {
+			s := s // make a copy to prevent aliasing
+			x.symbols[s.Name] = &s
 		}
 	}
-	return nil
+	return x.symbols[name]
 }
 
 func (x *elfExe) progContaining(addr uint64) *elf.Prog {
@@ -204,8 +204,9 @@ func (x *elfExe) PCLNTab() ([]byte, uint64) {
 
 // peExe is the PE (Windows Portable Executable) implementation of the exe interface.
 type peExe struct {
-	r io.ReaderAt
-	f *pe.File
+	r       io.ReaderAt
+	f       *pe.File
+	symbols map[string]*pe.Symbol
 }
 
 func (x *peExe) imageBase() uint64 {
@@ -270,12 +271,13 @@ func (x *peExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
 }
 
 func (x *peExe) lookupSymbol(name string) *pe.Symbol {
-	for _, s := range x.f.Symbols {
-		if s.Name == name {
-			return s
+	if x.symbols == nil {
+		x.symbols = make(map[string]*pe.Symbol, len(x.f.Symbols))
+		for _, s := range x.f.Symbols {
+			x.symbols[s.Name] = s
 		}
 	}
-	return nil
+	return x.symbols[name]
 }
 
 func (x *peExe) PCLNTab() ([]byte, uint64) {
@@ -286,16 +288,15 @@ func (x *peExe) PCLNTab() ([]byte, uint64) {
 			break
 		}
 	}
+
 	var start, end int64
 	var section int
-	for _, symbol := range x.f.Symbols {
-		if symbol.Name == "runtime.pclntab" {
-			start = int64(symbol.Value)
-			section = int(symbol.SectionNumber - 1)
-		} else if symbol.Name == "runtime.epclntab" {
-			end = int64(symbol.Value)
-			break
-		}
+	if s := x.lookupSymbol("runtime.pclntab"); s != nil {
+		start = int64(s.Value)
+		section = int(s.SectionNumber - 1)
+	}
+	if s := x.lookupSymbol("runtime.epclntab"); s != nil {
+		end = int64(s.Value)
 	}
 	if start == 0 || end == 0 {
 		return nil, 0
@@ -312,7 +313,8 @@ func (x *peExe) PCLNTab() ([]byte, uint64) {
 
 // machoExe is the Mach-O (Apple macOS/iOS) implementation of the exe interface.
 type machoExe struct {
-	f *macho.File
+	f       *macho.File
+	symbols map[string]*macho.Symbol
 }
 
 func (x *machoExe) ReadData(addr, size uint64) ([]byte, error) {
@@ -371,12 +373,14 @@ func (x *machoExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) 
 }
 
 func (x *machoExe) lookupSymbol(name string) *macho.Symbol {
-	for _, s := range x.f.Symtab.Syms {
-		if s.Name == name {
-			return &s
-		}
+	if x.symbols == nil {
+		x.symbols = make(map[string]*macho.Symbol, len(x.f.Symtab.Syms))
 	}
-	return nil
+	for _, s := range x.f.Symtab.Syms {
+		s := s // make a copy to prevent aliasing
+		x.symbols[s.Name] = &s
+	}
+	return x.symbols[name]
 }
 
 func (x *machoExe) segmentContaining(addr uint64) *macho.Segment {
