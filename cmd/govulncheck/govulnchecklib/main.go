@@ -94,6 +94,8 @@ Scanning for dependencies with known vulnerabilities...
 				die(noGoModErrorMessage)
 			} else if !fileExists(filepath.Join(cfg.Dir, "go.sum")) {
 				die(noGoSumErrorMessage)
+			} else if isGoVersionMismatchError(err) {
+				die(fmt.Sprintf("%s\n\n%v", goVersionMismatchErrorMessage, err))
 			}
 			die("govulncheck: %v", err)
 		}

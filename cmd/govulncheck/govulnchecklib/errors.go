@@ -7,6 +7,7 @@ package govulnchecklib
 import (
 	"errors"
 	"os"
+	"strings"
 )
 
 const noGoModErrorMessage = `govulncheck: no go.mod file
@@ -33,4 +34,20 @@ func fileExists(path string) bool {
 	// Conservatively return true if os.Stat fails
 	// for some other reason.
 	return true
+}
+
+const goVersionMismatchErrorMessage = `govulncheck: Go version mismatch
+
+Loading packages failed, possibly due to a mismatch between the Go version
+used to build govulncheck and the Go version on PATH. Consider rebuilding
+govulncheck with the current Go version.`
+
+// isGoVersionMismatchError checks if err is due to mismatch between
+// the Go version used to build govulncheck and the one currently
+// on PATH.
+func isGoVersionMismatchError(err error) bool {
+	msg := err.Error()
+	// See golang.org/x/tools/go/packages/packages.go.
+	return strings.Contains(msg, "This application uses version go") &&
+		strings.Contains(msg, "It may fail to process source files")
 }
