@@ -17,6 +17,7 @@ import (
 	"debug/pe"
 	"encoding/binary"
 	"fmt"
+	"sync"
 
 	// "internal/xcoff"
 	"io"
@@ -77,8 +78,10 @@ func openExe(r io.ReaderAt) (exe, error) {
 
 // elfExe is the ELF implementation of the exe interface.
 type elfExe struct {
-	f       *elf.File
-	symbols map[string]*elf.Symbol
+	f *elf.File
+
+	symbols     map[string]*elf.Symbol
+	symbolsOnce sync.Once
 }
 
 func (x *elfExe) ReadData(addr, size uint64) ([]byte, error) {
@@ -126,14 +129,14 @@ func (x *elfExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
 }
 
 func (x *elfExe) lookupSymbol(name string) *elf.Symbol {
-	if x.symbols == nil {
+	x.symbolsOnce.Do(func() {
 		syms, _ := x.f.Symbols()
 		x.symbols = make(map[string]*elf.Symbol, len(syms))
 		for _, s := range syms {
 			s := s // make a copy to prevent aliasing
 			x.symbols[s.Name] = &s
 		}
-	}
+	})
 	return x.symbols[name]
 }
 
@@ -204,9 +207,11 @@ func (x *elfExe) PCLNTab() ([]byte, uint64) {
 
 // peExe is the PE (Windows Portable Executable) implementation of the exe interface.
 type peExe struct {
-	r       io.ReaderAt
-	f       *pe.File
-	symbols map[string]*pe.Symbol
+	r io.ReaderAt
+	f *pe.File
+
+	symbols     map[string]*pe.Symbol
+	symbolsOnce sync.Once
 }
 
 func (x *peExe) imageBase() uint64 {
@@ -271,12 +276,12 @@ func (x *peExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
 }
 
 func (x *peExe) lookupSymbol(name string) *pe.Symbol {
-	if x.symbols == nil {
+	x.symbolsOnce.Do(func() {
 		x.symbols = make(map[string]*pe.Symbol, len(x.f.Symbols))
 		for _, s := range x.f.Symbols {
 			x.symbols[s.Name] = s
 		}
-	}
+	})
 	return x.symbols[name]
 }
 
@@ -313,8 +318,10 @@ func (x *peExe) PCLNTab() ([]byte, uint64) {
 
 // machoExe is the Mach-O (Apple macOS/iOS) implementation of the exe interface.
 type machoExe struct {
-	f       *macho.File
-	symbols map[string]*macho.Symbol
+	f *macho.File
+
+	symbols     map[string]*macho.Symbol
+	symbolsOnce sync.Once
 }
 
 func (x *machoExe) ReadData(addr, size uint64) ([]byte, error) {
@@ -373,13 +380,13 @@ func (x *machoExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) 
 }
 
 func (x *machoExe) lookupSymbol(name string) *macho.Symbol {
-	if x.symbols == nil {
+	x.symbolsOnce.Do(func() {
 		x.symbols = make(map[string]*macho.Symbol, len(x.f.Symtab.Syms))
-	}
-	for _, s := range x.f.Symtab.Syms {
-		s := s // make a copy to prevent aliasing
-		x.symbols[s.Name] = &s
-	}
+		for _, s := range x.f.Symtab.Syms {
+			s := s // make a copy to prevent aliasing
+			x.symbols[s.Name] = &s
+		}
+	})
 	return x.symbols[name]
 }
 
