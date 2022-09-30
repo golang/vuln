@@ -189,9 +189,18 @@ type httpSource struct {
 	c      *http.Client
 	cache  Cache
 	dbName string
+
+	// indexCalls counts the number of times Index()
+	// method has been called. httpCalls counts the
+	// number of times GetByModule makes an http request
+	// to the vuln db for a module path. Used for testing
+	// privacy properties of httpSource.
+	indexCalls int
+	httpCalls  int
 }
 
 func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
+	hs.indexCalls++ // for testing privacy properties
 	defer derrors.Wrap(&err, "Index()")
 
 	var cachedIndex DBIndex
@@ -284,6 +293,7 @@ func (hs *httpSource) GetByModule(ctx context.Context, modulePath string) (_ []*
 	if err != nil {
 		return nil, err
 	}
+	hs.httpCalls++ // for testing privacy properties
 	entries, err := httpReadJSON[[]*osv.Entry](ctx, hs, epath+".json")
 	if err != nil || entries == nil {
 		return nil, err

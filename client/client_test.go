@@ -155,7 +155,58 @@ func TestByModule(t *testing.T) {
 				t.Errorf("got\n\t%s\nbut should start with\n\t%s", got, test.detailPrefix)
 			}
 		})
+	}
+}
 
+// TestMustUseIndex checks that httpSource in NewClient(...)
+//   - always calls Index function before making an http
+//     request in GetByModule.
+//   - if an http request was made, then the module path
+//     must be in the index.
+//
+// This test serves as an approximate mechanism to make sure
+// that we only send module info to the vuln db server if the
+// module has known vulnerabilities. Otherwise, we might send
+// unknown private module information to the db.
+func TestMustUseIndex(t *testing.T) {
+	if runtime.GOOS == "js" {
+		t.Skip("skipping test: no network on js")
+	}
+	ctx := context.Background()
+	// Create a local http database.
+	srv := newTestServer()
+	defer srv.Close()
+
+	// List of modules to query, some are repeated to exercise cache hits.
+	modulePaths := []string{"github.com/BeeGo/beego", "github.com/tidwall/gjson", "net/http", "abc.xyz", "github.com/BeeGo/beego"}
+	for _, cache := range []Cache{newTestCache(), nil} {
+		clt, err := NewClient([]string{srv.URL}, Options{HTTPCache: cache})
+		if err != nil {
+			t.Fatal(err)
+		}
+		hs := clt.(*client).sources[0].(*httpSource)
+		for _, modulePath := range modulePaths {
+			indexCalls := hs.indexCalls
+			httpCalls := hs.httpCalls
+			if _, err := clt.GetByModule(ctx, modulePath); err != nil {
+				t.Fatal(err)
+			}
+			// Number of index Calls should be increased.
+			if hs.indexCalls == indexCalls {
+				t.Errorf("GetByModule(ctx, %s) [cache:%t] did not call Index(...)", modulePath, cache != nil)
+			}
+			// If http request was made, then the modulePath must be in the index.
+			if hs.httpCalls > httpCalls {
+				index, err := hs.Index(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, present := index[modulePath]
+				if !present {
+					t.Errorf("GetByModule(ctx, %s) [cache:%t] issued http request for module not in Index(...)", modulePath, cache != nil)
+				}
+			}
+		}
 	}
 }
 
