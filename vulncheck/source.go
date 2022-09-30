@@ -8,11 +8,11 @@ import (
 	"context"
 	"fmt"
 	"go/token"
-	"runtime"
 	"sort"
 
 	"golang.org/x/tools/go/callgraph"
 	"golang.org/x/tools/go/ssa"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/osv"
@@ -51,7 +51,7 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 	if cfg.SourceGoVersion != "" {
 		stdlibModule.Version = semver.GoTagToSemver(cfg.SourceGoVersion)
 	} else {
-		stdlibModule.Version = semver.GoTagToSemver(runtime.Version())
+		stdlibModule.Version = semver.GoTagToSemver(internal.GoVersion())
 	}
 
 	mods := extractModules(pkgs)

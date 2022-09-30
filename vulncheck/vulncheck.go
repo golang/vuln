@@ -27,7 +27,7 @@ type Config struct {
 	Client client.Client
 
 	// SourceGoVersion is Go version used to build Source inputs passed
-	// to vulncheck. If not provided, the current underlying Go version
+	// to vulncheck. If not provided, the current Go version at PATH
 	// is used to detect vulnerabilities in Go standard library.
 	SourceGoVersion string
 

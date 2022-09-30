@@ -5,18 +5,17 @@
 package govulncheck
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
@@ -33,7 +32,7 @@ func Run(cfg Config) {
 	if err != nil {
 		die("govulncheck: %s", err)
 	}
-	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: goVersion()}
+	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: internal.GoVersion()}
 
 	patterns := cfg.Patterns
 	format := cfg.OutputType
@@ -307,19 +306,6 @@ func compact(s []string) []string {
 		}
 	}
 	return s[:i]
-}
-
-func goVersion() string {
-	if v := os.Getenv("GOVERSION"); v != "" {
-		// Unlikely to happen in practice, mostly used for testing.
-		return v
-	}
-	out, err := exec.Command("go", "env", "GOVERSION").Output()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to determine go version; skipping stdlib scanning: %v\n", err)
-		return ""
-	}
-	return string(bytes.TrimSpace(out))
 }
 
 func packageVersionString(packagePath, version string) string {
