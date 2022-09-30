@@ -2,11 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package govulnchecklib defines the main function for the govulncheck command.
-//
-// WARNING: this package is made public only to make it easy to integrate govulncheck
-// in certain tools like (e.g. gopls). The API is not stable and may change any time.
-package govulnchecklib
+package govulncheck
 
 import (
 	"bytes"
@@ -22,7 +18,6 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
-	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
@@ -53,7 +48,7 @@ func Main(cfg Config) {
 		dbs = strings.Split(GOVULNDB, ",")
 	}
 	dbClient, err := client.NewClient(dbs, client.Options{
-		HTTPCache: govulncheck.DefaultCache(),
+		HTTPCache: DefaultCache(),
 	})
 	if err != nil {
 		die("govulncheck: %s", err)
@@ -87,7 +82,7 @@ Scanning for dependencies with known vulnerabilities...
 		}
 	case "source":
 		cfg := &cfg.SourceLoadConfig
-		pkgs, err = govulncheck.LoadPackages(cfg, patterns...)
+		pkgs, err = LoadPackages(cfg, patterns...)
 		if err != nil {
 			// Try to provide a meaningful and actionable error message.
 			if !fileExists(filepath.Join(cfg.Dir, "go.mod")) {
@@ -121,10 +116,10 @@ Scanning for dependencies with known vulnerabilities...
 		os.Exit(0)
 	case "text", "verbose":
 		// set of top-level packages, used to find representative symbols
-		ci := govulncheck.GetCallInfo(r, pkgs)
+		ci := GetCallInfo(r, pkgs)
 		writeText(r, ci, unaffected, format == "verbose")
 	case "summary":
-		ci := govulncheck.GetCallInfo(r, pkgs)
+		ci := GetCallInfo(r, pkgs)
 		writeJSON(summary(ci, unaffected))
 		os.Exit(0)
 	default:
@@ -209,7 +204,7 @@ const (
 	lineLength = 55
 )
 
-func writeText(r *vulncheck.Result, ci *govulncheck.CallInfo, unaffected []*vulncheck.Vuln, verbose bool) {
+func writeText(r *vulncheck.Result, ci *CallInfo, unaffected []*vulncheck.Vuln, verbose bool) {
 	uniqueVulns := map[string]bool{}
 	for _, v := range r.Vulns {
 		uniqueVulns[v.OSV.ID] = true
@@ -278,7 +273,7 @@ func writeVulnerability(idx int, id, details, callstack, found, fixed, platforms
 `, idx, id, indent(details, 2), callstack, found, fixed, platforms, id)
 }
 
-func foundVersion(modulePath, pkgPath string, ci *govulncheck.CallInfo) string {
+func foundVersion(modulePath, pkgPath string, ci *CallInfo) string {
 	var found string
 	if v := ci.ModuleVersions[modulePath]; v != "" {
 		found = packageVersionString(pkgPath, v[1:])
@@ -287,18 +282,18 @@ func foundVersion(modulePath, pkgPath string, ci *govulncheck.CallInfo) string {
 }
 
 func fixedVersion(pkgPath string, affected []osv.Affected) string {
-	fixed := govulncheck.LatestFixed(affected)
+	fixed := LatestFixed(affected)
 	if fixed != "" {
 		fixed = packageVersionString(pkgPath, fixed)
 	}
 	return fixed
 }
 
-func defaultCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) string {
+func defaultCallStacks(vg []*vulncheck.Vuln, ci *CallInfo) string {
 	var summaries []string
 	for _, v := range vg {
 		if css := ci.CallStacks[v]; len(css) > 0 {
-			if sum := govulncheck.SummarizeCallStack(css[0], ci.TopPackages, v.PkgPath); sum != "" {
+			if sum := SummarizeCallStack(css[0], ci.TopPackages, v.PkgPath); sum != "" {
 				summaries = append(summaries, strings.TrimSpace(sum))
 			}
 		}
@@ -315,7 +310,7 @@ func defaultCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) string {
 	return b.String()
 }
 
-func verboseCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) string {
+func verboseCallStacks(vg []*vulncheck.Vuln, ci *CallInfo) string {
 	// Display one full call stack for each vuln.
 	i := 1
 	nMore := 0
@@ -327,8 +322,8 @@ func verboseCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) string {
 		}
 		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, v.Symbol))
 		for _, e := range css[0] {
-			b.WriteString(fmt.Sprintf("  %s\n", govulncheck.FuncName(e.Function)))
-			if pos := govulncheck.AbsRelShorter(govulncheck.FuncPos(e.Call)); pos != "" {
+			b.WriteString(fmt.Sprintf("  %s\n", FuncName(e.Function)))
+			if pos := AbsRelShorter(FuncPos(e.Call)); pos != "" {
 				b.WriteString(fmt.Sprintf("      %s\n", pos))
 			}
 		}

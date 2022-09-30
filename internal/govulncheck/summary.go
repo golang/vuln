@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package govulnchecklib
+package govulncheck
 
 import (
-	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
@@ -47,7 +46,7 @@ type StackEntry struct {
 }
 
 // summary summarize the analysis result.
-func summary(ci *govulncheck.CallInfo, unaffected []*vulncheck.Vuln) Summary {
+func summary(ci *CallInfo, unaffected []*vulncheck.Vuln) Summary {
 	var affecting, unaffecting []Vuln
 	for _, vg := range ci.VulnGroups {
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
@@ -79,7 +78,7 @@ func summary(ci *govulncheck.CallInfo, unaffected []*vulncheck.Vuln) Summary {
 	}
 }
 
-func summarizeCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) []Trace {
+func summarizeCallStacks(vg []*vulncheck.Vuln, ci *CallInfo) []Trace {
 	cs := make([]Trace, 0, len(vg))
 	// report one full call stack for each vuln.
 	for _, v := range vg {
@@ -90,13 +89,13 @@ func summarizeCallStacks(vg []*vulncheck.Vuln, ci *govulncheck.CallInfo) []Trace
 		stack := make([]StackEntry, 0, len(css))
 		for _, e := range css[0] {
 			stack = append(stack, StackEntry{
-				FuncName: govulncheck.FuncName(e.Function),
-				CallSite: govulncheck.FuncPos(e.Call),
+				FuncName: FuncName(e.Function),
+				CallSite: FuncPos(e.Call),
 			})
 		}
 		cs = append(cs, Trace{
 			Symbol: v.Symbol,
-			Desc:   govulncheck.SummarizeCallStack(css[0], ci.TopPackages, v.PkgPath),
+			Desc:   SummarizeCallStack(css[0], ci.TopPackages, v.PkgPath),
 			Stack:  stack,
 			Seen:   len(css),
 		})

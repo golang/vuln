@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/packages"
-	"golang.org/x/vuln/cmd/govulncheck/govulnchecklib"
+	"golang.org/x/vuln/internal/govulncheck"
 )
 
 var (
@@ -73,7 +73,7 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 		buildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(tagsFlag, ","))}
 	}
 
-	govulnchecklib.Main(govulnchecklib.Config{
+	govulncheck.Main(govulncheck.Config{
 		Analysis:     mode,
 		OutputFormat: outputType,
 		Patterns:     patterns,

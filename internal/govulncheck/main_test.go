@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package govulnchecklib
+package govulncheck
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 )
 
@@ -100,7 +99,7 @@ func TestLatestFixed(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got := govulncheck.LatestFixed(test.in)
+			got := LatestFixed(test.in)
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
