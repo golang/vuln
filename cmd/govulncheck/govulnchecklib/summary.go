@@ -5,7 +5,7 @@
 package govulnchecklib
 
 import (
-	"golang.org/x/vuln/cmd/govulncheck/internal/govulncheck"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )

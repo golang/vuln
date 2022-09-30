@@ -22,7 +22,7 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
-	"golang.org/x/vuln/cmd/govulncheck/internal/govulncheck"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
