@@ -189,4 +189,12 @@ type Entry struct {
 	Details    string      `json:"details"`
 	Affected   []Affected  `json:"affected"`
 	References []Reference `json:"references,omitempty"`
+	Credits    []Credit    `json:"credits,omitempty"`
+}
+
+// Credit represents an OSV style Credit to give credit
+// for the Entry
+type Credit struct {
+	Name    string   `json:"name,omitempty"`
+	Contact []string `json:"contact,omitempty"`
 }
