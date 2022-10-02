@@ -36,8 +36,8 @@ func Run(cfg Config) {
 	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: goVersion()}
 
 	patterns := cfg.Patterns
-	format := cfg.OutputFormat
-	if format == formatText || format == formatVerbose {
+	format := cfg.OutputType
+	if format == outputText || format == outputVerbose {
 		fmt.Printf(`govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...
@@ -49,7 +49,7 @@ Scanning for dependencies with known vulnerabilities...
 		unaffected []*vulncheck.Vuln
 		ctx        = context.Background()
 	)
-	switch cfg.Analysis {
+	switch cfg.AnalysisType {
 	case analysisBinary:
 		f, err := os.Open(patterns[0])
 		if err != nil {
@@ -85,25 +85,25 @@ Scanning for dependencies with known vulnerabilities...
 		unaffected = filterUnaffected(r)
 		r.Vulns = filterCalled(r)
 	default:
-		die("govulncheck: invalid analysis mode %q", cfg.Analysis)
+		die("govulncheck: invalid analysis mode %q", cfg.AnalysisType)
 	}
 
 	switch format {
-	case formatJSON:
+	case outputJSON:
 		// Following golang.org/x/tools/go/analysis/singlechecker,
 		// return 0 exit code in -json mode.
 		writeJSON(r)
 		os.Exit(0)
-	case formatText, formatVerbose:
+	case outputText, outputVerbose:
 		// set of top-level packages, used to find representative symbols
 		ci := GetCallInfo(r, pkgs)
-		writeText(r, ci, unaffected, format == formatVerbose)
-	case formatSummary:
+		writeText(r, ci, unaffected, format == outputVerbose)
+	case outputSummary:
 		ci := GetCallInfo(r, pkgs)
 		writeJSON(summary(ci, unaffected))
 		os.Exit(0)
 	default:
-		die("govulncheck: unrecognized output type %q", cfg.OutputFormat)
+		die("govulncheck: unrecognized output type %q", cfg.OutputType)
 	}
 
 	// Following golang.org/x/tools/go/analysis/singlechecker,

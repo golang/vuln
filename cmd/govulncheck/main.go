@@ -74,8 +74,8 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 	}
 
 	govulncheck.Run(govulncheck.Config{
-		Analysis:     mode,
-		OutputFormat: outputType,
+		AnalysisType: mode,
+		OutputType:   outputType,
 		Patterns:     patterns,
 		SourceLoadConfig: packages.Config{
 			Dir:        filepath.FromSlash(dirFlag),
