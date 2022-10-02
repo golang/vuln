@@ -50,5 +50,5 @@ type Config struct {
 	Patterns []string
 
 	// SourceLoadConfig specifies the package loading configuration.
-	SourceLoadConfig packages.Config
+	SourceLoadConfig *packages.Config
 }

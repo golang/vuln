@@ -34,7 +34,6 @@ func Run(cfg Config) error {
 	}
 	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: internal.GoVersion()}
 
-	patterns := cfg.Patterns
 	format := cfg.OutputType
 	if format == OutputTypeText || format == OutputTypeVerbose {
 		fmt.Println(introMessage)
@@ -47,7 +46,7 @@ func Run(cfg Config) error {
 	)
 	switch cfg.AnalysisType {
 	case AnalysisTypeBinary:
-		f, err := os.Open(patterns[0])
+		f, err := os.Open(cfg.Patterns[0])
 		if err != nil {
 			return err
 		}
@@ -57,14 +56,13 @@ func Run(cfg Config) error {
 			return err
 		}
 	case AnalysisTypeSource:
-		cfg := &cfg.SourceLoadConfig
-		pkgs, err = LoadPackages(cfg, patterns...)
+		pkgs, err = LoadPackages(cfg)
 		if err != nil {
 			// Try to provide a meaningful and actionable error message.
-			if !fileExists(filepath.Join(cfg.Dir, "go.mod")) {
+			if !fileExists(filepath.Join(cfg.SourceLoadConfig.Dir, "go.mod")) {
 				return ErrNoGoMod
 			}
-			if !fileExists(filepath.Join(cfg.Dir, "go.sum")) {
+			if !fileExists(filepath.Join(cfg.SourceLoadConfig.Dir, "go.sum")) {
 				return ErrNoGoSum
 			}
 			if isGoVersionMismatchError(err) {
