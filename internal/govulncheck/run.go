@@ -16,36 +16,16 @@ import (
 	"strings"
 
 	"golang.org/x/exp/maps"
-	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
 
-// Config is the configuration for Main.
-type Config struct {
-	// Analysis specifies the vulncheck analysis type. Valid types are "source" and "binary"
-	Analysis string
-	// OutputFormat specifies the result type. Valid types are:
-	//  "text": print human readable compact text output to STDOUT.
-	//  "verbose": print human readable verbose text output to STDOUT.
-	//  "json": print JSON-encoded vulncheck.Result.
-	//  "summary": print JSON-encoded Summary.
-	OutputFormat string
-
-	// Patterns are either the binary path for "binary" analysis mode, or
-	// go package patterns for "source" analysis mode.
-	Patterns []string
-
-	// SourceLoadConfig specifies the package loading configuration.
-	SourceLoadConfig packages.Config
-}
-
 // Run is the main function for the govulncheck command line tool.
 func Run(cfg Config) {
-	dbs := []string{"https://vuln.go.dev"}
-	if GOVULNDB := os.Getenv("GOVULNDB"); GOVULNDB != "" {
-		dbs = strings.Split(GOVULNDB, ",")
+	dbs := []string{vulndbHost}
+	if db := os.Getenv(envGOVULNDB); db != "" {
+		dbs = strings.Split(db, ",")
 	}
 	dbClient, err := client.NewClient(dbs, client.Options{
 		HTTPCache: DefaultCache(),
@@ -57,7 +37,7 @@ func Run(cfg Config) {
 
 	patterns := cfg.Patterns
 	format := cfg.OutputFormat
-	if format == "text" || format == "verbose" {
+	if format == formatText || format == formatVerbose {
 		fmt.Printf(`govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...
@@ -70,7 +50,7 @@ Scanning for dependencies with known vulnerabilities...
 		ctx        = context.Background()
 	)
 	switch cfg.Analysis {
-	case "binary":
+	case analysisBinary:
 		f, err := os.Open(patterns[0])
 		if err != nil {
 			die("govulncheck: %v", err)
@@ -80,7 +60,7 @@ Scanning for dependencies with known vulnerabilities...
 		if err != nil {
 			die("govulncheck: %v", err)
 		}
-	case "source":
+	case analysisSource:
 		cfg := &cfg.SourceLoadConfig
 		pkgs, err = LoadPackages(cfg, patterns...)
 		if err != nil {
@@ -109,16 +89,16 @@ Scanning for dependencies with known vulnerabilities...
 	}
 
 	switch format {
-	case "json":
+	case formatJSON:
 		// Following golang.org/x/tools/go/analysis/singlechecker,
 		// return 0 exit code in -json mode.
 		writeJSON(r)
 		os.Exit(0)
-	case "text", "verbose":
+	case formatText, formatVerbose:
 		// set of top-level packages, used to find representative symbols
 		ci := GetCallInfo(r, pkgs)
-		writeText(r, ci, unaffected, format == "verbose")
-	case "summary":
+		writeText(r, ci, unaffected, format == formatVerbose)
+	case formatSummary:
 		ci := GetCallInfo(r, pkgs)
 		writeJSON(summary(ci, unaffected))
 		os.Exit(0)
