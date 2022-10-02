@@ -5,6 +5,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -73,7 +74,7 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 		buildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(tagsFlag, ","))}
 	}
 
-	govulncheck.Run(govulncheck.Config{
+	err := govulncheck.Run(govulncheck.Config{
 		AnalysisType: mode,
 		OutputType:   outputType,
 		Patterns:     patterns,
@@ -83,6 +84,19 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 			BuildFlags: buildFlags,
 		},
 	})
+	if outputType == govulncheck.OutputTypeJSON {
+		// The current behavior is to not print any errors.
+		return
+	}
+	if errors.Is(err, govulncheck.ErrContainsVulnerabilties) {
+		// This follows the style from
+		// golang.org/x/tools/go/analysis/singlechecker,
+		// which fails with 3 if there are findings (in this case, vulns).
+		os.Exit(3)
+	}
+	if err != nil {
+		die(fmt.Sprintf("govulncheck: %v", err))
+	}
 }
 
 func validateFlags(mode string) {

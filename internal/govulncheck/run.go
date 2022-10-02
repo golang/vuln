@@ -21,7 +21,7 @@ import (
 )
 
 // Run is the main function for the govulncheck command line tool.
-func Run(cfg Config) {
+func Run(cfg Config) error {
 	dbs := []string{vulndbHost}
 	if db := os.Getenv(envGOVULNDB); db != "" {
 		dbs = strings.Split(db, ",")
@@ -30,7 +30,7 @@ func Run(cfg Config) {
 		HTTPCache: DefaultCache(),
 	})
 	if err != nil {
-		die("govulncheck: %s", err)
+		return err
 	}
 	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: internal.GoVersion()}
 
@@ -52,12 +52,12 @@ Scanning for dependencies with known vulnerabilities...
 	case AnalysisTypeBinary:
 		f, err := os.Open(patterns[0])
 		if err != nil {
-			die("govulncheck: %v", err)
+			return err
 		}
 		defer f.Close()
 		r, err = binary(ctx, f, vcfg)
 		if err != nil {
-			die("govulncheck: %v", err)
+			return err
 		}
 	case AnalysisTypeSource:
 		cfg := &cfg.SourceLoadConfig
@@ -65,13 +65,15 @@ Scanning for dependencies with known vulnerabilities...
 		if err != nil {
 			// Try to provide a meaningful and actionable error message.
 			if !fileExists(filepath.Join(cfg.Dir, "go.mod")) {
-				die(noGoModErrorMessage)
-			} else if !fileExists(filepath.Join(cfg.Dir, "go.sum")) {
-				die(noGoSumErrorMessage)
-			} else if isGoVersionMismatchError(err) {
-				die(fmt.Sprintf("%s\n\n%v", goVersionMismatchErrorMessage, err))
+				return ErrNoGoMod
 			}
-			die("govulncheck: %v", err)
+			if !fileExists(filepath.Join(cfg.Dir, "go.sum")) {
+				return ErrNoGoSum
+			}
+			if isGoVersionMismatchError(err) {
+				return fmt.Errorf("%v\n\n%v", ErrGoVersionMismatch, err)
+			}
+			return err
 		}
 
 		// Sort pkgs so that the PkgNodes returned by vulncheck.Source will be
@@ -79,48 +81,43 @@ Scanning for dependencies with known vulnerabilities...
 		sortPackages(pkgs)
 		r, err = vulncheck.Source(ctx, pkgs, vcfg)
 		if err != nil {
-			die("govulncheck: %v", err)
+			return err
 		}
 		unaffected = filterUnaffected(r)
 		r.Vulns = filterCalled(r)
 	default:
-		die("govulncheck: invalid analysis mode %q", cfg.AnalysisType)
+		return fmt.Errorf("%w: %s", ErrInvalidAnalysisType, cfg.AnalysisType)
 	}
 
 	switch format {
 	case OutputTypeJSON:
 		// Following golang.org/x/tools/go/analysis/singlechecker,
 		// return 0 exit code in -json mode.
-		writeJSON(r)
-		os.Exit(0)
+		return writeJSON(r)
 	case OutputTypeText, OutputTypeVerbose:
 		// set of top-level packages, used to find representative symbols
 		ci := GetCallInfo(r, pkgs)
 		writeText(r, ci, unaffected, format == OutputTypeVerbose)
 	case OutputTypeSummary:
 		ci := GetCallInfo(r, pkgs)
-		writeJSON(summary(ci, unaffected))
-		os.Exit(0)
+		return writeJSON(summary(ci, unaffected))
 	default:
-		die("govulncheck: unrecognized output type %q", cfg.OutputType)
+		return fmt.Errorf("%w: %s", ErrInvalidOutputType, cfg.OutputType)
 	}
-
-	// Following golang.org/x/tools/go/analysis/singlechecker,
-	// fail with 3 if there are findings (in this case, vulns).
-	exitCode := 0
 	if len(r.Vulns) > 0 {
-		exitCode = 3
+		return ErrContainsVulnerabilties
 	}
-	os.Exit(exitCode)
+	return nil
 }
 
-func writeJSON(r any) {
+func writeJSON(r any) error {
 	b, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
-		die("govulncheck: %s", err)
+		return err
 	}
 	os.Stdout.Write(b)
 	fmt.Println()
+	return nil
 }
 
 const (
@@ -314,11 +311,6 @@ func packageVersionString(packagePath, version string) string {
 		v = semverToGoTag(v)
 	}
 	return fmt.Sprintf("%s@%s", packagePath, v)
-}
-
-func die(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format+"\n", args...)
-	os.Exit(1)
 }
 
 // indent returns the output of prefixing n spaces to s at every line break,

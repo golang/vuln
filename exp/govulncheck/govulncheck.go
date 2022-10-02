@@ -5,12 +5,14 @@
 // Package govulncheck has experimental govulncheck API.
 package govulncheck
 
-import "golang.org/x/vuln/internal/govulncheck"
+import (
+	"golang.org/x/vuln/internal/govulncheck"
+)
 
 // Config is the configuration for Main.
 type Config = govulncheck.Config
 
 // Run is the main function for the govulncheck command line tool.
-func Run(cfg Config) {
-	govulncheck.Run(cfg)
+func Run(cfg Config) error {
+	return govulncheck.Run(cfg)
 }
