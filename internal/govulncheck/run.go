@@ -22,18 +22,8 @@ import (
 )
 
 // Run is the main function for the govulncheck command line tool.
-func Run(cfg Config) error {
-<<<<<<< HEAD
-	dbs := []string{vulndbHost}
-	if db := os.Getenv(envGOVULNDB); db != "" {
-		dbs = strings.Split(db, ",")
-	}
-	dbClient, err := client.NewClient(dbs, client.Options{
-		HTTPCache: DefaultCache(),
-	})
-=======
+func Run(ctx context.Context, cfg Config) error {
 	vcfg, err := createVulncheckConfig(cfg)
->>>>>>> 31610d0... internal/govulncheck: add function for creating vulncheck.Config
 	if err != nil {
 		return err
 	}
@@ -46,7 +36,6 @@ func Run(cfg Config) error {
 		r          *vulncheck.Result
 		pkgs       []*vulncheck.Package
 		unaffected []*vulncheck.Vuln
-		ctx        = context.Background()
 	)
 	switch cfg.AnalysisType {
 	case AnalysisTypeBinary:
@@ -300,8 +289,8 @@ func compact(s []string) []string {
 
 func createVulncheckConfig(cfg Config) (*vulncheck.Config, error) {
 	dbs := []string{vulndbHost}
-	if cfg.EnvGOVULNDB != "" {
-		dbs = strings.Split(cfg.EnvGOVULNDB, ",")
+	if db := os.Getenv(envGOVULNDB); db != "" {
+		dbs = strings.Split(db, ",")
 	}
 	dbClient, err := client.NewClient(dbs, client.Options{
 		HTTPCache: DefaultCache(),

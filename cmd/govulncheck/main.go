@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -74,7 +75,8 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 		buildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(tagsFlag, ","))}
 	}
 
-	err := govulncheck.Run(govulncheck.Config{
+	ctx := context.Background()
+	err := govulncheck.Run(ctx, govulncheck.Config{
 		AnalysisType: mode,
 		OutputType:   outputType,
 		Patterns:     patterns,
