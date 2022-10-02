@@ -10,7 +10,7 @@ import "golang.org/x/vuln/internal/govulncheck"
 // Config is the configuration for Main.
 type Config = govulncheck.Config
 
-// Main is the main function for the govulncheck command line tool.
-func Main(cfg Config) {
-	govulncheck.Main(cfg)
+// Run is the main function for the govulncheck command line tool.
+func Run(cfg Config) {
+	govulncheck.Run(cfg)
 }

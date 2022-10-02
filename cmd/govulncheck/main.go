@@ -73,7 +73,7 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 		buildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(tagsFlag, ","))}
 	}
 
-	govulncheck.Main(govulncheck.Config{
+	govulncheck.Run(govulncheck.Config{
 		Analysis:     mode,
 		OutputFormat: outputType,
 		Patterns:     patterns,

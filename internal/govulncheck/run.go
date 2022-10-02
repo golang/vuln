@@ -41,8 +41,8 @@ type Config struct {
 	SourceLoadConfig packages.Config
 }
 
-// Main is the main function for the govulncheck command line tool.
-func Main(cfg Config) {
+// Run is the main function for the govulncheck command line tool.
+func Run(cfg Config) {
 	dbs := []string{"https://vuln.go.dev"}
 	if GOVULNDB := os.Getenv("GOVULNDB"); GOVULNDB != "" {
 		dbs = strings.Split(GOVULNDB, ",")
