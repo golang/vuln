@@ -7,29 +7,29 @@ package govulncheck
 import "golang.org/x/tools/go/packages"
 
 const (
-	// analysisBinary is used for binary analysis with vulncheck.Binary.
-	analysisBinary = "binary"
+	// AnalysisTypeBinary is used for binary analysis with vulncheck.Binary.
+	AnalysisTypeBinary = "binary"
 
-	// analysisSource is used for source code analysis with vulncheck.Source.
-	analysisSource = "source"
+	// AnalysisTypeSource is used for source code analysis with vulncheck.Source.
+	AnalysisTypeSource = "source"
 )
 
 const (
-	// outputText is the default output type for `govulncheck`.
-	outputText = "text"
+	// OutputTypeText is the default output type for `govulncheck`.
+	OutputTypeText = "text"
 
-	//  outputVerbose is the output type for `govulncheck -v`.
-	outputVerbose = "verbose"
+	//  OutputTypeVerbose is the output type for `govulncheck -v`.
+	OutputTypeVerbose = "verbose"
 
-	// outputJSON is the output type for `govulncheck -json`, which will print
+	// OutputTypeJSON is the output type for `govulncheck -json`, which will print
 	// the JSON-encoded vulncheck.Result.
-	outputJSON = "json"
+	OutputTypeJSON = "json"
 
-	// outputSummary is the output type for `govulncheck -summary-json`, which
+	// OutputTypeSummary is the output type for `govulncheck -summary-json`, which
 	// will print the JSON-encoded govulncheck.Summary.
 	//
 	// This is only meant by use for experimental with gopls.
-	outputSummary = "summary"
+	OutputTypeSummary = "summary"
 )
 
 const (

@@ -52,20 +52,20 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 
 	patterns := flag.Args()
 
-	mode := "source"
+	mode := govulncheck.AnalysisTypeSource
 	if len(patterns) == 1 && isFile(patterns[0]) {
-		mode = "binary"
+		mode = govulncheck.AnalysisTypeBinary
 	}
 	validateFlags(mode)
 
-	outputType := "text"
+	outputType := govulncheck.OutputTypeText
 	if *jsonFlag {
-		outputType = "json"
+		outputType = govulncheck.OutputTypeJSON
 	} else if summaryJSONFlag { // accessible only in testmode.
-		outputType = "summary"
+		outputType = govulncheck.OutputTypeSummary
 	}
-	if outputType == "text" && *verboseFlag {
-		outputType = "verbose"
+	if outputType == govulncheck.OutputTypeText && *verboseFlag {
+		outputType = govulncheck.OutputTypeVerbose
 	}
 
 	var buildFlags []string
@@ -87,7 +87,7 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 
 func validateFlags(mode string) {
 	switch mode {
-	case "binary":
+	case govulncheck.AnalysisTypeBinary:
 		if *testFlag {
 			die("govulncheck: the -test flag is invalid for binaries")
 		}
