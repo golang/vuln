@@ -37,10 +37,7 @@ func Run(cfg Config) error {
 	patterns := cfg.Patterns
 	format := cfg.OutputType
 	if format == OutputTypeText || format == OutputTypeVerbose {
-		fmt.Printf(`govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
-
-Scanning for dependencies with known vulnerabilities...
-`)
+		fmt.Println(introMessage)
 	}
 	var (
 		r          *vulncheck.Result
@@ -162,14 +159,8 @@ func writeText(r *vulncheck.Result, ci *CallInfo, unaffected []*vulncheck.Vuln, 
 		writeVulnerability(idx+1, id, details, b.String(), found, fixed, platforms(v0.OSV))
 	}
 	if len(unaffected) > 0 {
-		fmt.Printf(`
-=== Informational ===
-
-The vulnerabilities below are in packages that you import, but your code
-doesn't appear to call any vulnerable functions. You may not need to take any
-action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
-for details.
-`)
+		fmt.Println()
+		fmt.Println(informationalMessage)
 		for idx, vuln := range unaffected {
 			found := foundVersion(vuln.ModPath, vuln.PkgPath, ci)
 			fixed := fixedVersion(vuln.PkgPath, vuln.OSV.Affected)
