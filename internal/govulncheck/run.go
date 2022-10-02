@@ -5,23 +5,25 @@
 package govulncheck
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/vuln/client"
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
 
 // Run is the main function for the govulncheck command line tool.
 func Run(cfg Config) error {
+<<<<<<< HEAD
 	dbs := []string{vulndbHost}
 	if db := os.Getenv(envGOVULNDB); db != "" {
 		dbs = strings.Split(db, ",")
@@ -29,10 +31,12 @@ func Run(cfg Config) error {
 	dbClient, err := client.NewClient(dbs, client.Options{
 		HTTPCache: DefaultCache(),
 	})
+=======
+	vcfg, err := createVulncheckConfig(cfg)
+>>>>>>> 31610d0... internal/govulncheck: add function for creating vulncheck.Config
 	if err != nil {
 		return err
 	}
-	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: internal.GoVersion()}
 
 	format := cfg.OutputType
 	if format == OutputTypeText || format == OutputTypeVerbose {
@@ -84,7 +88,7 @@ func Run(cfg Config) error {
 		return fmt.Errorf("%w: %s", ErrInvalidAnalysisType, cfg.AnalysisType)
 	}
 
-	switch format {
+	switch cfg.OutputType {
 	case OutputTypeJSON:
 		// Following golang.org/x/tools/go/analysis/singlechecker,
 		// return 0 exit code in -json mode.
@@ -92,7 +96,7 @@ func Run(cfg Config) error {
 	case OutputTypeText, OutputTypeVerbose:
 		// set of top-level packages, used to find representative symbols
 		ci := GetCallInfo(r, pkgs)
-		writeText(r, ci, unaffected, format == OutputTypeVerbose)
+		writeText(r, ci, unaffected, cfg.OutputType == OutputTypeVerbose)
 	case OutputTypeSummary:
 		ci := GetCallInfo(r, pkgs)
 		return writeJSON(summary(ci, unaffected))
@@ -292,6 +296,33 @@ func compact(s []string) []string {
 		}
 	}
 	return s[:i]
+}
+
+func createVulncheckConfig(cfg Config) (*vulncheck.Config, error) {
+	dbs := []string{vulndbHost}
+	if cfg.EnvGOVULNDB != "" {
+		dbs = strings.Split(cfg.EnvGOVULNDB, ",")
+	}
+	dbClient, err := client.NewClient(dbs, client.Options{
+		HTTPCache: DefaultCache(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &vulncheck.Config{Client: dbClient, SourceGoVersion: goVersion()}, nil
+}
+
+func goVersion() string {
+	if v := os.Getenv(envGOVERSION); v != "" {
+		// Unlikely to happen in practice, mostly used for testing.
+		return v
+	}
+	out, err := exec.Command("go", "env", envGOVERSION).Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to determine go version; skipping stdlib scanning: %v\n", err)
+		return ""
+	}
+	return string(bytes.TrimSpace(out))
 }
 
 func packageVersionString(packagePath, version string) string {
