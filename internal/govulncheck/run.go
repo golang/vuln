@@ -49,7 +49,7 @@ func Run(ctx context.Context, cfg Config) error {
 			return err
 		}
 	case AnalysisTypeSource:
-		pkgs, err = LoadPackages(cfg)
+		pkgs, err = loadPackages(cfg)
 		if err != nil {
 			// Try to provide a meaningful and actionable error message.
 			if !fileExists(filepath.Join(cfg.SourceLoadConfig.Dir, "go.mod")) {
@@ -84,10 +84,10 @@ func Run(ctx context.Context, cfg Config) error {
 		return writeJSON(r)
 	case OutputTypeText, OutputTypeVerbose:
 		// set of top-level packages, used to find representative symbols
-		ci := GetCallInfo(r, pkgs)
+		ci := getCallInfo(r, pkgs)
 		writeText(r, ci, unaffected, cfg.OutputType == OutputTypeVerbose)
 	case OutputTypeSummary:
-		ci := GetCallInfo(r, pkgs)
+		ci := getCallInfo(r, pkgs)
 		return writeJSON(summary(ci, unaffected))
 	default:
 		return fmt.Errorf("%w: %s", ErrInvalidOutputType, cfg.OutputType)
@@ -113,7 +113,7 @@ const (
 	lineLength = 55
 )
 
-func writeText(r *vulncheck.Result, ci *CallInfo, unaffected []*vulncheck.Vuln, verbose bool) {
+func writeText(r *vulncheck.Result, ci *callInfo, unaffected []*vulncheck.Vuln, verbose bool) {
 	uniqueVulns := map[string]bool{}
 	for _, v := range r.Vulns {
 		uniqueVulns[v.OSV.ID] = true
@@ -126,7 +126,7 @@ func writeText(r *vulncheck.Result, ci *CallInfo, unaffected []*vulncheck.Vuln, 
 	default:
 		fmt.Printf("Found %d known vulnerabilities.\n", len(uniqueVulns))
 	}
-	for idx, vg := range ci.VulnGroups {
+	for idx, vg := range ci.vulnGroups {
 		fmt.Println()
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.
@@ -176,9 +176,9 @@ func writeVulnerability(idx int, id, details, callstack, found, fixed, platforms
 `, idx, id, indent(details, 2), callstack, found, fixed, platforms, id)
 }
 
-func foundVersion(modulePath, pkgPath string, ci *CallInfo) string {
+func foundVersion(modulePath, pkgPath string, ci *callInfo) string {
 	var found string
-	if v := ci.ModuleVersions[modulePath]; v != "" {
+	if v := ci.moduleVersions[modulePath]; v != "" {
 		found = packageVersionString(pkgPath, v[1:])
 	}
 	return found
@@ -192,11 +192,11 @@ func fixedVersion(pkgPath string, affected []osv.Affected) string {
 	return fixed
 }
 
-func defaultCallStacks(vg []*vulncheck.Vuln, ci *CallInfo) string {
+func defaultCallStacks(vg []*vulncheck.Vuln, ci *callInfo) string {
 	var summaries []string
 	for _, v := range vg {
-		if css := ci.CallStacks[v]; len(css) > 0 {
-			if sum := SummarizeCallStack(css[0], ci.TopPackages, v.PkgPath); sum != "" {
+		if css := ci.callStacks[v]; len(css) > 0 {
+			if sum := SummarizeCallStack(css[0], ci.topPackages, v.PkgPath); sum != "" {
 				summaries = append(summaries, strings.TrimSpace(sum))
 			}
 		}
@@ -213,13 +213,13 @@ func defaultCallStacks(vg []*vulncheck.Vuln, ci *CallInfo) string {
 	return b.String()
 }
 
-func verboseCallStacks(vg []*vulncheck.Vuln, ci *CallInfo) string {
+func verboseCallStacks(vg []*vulncheck.Vuln, ci *callInfo) string {
 	// Display one full call stack for each vuln.
 	i := 1
 	nMore := 0
 	var b strings.Builder
 	for _, v := range vg {
-		css := ci.CallStacks[v]
+		css := ci.callStacks[v]
 		if len(css) == 0 {
 			continue
 		}

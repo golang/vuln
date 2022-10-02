@@ -27,11 +27,11 @@ func (e *PackageError) Error() string {
 	return b.String()
 }
 
-// LoadPackages loads the packages matching patterns using cfg, after setting
+// loadPackages loads the packages matching patterns using cfg, after setting
 // the cfg mode flags that vulncheck needs for analysis.
 // If the packages contain errors, a PackageError is returned containing a list of the errors,
 // along with the packages themselves.
-func LoadPackages(cfg Config) ([]*vulncheck.Package, error) {
+func loadPackages(cfg Config) ([]*vulncheck.Package, error) {
 	patterns := cfg.Patterns
 	cfg.SourceLoadConfig.Mode |= packages.NeedName | packages.NeedImports | packages.NeedTypes |
 		packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps |
@@ -52,33 +52,33 @@ func LoadPackages(cfg Config) ([]*vulncheck.Package, error) {
 	return vpkgs, err
 }
 
-// CallInfo is information about calls to vulnerable functions.
-type CallInfo struct {
-	// CallStacks contains all call stacks to vulnerable functions.
-	CallStacks map[*vulncheck.Vuln][]vulncheck.CallStack
+// callInfo is information about calls to vulnerable functions.
+type callInfo struct {
+	// callStacks contains all call stacks to vulnerable functions.
+	callStacks map[*vulncheck.Vuln][]vulncheck.CallStack
 
-	// VulnGroups contains vulnerabilities grouped by ID and package.
-	VulnGroups [][]*vulncheck.Vuln
+	// vulnGroups contains vulnerabilities grouped by ID and package.
+	vulnGroups [][]*vulncheck.Vuln
 
-	// ModuleVersions is a map of module paths to versions.
-	ModuleVersions map[string]string
+	// moduleVersions is a map of module paths to versions.
+	moduleVersions map[string]string
 
-	// TopPackages contains the top-level packages in the call info.
-	TopPackages map[string]bool
+	// topPackages contains the top-level packages in the call info.
+	topPackages map[string]bool
 }
 
-// GetCallInfo computes call stacks and related information from a vulncheck.Result.
+// getCallInfo computes call stacks and related information from a vulncheck.Result.
 // It also makes a set of top-level packages from pkgs.
-func GetCallInfo(r *vulncheck.Result, pkgs []*vulncheck.Package) *CallInfo {
+func getCallInfo(r *vulncheck.Result, pkgs []*vulncheck.Package) *callInfo {
 	pset := map[string]bool{}
 	for _, p := range pkgs {
 		pset[p.PkgPath] = true
 	}
-	return &CallInfo{
-		CallStacks:     vulncheck.CallStacks(r),
-		VulnGroups:     groupByIDAndPackage(r.Vulns),
-		ModuleVersions: moduleVersionMap(r.Modules),
-		TopPackages:    pset,
+	return &callInfo{
+		callStacks:     vulncheck.CallStacks(r),
+		vulnGroups:     groupByIDAndPackage(r.Vulns),
+		moduleVersions: moduleVersionMap(r.Modules),
+		topPackages:    pset,
 	}
 }
 

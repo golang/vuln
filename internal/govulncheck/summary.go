@@ -46,9 +46,9 @@ type StackEntry struct {
 }
 
 // summary summarize the analysis result.
-func summary(ci *CallInfo, unaffected []*vulncheck.Vuln) Summary {
+func summary(ci *callInfo, unaffected []*vulncheck.Vuln) Summary {
 	var affecting, unaffecting []Vuln
-	for _, vg := range ci.VulnGroups {
+	for _, vg := range ci.vulnGroups {
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.
 		v0 := vg[0]
@@ -78,11 +78,11 @@ func summary(ci *CallInfo, unaffected []*vulncheck.Vuln) Summary {
 	}
 }
 
-func summarizeCallStacks(vg []*vulncheck.Vuln, ci *CallInfo) []Trace {
+func summarizeCallStacks(vg []*vulncheck.Vuln, ci *callInfo) []Trace {
 	cs := make([]Trace, 0, len(vg))
 	// report one full call stack for each vuln.
 	for _, v := range vg {
-		css := ci.CallStacks[v]
+		css := ci.callStacks[v]
 		if len(css) == 0 {
 			continue
 		}
@@ -95,7 +95,7 @@ func summarizeCallStacks(vg []*vulncheck.Vuln, ci *CallInfo) []Trace {
 		}
 		cs = append(cs, Trace{
 			Symbol: v.Symbol,
-			Desc:   SummarizeCallStack(css[0], ci.TopPackages, v.PkgPath),
+			Desc:   SummarizeCallStack(css[0], ci.topPackages, v.PkgPath),
 			Stack:  stack,
 			Seen:   len(css),
 		})
