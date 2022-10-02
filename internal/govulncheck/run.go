@@ -21,7 +21,7 @@ import (
 )
 
 // Run is the main function for the govulncheck command line tool.
-func Run(cfg Config) error {
+func Run(ctx context.Context, cfg Config) error {
 	dbs := []string{vulndbHost}
 	if db := os.Getenv(envGOVULNDB); db != "" {
 		dbs = strings.Split(db, ",")
@@ -42,7 +42,6 @@ func Run(cfg Config) error {
 		r          *vulncheck.Result
 		pkgs       []*vulncheck.Package
 		unaffected []*vulncheck.Vuln
-		ctx        = context.Background()
 	)
 	switch cfg.AnalysisType {
 	case AnalysisTypeBinary:

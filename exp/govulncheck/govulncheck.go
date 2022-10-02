@@ -6,6 +6,8 @@
 package govulncheck
 
 import (
+	"context"
+
 	"golang.org/x/vuln/internal/govulncheck"
 )
 
@@ -14,5 +16,6 @@ type Config = govulncheck.Config
 
 // Main is the main function for the govulncheck command line tool.
 func Main(cfg Config) error {
-	return govulncheck.Run(cfg)
+	ctx := context.Background()
+	return govulncheck.Run(ctx, cfg)
 }
