@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/go-cmdtest"
 	"golang.org/x/vuln/internal/buildtest"
+	"golang.org/x/vuln/internal/web"
 )
 
 var update = flag.Bool("update", false, "update test files with results")
@@ -50,8 +51,17 @@ func TestCommand(t *testing.T) {
 		if inputFile != "" {
 			return nil, errors.New("input redirection makes no sense")
 		}
+		// We set GOVERSION to always get the same results regardless of the underlying Go build system.
+		vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb"))
+		if err != nil {
+			return nil, err
+		}
+		govulndbURI, err := web.URLFromFilePath(vulndbDir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create GOVULNDB env var: %v", err)
+		}
 		// We set TEST_GOVERSION to always get the same results regardless of the underlying Go build system.
-		cmd.Env = append(os.Environ(), "GOVULNDB=file://"+testDir+"/testdata/vulndb", "TEST_GOVERSION=go1.18")
+		cmd.Env = append(os.Environ(), "GOVULNDB="+govulndbURI.String(), "TEST_GOVERSION=go1.18")
 		out, err := cmd.CombinedOutput()
 		out = filterGoFilePaths(out)
 		out = filterStdlibVersions(out)

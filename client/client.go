@@ -45,6 +45,7 @@ import (
 	"golang.org/x/mod/module"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/web"
 	"golang.org/x/vuln/osv"
 )
 
@@ -436,17 +437,16 @@ type Options struct {
 func NewClient(sources []string, opts Options) (_ Client, err error) {
 	defer derrors.Wrap(&err, "NewClient(%v, opts)", sources)
 	c := &client{}
-	for _, uri := range sources {
-		uri = strings.TrimRight(uri, "/")
-		// should parse the URI out here instead of in there
-		switch {
-		case strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://"):
-			hs := &httpSource{url: uri}
-			url, err := url.Parse(uri)
-			if err != nil {
-				return nil, err
-			}
-			hs.dbName = url.Hostname()
+	for _, source := range sources {
+		source = strings.TrimRight(source, "/") // TODO: why?
+		uri, err := url.Parse(source)
+		if err != nil {
+			return nil, err
+		}
+		switch uri.Scheme {
+		case "http", "https":
+			hs := &httpSource{url: uri.String()}
+			hs.dbName = uri.Hostname()
 			if opts.HTTPCache != nil {
 				hs.cache = opts.HTTPCache
 			}
@@ -456,8 +456,11 @@ func NewClient(sources []string, opts Options) (_ Client, err error) {
 				hs.c = new(http.Client)
 			}
 			c.sources = append(c.sources, hs)
-		case strings.HasPrefix(uri, "file://"):
-			dir := strings.TrimPrefix(uri, "file://")
+		case "file":
+			dir, err := web.URLToFilePath(uri)
+			if err != nil {
+				return nil, err
+			}
 			fi, err := os.Stat(dir)
 			if err != nil {
 				return nil, err

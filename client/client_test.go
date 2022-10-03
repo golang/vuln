@@ -7,6 +7,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/web"
 	"golang.org/x/vuln/osv"
 )
 
@@ -85,7 +87,17 @@ func newTestServer() *httptest.Server {
 	return httptest.NewServer(mux)
 }
 
-const localURL = "file://testdata/vulndb"
+var localURL = func() string {
+	absDir, err := filepath.Abs("testdata/vulndb")
+	if err != nil {
+		panic(fmt.Sprintf("failed to read testdata/vulndb: %v", err))
+	}
+	u, err := web.URLFromFilePath(absDir)
+	if err != nil {
+		panic(fmt.Sprintf("failed to read testdata/vulndb: %v", err))
+	}
+	return u.String()
+}()
 
 func TestByModule(t *testing.T) {
 	if runtime.GOOS == "js" {
