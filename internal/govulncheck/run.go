@@ -5,28 +5,34 @@
 package govulncheck
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
 
 // Run is the main function for the govulncheck command line tool.
-func Run(ctx context.Context, cfg Config) error {
-	vcfg, err := createVulncheckConfig(cfg)
+func Run(cfg Config) error {
+	dbs := []string{vulndbHost}
+	if db := os.Getenv(envGOVULNDB); db != "" {
+		dbs = strings.Split(db, ",")
+	}
+	dbClient, err := client.NewClient(dbs, client.Options{
+		HTTPCache: DefaultCache(),
+	})
 	if err != nil {
 		return err
 	}
+	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: internal.GoVersion()}
 
 	format := cfg.OutputType
 	if format == OutputTypeText || format == OutputTypeVerbose {
@@ -36,6 +42,7 @@ func Run(ctx context.Context, cfg Config) error {
 		r          *vulncheck.Result
 		pkgs       []*vulncheck.Package
 		unaffected []*vulncheck.Vuln
+		ctx        = context.Background()
 	)
 	switch cfg.AnalysisType {
 	case AnalysisTypeBinary:
@@ -285,33 +292,6 @@ func compact(s []string) []string {
 		}
 	}
 	return s[:i]
-}
-
-func createVulncheckConfig(cfg Config) (*vulncheck.Config, error) {
-	dbs := []string{vulndbHost}
-	if db := os.Getenv(envGOVULNDB); db != "" {
-		dbs = strings.Split(db, ",")
-	}
-	dbClient, err := client.NewClient(dbs, client.Options{
-		HTTPCache: DefaultCache(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &vulncheck.Config{Client: dbClient, SourceGoVersion: goVersion()}, nil
-}
-
-func goVersion() string {
-	if v := os.Getenv(envGOVERSION); v != "" {
-		// Unlikely to happen in practice, mostly used for testing.
-		return v
-	}
-	out, err := exec.Command("go", "env", envGOVERSION).Output()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to determine go version; skipping stdlib scanning: %v\n", err)
-		return ""
-	}
-	return string(bytes.TrimSpace(out))
 }
 
 func packageVersionString(packagePath, version string) string {

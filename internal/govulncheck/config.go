@@ -33,18 +33,8 @@ const (
 )
 
 const (
-	// EnvGOVULNDB is the GOVULNDB environment variable, which accepts a list
-	// of a comma-separated list of vulnerability database URLs, with http://,
-	// https://, or file:// protocols.
-	//
-	// If this is empty, govulncheck will default to the Go vulnerability
-	// database at vuln.go.dev.
-	EnvGOVULNDB = "GOVULNDB"
-
-	// envGOVULNDB represents the GOVERSION environment variable.
-	envGOVERSION = "GOVERSION"
-
-	vulndbHost = "https://vuln.go.dev"
+	envGOVULNDB = "GOVULNDB"
+	vulndbHost  = "https://vuln.go.dev"
 )
 
 // Config is the configuration for Main.
