@@ -77,6 +77,8 @@ func Run(ctx context.Context, cfg Config) (*Result, error) {
 		if err != nil {
 			return nil, err
 		}
+		// TODO(https://go.dev/issue/56042): add affected and unaffected logic
+		// to Result.
 		unaffected = filterUnaffected(r)
 		r.Vulns = filterCalled(r)
 	default:
@@ -87,20 +89,31 @@ func Run(ctx context.Context, cfg Config) (*Result, error) {
 	case OutputTypeJSON:
 		// Following golang.org/x/tools/go/analysis/singlechecker,
 		// return 0 exit code in -json mode.
+
+		// TODO(https://go.dev/issue/56042): change output from
+		// vulncheck.Result to govulncheck.Result.
 		if err := writeJSON(r); err != nil {
 			return nil, err
 		}
 		return &Result{}, nil
-	case OutputTypeText, OutputTypeVerbose:
-		// set of top-level packages, used to find representative symbols
-		ci := getCallInfo(r, pkgs)
-		writeText(r, ci, unaffected, cfg.OutputType == OutputTypeVerbose)
 	case OutputTypeSummary:
+		// TODO(https://go.dev/issue/56042): delete this mode and change -json
+		// to output govulncheck.Result
 		ci := getCallInfo(r, pkgs)
 		if err := writeJSON(summary(ci, unaffected)); err != nil {
 			return nil, err
 		}
 		return &Result{}, nil
+	case OutputTypeText, OutputTypeVerbose:
+		// set of top-level packages, used to find representative symbols
+
+		// TODO(https://go.dev/issue/56042): add callinfo to govulncheck.Result
+		// See comments from http://go.dev/cl/437856.
+		ci := getCallInfo(r, pkgs)
+
+		// TODO(https://go.dev/issue/56042): move fields from output to Result
+		// struct and delete writeText.
+		writeText(r, ci, unaffected, cfg.OutputType == OutputTypeVerbose)
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrInvalidOutputType, cfg.OutputType)
 	}
@@ -126,6 +139,7 @@ const (
 )
 
 func writeText(r *vulncheck.Result, ci *callInfo, unaffected []*vulncheck.Vuln, verbose bool) {
+	// TODO(https://go.dev/issue/56042): add uniqueVulns to govulncheck.Result.
 	uniqueVulns := map[string]bool{}
 	for _, v := range r.Vulns {
 		uniqueVulns[v.OSV.ID] = true
@@ -142,12 +156,16 @@ func writeText(r *vulncheck.Result, ci *callInfo, unaffected []*vulncheck.Vuln, 
 		fmt.Println()
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
 		// All have a non-zero CallSink.
+
+		// TODO(https://go.dev/issue/56042): add ID, details, found and fixed
+		// below to govulncheck.Result.
 		v0 := vg[0]
 		id := v0.OSV.ID
 		details := wrap(v0.OSV.Details, 80-labelWidth)
 		found := foundVersion(v0.ModPath, v0.PkgPath, ci)
 		fixed := fixedVersion(v0.PkgPath, v0.OSV.Affected)
 
+		// TODO(https://go.dev/issue/56042): add stacks to govulncheck.Result.
 		var stacks string
 		if !verbose {
 			stacks = defaultCallStacks(vg, ci)
@@ -159,6 +177,8 @@ func writeText(r *vulncheck.Result, ci *callInfo, unaffected []*vulncheck.Vuln, 
 			b.WriteString(indent("\n\nCall stacks in your code:\n", 2))
 			b.WriteString(indent(stacks, 6))
 		}
+		// TODO(https://go.dev/issue/56042): add platform and callstack summary
+		// to govulncheck.Result
 		writeVulnerability(idx+1, id, details, b.String(), found, fixed, platforms(v0.OSV))
 	}
 	if len(unaffected) > 0 {

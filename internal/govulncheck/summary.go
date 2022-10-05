@@ -10,6 +10,8 @@ import (
 )
 
 // Summary is the govulncheck result.
+//
+// TODO(https://go.dev/issue/56042): replace Summary with Result
 type Summary struct {
 	// Vulnerabilities affecting the analysis target binary or source code.
 	Affecting []Vuln
