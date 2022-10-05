@@ -21,7 +21,7 @@ import (
 )
 
 // Run is the main function for the govulncheck command line tool.
-func Run(ctx context.Context, cfg Config) error {
+func Run(ctx context.Context, cfg Config) (*Result, error) {
 	dbs := []string{vulndbHost}
 	if db := os.Getenv(envGOVULNDB); db != "" {
 		dbs = strings.Split(db, ",")
@@ -30,7 +30,7 @@ func Run(ctx context.Context, cfg Config) error {
 		HTTPCache: DefaultCache(),
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	vcfg := &vulncheck.Config{Client: dbClient, SourceGoVersion: internal.GoVersion()}
 
@@ -47,27 +47,27 @@ func Run(ctx context.Context, cfg Config) error {
 	case AnalysisTypeBinary:
 		f, err := os.Open(cfg.Patterns[0])
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer f.Close()
 		r, err = binary(ctx, f, vcfg)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	case AnalysisTypeSource:
 		pkgs, err = loadPackages(cfg)
 		if err != nil {
 			// Try to provide a meaningful and actionable error message.
 			if !fileExists(filepath.Join(cfg.SourceLoadConfig.Dir, "go.mod")) {
-				return ErrNoGoMod
+				return nil, ErrNoGoMod
 			}
 			if !fileExists(filepath.Join(cfg.SourceLoadConfig.Dir, "go.sum")) {
-				return ErrNoGoSum
+				return nil, ErrNoGoSum
 			}
 			if isGoVersionMismatchError(err) {
-				return fmt.Errorf("%v\n\n%v", ErrGoVersionMismatch, err)
+				return nil, fmt.Errorf("%v\n\n%v", ErrGoVersionMismatch, err)
 			}
-			return err
+			return nil, err
 		}
 
 		// Sort pkgs so that the PkgNodes returned by vulncheck.Source will be
@@ -75,33 +75,39 @@ func Run(ctx context.Context, cfg Config) error {
 		sortPackages(pkgs)
 		r, err = vulncheck.Source(ctx, pkgs, vcfg)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		unaffected = filterUnaffected(r)
 		r.Vulns = filterCalled(r)
 	default:
-		return fmt.Errorf("%w: %s", ErrInvalidAnalysisType, cfg.AnalysisType)
+		return nil, fmt.Errorf("%w: %s", ErrInvalidAnalysisType, cfg.AnalysisType)
 	}
 
 	switch cfg.OutputType {
 	case OutputTypeJSON:
 		// Following golang.org/x/tools/go/analysis/singlechecker,
 		// return 0 exit code in -json mode.
-		return writeJSON(r)
+		if err := writeJSON(r); err != nil {
+			return nil, err
+		}
+		return &Result{}, nil
 	case OutputTypeText, OutputTypeVerbose:
 		// set of top-level packages, used to find representative symbols
 		ci := getCallInfo(r, pkgs)
 		writeText(r, ci, unaffected, cfg.OutputType == OutputTypeVerbose)
 	case OutputTypeSummary:
 		ci := getCallInfo(r, pkgs)
-		return writeJSON(summary(ci, unaffected))
+		if err := writeJSON(summary(ci, unaffected)); err != nil {
+			return nil, err
+		}
+		return &Result{}, nil
 	default:
-		return fmt.Errorf("%w: %s", ErrInvalidOutputType, cfg.OutputType)
+		return nil, fmt.Errorf("%w: %s", ErrInvalidOutputType, cfg.OutputType)
 	}
 	if len(r.Vulns) > 0 {
-		return ErrContainsVulnerabilties
+		return nil, ErrContainsVulnerabilties
 	}
-	return nil
+	return &Result{}, nil
 }
 
 func writeJSON(r any) error {

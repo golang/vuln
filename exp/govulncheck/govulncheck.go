@@ -17,5 +17,6 @@ type Config = govulncheck.Config
 // Main is the main function for the govulncheck command line tool.
 func Main(cfg Config) error {
 	ctx := context.Background()
-	return govulncheck.Run(ctx, cfg)
+	_, err := govulncheck.Run(ctx, cfg)
+	return err
 }
