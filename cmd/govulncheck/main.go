@@ -80,7 +80,7 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 		AnalysisType: mode,
 		OutputType:   outputType,
 		Patterns:     patterns,
-		SourceLoadConfig: packages.Config{
+		SourceLoadConfig: &packages.Config{
 			Dir:        filepath.FromSlash(dirFlag),
 			Tests:      *testFlag,
 			BuildFlags: buildFlags,
