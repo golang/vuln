@@ -61,7 +61,7 @@ func summary(ci *callInfo, unaffected []*vulncheck.Vuln) Summary {
 			PkgPath: v0.PkgPath,
 			ModPath: v0.ModPath,
 			FoundIn: foundVersion(v0.ModPath, v0.PkgPath, ci),
-			FixedIn: fixedVersion(v0.PkgPath, v0.OSV.Affected),
+			FixedIn: fixedVersion(v0.ModPath, v0.PkgPath, v0.OSV.Affected),
 			Trace:   stacks,
 		})
 	}
@@ -71,7 +71,7 @@ func summary(ci *callInfo, unaffected []*vulncheck.Vuln) Summary {
 			PkgPath: vuln.PkgPath,
 			ModPath: vuln.ModPath,
 			FoundIn: foundVersion(vuln.ModPath, vuln.PkgPath, ci),
-			FixedIn: fixedVersion(vuln.PkgPath, vuln.OSV.Affected),
+			FixedIn: fixedVersion(vuln.ModPath, vuln.PkgPath, vuln.OSV.Affected),
 		})
 	}
 	return Summary{

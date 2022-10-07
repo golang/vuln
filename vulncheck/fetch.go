@@ -9,10 +9,11 @@ import (
 	"fmt"
 
 	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal"
 )
 
 var stdlibModule = &Module{
-	Path: "stdlib",
+	Path: internal.GoStdModulePath,
 	// Version is populated by Source and Binary based on user input
 }
 

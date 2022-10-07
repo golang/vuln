@@ -314,8 +314,8 @@ func (hs *httpSource) GetByModule(ctx context.Context, modulePath string) (_ []*
 // mustn't pass them to module.EscapePath.
 // Keep in sync with vulndb/internal/database/generate.go.
 var specialCaseModulePaths = map[string]bool{
-	"stdlib":    true,
-	"toolchain": true,
+	internal.GoStdModulePath: true,
+	internal.GoCmdModulePath: true,
 }
 
 // EscapeModulePath should be called by cache implementations or other users of

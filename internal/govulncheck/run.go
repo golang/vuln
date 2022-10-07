@@ -163,7 +163,7 @@ func writeText(r *vulncheck.Result, ci *callInfo, unaffected []*vulncheck.Vuln, 
 		id := v0.OSV.ID
 		details := wrap(v0.OSV.Details, 80-labelWidth)
 		found := foundVersion(v0.ModPath, v0.PkgPath, ci)
-		fixed := fixedVersion(v0.PkgPath, v0.OSV.Affected)
+		fixed := fixedVersion(v0.ModPath, v0.PkgPath, v0.OSV.Affected)
 
 		// TODO(https://go.dev/issue/56042): add stacks to govulncheck.Result.
 		var stacks string
@@ -186,7 +186,7 @@ func writeText(r *vulncheck.Result, ci *callInfo, unaffected []*vulncheck.Vuln, 
 		fmt.Println(informationalMessage)
 		for idx, vuln := range unaffected {
 			found := foundVersion(vuln.ModPath, vuln.PkgPath, ci)
-			fixed := fixedVersion(vuln.PkgPath, vuln.OSV.Affected)
+			fixed := fixedVersion(vuln.ModPath, vuln.PkgPath, vuln.OSV.Affected)
 			fmt.Println()
 			writeVulnerability(idx+1, vuln.OSV.ID, vuln.OSV.Details, "", found, fixed, platforms(vuln.OSV))
 		}
@@ -211,15 +211,15 @@ func writeVulnerability(idx int, id, details, callstack, found, fixed, platforms
 func foundVersion(modulePath, pkgPath string, ci *callInfo) string {
 	var found string
 	if v := ci.moduleVersions[modulePath]; v != "" {
-		found = packageVersionString(pkgPath, v[1:])
+		found = packageVersionString(modulePath, pkgPath, v[1:])
 	}
 	return found
 }
 
-func fixedVersion(pkgPath string, affected []osv.Affected) string {
+func fixedVersion(modulePath, pkgPath string, affected []osv.Affected) string {
 	fixed := LatestFixed(affected)
 	if fixed != "" {
-		fixed = packageVersionString(pkgPath, fixed)
+		fixed = packageVersionString(modulePath, pkgPath, fixed)
 	}
 	return fixed
 }
@@ -319,9 +319,9 @@ func compact(s []string) []string {
 	return s[:i]
 }
 
-func packageVersionString(packagePath, version string) string {
+func packageVersionString(modulePath, packagePath, version string) string {
 	v := "v" + version
-	if importPathInStdlib(packagePath) {
+	if modulePath == internal.GoStdModulePath {
 		v = semverToGoTag(v)
 	}
 	return fmt.Sprintf("%s@%s", packagePath, v)

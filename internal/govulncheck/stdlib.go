@@ -69,12 +69,3 @@ func finalDigitsIndex(s string) int {
 	}
 	return i + 1
 }
-
-// importPathInStdlib reports whether the given import path could be part of the Go standard library,
-// by reporting whether the first component lacks a '.'.
-func importPathInStdlib(path string) bool {
-	if i := strings.IndexByte(path, '/'); i != -1 {
-		path = path[:i]
-	}
-	return !strings.Contains(path, ".")
-}
