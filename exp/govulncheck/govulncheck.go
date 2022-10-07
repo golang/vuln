@@ -2,21 +2,35 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package govulncheck has experimental govulncheck API.
+// Package govulncheck provides an experimental govulncheck API.
 package govulncheck
 
-import (
-	"context"
+import "golang.org/x/vuln/internal/govulncheck"
 
-	"golang.org/x/vuln/internal/govulncheck"
+// Source reports vulnerabilities that affect the analyzed packages.
+var Source = govulncheck.Source
+
+type (
+	// Config is the configuration for Main.
+	Config = govulncheck.Config
+
+	// Result is the result of executing Source.
+	Result = govulncheck.Result
+
+	// Vuln represents a single OSV entry.
+	Vuln = govulncheck.Vuln
+
+	// Module represents a specific vulnerability relevant to a
+	// single module or package.
+	Module = govulncheck.Module
+
+	// Package is a Go package with known vulnerable symbols.
+	Package = govulncheck.Package
+
+	// CallStacks contains a representative call stack for each
+	// vulnerable symbol that is called.
+	CallStack = govulncheck.CallStack
+
+	// StackFrame represents a call stack entry.
+	StackFrame = govulncheck.StackFrame
 )
-
-// Config is the configuration for Main.
-type Config = govulncheck.LegacyConfig
-
-// Main is the main function for the govulncheck command line tool.
-func Main(cfg Config) error {
-	ctx := context.Background()
-	_, err := govulncheck.LegacyRun(ctx, cfg)
-	return err
-}
