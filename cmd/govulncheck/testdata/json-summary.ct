@@ -74,8 +74,8 @@ $ govulncheck -dir ${moddir}/vuln -summary-json .
 			},
 			"PkgPath": "golang.org/x/text/language",
 			"ModPath": "golang.org/x/text",
-			"FoundIn": "golang.org/x/text/language@v0.3.0",
-			"FixedIn": "golang.org/x/text/language@v0.3.7",
+			"FoundIn": "v0.3.0",
+			"FixedIn": "v0.3.7",
 			"Trace": [
 				{
 					"Symbol": "Parse",
@@ -166,8 +166,8 @@ $ govulncheck -dir ${moddir}/vuln -summary-json .
 			},
 			"PkgPath": "github.com/tidwall/gjson",
 			"ModPath": "github.com/tidwall/gjson",
-			"FoundIn": "github.com/tidwall/gjson@v1.9.2",
-			"FixedIn": "github.com/tidwall/gjson@v1.9.3",
+			"FoundIn": "v1.9.2",
+			"FixedIn": "v1.9.3",
 			"Trace": null
 		},
 		{
@@ -260,8 +260,8 @@ $ govulncheck -dir ${moddir}/vuln -summary-json .
 			},
 			"PkgPath": "github.com/tidwall/gjson",
 			"ModPath": "github.com/tidwall/gjson",
-			"FoundIn": "github.com/tidwall/gjson@v1.9.2",
-			"FixedIn": "github.com/tidwall/gjson@v1.9.3",
+			"FoundIn": "v1.9.2",
+			"FixedIn": "v1.9.3",
 			"Trace": null
 		}
 	]

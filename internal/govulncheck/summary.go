@@ -25,8 +25,8 @@ type Vuln struct {
 	OSV     *osv.Entry
 	PkgPath string // Package path.
 	ModPath string // Module path.
-	FoundIn string // <package path>@<version> if we know when it was introduced. Empty otherwise.
-	FixedIn string // <package path>@<version> if fix is available. Empty otherwise.
+	FoundIn string // Module version used in the analyzed code. Empty if unknown.
+	FixedIn string // Fixed version if fix is available. Empty otherwise.
 	// Trace contains a call stack for each affecting symbol.
 	// For vulnerabilities found from binary analysis, and vulnerabilities
 	// that are reported as Unaffecting ones, this will be always empty.
@@ -60,8 +60,8 @@ func summary(ci *callInfo, unaffected []*vulncheck.Vuln) Summary {
 			OSV:     vg[0].OSV,
 			PkgPath: v0.PkgPath,
 			ModPath: v0.ModPath,
-			FoundIn: foundVersion(v0.ModPath, v0.PkgPath, ci),
-			FixedIn: fixedVersion(v0.ModPath, v0.PkgPath, v0.OSV.Affected),
+			FoundIn: foundVersion(v0.ModPath, ci),
+			FixedIn: fixedVersion(v0.ModPath, v0.OSV.Affected),
 			Trace:   stacks,
 		})
 	}
@@ -70,8 +70,8 @@ func summary(ci *callInfo, unaffected []*vulncheck.Vuln) Summary {
 			OSV:     vuln.OSV,
 			PkgPath: vuln.PkgPath,
 			ModPath: vuln.ModPath,
-			FoundIn: foundVersion(vuln.ModPath, vuln.PkgPath, ci),
-			FixedIn: fixedVersion(vuln.ModPath, vuln.PkgPath, vuln.OSV.Affected),
+			FoundIn: foundVersion(vuln.ModPath, ci),
+			FixedIn: fixedVersion(vuln.ModPath, vuln.OSV.Affected),
 		})
 	}
 	return Summary{

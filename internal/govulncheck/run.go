@@ -162,8 +162,8 @@ func writeText(r *vulncheck.Result, ci *callInfo, unaffected []*vulncheck.Vuln, 
 		v0 := vg[0]
 		id := v0.OSV.ID
 		details := wrap(v0.OSV.Details, 80-labelWidth)
-		found := foundVersion(v0.ModPath, v0.PkgPath, ci)
-		fixed := fixedVersion(v0.ModPath, v0.PkgPath, v0.OSV.Affected)
+		found := packageVersionString(v0.PkgPath, foundVersion(v0.ModPath, ci))
+		fixed := packageVersionString(v0.PkgPath, fixedVersion(v0.ModPath, v0.OSV.Affected))
 
 		// TODO(https://go.dev/issue/56042): add stacks to govulncheck.Result.
 		var stacks string
@@ -185,8 +185,8 @@ func writeText(r *vulncheck.Result, ci *callInfo, unaffected []*vulncheck.Vuln, 
 		fmt.Println()
 		fmt.Println(informationalMessage)
 		for idx, vuln := range unaffected {
-			found := foundVersion(vuln.ModPath, vuln.PkgPath, ci)
-			fixed := fixedVersion(vuln.ModPath, vuln.PkgPath, vuln.OSV.Affected)
+			found := packageVersionString(vuln.PkgPath, foundVersion(vuln.ModPath, ci))
+			fixed := packageVersionString(vuln.PkgPath, fixedVersion(vuln.ModPath, vuln.OSV.Affected))
 			fmt.Println()
 			writeVulnerability(idx+1, vuln.OSV.ID, vuln.OSV.Details, "", found, fixed, platforms(vuln.OSV))
 		}
@@ -208,18 +208,18 @@ func writeVulnerability(idx int, id, details, callstack, found, fixed, platforms
 `, idx, id, indent(details, 2), callstack, found, fixed, platforms, id)
 }
 
-func foundVersion(modulePath, pkgPath string, ci *callInfo) string {
+func foundVersion(modulePath string, ci *callInfo) string {
 	var found string
 	if v := ci.moduleVersions[modulePath]; v != "" {
-		found = packageVersionString(modulePath, pkgPath, v[1:])
+		found = versionString(modulePath, v[1:])
 	}
 	return found
 }
 
-func fixedVersion(modulePath, pkgPath string, affected []osv.Affected) string {
+func fixedVersion(modulePath string, affected []osv.Affected) string {
 	fixed := LatestFixed(affected)
 	if fixed != "" {
-		fixed = packageVersionString(modulePath, pkgPath, fixed)
+		fixed = versionString(modulePath, fixed)
 	}
 	return fixed
 }
@@ -319,12 +319,24 @@ func compact(s []string) []string {
 	return s[:i]
 }
 
-func packageVersionString(modulePath, packagePath, version string) string {
-	v := "v" + version
-	if modulePath == internal.GoStdModulePath {
-		v = semverToGoTag(v)
+func packageVersionString(packagePath, version string) string {
+	if version == "" {
+		return ""
 	}
-	return fmt.Sprintf("%s@%s", packagePath, v)
+	return fmt.Sprintf("%s@%s", packagePath, version)
+}
+
+// versionString prepends a version string prefix (`v` or `go`
+// depending on the modulePath) to the given semver-style version string.
+func versionString(modulePath, version string) string {
+	if version == "" {
+		return ""
+	}
+	v := "v" + version
+	if modulePath == internal.GoStdModulePath || modulePath == internal.GoCmdModulePath {
+		return semverToGoTag(v)
+	}
+	return v
 }
 
 // indent returns the output of prefixing n spaces to s at every line break,
