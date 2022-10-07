@@ -51,4 +51,8 @@ type Config struct {
 
 	// SourceLoadConfig specifies the package loading configuration.
 	SourceLoadConfig *packages.Config
+
+	// GoVersion specifies the go version used when analyzing source code.
+	// The default is the version of the go command found from the PATH (Path).
+	GoVersion string
 }
