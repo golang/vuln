@@ -79,6 +79,12 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 	entries := entryPoints(ssaPkgs)
 	cg := callGraph(prog, entries)
 	vulnCallGraphSlice(entries, modVulns, cg, result)
+
+	// Release residual memory.
+	for _, p := range result.Imports.Packages {
+		p.pkg = nil
+	}
+
 	return result, nil
 }
 
