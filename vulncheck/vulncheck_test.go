@@ -8,6 +8,7 @@ import (
 	"path"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/go/packages/packagestest"
@@ -16,6 +17,7 @@ import (
 )
 
 func TestFilterVulns(t *testing.T) {
+	past := time.Now().Add(-3 * time.Hour)
 	mv := moduleVulnerabilities{
 		{
 			mod: &Module{
@@ -111,6 +113,28 @@ func TestFilterVulns(t *testing.T) {
 				}},
 			},
 		},
+		{
+			mod: &Module{
+				Path:    "example.mod/w",
+				Version: "v1.3.0",
+			},
+			vulns: []*osv.Entry{
+				{ID: "m", Withdrawn: &past, Affected: []osv.Affected{ // should be filtered out
+					{Package: osv.Package{Name: "example.mod/w"}, EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							GOOS: []string{"linux"},
+						}},
+					}},
+				}},
+				{ID: "n", Affected: []osv.Affected{
+					{Package: osv.Package{Name: "example.mod/w"}, EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							GOOS: []string{"linux"},
+						}},
+					}},
+				}},
+			},
+		},
 	}
 
 	expected := moduleVulnerabilities{
@@ -162,6 +186,21 @@ func TestFilterVulns(t *testing.T) {
 						GOOS: []string{"linux"},
 					}},
 				}}}},
+			},
+		},
+		{
+			mod: &Module{
+				Path:    "example.mod/w",
+				Version: "v1.3.0",
+			},
+			vulns: []*osv.Entry{
+				{ID: "n", Affected: []osv.Affected{
+					{Package: osv.Package{Name: "example.mod/w"}, EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{{
+							GOOS: []string{"linux"},
+						}},
+					}},
+				}},
 			},
 		},
 	}

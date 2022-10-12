@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"go/types"
 	"strings"
+	"time"
 
 	"golang.org/x/exp/slices"
 	"golang.org/x/tools/go/packages"
@@ -310,6 +311,7 @@ type modVulns struct {
 }
 
 func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
+	now := time.Now()
 	var filteredMod moduleVulnerabilities
 	for _, mod := range mv {
 		module := mod.mod
@@ -320,6 +322,11 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 		// TODO(https://golang.org/issues/49264): if modVersion == "", try vcs?
 		var filteredVulns []*osv.Entry
 		for _, v := range mod.vulns {
+			// Ignore vulnerabilities that have been withdrawn
+			if v.Withdrawn != nil && v.Withdrawn.Before(now) {
+				continue
+			}
+
 			var filteredAffected []osv.Affected
 			for _, a := range v.Affected {
 				// Vulnerabilities from some databases might contain
