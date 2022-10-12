@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/osv"
 )
 
@@ -111,7 +112,7 @@ func TestImports(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x and y as entry packages.
-	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y"))
+	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +254,7 @@ func TestRequires(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -490,7 +491,7 @@ func TestCalls(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x and y as entry packages.
-	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y"))
+	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -566,8 +567,8 @@ func TestFiltering(t *testing.T) {
 	})
 	defer e.Cleanup()
 
-	client := &mockClient{
-		ret: map[string][]*osv.Entry{
+	client := &test.MockClient{
+		Ret: map[string][]*osv.Entry{
 			"golang.org/vmod": []*osv.Entry{
 				{
 					ID: "V",
@@ -589,7 +590,7 @@ func TestFiltering(t *testing.T) {
 	}
 
 	// Load x as entry package.
-	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -659,8 +660,8 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	})
 	defer e.Cleanup()
 
-	client := &mockClient{
-		ret: map[string][]*osv.Entry{
+	client := &test.MockClient{
+		Ret: map[string][]*osv.Entry{
 			"golang.org/vmod": []*osv.Entry{
 				{
 					ID: "V",
@@ -680,7 +681,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	}
 
 	// Load x as entry package.
-	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -746,7 +747,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -827,7 +828,7 @@ func TestRecursion(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/osv"
 )
 
@@ -408,7 +409,7 @@ func TestConvert(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := loadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}

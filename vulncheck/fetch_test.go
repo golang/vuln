@@ -9,12 +9,13 @@ import (
 	"reflect"
 	"testing"
 
+	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/osv"
 )
 
 func TestFetchVulnerabilities(t *testing.T) {
-	mc := &mockClient{
-		ret: map[string][]*osv.Entry{
+	mc := &test.MockClient{
+		Ret: map[string][]*osv.Entry{
 			"example.mod/a": {{ID: "a", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}}},
 			"example.mod/b": {{ID: "b", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/b"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}}},
 			"example.mod/d": {{ID: "c", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/d"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}}},

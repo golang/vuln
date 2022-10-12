@@ -5,34 +5,22 @@
 package vulncheck
 
 import (
-	"context"
 	"fmt"
 	"runtime"
 	"sort"
 
-	"golang.org/x/tools/go/packages"
-	"golang.org/x/tools/go/packages/packagestest"
-	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/internal/semver"
+	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/osv"
 )
-
-type mockClient struct {
-	client.Client
-	ret map[string][]*osv.Entry
-}
-
-func (mc *mockClient) GetByModule(ctx context.Context, a string) ([]*osv.Entry, error) {
-	return mc.ret[a], nil
-}
 
 // testClient contains the following test vulnerabilities
 //
 //	golang.org/amod/avuln.{VulnData.Vuln1, vulnData.Vuln2}
 //	golang.org/bmod/bvuln.Vuln
 //	archive/zip.OpenReader
-var testClient = &mockClient{
-	ret: map[string][]*osv.Entry{
+var testClient = &test.MockClient{
+	Ret: map[string][]*osv.Entry{
 		"golang.org/amod": []*osv.Entry{
 			{
 				ID: "VA",
@@ -201,25 +189,4 @@ func sortStrMap(m map[string][]string) {
 	for _, strs := range m {
 		sort.Strings(strs)
 	}
-}
-
-// loadPackages loads packages for patterns. Returns error if the loading failed
-// or some of the specified packages have issues. In the latter case, the error
-// message will contain information only for the first observed package with issues.
-func loadPackages(e *packagestest.Exported, patterns ...string) ([]*packages.Package, error) {
-	e.Config.Mode |= packages.NeedModule | packages.NeedName | packages.NeedFiles |
-		packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes |
-		packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps
-	pkgs, err := packages.Load(e.Config, patterns...)
-	if err != nil {
-		return pkgs, err
-	}
-
-	for _, p := range pkgs {
-		if len(p.Errors) > 0 {
-			return pkgs, fmt.Errorf("%v", p.Errors)
-		}
-	}
-
-	return pkgs, nil
 }

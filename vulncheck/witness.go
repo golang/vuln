@@ -127,8 +127,8 @@ type StackEntry struct {
 	// Function whose frame is on the stack.
 	Function *FuncNode
 
-	// Call is the call site inducing the stack frame.
-	// nil when the frame represents the stack entry point.
+	// Call is the call site inducing the next stack frame.
+	// nil when the frame represents the last frame in the stack.
 	Call *CallSite
 }
 
@@ -199,9 +199,9 @@ func callStacks(vulnSinkID int, res *Result) []CallStack {
 		// Pick a single call site for each function in determinstic order.
 		// A single call site is sufficient as we visit a function only once.
 		for _, cs := range callsites(f.CallSites, res, seen) {
-			callee := res.Calls.Functions[cs.Parent]
-			nStack := &callChain{f: callee, call: cs, child: c}
-			if entries[callee.ID] {
+			caller := res.Calls.Functions[cs.Parent]
+			nStack := &callChain{f: caller, call: cs, child: c}
+			if entries[caller.ID] {
 				stacks = append(stacks, nStack.CallStack())
 			}
 			queue.PushBack(nStack)
