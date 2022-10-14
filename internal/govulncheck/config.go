@@ -37,8 +37,8 @@ const (
 	vulndbHost  = "https://vuln.go.dev"
 )
 
-// Config is the configuration for Main.
-type Config struct {
+// LegacyConfig is the configuration for Main.
+type LegacyConfig struct {
 	// AnalysisType specifies the vulncheck analysis type.
 	AnalysisType string
 

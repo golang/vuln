@@ -76,7 +76,7 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 	}
 
 	ctx := context.Background()
-	_, err := govulncheck.Run(ctx, govulncheck.Config{
+	_, err := govulncheck.LegacyRun(ctx, govulncheck.LegacyConfig{
 		AnalysisType: mode,
 		OutputType:   outputType,
 		Patterns:     patterns,

@@ -20,8 +20,8 @@ import (
 	"golang.org/x/vuln/vulncheck"
 )
 
-// Run is the main function for the govulncheck command line tool.
-func Run(ctx context.Context, cfg Config) (*Result, error) {
+// LegacyRun is the main function for the govulncheck command line tool.
+func LegacyRun(ctx context.Context, cfg LegacyConfig) (*Result, error) {
 	dbs := []string{vulndbHost}
 	if db := os.Getenv(envGOVULNDB); db != "" {
 		dbs = strings.Split(db, ",")

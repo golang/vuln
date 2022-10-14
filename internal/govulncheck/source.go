@@ -31,7 +31,7 @@ func (e *PackageError) Error() string {
 // the cfg mode flags that vulncheck needs for analysis.
 // If the packages contain errors, a PackageError is returned containing a list of the errors,
 // along with the packages themselves.
-func loadPackages(cfg Config) ([]*vulncheck.Package, error) {
+func loadPackages(cfg LegacyConfig) ([]*vulncheck.Package, error) {
 	patterns := cfg.Patterns
 	cfg.SourceLoadConfig.Mode |= packages.NeedName | packages.NeedImports | packages.NeedTypes |
 		packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps |

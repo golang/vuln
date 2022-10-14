@@ -12,11 +12,11 @@ import (
 )
 
 // Config is the configuration for Main.
-type Config = govulncheck.Config
+type Config = govulncheck.LegacyConfig
 
 // Main is the main function for the govulncheck command line tool.
 func Main(cfg Config) error {
 	ctx := context.Background()
-	_, err := govulncheck.Run(ctx, cfg)
+	_, err := govulncheck.LegacyRun(ctx, cfg)
 	return err
 }
