@@ -311,8 +311,19 @@ func (t *LineTable) go12Funcs() []Func {
 		info := t.funcData(uint32(i))
 		f.LineTable = t
 		f.FrameSize = int(info.deferreturn())
-		f.inlineTreeOffset = info.funcdataOffset(funcdata_InlTree)
-		f.inlineTreeCount = 1 + t.maxInlineTreeIndexValue(info)
+
+		// Additions.
+		// numFuncField is the number of (32 bit) fields in _func (src/runtime/runtime2.go)
+		// Note that the last 4 fields are 32 bits combined. This number is 11 for go1.20,
+		// 10 for earlier versions down to go1.16, and 9 before that.
+		var numFuncFields uint32 = 11
+		if t.version < ver116 {
+			numFuncFields = 9
+		} else if t.version < ver120 {
+			numFuncFields = 10
+		}
+		f.inlineTreeOffset = info.funcdataOffset(funcdata_InlTree, numFuncFields)
+		f.inlineTreeCount = 1 + t.maxInlineTreeIndexValue(info, numFuncFields)
 
 		syms[i] = Sym{
 			Value:     f.Entry,

@@ -17,9 +17,6 @@ const (
 	funcdata_InlTree    = 3
 )
 
-func (f funcData) npcdata() uint32   { return f.field(7) }
-func (f funcData) nfuncdata() uint32 { return uint32(f.data[f.fieldOffset(9)+3]) }
-
 // InlineTree returns the inline tree for Func f as a sequence of InlinedCalls.
 // goFuncValue is the value of the gosym.FuncSymName symbol.
 // baseAddr is the address of the memory region (ELF Prog) containing goFuncValue.
@@ -88,23 +85,29 @@ type rawInlinedCall112 struct {
 // rawInlinedCall120 is the encoding of entries in the FUNCDATA_InlTree table
 // from Go 1.20. It is equivalent to runtime.inlinedCall.
 type rawInlinedCall120 struct {
-	FuncID   uint8 // type of the called function
-	_        [3]byte
-	NameOff  int32 // offset into pclntab for name of called function
-	ParentPC int32 // position of an instruction whose source position is the call site (offset from entry)
+	FuncID    uint8 // type of the called function
+	_         [3]byte
+	NameOff   int32 // offset into pclntab for name of called function
+	ParentPC  int32 // position of an instruction whose source position is the call site (offset from entry)
+	StartLine int32 // line number of start of function (func keyword/TEXT directive)
 }
 
-func (f funcData) funcdataOffset(i uint8) uint32 {
-	if uint32(i) >= f.nfuncdata() {
+func (f funcData) npcdata() uint32 { return f.field(7) }
+func (f funcData) nfuncdata(numFuncFields uint32) uint32 {
+	return uint32(f.data[f.fieldOffset(numFuncFields-1)+3])
+}
+
+func (f funcData) funcdataOffset(i uint8, numFuncFields uint32) uint32 {
+	if uint32(i) >= f.nfuncdata(numFuncFields) {
 		return ^uint32(0)
 	}
 	var off uint32
 	if f.t.version >= ver118 {
-		off = f.fieldOffset(10) + // skip fixed part of _func
+		off = f.fieldOffset(numFuncFields) + // skip fixed part of _func
 			f.npcdata()*4 + // skip pcdata
 			uint32(i)*4 // index of i'th FUNCDATA
 	} else {
-		off = f.fieldOffset(10) + // skip fixed part of _func
+		off = f.fieldOffset(numFuncFields) + // skip fixed part of _func
 			f.npcdata()*4
 		off += uint32(i) * f.t.ptrsize
 	}
@@ -121,11 +124,11 @@ func (f funcData) fieldOffset(n uint32) uint32 {
 	return sz0 + (n-1)*4 // subsequent fields are 4 bytes each
 }
 
-func (f funcData) pcdataOffset(i uint8) uint32 {
+func (f funcData) pcdataOffset(i uint8, numFuncFields uint32) uint32 {
 	if uint32(i) >= f.npcdata() {
 		return ^uint32(0)
 	}
-	off := f.fieldOffset(10) + // skip fixed part of _func
+	off := f.fieldOffset(numFuncFields) + // skip fixed part of _func
 		uint32(i)*4 // index of i'th PCDATA
 	return f.t.binary.Uint32(f.data[off:])
 }
@@ -134,11 +137,11 @@ func (f funcData) pcdataOffset(i uint8) uint32 {
 // pc-value table in info. This is the only way to determine how many
 // IndexedCalls are in an inline tree, since the data of the tree itself is not
 // delimited in any way.
-func (t *LineTable) maxInlineTreeIndexValue(info funcData) int {
+func (t *LineTable) maxInlineTreeIndexValue(info funcData, numFuncFields uint32) int {
 	if info.npcdata() <= pcdata_InlTreeIndex {
 		return -1
 	}
-	off := info.pcdataOffset(pcdata_InlTreeIndex)
+	off := info.pcdataOffset(pcdata_InlTreeIndex, numFuncFields)
 	p := t.pctab[off:]
 	val := int32(-1)
 	max := int32(-1)
