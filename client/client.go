@@ -89,8 +89,20 @@ type localSource struct {
 
 func (*localSource) unexported() {}
 
-func (ls *localSource) GetByModule(_ context.Context, modulePath string) (_ []*osv.Entry, err error) {
+func (ls *localSource) GetByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
 	defer derrors.Wrap(&err, "localSource.GetByModule(%q)", modulePath)
+
+	index, err := ls.Index(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Query index first to be consistent with the way httpSource.GetByModule works.
+	// Prevents opening and stating files on disk that don't need to be touched. Also
+	// solves #56179.
+	if _, present := index[modulePath]; !present {
+		return nil, nil
+	}
+
 	epath, err := EscapeModulePath(modulePath)
 	if err != nil {
 		return nil, err
