@@ -69,6 +69,10 @@ func LegacyRun(ctx context.Context, cfg LegacyConfig) (*Result, error) {
 			}
 			return nil, err
 		}
+		// If we are in GOPATH mode, then no version information will be available.
+		if inGoPathMode(pkgs) {
+			return nil, ErrNoModVersion
+		}
 
 		// Sort pkgs so that the PkgNodes returned by vulncheck.Source will be
 		// deterministic.
