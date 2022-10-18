@@ -7,7 +7,7 @@ govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulnch
 Scanning for dependencies with known vulnerabilities...
 No vulnerabilities found.
 
-$ govulncheck -dir ${moddir}/vuln . --> FAIL 3
+$ govulncheck -tags=twocallstacks -dir ${moddir}/vuln . --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...
@@ -21,6 +21,7 @@ Vulnerability #1: GO-2021-0113
 
   Call stacks in your code:
       .../vuln.go:12:16: golang.org/vuln.main calls golang.org/x/text/language.Parse
+      .../vuln_extra.go:8:30: golang.org/vuln.init#1 calls golang.org/x/text/language.ParseAcceptLanguage
 
   Found in: golang.org/x/text/language@v0.3.0
   Fixed in: golang.org/x/text/language@v0.3.7
