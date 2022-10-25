@@ -159,7 +159,8 @@ func writeText(r *vulncheck.Result, ci *callInfo, unaffected []*vulncheck.Vuln, 
 	for idx, vg := range ci.vulnGroups {
 		fmt.Println()
 		// All the vulns in vg have the same PkgPath, ModPath and OSV.
-		// All have a non-zero CallSink.
+		// All have a non-zero CallSink when not in binary mode, otherwise
+		// they all have a zero CallSink.
 
 		// TODO(https://go.dev/issue/56042): add ID, details, found and fixed
 		// below to govulncheck.Result.
@@ -169,21 +170,23 @@ func writeText(r *vulncheck.Result, ci *callInfo, unaffected []*vulncheck.Vuln, 
 		found := packageVersionString(v0.PkgPath, foundVersion(v0.ModPath, ci))
 		fixed := packageVersionString(v0.PkgPath, fixedVersion(v0.ModPath, v0.OSV.Affected))
 
-		// TODO(https://go.dev/issue/56042): add stacks to govulncheck.Result.
-		var stacks string
-		if !verbose {
-			stacks = defaultCallStacks(vg, ci)
-		} else {
-			stacks = verboseCallStacks(vg, ci)
-		}
-		var b strings.Builder
-		if len(stacks) > 0 {
-			b.WriteString(indent("\n\nCall stacks in your code:\n", 2))
-			b.WriteString(indent(stacks, 6))
+		var stacksBuilder strings.Builder
+		if r.Calls != nil { // there are no call stacks in binary mode
+			// TODO(https://go.dev/issue/56042): add stacks to govulncheck.Result.
+			var stacks string
+			if !verbose {
+				stacks = defaultCallStacks(vg, ci, r)
+			} else {
+				stacks = verboseCallStacks(vg, ci, r)
+			}
+			if len(stacks) > 0 {
+				stacksBuilder.WriteString(indent("\n\nCall stacks in your code:\n", 2))
+				stacksBuilder.WriteString(indent(stacks, 6))
+			}
 		}
 		// TODO(https://go.dev/issue/56042): add platform and callstack summary
 		// to govulncheck.Result
-		writeVulnerability(idx+1, id, details, b.String(), found, fixed, platforms(v0.OSV))
+		writeVulnerability(idx+1, id, details, stacksBuilder.String(), found, fixed, platforms(v0.OSV))
 	}
 	if len(unaffected) > 0 {
 		fmt.Println()
@@ -228,15 +231,16 @@ func fixedVersion(modulePath string, affected []osv.Affected) string {
 	return fixed
 }
 
-func defaultCallStacks(vg []*vulncheck.Vuln, ci *callInfo) string {
+func defaultCallStacks(vg []*vulncheck.Vuln, ci *callInfo, r *vulncheck.Result) string {
 	var summaries []string
-	for _, v := range vg {
-		if css := ci.callStacks[v]; len(css) > 0 {
-			if sum := SummarizeCallStack(css[0], ci.topPackages, v.PkgPath); sum != "" {
-				summaries = append(summaries, strings.TrimSpace(sum))
-			}
+	forUniqueCallStacks(vg, ci, r, func(v *vulncheck.Vuln, cs vulncheck.CallStack, ci *callInfo) {
+		if sum := SummarizeCallStack(cs, ci.topPackages, v.PkgPath); sum != "" {
+			summaries = append(summaries, strings.TrimSpace(sum))
 		}
-	}
+	})
+
+	// Sort call stack summaries and get rid of duplicates.
+	// Note that different call stacks can yield same summaries.
 	if len(summaries) > 0 {
 		sort.Strings(summaries)
 		summaries = compact(summaries)
@@ -249,31 +253,56 @@ func defaultCallStacks(vg []*vulncheck.Vuln, ci *callInfo) string {
 	return b.String()
 }
 
-func verboseCallStacks(vg []*vulncheck.Vuln, ci *callInfo) string {
+func verboseCallStacks(vg []*vulncheck.Vuln, ci *callInfo, r *vulncheck.Result) string {
 	// Display one full call stack for each vuln.
 	i := 1
 	nMore := 0
 	var b strings.Builder
-	for _, v := range vg {
-		css := ci.callStacks[v]
-		if len(css) == 0 {
-			continue
-		}
+	forUniqueCallStacks(vg, ci, r, func(v *vulncheck.Vuln, cs vulncheck.CallStack, ci *callInfo) {
 		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, v.Symbol))
-		for _, e := range css[0] {
+		for _, e := range cs {
 			b.WriteString(fmt.Sprintf("  %s\n", FuncName(e.Function)))
 			if pos := AbsRelShorter(FuncPos(e.Call)); pos != "" {
 				b.WriteString(fmt.Sprintf("      %s\n", pos))
 			}
 		}
 		i++
-		nMore += len(css) - 1
-	}
+		nMore += len(ci.callStacks[v]) - 1
+	})
 	if nMore > 0 {
 		b.WriteString(fmt.Sprintf("    There are %d more call stacks available.\n", nMore))
 		b.WriteString(fmt.Sprintf("To see all of them, pass the -json flags.\n"))
 	}
 	return b.String()
+}
+
+// forUniqueCallStacks applies f to each unique call stack of vg.
+func forUniqueCallStacks(vg []*vulncheck.Vuln, ci *callInfo, r *vulncheck.Result, f func(v *vulncheck.Vuln, cs vulncheck.CallStack, ci *callInfo)) {
+	vulnFuncs := make(map[*vulncheck.FuncNode]bool)
+	for _, v := range vg {
+		vulnFuncs[r.Calls.Functions[v.CallSink]] = true
+	}
+	for _, v := range vg {
+		vFunc := r.Calls.Functions[v.CallSink]
+		if cs := uniqueCallStack(vFunc, ci.callStacks[v], vulnFuncs); cs != nil {
+			f(v, cs, ci)
+		}
+	}
+}
+
+// uniqueCallStack returns the first member of stacks for vulnFunc that does not
+// go through skip list (except vulnFunc). Returns nil if no such stack can be found.
+func uniqueCallStack(vulnFunc *vulncheck.FuncNode, stacks []vulncheck.CallStack, skip map[*vulncheck.FuncNode]bool) vulncheck.CallStack {
+callstack:
+	for _, cs := range stacks {
+		for _, e := range cs {
+			if e.Function != vulnFunc && skip[e.Function] {
+				continue callstack
+			}
+		}
+		return cs
+	}
+	return nil
 }
 
 // platforms returns a string describing the GOOS/GOARCH pairs that the vuln affects.

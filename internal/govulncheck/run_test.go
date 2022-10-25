@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/vulncheck"
 )
 
 func TestLatestFixed(t *testing.T) {
@@ -176,6 +177,44 @@ func TestIndent(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			got := indent(test.s, test.n)
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestUniqueCallStack(t *testing.T) {
+	a := &vulncheck.FuncNode{Name: "A"}
+	b := &vulncheck.FuncNode{Name: "B"}
+	v1 := &vulncheck.FuncNode{Name: "V1"}
+	v2 := &vulncheck.FuncNode{Name: "V2"}
+	v3 := &vulncheck.FuncNode{Name: "V3"}
+
+	callStack := func(fs ...*vulncheck.FuncNode) vulncheck.CallStack {
+		var cs vulncheck.CallStack
+		for _, f := range fs {
+			cs = append(cs, vulncheck.StackEntry{Function: f})
+		}
+		return cs
+	}
+
+	// V1, V2, and V3 are vulnerable symbols
+	skip := map[*vulncheck.FuncNode]bool{v1: true, v2: true, v3: true}
+	for _, test := range []struct {
+		v    *vulncheck.FuncNode
+		css  []vulncheck.CallStack
+		want vulncheck.CallStack
+	}{
+		// [A -> B -> V3 -> V1, A -> V1] ==> A -> V1 since the first stack goes through V3
+		{v1, []vulncheck.CallStack{callStack(a, b, v3, v1), callStack(a, v1)}, callStack(a, v1)},
+		// [A -> V1 -> V2] ==> nil since the only candidate call stack goes through V1
+		{v2, []vulncheck.CallStack{callStack(a, v1, v2)}, nil},
+		// [A -> V1 -> V3, A -> B -> v3] ==> A -> B -> V3 since the first stack goes through V1
+		{v3, []vulncheck.CallStack{callStack(a, v1, v3), callStack(a, b, v3)}, callStack(a, b, v3)},
+	} {
+		t.Run(test.v.Name, func(t *testing.T) {
+			got := uniqueCallStack(test.v, test.css, skip)
 			if diff := cmp.Diff(test.want, got); diff != "" {
 				t.Fatalf("mismatch (-want, +got):\n%s", diff)
 			}
