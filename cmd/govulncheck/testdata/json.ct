@@ -4,154 +4,196 @@
 
 $ govulncheck -dir ${moddir}/novuln -json .
 {
-	"Calls": {
-		"Functions": {},
-		"Entries": null
-	},
-	"Imports": {
-		"Packages": {},
-		"Entries": null
-	},
-	"Requires": {
-		"Modules": {},
-		"Entries": null
-	},
-	"Vulns": null,
-	"Modules": [
-		{
-			"Path": "golang.org/novuln",
-			"Version": "",
-			"Dir": "",
-			"Replace": null
-		},
-		{
-			"Path": "golang.org/x/text",
-			"Version": "v0.3.7",
-			"Dir": "",
-			"Replace": null
-		},
-		{
-			"Path": "stdlib",
-			"Version": "",
-			"Dir": "",
-			"Replace": null
-		}
-	]
+	"Vulns": null
 }
 
 $ govulncheck -dir ${moddir}/vuln -json .
 {
-	"Calls": {
-		"Functions": {
-			"1": {
-				"ID": 1,
-				"Name": "main",
-				"RecvType": "",
-				"PkgPath": "golang.org/vuln",
-				"Pos": {
-					"Filename": ".../vuln.go",
-					"Offset": 97,
-					"Line": 10,
-					"Column": 6
-				},
-				"CallSites": null
-			},
-			"2": {
-				"ID": 2,
-				"Name": "Parse",
-				"RecvType": "",
-				"PkgPath": "golang.org/x/text/language",
-				"Pos": {
-					"Filename": ".../parse.go",
-					"Offset": 5808,
-					"Line": 228,
-					"Column": 6
-				},
-				"CallSites": [
+	"Vulns": [
+		{
+			"OSV": {
+				"id": "GO-2022-0592",
+				"published": "2022-08-15T18:06:07Z",
+				"modified": "2022-08-19T22:21:47Z",
+				"aliases": [
+					"CVE-2021-42248",
+					"GHSA-c9gm-7rfj-8w5h"
+				],
+				"details": "A maliciously crafted path can cause Get and other query functions to consume excessive amounts of CPU and time.",
+				"affected": [
 					{
-						"Parent": 1,
-						"Name": "Parse",
-						"RecvType": "",
-						"Pos": {
-							"Filename": ".../vuln.go",
-							"Offset": 143,
-							"Line": 12,
-							"Column": 16
+						"package": {
+							"name": "github.com/tidwall/gjson",
+							"ecosystem": "Go"
 						},
-						"Resolved": true
+						"ranges": [
+							{
+								"type": "SEMVER",
+								"events": [
+									{
+										"introduced": "0"
+									},
+									{
+										"fixed": "1.9.3"
+									}
+								]
+							}
+						],
+						"database_specific": {
+							"url": "https://pkg.go.dev/vuln/GO-2022-0592"
+						},
+						"ecosystem_specific": {
+							"imports": [
+								{
+									"path": "github.com/tidwall/gjson",
+									"symbols": [
+										"Get",
+										"GetBytes",
+										"GetMany",
+										"GetManyBytes",
+										"Result.Get",
+										"queryMatches"
+									]
+								}
+							]
+						}
+					}
+				],
+				"references": [
+					{
+						"type": "FIX",
+						"url": "https://github.com/tidwall/gjson/commit/77a57fda87dca6d0d7d4627d512a630f89a91c96"
+					},
+					{
+						"type": "WEB",
+						"url": "https://github.com/tidwall/gjson/issues/237"
+					},
+					{
+						"type": "WEB",
+						"url": "https://nvd.nist.gov/vuln/detail/CVE-2021-42248"
+					},
+					{
+						"type": "WEB",
+						"url": "https://github.com/advisories/GHSA-c9gm-7rfj-8w5h"
 					}
 				]
-			}
+			},
+			"Modules": [
+				{
+					"Path": "github.com/tidwall/gjson",
+					"FoundVersion": "v1.9.2",
+					"FixedVersion": "v1.9.3",
+					"Packages": [
+						{
+							"Path": "github.com/tidwall/gjson",
+							"CallStacks": null
+						}
+					]
+				}
+			]
 		},
-		"Entries": [
-			1
-		]
-	},
-	"Imports": {
-		"Packages": {
-			"1": {
-				"ID": 1,
-				"Name": "gjson",
-				"Path": "github.com/tidwall/gjson",
-				"Module": 1,
-				"ImportedBy": [
-					3
+		{
+			"OSV": {
+				"id": "GO-2021-0265",
+				"published": "2022-01-14T17:30:24Z",
+				"modified": "2022-08-19T22:21:47Z",
+				"aliases": [
+					"CVE-2020-36066",
+					"CVE-2021-42836",
+					"GHSA-ppj4-34rq-v8j9",
+					"GHSA-wjm3-fq3r-5x46"
+				],
+				"details": "GJSON allowed a ReDoS (regular expression denial of service) attack.",
+				"affected": [
+					{
+						"package": {
+							"name": "github.com/tidwall/gjson",
+							"ecosystem": "Go"
+						},
+						"ranges": [
+							{
+								"type": "SEMVER",
+								"events": [
+									{
+										"introduced": "0"
+									},
+									{
+										"fixed": "1.9.3"
+									}
+								]
+							}
+						],
+						"database_specific": {
+							"url": "https://pkg.go.dev/vuln/GO-2021-0265"
+						},
+						"ecosystem_specific": {
+							"imports": [
+								{
+									"path": "github.com/tidwall/gjson",
+									"goos": [
+										"linux",
+										"windows"
+									],
+									"goarch": [
+										"amd64"
+									],
+									"symbols": [
+										"match.Match"
+									]
+								}
+							]
+						}
+					}
+				],
+				"references": [
+					{
+						"type": "FIX",
+						"url": "https://github.com/tidwall/gjson/commit/590010fdac311cc8990ef5c97448d4fec8f29944"
+					},
+					{
+						"type": "WEB",
+						"url": "https://github.com/tidwall/gjson/compare/v1.9.2...v1.9.3"
+					},
+					{
+						"type": "WEB",
+						"url": "https://github.com/tidwall/gjson/issues/236"
+					},
+					{
+						"type": "WEB",
+						"url": "https://github.com/tidwall/gjson/issues/237"
+					},
+					{
+						"type": "WEB",
+						"url": "https://nvd.nist.gov/vuln/detail/CVE-2020-36066"
+					},
+					{
+						"type": "WEB",
+						"url": "https://nvd.nist.gov/vuln/detail/CVE-2021-42836"
+					},
+					{
+						"type": "WEB",
+						"url": "https://github.com/advisories/GHSA-ppj4-34rq-v8j9"
+					},
+					{
+						"type": "WEB",
+						"url": "https://github.com/advisories/GHSA-wjm3-fq3r-5x46"
+					}
 				]
 			},
-			"2": {
-				"ID": 2,
-				"Name": "language",
-				"Path": "golang.org/x/text/language",
-				"Module": 3,
-				"ImportedBy": [
-					3
-				]
-			},
-			"3": {
-				"ID": 3,
-				"Name": "main",
-				"Path": "golang.org/vuln",
-				"Module": 2,
-				"ImportedBy": null
-			}
+			"Modules": [
+				{
+					"Path": "github.com/tidwall/gjson",
+					"FoundVersion": "v1.9.2",
+					"FixedVersion": "v1.9.3",
+					"Packages": [
+						{
+							"Path": "github.com/tidwall/gjson",
+							"CallStacks": null
+						}
+					]
+				}
+			]
 		},
-		"Entries": [
-			3
-		]
-	},
-	"Requires": {
-		"Modules": {
-			"1": {
-				"ID": 1,
-				"Path": "github.com/tidwall/gjson",
-				"Version": "v1.9.2",
-				"Replace": 0,
-				"RequiredBy": [
-					2
-				]
-			},
-			"2": {
-				"ID": 2,
-				"Path": "golang.org/vuln",
-				"Version": "",
-				"Replace": 0,
-				"RequiredBy": null
-			},
-			"3": {
-				"ID": 3,
-				"Path": "golang.org/x/text",
-				"Version": "v0.3.0",
-				"Replace": 0,
-				"RequiredBy": [
-					2
-				]
-			}
-		},
-		"Entries": [
-			2
-		]
-	},
-	"Vulns": [
 		{
 			"OSV": {
 				"id": "GO-2021-0113",
@@ -213,50 +255,48 @@ $ govulncheck -dir ${moddir}/vuln -json .
 					}
 				]
 			},
-			"Symbol": "Parse",
-			"PkgPath": "golang.org/x/text/language",
-			"ModPath": "golang.org/x/text",
-			"CallSink": 2,
-			"ImportSink": 2,
-			"RequireSink": 3
-		}
-	],
-	"Modules": [
-		{
-			"Path": "github.com/tidwall/gjson",
-			"Version": "v1.9.2",
-			"Dir": "",
-			"Replace": null
-		},
-		{
-			"Path": "github.com/tidwall/match",
-			"Version": "v1.1.0",
-			"Dir": "",
-			"Replace": null
-		},
-		{
-			"Path": "github.com/tidwall/pretty",
-			"Version": "v1.2.0",
-			"Dir": "",
-			"Replace": null
-		},
-		{
-			"Path": "golang.org/vuln",
-			"Version": "",
-			"Dir": "",
-			"Replace": null
-		},
-		{
-			"Path": "golang.org/x/text",
-			"Version": "v0.3.0",
-			"Dir": "",
-			"Replace": null
-		},
-		{
-			"Path": "stdlib",
-			"Version": "",
-			"Dir": "",
-			"Replace": null
+			"Modules": [
+				{
+					"Path": "golang.org/x/text",
+					"FoundVersion": "v0.3.0",
+					"FixedVersion": "v0.3.7",
+					"Packages": [
+						{
+							"Path": "golang.org/x/text/language",
+							"CallStacks": [
+								{
+									"Symbol": "Parse",
+									"Summary": ".../vuln.go:12:16: golang.org/vuln.main calls golang.org/x/text/language.Parse",
+									"Frames": [
+										{
+											"PkgPath": "golang.org/vuln",
+											"FuncName": "main",
+											"RecvType": "",
+											"Position": {
+												"Filename": ".../vuln.go",
+												"Offset": 143,
+												"Line": 12,
+												"Column": 16
+											}
+										},
+										{
+											"PkgPath": "golang.org/x/text/language",
+											"FuncName": "Parse",
+											"RecvType": "",
+											"Position": {
+												"Filename": "",
+												"Offset": 0,
+												"Line": 0,
+												"Column": 0
+											}
+										}
+									]
+								}
+							]
+						}
+					]
+				}
+			]
 		}
 	]
 }

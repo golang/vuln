@@ -191,6 +191,17 @@ func TestUniqueCallStack(t *testing.T) {
 	v2 := &vulncheck.FuncNode{Name: "V2"}
 	v3 := &vulncheck.FuncNode{Name: "V3"}
 
+	vuln1 := &vulncheck.Vuln{Symbol: "V1", CallSink: 1}
+	vuln2 := &vulncheck.Vuln{Symbol: "V2", CallSink: 2}
+	vuln3 := &vulncheck.Vuln{Symbol: "V3", CallSink: 3}
+
+	vr := &vulncheck.Result{
+		Calls: &vulncheck.CallGraph{
+			Functions: map[int]*vulncheck.FuncNode{1: v1, 2: v2, 3: v3},
+		},
+		Vulns: []*vulncheck.Vuln{vuln1, vuln2, vuln3},
+	}
+
 	callStack := func(fs ...*vulncheck.FuncNode) vulncheck.CallStack {
 		var cs vulncheck.CallStack
 		for _, f := range fs {
@@ -200,21 +211,21 @@ func TestUniqueCallStack(t *testing.T) {
 	}
 
 	// V1, V2, and V3 are vulnerable symbols
-	skip := map[*vulncheck.FuncNode]bool{v1: true, v2: true, v3: true}
+	skip := []*vulncheck.Vuln{vuln1, vuln2, vuln3}
 	for _, test := range []struct {
-		v    *vulncheck.FuncNode
+		vuln *vulncheck.Vuln
 		css  []vulncheck.CallStack
 		want vulncheck.CallStack
 	}{
 		// [A -> B -> V3 -> V1, A -> V1] ==> A -> V1 since the first stack goes through V3
-		{v1, []vulncheck.CallStack{callStack(a, b, v3, v1), callStack(a, v1)}, callStack(a, v1)},
+		{vuln1, []vulncheck.CallStack{callStack(a, b, v3, v1), callStack(a, v1)}, callStack(a, v1)},
 		// [A -> V1 -> V2] ==> nil since the only candidate call stack goes through V1
-		{v2, []vulncheck.CallStack{callStack(a, v1, v2)}, nil},
+		{vuln2, []vulncheck.CallStack{callStack(a, v1, v2)}, nil},
 		// [A -> V1 -> V3, A -> B -> v3] ==> A -> B -> V3 since the first stack goes through V1
-		{v3, []vulncheck.CallStack{callStack(a, v1, v3), callStack(a, b, v3)}, callStack(a, b, v3)},
+		{vuln3, []vulncheck.CallStack{callStack(a, v1, v3), callStack(a, b, v3)}, callStack(a, b, v3)},
 	} {
-		t.Run(test.v.Name, func(t *testing.T) {
-			got := uniqueCallStack(test.v, test.css, skip)
+		t.Run(test.vuln.Symbol, func(t *testing.T) {
+			got := uniqueCallStack(test.vuln, test.css, skip, vr)
 			if diff := cmp.Diff(test.want, got); diff != "" {
 				t.Fatalf("mismatch (-want, +got):\n%s", diff)
 			}

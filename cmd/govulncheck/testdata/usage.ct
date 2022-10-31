@@ -7,8 +7,6 @@ usage:
     	directory to use for loading source files
   -json
     	output JSON
-  -summary-json
-    	output govulnchecklib.Summary JSON
   -tags list
     	comma-separated list of build tags
   -test
@@ -28,8 +26,6 @@ usage:
     	directory to use for loading source files
   -json
     	output JSON
-  -summary-json
-    	output govulnchecklib.Summary JSON
   -tags list
     	comma-separated list of build tags
   -test

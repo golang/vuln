@@ -25,8 +25,7 @@ var (
 	tagsFlag    buildutil.TagsFlag
 
 	// testmode flags. See main_testmode.go.
-	dirFlag         string
-	summaryJSONFlag bool
+	dirFlag string
 )
 
 func init() {
@@ -63,10 +62,7 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 	outputType := govulncheck.OutputTypeText
 	if *jsonFlag {
 		outputType = govulncheck.OutputTypeJSON
-	} else if summaryJSONFlag { // accessible only in testmode.
-		outputType = govulncheck.OutputTypeSummary
-	}
-	if outputType == govulncheck.OutputTypeText && *verboseFlag {
+	} else if *verboseFlag {
 		outputType = govulncheck.OutputTypeVerbose
 	}
 

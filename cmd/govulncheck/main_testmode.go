@@ -10,5 +10,4 @@ import "flag"
 
 func init() {
 	flag.StringVar(&dirFlag, "dir", "", "directory to use for loading source files")
-	flag.BoolVar(&summaryJSONFlag, "summary-json", false, "output govulnchecklib.Summary JSON")
 }

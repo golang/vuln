@@ -61,8 +61,15 @@ type Vuln struct {
 // IsCalled reports whether the vulnerability is called, therefore
 // affecting the target source code or binary.
 //
-// TODO(https://go.dev/issue/56042): implement
+// TODO: add unit tests
 func (v *Vuln) IsCalled() bool {
+	for _, m := range v.Modules {
+		for _, p := range m.Packages {
+			if len(p.CallStacks) > 0 {
+				return true
+			}
+		}
+	}
 	return false
 }
 
@@ -139,12 +146,12 @@ type StackFrame struct {
 	// FuncName is the function name.
 	FuncName string
 
-	// RecvName is the receiver name, if the symbol is a
-	// method.
+	// RecvType is the fully qualified receiver type,
+	// if the called symbol is a method.
 	//
 	// The client can create the final symbol name by
-	// prepending RecvName to FuncName.
-	RecvName string
+	// prepending RecvType to FuncName.
+	RecvType string
 
 	// Position describes an arbitrary source position
 	// including the file, line, and column location.

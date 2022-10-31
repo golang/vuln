@@ -24,12 +24,6 @@ const (
 	// OutputTypeJSON is the output type for `govulncheck -json`, which will print
 	// the JSON-encoded vulncheck.Result.
 	OutputTypeJSON = "json"
-
-	// OutputTypeSummary is the output type for `govulncheck -summary-json`, which
-	// will print the JSON-encoded govulncheck.Summary.
-	//
-	// This is only meant by use for experimental with gopls.
-	OutputTypeSummary = "summary"
 )
 
 const (

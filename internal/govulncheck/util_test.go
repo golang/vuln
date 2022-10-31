@@ -67,15 +67,13 @@ func TestSummarizeCallStack(t *testing.T) {
 	}
 }
 
-func stringToCallStack(s string) vulncheck.CallStack {
-	var cs vulncheck.CallStack
+func stringToCallStack(s string) CallStack {
+	var cs CallStack
 	for _, e := range strings.Fields(s) {
 		parts := strings.Split(e, ".")
-		cs = append(cs, vulncheck.StackEntry{
-			Function: &vulncheck.FuncNode{
-				PkgPath: parts[0],
-				Name:    parts[1],
-			},
+		cs.Frames = append(cs.Frames, &StackFrame{
+			PkgPath:  parts[0],
+			FuncName: parts[1],
 		})
 	}
 	return cs
