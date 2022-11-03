@@ -62,8 +62,8 @@ The -v flag causes govulncheck to output more information about call stacks
 when run on source. It has no effect when run on a binary.
 
 The -json flag causes govulncheck to print its output as a JSON object
-corresponding to the type [golang.org/x/vuln/vulncheck.Result]. The exit code
-of govulncheck is 0 when this flag is provided.
+corresponding to the type [golang.org/x/vuln/exp/govulncheck.Result]. The
+exit code of govulncheck is 0 when this flag is provided.
 
 The -tags flag accepts a comma-separated list of build tags to control which
 files should be included in loaded packages for source analysis.
