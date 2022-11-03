@@ -82,7 +82,6 @@ func SummarizeCallStack(cs CallStack, topPkgs map[string]bool, vulnPkg string) s
 		return topPkgs[e.PkgPath]
 	})
 	if iTop < 0 {
-		print("1\n")
 		return ""
 	}
 	// Find the highest function in the vulnerable package that is below iTop.
@@ -90,21 +89,20 @@ func SummarizeCallStack(cs CallStack, topPkgs map[string]bool, vulnPkg string) s
 		return e.PkgPath == vulnPkg
 	})
 	if iVuln < 0 {
-		print("2\n")
 		return ""
 	}
 	iVuln += iTop + 1 // adjust for slice in call to highest.
-	topName := funcName(cs.Frames[iTop])
-	topPos := AbsRelShorter(funcPos(cs.Frames[iTop]))
+	topName := cs.Frames[iTop].Name()
+	topPos := internal.AbsRelShorter(cs.Frames[iTop].Pos())
 	if topPos != "" {
 		topPos += ": "
 	}
-	vulnName := funcName(cs.Frames[iVuln])
+	vulnName := cs.Frames[iVuln].Name()
 	if iVuln == iTop+1 {
 		return fmt.Sprintf("%s%s calls %s", topPos, topName, vulnName)
 	}
 	return fmt.Sprintf("%s%s calls %s, which eventually calls %s",
-		topPos, topName, funcName(cs.Frames[iTop+1]), vulnName)
+		topPos, topName, cs.Frames[iTop+1].Name(), vulnName)
 }
 
 // highest returns the highest (one with the smallest index) entry in the call
@@ -141,25 +139,4 @@ func PkgPath(fn *vulncheck.FuncNode) string {
 		s = s[:i]
 	}
 	return s
-}
-
-// funcName returns the full qualified function name from fn,
-// adjusted to remove pointer annotations.
-func funcName(sf *StackFrame) string {
-	var n string
-	if sf.RecvType == "" {
-		n = fmt.Sprintf("%s.%s", sf.PkgPath, sf.FuncName)
-	} else {
-		n = fmt.Sprintf("%s.%s", sf.RecvType, sf.FuncName)
-	}
-	return strings.TrimPrefix(n, "*")
-}
-
-// funcPos returns the position of the call in sf as string.
-// If position is not available, return "".
-func funcPos(sf *StackFrame) string {
-	if sf.Position.IsValid() {
-		return sf.Position.String()
-	}
-	return ""
 }

@@ -6,7 +6,9 @@
 package govulncheck
 
 import (
+	"fmt"
 	"go/token"
+	"strings"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
@@ -30,11 +32,6 @@ type Config struct {
 	//
 	// By default, GoVersion is the go command version found from the PATH.
 	GoVersion string
-
-	// Verbosity controls the stdout and stderr output when running Source.
-	//
-	// TODO(https://go.dev/issue/56042): make this an enum.
-	Verbosity string
 }
 
 // Result is the result of executing Source or Binary.
@@ -157,4 +154,25 @@ type StackFrame struct {
 	// including the file, line, and column location.
 	// A Position is valid if the line number is > 0.
 	Position token.Position
+}
+
+// Name returns the full qualified function name from sf,
+// adjusted to remove pointer annotations.
+func (sf *StackFrame) Name() string {
+	var n string
+	if sf.RecvType == "" {
+		n = fmt.Sprintf("%s.%s", sf.PkgPath, sf.FuncName)
+	} else {
+		n = fmt.Sprintf("%s.%s", sf.RecvType, sf.FuncName)
+	}
+	return strings.TrimPrefix(n, "*")
+}
+
+// Pos returns the position of the call in sf as string.
+// If position is not available, return "".
+func (sf *StackFrame) Pos() string {
+	if sf.Position.IsValid() {
+		return sf.Position.String()
+	}
+	return ""
 }

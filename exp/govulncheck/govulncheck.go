@@ -7,8 +7,13 @@ package govulncheck
 
 import "golang.org/x/vuln/internal/govulncheck"
 
-// Source reports vulnerabilities that affect the analyzed packages.
-var Source = govulncheck.Source
+var (
+	// Source reports vulnerabilities that affect the analyzed packages.
+	Source = govulncheck.Source
+
+	// DefaultCache constructs cache for a vulnerability database client.
+	DefaultCache = govulncheck.DefaultCache
+)
 
 type (
 	// Config is the configuration for Main.

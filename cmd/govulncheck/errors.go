@@ -2,27 +2,19 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package govulncheck
+package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/vulncheck"
 )
 
 var (
-	// ErrContainsVulnerabilties is used to indicate that vulerabilities were
-	// found in the output of Run.
-	ErrContainsVulnerabilties = errors.New("module contains vulnerabilities")
-
-	// ErrInvalidAnalysisType indicates that an unsupported AnalysisType was passed to Config.
-	ErrInvalidAnalysisType = errors.New("invalid analysis type")
-
-	// ErrInvalidOutputType indicates that an unsupported OutputType was passed to Config.
-	ErrInvalidOutputType = errors.New("invalid output type")
-
 	// ErrErrGoVersionMismatch is used to indicate that there is a mismatch between
 	// the Go version used to build govulncheck and the one currently on PATH.
 	ErrGoVersionMismatch = errors.New(`Loading packages failed, possibly due to a mismatch between the Go version
@@ -52,6 +44,20 @@ versions to correctly identify vulnerabilities.
 
 See https://go.dev/doc/modules/managing-dependencies for more information.`)
 )
+
+// A PackageError contains errors from loading a set of packages.
+type PackageError struct {
+	Errors []packages.Error
+}
+
+func (e *PackageError) Error() string {
+	var b strings.Builder
+	fmt.Fprintln(&b, "Packages contain errors:")
+	for _, e := range e.Errors {
+		fmt.Fprintln(&b, e)
+	}
+	return b.String()
+}
 
 // fileExists checks if file path exists. Returns true
 // if the file exists or it cannot prove that it does

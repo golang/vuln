@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package govulncheck
+package main
 
 import (
 	"encoding/json"
@@ -12,10 +12,12 @@ import (
 	"strings"
 
 	"golang.org/x/exp/maps"
+	"golang.org/x/vuln/exp/govulncheck"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/osv"
 )
 
-func printJSON(r *Result) error {
+func printJSON(r *govulncheck.Result) error {
 	b, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
 		return err
@@ -30,10 +32,10 @@ const (
 	lineLength = 55
 )
 
-func printText(r *Result, verbose, source bool) {
+func printText(r *govulncheck.Result, verbose, source bool) {
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
-	var unaffected []*Vuln
+	var unaffected []*govulncheck.Vuln
 	uniqueVulns := 0
 	for _, v := range r.Vulns {
 		if !source || v.IsCalled() {
@@ -117,7 +119,7 @@ func printVulnerability(idx int, id, details, callstack, found, fixed, platforms
 `, idx, id, indent(details, 2), callstack, found, fixed, platforms, id)
 }
 
-func defaultCallStacks(css []CallStack) string {
+func defaultCallStacks(css []govulncheck.CallStack) string {
 	var summaries []string
 	for _, cs := range css {
 		summaries = append(summaries, cs.Summary)
@@ -137,15 +139,15 @@ func defaultCallStacks(css []CallStack) string {
 	return b.String()
 }
 
-func verboseCallStacks(css []CallStack) string {
+func verboseCallStacks(css []govulncheck.CallStack) string {
 	// Display one full call stack for each vuln.
 	i := 1
 	var b strings.Builder
 	for _, cs := range css {
 		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, cs.Symbol))
 		for _, e := range cs.Frames {
-			b.WriteString(fmt.Sprintf("  %s\n", funcName(e)))
-			if pos := AbsRelShorter(funcPos(e)); pos != "" {
+			b.WriteString(fmt.Sprintf("  %s\n", e.Name()))
+			if pos := internal.AbsRelShorter(e.Pos()); pos != "" {
 				b.WriteString(fmt.Sprintf("      %s\n", pos))
 			}
 		}
