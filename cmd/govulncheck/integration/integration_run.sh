@@ -17,7 +17,7 @@ update_status(){
  fi
 }
 
-# Print go version for debugging purposes. Expected to be go1.18.7.
+# Print go version for debugging purposes. Expected to be go1.18.8.
 go version
 
 # Clone kubernetes to a dedicated directory.
@@ -48,7 +48,7 @@ fi
 
 pushd $dir
 # We build scanner binary using go.18 as that will generate vulnerabilities;
-# go1.18.7 will not.
+# go1.18.8 will not.
 go1.18 download
 # Use scanner at specific commit and tag version for reproducibility.
 git checkout 29b8761da747

@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/vuln/vulncheck"
+	"golang.org/x/vuln/exp/govulncheck"
 )
 
 const usage = `test helper for examining the output of running govulncheck on
@@ -30,13 +30,9 @@ func main() {
 		log.Fatal("Failed to read:", out)
 	}
 
-	var r vulncheck.Result
+	var r govulncheck.Result
 	if err := json.Unmarshal(outJson, &r); err != nil {
-		log.Fatal("Failed to load json into vulncheck.Result:", err)
-	}
-
-	if len(r.Vulns) != 36 {
-		log.Fatalf("want 36 vulns; got %d", len(r.Vulns))
+		log.Fatal("Failed to load json into exp/govulncheck.Result:", err)
 	}
 
 	type vuln struct {
@@ -45,7 +41,13 @@ func main() {
 	}
 	symbolVulns := make(map[vuln]bool)
 	for _, v := range r.Vulns {
-		symbolVulns[vuln{v.PkgPath, v.Symbol}] = true
+		for _, m := range v.Modules {
+			for _, p := range m.Packages {
+				for _, c := range p.CallStacks {
+					symbolVulns[vuln{p.Path, c.Symbol}] = true
+				}
+			}
+		}
 	}
 
 	want := map[vuln]bool{

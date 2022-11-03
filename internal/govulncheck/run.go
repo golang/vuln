@@ -114,6 +114,8 @@ func createBinaryResult(vr *vulncheck.Result) *Result {
 	r := &Result{}
 	for _, vv := range vr.Vulns {
 		p := &Package{Path: vv.PkgPath}
+		// in binary mode, call stacks contain just the symbol data
+		p.CallStacks = []CallStack{{Symbol: vv.Symbol}}
 		m := &Module{
 			Path:         vv.ModPath,
 			FoundVersion: foundVersion(vv.ModPath, modVersions),

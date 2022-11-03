@@ -75,7 +75,13 @@ $ govulncheck -json ${vuln_binary}
 					"Packages": [
 						{
 							"Path": "golang.org/x/text/language",
-							"CallStacks": null
+							"CallStacks": [
+								{
+									"Symbol": "Parse",
+									"Summary": "",
+									"Frames": null
+								}
+							]
 						}
 					]
 				}
