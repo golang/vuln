@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,6 +18,98 @@ import (
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
+
+func TestUniqueCallStack(t *testing.T) {
+	a := &vulncheck.FuncNode{Name: "A"}
+	b := &vulncheck.FuncNode{Name: "B"}
+	v1 := &vulncheck.FuncNode{Name: "V1"}
+	v2 := &vulncheck.FuncNode{Name: "V2"}
+	v3 := &vulncheck.FuncNode{Name: "V3"}
+
+	vuln1 := &vulncheck.Vuln{Symbol: "V1", CallSink: 1}
+	vuln2 := &vulncheck.Vuln{Symbol: "V2", CallSink: 2}
+	vuln3 := &vulncheck.Vuln{Symbol: "V3", CallSink: 3}
+
+	vr := &vulncheck.Result{
+		Calls: &vulncheck.CallGraph{
+			Functions: map[int]*vulncheck.FuncNode{1: v1, 2: v2, 3: v3},
+		},
+		Vulns: []*vulncheck.Vuln{vuln1, vuln2, vuln3},
+	}
+
+	callStack := func(fs ...*vulncheck.FuncNode) vulncheck.CallStack {
+		var cs vulncheck.CallStack
+		for _, f := range fs {
+			cs = append(cs, vulncheck.StackEntry{Function: f})
+		}
+		return cs
+	}
+
+	// V1, V2, and V3 are vulnerable symbols
+	skip := []*vulncheck.Vuln{vuln1, vuln2, vuln3}
+	for _, test := range []struct {
+		vuln *vulncheck.Vuln
+		css  []vulncheck.CallStack
+		want vulncheck.CallStack
+	}{
+		// [A -> B -> V3 -> V1, A -> V1] ==> A -> V1 since the first stack goes through V3
+		{vuln1, []vulncheck.CallStack{callStack(a, b, v3, v1), callStack(a, v1)}, callStack(a, v1)},
+		// [A -> V1 -> V2] ==> nil since the only candidate call stack goes through V1
+		{vuln2, []vulncheck.CallStack{callStack(a, v1, v2)}, nil},
+		// [A -> V1 -> V3, A -> B -> v3] ==> A -> B -> V3 since the first stack goes through V1
+		{vuln3, []vulncheck.CallStack{callStack(a, v1, v3), callStack(a, b, v3)}, callStack(a, b, v3)},
+	} {
+		t.Run(test.vuln.Symbol, func(t *testing.T) {
+			got := uniqueCallStack(test.vuln, test.css, skip, vr)
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestSummarizeCallStack(t *testing.T) {
+	topPkgs := map[string]bool{"t1": true, "t2": true}
+	vulnPkg := "v"
+
+	for _, test := range []struct {
+		in, want string
+	}{
+		{"a.F", ""},
+		{"t1.F", ""},
+		{"v.V", ""},
+		{
+			"t1.F v.V",
+			"t1.F calls v.V",
+		},
+		{
+			"t1.F t2.G v.V1 v.v2",
+			"t2.G calls v.V1",
+		},
+		{
+			"t1.F x.Y t2.G a.H b.I c.J v.V",
+			"t2.G calls a.H, which eventually calls v.V",
+		},
+	} {
+		in := stringToCallStack(test.in)
+		got := summarizeCallStack(in, topPkgs, vulnPkg)
+		if got != test.want {
+			t.Errorf("%s:\ngot  %s\nwant %s", test.in, got, test.want)
+		}
+	}
+}
+
+func stringToCallStack(s string) CallStack {
+	var cs CallStack
+	for _, e := range strings.Fields(s) {
+		parts := strings.Split(e, ".")
+		cs.Frames = append(cs.Frames, &StackFrame{
+			PkgPath:  parts[0],
+			FuncName: parts[1],
+		})
+	}
+	return cs
+}
 
 // TestInits checks for correct positions of init functions
 // and their respective calls (see #51575).

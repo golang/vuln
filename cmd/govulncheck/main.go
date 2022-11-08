@@ -103,13 +103,13 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 		if err != nil {
 			// Try to provide a meaningful and actionable error message.
 			if !fileExists(filepath.Join(dir, "go.mod")) {
-				return ErrNoGoMod
+				return errNoGoMod
 			}
 			if !fileExists(filepath.Join(dir, "go.sum")) {
-				return ErrNoGoSum
+				return errNoGoSum
 			}
 			if isGoVersionMismatchError(err) {
-				return fmt.Errorf("%v\n\n%v", ErrGoVersionMismatch, err)
+				return fmt.Errorf("%v\n\n%v", errGoVersionMismatch, err)
 			}
 			return err
 		}
@@ -181,7 +181,7 @@ func die(format string, args ...interface{}) {
 
 // loadPackages loads the packages matching patterns at dir using build tags
 // provided by tagsFlag. Uses load mode needed for vulncheck analysis. If the
-// packages contain errors, a PackageError is returned containing a list of
+// packages contain errors, a packageError is returned containing a list of
 // the errors, along with the packages themselves.
 func loadPackages(patterns []string, dir string) ([]*vulncheck.Package, error) {
 	var buildFlags []string
@@ -205,7 +205,7 @@ func loadPackages(patterns []string, dir string) ([]*vulncheck.Package, error) {
 		perrs = append(perrs, p.Errors...)
 	})
 	if len(perrs) > 0 {
-		err = &PackageError{perrs}
+		err = &packageError{perrs}
 	}
 	return vpkgs, err
 }

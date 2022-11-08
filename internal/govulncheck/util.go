@@ -5,7 +5,6 @@
 package govulncheck
 
 import (
-	"fmt"
 	"strings"
 
 	"golang.org/x/mod/semver"
@@ -15,11 +14,9 @@ import (
 	"golang.org/x/vuln/vulncheck"
 )
 
-// LatestFixed returns the latest fixed version in the list of affected ranges,
+// latestFixed returns the latest fixed version in the list of affected ranges,
 // or the empty string if there are no fixed versions.
-//
-// TODO: make private
-func LatestFixed(as []osv.Affected) string {
+func latestFixed(as []osv.Affected) string {
 	v := ""
 	for _, a := range as {
 		for _, r := range a.Ranges {
@@ -45,7 +42,7 @@ func foundVersion(modulePath string, moduleVersions map[string]string) string {
 }
 
 func fixedVersion(modulePath string, affected []osv.Affected) string {
-	fixed := LatestFixed(affected)
+	fixed := latestFixed(affected)
 	if fixed != "" {
 		fixed = versionString(modulePath, fixed)
 	}
@@ -63,46 +60,6 @@ func versionString(modulePath, version string) string {
 		return semverToGoTag(v)
 	}
 	return v
-}
-
-// SummarizeCallStack returns a short description of the call stack.
-// It uses one of two forms, depending on what the lowest function F in topPkgs
-// calls:
-//   - If it calls a function V from the vulnerable package, then summarizeCallStack
-//     returns "F calls V".
-//   - If it calls a function G in some other package, which eventually calls V,
-//     it returns "F calls G, which eventually calls V".
-//
-// If it can't find any of these functions, summarizeCallStack returns the empty string.
-//
-// TODO: make private
-func SummarizeCallStack(cs CallStack, topPkgs map[string]bool, vulnPkg string) string {
-	// Find the lowest function in the top packages.
-	iTop := lowest(cs.Frames, func(e *StackFrame) bool {
-		return topPkgs[e.PkgPath]
-	})
-	if iTop < 0 {
-		return ""
-	}
-	// Find the highest function in the vulnerable package that is below iTop.
-	iVuln := highest(cs.Frames[iTop+1:], func(e *StackFrame) bool {
-		return e.PkgPath == vulnPkg
-	})
-	if iVuln < 0 {
-		return ""
-	}
-	iVuln += iTop + 1 // adjust for slice in call to highest.
-	topName := cs.Frames[iTop].Name()
-	topPos := internal.AbsRelShorter(cs.Frames[iTop].Pos())
-	if topPos != "" {
-		topPos += ": "
-	}
-	vulnName := cs.Frames[iVuln].Name()
-	if iVuln == iTop+1 {
-		return fmt.Sprintf("%s%s calls %s", topPos, topName, vulnName)
-	}
-	return fmt.Sprintf("%s%s calls %s, which eventually calls %s",
-		topPos, topName, cs.Frames[iTop+1].Name(), vulnName)
 }
 
 // highest returns the highest (one with the smallest index) entry in the call
@@ -127,10 +84,8 @@ func lowest(cs []*StackFrame, f func(e *StackFrame) bool) int {
 	return -1
 }
 
-// PkgPath returns the package path from fn.
-//
-// TODO: make private
-func PkgPath(fn *vulncheck.FuncNode) string {
+// pkgPath returns the package path from fn.
+func pkgPath(fn *vulncheck.FuncNode) string {
 	if fn.PkgPath != "" {
 		return fn.PkgPath
 	}
@@ -139,4 +94,39 @@ func PkgPath(fn *vulncheck.FuncNode) string {
 		s = s[:i]
 	}
 	return s
+}
+
+// moduleVersionMap builds a map from module paths to versions.
+func moduleVersionMap(mods []*vulncheck.Module) map[string]string {
+	moduleVersions := map[string]string{}
+	for _, m := range mods {
+		v := m.Version
+		if m.Replace != nil {
+			v = m.Replace.Version
+		}
+		moduleVersions[m.Path] = v
+	}
+	return moduleVersions
+}
+
+// pkgMap creates a map from package paths to packages for all pkgs
+// and their transitive imports.
+func pkgMap(pkgs []*vulncheck.Package) map[string]*vulncheck.Package {
+	m := make(map[string]*vulncheck.Package)
+	var visit func(*vulncheck.Package)
+	visit = func(p *vulncheck.Package) {
+		if _, ok := m[p.PkgPath]; ok {
+			return
+		}
+		m[p.PkgPath] = p
+
+		for _, i := range p.Imports {
+			visit(i)
+		}
+	}
+
+	for _, p := range pkgs {
+		visit(p)
+	}
+	return m
 }

@@ -94,7 +94,7 @@ func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *Result
 					Frames: stackFramesfromEntries(vcs),
 					Symbol: vv.Symbol,
 				}
-				cs.Summary = SummarizeCallStack(cs, topPkgs, p.Path)
+				cs.Summary = summarizeCallStack(cs, topPkgs, p.Path)
 				p.CallStacks = []CallStack{cs}
 			}
 		}
@@ -252,38 +252,4 @@ func stackFramesfromEntries(vcs vulncheck.CallStack) []*StackFrame {
 		frames = append(frames, fr)
 	}
 	return frames
-}
-
-// uniqueCallStack returns the first unique call stack among css, if any.
-// Unique means that the call stack does not go through symbols of vg.
-func uniqueCallStack(v *vulncheck.Vuln, css []vulncheck.CallStack, vg []*vulncheck.Vuln, r *vulncheck.Result) vulncheck.CallStack {
-	vulnFuncs := make(map[*vulncheck.FuncNode]bool)
-	for _, v := range vg {
-		vulnFuncs[r.Calls.Functions[v.CallSink]] = true
-	}
-
-	vulnFunc := r.Calls.Functions[v.CallSink]
-callstack:
-	for _, cs := range css {
-		for _, e := range cs {
-			if e.Function != vulnFunc && vulnFuncs[e.Function] {
-				continue callstack
-			}
-		}
-		return cs
-	}
-	return nil
-}
-
-// moduleVersionMap builds a map from module paths to versions.
-func moduleVersionMap(mods []*vulncheck.Module) map[string]string {
-	moduleVersions := map[string]string{}
-	for _, m := range mods {
-		v := m.Version
-		if m.Replace != nil {
-			v = m.Replace.Version
-		}
-		moduleVersions[m.Path] = v
-	}
-	return moduleVersions
 }

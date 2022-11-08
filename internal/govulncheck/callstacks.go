@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/vulncheck"
 )
 
@@ -114,24 +115,61 @@ func isInit(f *vulncheck.FuncNode) bool {
 	return f.Name == "init" || strings.HasPrefix(f.Name, "init#")
 }
 
-// pkgMap creates a map from package paths to packages for all pkgs
-// and their transitive imports.
-func pkgMap(pkgs []*vulncheck.Package) map[string]*vulncheck.Package {
-	m := make(map[string]*vulncheck.Package)
-	var visit func(*vulncheck.Package)
-	visit = func(p *vulncheck.Package) {
-		if _, ok := m[p.PkgPath]; ok {
-			return
-		}
-		m[p.PkgPath] = p
+// summarizeCallStack returns a short description of the call stack.
+// It uses one of two forms, depending on what the lowest function F in topPkgs
+// calls:
+//   - If it calls a function V from the vulnerable package, then summarizeCallStack
+//     returns "F calls V".
+//   - If it calls a function G in some other package, which eventually calls V,
+//     it returns "F calls G, which eventually calls V".
+//
+// If it can't find any of these functions, summarizeCallStack returns the empty string.
+func summarizeCallStack(cs CallStack, topPkgs map[string]bool, vulnPkg string) string {
+	// Find the lowest function in the top packages.
+	iTop := lowest(cs.Frames, func(e *StackFrame) bool {
+		return topPkgs[e.PkgPath]
+	})
+	if iTop < 0 {
+		return ""
+	}
+	// Find the highest function in the vulnerable package that is below iTop.
+	iVuln := highest(cs.Frames[iTop+1:], func(e *StackFrame) bool {
+		return e.PkgPath == vulnPkg
+	})
+	if iVuln < 0 {
+		return ""
+	}
+	iVuln += iTop + 1 // adjust for slice in call to highest.
+	topName := cs.Frames[iTop].Name()
+	topPos := internal.AbsRelShorter(cs.Frames[iTop].Pos())
+	if topPos != "" {
+		topPos += ": "
+	}
+	vulnName := cs.Frames[iVuln].Name()
+	if iVuln == iTop+1 {
+		return fmt.Sprintf("%s%s calls %s", topPos, topName, vulnName)
+	}
+	return fmt.Sprintf("%s%s calls %s, which eventually calls %s",
+		topPos, topName, cs.Frames[iTop+1].Name(), vulnName)
+}
 
-		for _, i := range p.Imports {
-			visit(i)
-		}
+// uniqueCallStack returns the first unique call stack among css, if any.
+// Unique means that the call stack does not go through symbols of vg.
+func uniqueCallStack(v *vulncheck.Vuln, css []vulncheck.CallStack, vg []*vulncheck.Vuln, r *vulncheck.Result) vulncheck.CallStack {
+	vulnFuncs := make(map[*vulncheck.FuncNode]bool)
+	for _, v := range vg {
+		vulnFuncs[r.Calls.Functions[v.CallSink]] = true
 	}
 
-	for _, p := range pkgs {
-		visit(p)
+	vulnFunc := r.Calls.Functions[v.CallSink]
+callstack:
+	for _, cs := range css {
+		for _, e := range cs {
+			if e.Function != vulnFunc && vulnFuncs[e.Function] {
+				continue callstack
+			}
+		}
+		return cs
 	}
-	return m
+	return nil
 }

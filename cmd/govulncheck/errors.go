@@ -15,29 +15,29 @@ import (
 )
 
 var (
-	// ErrErrGoVersionMismatch is used to indicate that there is a mismatch between
+	// errGoVersionMismatch is used to indicate that there is a mismatch between
 	// the Go version used to build govulncheck and the one currently on PATH.
-	ErrGoVersionMismatch = errors.New(`Loading packages failed, possibly due to a mismatch between the Go version
+	errGoVersionMismatch = errors.New(`Loading packages failed, possibly due to a mismatch between the Go version
 used to build govulncheck and the Go version on PATH. Consider rebuilding
 govulncheck with the current Go version.`)
 
-	// ErrNoGoSum indicates that a go.mod file was not found in this module.
-	ErrNoGoMod = errors.New(`no go.mod file
+	// errNoGoSum indicates that a go.mod file was not found in this module.
+	errNoGoMod = errors.New(`no go.mod file
 
 govulncheck only works Go with modules. Try navigating to your module directory.
 Otherwise, run go mod init to make your project a module.
 
 See https://go.dev/doc/modules/managing-dependencies for more information.`)
 
-	// ErrNoGoSum indicates that a go.sum file was not found in this module.
-	ErrNoGoSum = errors.New(`no go.sum file
+	// errNoGoSum indicates that a go.sum file was not found in this module.
+	errNoGoSum = errors.New(`no go.sum file
 
 Your module is missing a go.sum file. Try running go mod tidy.
 
 See https://go.dev/doc/modules/managing-dependencies for more information.`)
 
-	// ErrNoModVersion indicates that govulncheck cannot access module version information.
-	ErrNoModVersion = errors.New(`no module version information
+	// errNoModVersion indicates that govulncheck cannot access module version information.
+	errNoModVersion = errors.New(`no module version information
 
 This can happen when running govulncheck in GOPATH mode. govulncheck needs module
 versions to correctly identify vulnerabilities.
@@ -45,12 +45,12 @@ versions to correctly identify vulnerabilities.
 See https://go.dev/doc/modules/managing-dependencies for more information.`)
 )
 
-// A PackageError contains errors from loading a set of packages.
-type PackageError struct {
+// packageError contains errors from loading a set of packages.
+type packageError struct {
 	Errors []packages.Error
 }
 
-func (e *PackageError) Error() string {
+func (e *packageError) Error() string {
 	var b strings.Builder
 	fmt.Fprintln(&b, "Packages contain errors:")
 	for _, e := range e.Errors {
