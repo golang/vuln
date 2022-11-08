@@ -341,6 +341,16 @@ func EscapeModulePath(path string) (string, error) {
 	return module.EscapePath(path)
 }
 
+// UnescapeModulePath should be called to convert filesystem paths into module
+// paths. It is like golang.org/x/mod/module, but accounts for special paths
+// used by the vulnerability database.
+func UnescapeModulePath(path string) (string, error) {
+	if specialCaseModulePaths[path] {
+		return path, nil
+	}
+	return module.UnescapePath(path)
+}
+
 func latestModifiedTime(entries []*osv.Entry) time.Time {
 	var t time.Time
 	for _, e := range entries {
