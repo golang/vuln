@@ -11,8 +11,6 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-// TODO: move this to util.go
-
 // Support functions for standard library packages.
 // These are copied from the internal/stdlib package in the pkgsite repo.
 
