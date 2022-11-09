@@ -37,7 +37,8 @@ action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
 for details.
 
 Vulnerability #1: GO-2021-0265
-  GJSON allowed a ReDoS (regular expression denial of service) attack.
+  GJSON allowed a ReDoS (regular expression denial of service)
+  attack.
   Found in: github.com/tidwall/gjson@v1.9.2
   Fixed in: github.com/tidwall/gjson@v1.9.3
   Platforms: linux/amd64, windows/amd64

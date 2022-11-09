@@ -37,13 +37,15 @@ action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
 for details.
 
 Vulnerability #1: GO-2022-0592
-  A maliciously crafted path can cause Get and other query functions to consume excessive amounts of CPU and time.
+  A maliciously crafted path can cause Get and other query
+  functions to consume excessive amounts of CPU and time.
   Found in: github.com/tidwall/gjson@v1.9.2
   Fixed in: github.com/tidwall/gjson@v1.9.3
   More info: https://pkg.go.dev/vuln/GO-2022-0592
 
 Vulnerability #2: GO-2021-0265
-  GJSON allowed a ReDoS (regular expression denial of service) attack.
+  GJSON allowed a ReDoS (regular expression denial of service)
+  attack.
   Found in: github.com/tidwall/gjson@v1.9.2
   Fixed in: github.com/tidwall/gjson@v1.9.3
   Platforms: linux/amd64, windows/amd64

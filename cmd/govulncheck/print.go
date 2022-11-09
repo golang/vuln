@@ -54,6 +54,7 @@ func printText(r *govulncheck.Result, verbose, source bool) {
 		fmt.Printf("Found %d known vulnerabilities.\n", uniqueVulns)
 	}
 
+	lineWidth := 80 - labelWidth
 	idx := 0
 	for _, v := range r.Vulns {
 		for _, m := range v.Modules {
@@ -65,7 +66,7 @@ func printText(r *govulncheck.Result, verbose, source bool) {
 				fmt.Println()
 
 				id := v.OSV.ID
-				details := wrap(v.OSV.Details, 80-labelWidth)
+				details := wrap(v.OSV.Details, lineWidth)
 				found := packageVersionString(p.Path, m.FoundVersion)
 				fixed := packageVersionString(p.Path, m.FixedVersion)
 
@@ -99,7 +100,8 @@ func printText(r *govulncheck.Result, verbose, source bool) {
 			found := packageVersionString(p.Path, m.FoundVersion)
 			fixed := packageVersionString(p.Path, m.FixedVersion)
 			fmt.Println()
-			printVulnerability(idx+1, un.OSV.ID, un.OSV.Details, "", found, fixed, platforms(un.OSV))
+			details := wrap(un.OSV.Details, lineWidth)
+			printVulnerability(idx+1, un.OSV.ID, details, "", found, fixed, platforms(un.OSV))
 		}
 	}
 }
