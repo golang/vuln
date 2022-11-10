@@ -99,7 +99,8 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 	cfg := &govulncheck.Config{Client: dbClient}
 	var res *govulncheck.Result
 	if sourceAnalysis {
-		pkgs, err := loadPackages(patterns, dir)
+		var pkgs []*vulncheck.Package
+		pkgs, err = loadPackages(patterns, dir)
 		if err != nil {
 			// Try to provide a meaningful and actionable error message.
 			if !fileExists(filepath.Join(dir, "go.mod")) {
@@ -115,7 +116,8 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 		}
 		res, err = govulncheck.Source(ctx, cfg, pkgs)
 	} else {
-		f, err := os.Open(patterns[0])
+		var f *os.File
+		f, err = os.Open(patterns[0])
 		if err != nil {
 			return err
 		}
