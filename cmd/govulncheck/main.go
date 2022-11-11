@@ -115,7 +115,8 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 		}
 		res, err = govulncheck.Source(ctx, cfg, pkgs)
 	} else {
-		f, err := os.Open(patterns[0])
+		var f *os.File
+		f, err = os.Open(patterns[0])
 		if err != nil {
 			return err
 		}
