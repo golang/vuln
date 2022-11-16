@@ -181,15 +181,16 @@ type EcosystemSpecific struct {
 // Entry represents a OSV style JSON vulnerability database
 // entry
 type Entry struct {
-	ID         string      `json:"id"`
-	Published  time.Time   `json:"published,omitempty"`
-	Modified   time.Time   `json:"modified,omitempty"`
-	Withdrawn  *time.Time  `json:"withdrawn,omitempty"`
-	Aliases    []string    `json:"aliases,omitempty"`
-	Details    string      `json:"details"`
-	Affected   []Affected  `json:"affected"`
-	References []Reference `json:"references,omitempty"`
-	Credits    []Credit    `json:"credits,omitempty"`
+	ID            string      `json:"id"`
+	Published     time.Time   `json:"published,omitempty"`
+	Modified      time.Time   `json:"modified,omitempty"`
+	Withdrawn     *time.Time  `json:"withdrawn,omitempty"`
+	Aliases       []string    `json:"aliases,omitempty"`
+	Details       string      `json:"details"`
+	Affected      []Affected  `json:"affected"`
+	References    []Reference `json:"references,omitempty"`
+	Credits       []Credit    `json:"credits,omitempty"`
+	SchemaVersion string      `json:"schema_version,omitempty"`
 }
 
 // Credit represents an OSV style Credit to give credit
