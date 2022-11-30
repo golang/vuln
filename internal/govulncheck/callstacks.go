@@ -116,41 +116,148 @@ func isInit(f *vulncheck.FuncNode) bool {
 }
 
 // summarizeCallStack returns a short description of the call stack.
-// It uses one of two forms, depending on what the lowest function F in topPkgs
-// calls:
-//   - If it calls a function V from the vulnerable package, then summarizeCallStack
-//     returns "F calls V".
-//   - If it calls a function G in some other package, which eventually calls V,
-//     it returns "F calls G, which eventually calls V".
+// It uses one of four forms, depending on what the lowest function F
+// in topPkgs calls and what is the highest function V of vulnPkg:
+//   - If F calls V directly and F as well as V are not anonymous functions:
+//     "F calls V"
+//   - The same case as above except F calls function G in some other package:
+//     "F calls G, which eventually calls V"
+//   - If F is an anonymous function, created by function G, and H is the
+//     lowest non-anonymous function in topPkgs:
+//     "H calls G, which eventually calls V"
+//   - If V is an anonymous function, created by function W:
+//     "F calls W, which eventually calls V"
 //
 // If it can't find any of these functions, summarizeCallStack returns the empty string.
 func summarizeCallStack(cs CallStack, topPkgs map[string]bool, vulnPkg string) string {
-	// Find the lowest function in the top packages.
-	iTop := lowest(cs.Frames, func(e *StackFrame) bool {
-		return topPkgs[e.PkgPath]
-	})
+	iTop, iTopEnd, topFunc, topEndFunc := summarizeTop(cs.Frames, topPkgs)
 	if iTop < 0 {
 		return ""
 	}
-	// Find the highest function in the vulnerable package that is below iTop.
-	iVuln := highest(cs.Frames[iTop+1:], func(e *StackFrame) bool {
-		return e.PkgPath == vulnPkg
-	})
-	if iVuln < 0 {
+
+	iVulnStart, vulnStartFunc, vulnFunc := summarizeVuln(cs.Frames, iTopEnd, vulnPkg)
+	if iVulnStart < 0 {
 		return ""
 	}
-	iVuln += iTop + 1 // adjust for slice in call to highest.
-	topName := cs.Frames[iTop].Name()
+
 	topPos := internal.AbsRelShorter(cs.Frames[iTop].Pos())
 	if topPos != "" {
 		topPos += ": "
 	}
-	vulnName := cs.Frames[iVuln].Name()
-	if iVuln == iTop+1 {
-		return fmt.Sprintf("%s%s calls %s", topPos, topName, vulnName)
+
+	// The invariant is that the summary will always mention at most three functions
+	// and never mention an anonymous function. It prioritizes summarizing top of the
+	// stack as that is what the user has the most control of. For instance, if both
+	// the top and vuln portions of the stack are each summarized with two functions,
+	// then the final summary will mention the two functions of the top segment and
+	// only one from the vuln segment.
+	if topFunc != topEndFunc {
+		// The last function of the top segment is anonymous.
+		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, topFunc, topEndFunc, vulnFunc)
 	}
-	return fmt.Sprintf("%s%s calls %s, which eventually calls %s",
-		topPos, topName, cs.Frames[iTop+1].Name(), vulnName)
+	if iVulnStart != iTopEnd+1 {
+		// If there is something in between top and vuln segments of
+		// the stack, then also summarize that intermediate segment.
+		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, topFunc, cs.Frames[iTopEnd+1].Name(), vulnFunc)
+	}
+	if vulnStartFunc != vulnFunc {
+		// The first function of the vuln segment is anonymous.
+		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, topFunc, vulnStartFunc, vulnFunc)
+	}
+	return fmt.Sprintf("%s%s calls %s", topPos, topFunc, vulnFunc)
+}
+
+// summarizeTop returns summary information for the beginning segment
+// of call stack frames that belong to topPkgs. It returns the latest,
+// e.g., lowest function in this segment and its index in frames. If
+// that function is anonymous, then summarizeTop also returns the
+// lowest non-anonymous function and its index in frames. In that case,
+// the anonymous function is replaced by the function that created it.
+//
+//	[p.V p.W q.Q ...]        -> (1, 1, p.W, p.W)
+//	[p.V p.W p.Z$1 q.Q ...]  -> (1, 2, p.W, p.Z)
+func summarizeTop(frames []*StackFrame, topPkgs map[string]bool) (iTop, iTopEnd int, topFunc, topEndFunc string) {
+	iTopEnd = lowest(frames, func(e *StackFrame) bool {
+		return topPkgs[e.PkgPath]
+	})
+	if iTopEnd < 0 {
+		return -1, -1, "", ""
+	}
+
+	topEndFunc = frames[iTopEnd].Name()
+	if !isAnonymousFunction(topEndFunc) {
+		iTop = iTopEnd
+		topFunc = topEndFunc
+		return
+	}
+
+	topEndFunc = creatorName(topEndFunc)
+
+	iTop = lowest(frames, func(e *StackFrame) bool {
+		return topPkgs[e.PkgPath] && !isAnonymousFunction(e.FuncName)
+	})
+	if iTop < 0 {
+		iTop = iTopEnd
+		topFunc = topEndFunc // for sanity
+		return
+	}
+
+	topFunc = frames[iTop].Name()
+	return
+}
+
+// summarizeVuln returns summary information for the final segment
+// of call stack frames that belong to vulnPkg. It returns the earliest,
+// e.g., highest function in this segment and its index in frames. If
+// that function is anonymous, then summarizeVuln also returns the
+// highest non-anonymous function. In that case, the anonymous function
+// is replaced by the function that created it.
+//
+//	[x x q.Q v.V v.W]   -> (3, v.V, v.V)
+//	[x x q.Q v.V$1 v.W] -> (3, v.V, v.W)
+func summarizeVuln(frames []*StackFrame, iTop int, vulnPkg string) (iVulnStart int, vulnStartFunc, vulnFunc string) {
+	iVulnStart = highest(frames[iTop+1:], func(e *StackFrame) bool {
+		return e.PkgPath == vulnPkg
+	})
+	if iVulnStart < 0 {
+		return -1, "", ""
+	}
+	iVulnStart += iTop + 1 // adjust for slice in call to highest.
+
+	vulnStartFunc = frames[iVulnStart].Name()
+	if !isAnonymousFunction(vulnStartFunc) {
+		vulnFunc = vulnStartFunc
+		return
+	}
+
+	vulnStartFunc = creatorName(vulnStartFunc)
+
+	iVuln := highest(frames[iVulnStart:], func(e *StackFrame) bool {
+		return e.PkgPath == vulnPkg && !isAnonymousFunction(e.FuncName)
+	})
+	if iVuln < 0 {
+		vulnFunc = vulnStartFunc // for sanity
+		return
+	}
+
+	vulnFunc = frames[iVuln+iVulnStart].Name()
+	return
+}
+
+// creatorName returns the name of the function that created
+// the anonymous function anonFuncName. Assumes anonFuncName
+// is of the form <name>$1...
+func creatorName(anonFuncName string) string {
+	vs := strings.Split(anonFuncName, "$")
+	if len(vs) == 1 {
+		return anonFuncName
+	}
+	return vs[0]
+}
+
+func isAnonymousFunction(funcName string) bool {
+	// anonymous functions have $ sign in their name (naming done by ssa)
+	return strings.ContainsRune(funcName, '$')
 }
 
 // uniqueCallStack returns the first unique call stack among css, if any.

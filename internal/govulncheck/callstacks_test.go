@@ -87,8 +87,24 @@ func TestSummarizeCallStack(t *testing.T) {
 			"t2.G calls v.V1",
 		},
 		{
+			"t1.F t2.G v.V$1 v.V1",
+			"t2.G calls v.V, which eventually calls v.V1",
+		},
+		{
+			"t1.F t2.G$1 v.V1",
+			"t1.F calls t2.G, which eventually calls v.V1",
+		},
+		{
+			"t1.F t2.G$1 v.V$1 v.V1",
+			"t1.F calls t2.G, which eventually calls v.V1",
+		},
+		{
 			"t1.F x.Y t2.G a.H b.I c.J v.V",
 			"t2.G calls a.H, which eventually calls v.V",
+		},
+		{
+			"t1.F x.Y t2.G a.H b.I c.J v.V$1 v.V1",
+			"t2.G calls a.H, which eventually calls v.V1",
 		},
 	} {
 		in := stringToCallStack(test.in)

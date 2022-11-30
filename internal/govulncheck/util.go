@@ -73,7 +73,7 @@ func highest(cs []*StackFrame, f func(e *StackFrame) bool) int {
 	return -1
 }
 
-// lowest returns the lowest (one with the largets index) entry in the call
+// lowest returns the lowest (one with the largest index) entry in the call
 // stack for which f returns true.
 func lowest(cs []*StackFrame, f func(e *StackFrame) bool) int {
 	for i := len(cs) - 1; i >= 0; i-- {
