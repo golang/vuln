@@ -28,21 +28,6 @@ govulncheck only works Go with modules. Try navigating to your module directory.
 Otherwise, run go mod init to make your project a module.
 
 See https://go.dev/doc/modules/managing-dependencies for more information.`)
-
-	// errNoGoSum indicates that a go.sum file was not found in this module.
-	errNoGoSum = errors.New(`no go.sum file
-
-Your module is missing a go.sum file. Try running go mod tidy.
-
-See https://go.dev/doc/modules/managing-dependencies for more information.`)
-
-	// errNoModVersion indicates that govulncheck cannot access module version information.
-	errNoModVersion = errors.New(`no module version information
-
-This can happen when running govulncheck in GOPATH mode. govulncheck needs module
-versions to correctly identify vulnerabilities.
-
-See https://go.dev/doc/modules/managing-dependencies for more information.`)
 )
 
 // packageError contains errors from loading a set of packages.

@@ -106,9 +106,6 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 			if !fileExists(filepath.Join(dir, "go.mod")) {
 				return errNoGoMod
 			}
-			if !fileExists(filepath.Join(dir, "go.sum")) {
-				return errNoGoSum
-			}
 			if isGoVersionMismatchError(err) {
 				return fmt.Errorf("%v\n\n%v", errGoVersionMismatch, err)
 			}
