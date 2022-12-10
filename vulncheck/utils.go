@@ -24,7 +24,8 @@ import (
 // the ssa program encapsulating the packages and top level
 // ssa packages corresponding to pkgs.
 func buildSSA(pkgs []*Package, fset *token.FileSet) (*ssa.Program, []*ssa.Package) {
-	prog := ssa.NewProgram(fset, ssa.BuilderMode(0))
+	// TODO(#57221): what about entry functions that are generics?
+	prog := ssa.NewProgram(fset, ssa.InstantiateGenerics)
 
 	imports := make(map[*Package]*ssa.Package)
 	var createImports func([]*Package)

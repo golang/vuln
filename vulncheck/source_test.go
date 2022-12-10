@@ -848,3 +848,55 @@ func TestRecursion(t *testing.T) {
 		t.Errorf("want 3 functions (X, y, Vuln) in vulnerability graph; got %v", l)
 	}
 }
+
+func TestIssue57174(t *testing.T) {
+	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
+		{
+			Name: "golang.org/entry",
+			Files: map[string]interface{}{
+				"x/x.go": `
+			package x
+
+			import "golang.org/bmod/bvuln"
+
+			func P(d [][3]int) {
+				p(d)
+			}
+
+			func p[E interface{ [3]int | [4]int }](d []E) {
+				c := d[0]
+				if c[0] > 0 {
+					bvuln.Vuln()
+				}
+			}
+			`,
+			},
+		},
+		{
+			Name: "golang.org/bmod@v0.5.0",
+			Files: map[string]interface{}{"bvuln/bvuln.go": `
+			package bvuln
+
+			func Vuln() {}
+			`},
+		},
+	})
+	defer e.Cleanup()
+
+	// Load x as entry package.
+	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pkgs) != 1 {
+		t.Fatal("failed to load x test package")
+	}
+
+	cfg := &Config{
+		Client: testClient,
+	}
+	_, err = Source(context.Background(), Convert(pkgs), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
