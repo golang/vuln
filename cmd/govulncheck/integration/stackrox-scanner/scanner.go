@@ -56,6 +56,7 @@ func main() {
 		{pkg: "net/http", symbol: "Server.Serve"}:                                   true,
 		{pkg: "net/http", symbol: "Server.ServeTLS"}:                                true,
 		{pkg: "net/http", symbol: "http2Server.ServeConn"}:                          true,
+		{pkg: "net/http", symbol: "http2serverConn.canonicalHeader"}:                true,
 		{pkg: "net/http", symbol: "http2serverConn.goAway"}:                         true,
 		{pkg: "net/http", symbol: "transferReader.parseTransferEncoding"}:           true,
 		{pkg: "path/filepath", symbol: "Glob"}:                                      true,
