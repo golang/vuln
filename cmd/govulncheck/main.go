@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/pprof"
+
 	"strings"
 
 	"golang.org/x/tools/go/buildutil"
@@ -24,7 +26,9 @@ var (
 	jsonFlag    = flag.Bool("json", false, "output JSON")
 	verboseFlag = flag.Bool("v", false, "print a full call stack for each vulnerability")
 	testFlag    = flag.Bool("test", false, "analyze test files. Only valid for source code.")
-	tagsFlag    buildutil.TagsFlag
+	cpuprofile  = flag.String("cpuprofile", "", "write CPU profile to file")
+
+	tagsFlag buildutil.TagsFlag
 
 	// testmode flags. See main_testmode.go.
 	dirFlag string
@@ -58,6 +62,16 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 		os.Exit(1)
 	}
 
+	// Profiling support.
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		pprof.StartCPUProfile(f)
+	}
+
 	patterns := flag.Args()
 
 	sourceAnalysis := true
@@ -66,14 +80,18 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 	}
 	validateFlags(sourceAnalysis)
 
-	if err := doGovulncheck(patterns, sourceAnalysis); err != nil {
-		die(fmt.Sprintf("govulncheck: %v", err))
+	err := doGovulncheck(patterns, sourceAnalysis)
+	pprof.StopCPUProfile()
+	if err != nil {
+		if code, ok := err.(exitCode); ok {
+			os.Exit(int(code))
+		}
+		die("govulncheck: %v", err)
 	}
 }
 
-// doGovulncheck performs main govulncheck functionality and exits the
-// program upon success with an appropriate exit status. Otherwise,
-// returns an error.
+// doGovulncheck performs the main govulncheck functionality and
+// returns an error, possibly an exitCode.
 func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 	ctx := context.Background()
 	dir := filepath.FromSlash(dirFlag)
@@ -127,11 +145,11 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 
 	if *jsonFlag {
 		// Following golang.org/x/tools/go/analysis/singlechecker,
-		// return 0 exit code in -json mode.
+		// -json mode is always a success.
 		if err := printJSON(res); err != nil {
 			return err
 		}
-		os.Exit(0)
+		return nil // success
 	}
 
 	printText(res, *verboseFlag, sourceAnalysis)
@@ -144,15 +162,20 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 	if sourceAnalysis {
 		for _, v := range res.Vulns {
 			if v.IsCalled() {
-				os.Exit(3)
+				return exitCode(3)
 			}
 		}
 	} else if len(res.Vulns) > 0 {
-		os.Exit(3)
+		return exitCode(3)
 	}
-	os.Exit(0)
 	return nil
 }
+
+// exitCode is an error returned by doGovulncheck to indicate
+// that the the program should silently exit with the specified code.
+type exitCode int
+
+func (code exitCode) Error() string { return fmt.Sprintf("exit code %d", code) }
 
 func validateFlags(source bool) {
 	if !source {

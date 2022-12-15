@@ -36,7 +36,10 @@ func TestCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts.DisableLogging = false
+
+	// Comment this out to log all command output (very verbose).
+	ts.DisableLogging = true
+
 	// Define a command that runs govulncheck with our local DB. We can't use
 	// cmdtest.Program for this because it doesn't let us set the environment,
 	// and that is the only way to tell govulncheck about an alternative vuln
