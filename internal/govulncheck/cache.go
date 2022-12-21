@@ -6,13 +6,13 @@ package govulncheck
 
 import (
 	"encoding/json"
-	"go/build"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
 	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/osv"
 )
 
@@ -22,7 +22,7 @@ import (
 // the index was retrieved from the vulnerability database. The JSON
 // format is as follows:
 //
-// $GOPATH/pkg/mod/cache/download/vulndb/{db hostname}/indexes/index.json
+// $GOMODCACHE/cache/download/vulndb/{db hostname}/indexes/index.json
 //   {
 //       Retrieved time.Time
 //       Index client.DBIndex
@@ -31,7 +31,7 @@ import (
 // Each package also has a JSON file which contains the array of vulnerability
 // entries for the package. The JSON format is as follows:
 //
-// $GOPATH/pkg/mod/cache/download/vulndb/{db hostname}/{import path}/vulns.json
+// $GOMODCACHE/cache/download/vulndb/{db hostname}/{import path}/vulns.json
 //   []*osv.Entry
 
 // FSCache is a thread-safe file-system cache implementing osv.Cache
@@ -45,8 +45,7 @@ type FSCache struct {
 // Assert that *FSCache implements client.Cache.
 var _ client.Cache = (*FSCache)(nil)
 
-// use cfg.GOMODCACHE available in cmd/go/internal?
-var defaultCacheRoot = filepath.Join(build.Default.GOPATH, "/pkg/mod/cache/download/vulndb")
+var defaultCacheRoot = filepath.Join(internal.GoEnv("GOMODCACHE"), "/cache/download/vulndb")
 
 func DefaultCache() *FSCache {
 	return &FSCache{rootDir: defaultCacheRoot}

@@ -51,7 +51,7 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 	if cfg.SourceGoVersion != "" {
 		stdlibModule.Version = semver.GoTagToSemver(cfg.SourceGoVersion)
 	} else {
-		stdlibModule.Version = semver.GoTagToSemver(internal.GoVersion())
+		stdlibModule.Version = semver.GoTagToSemver(internal.GoEnv("GOVERSION"))
 	}
 
 	mods := extractModules(pkgs)
