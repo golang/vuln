@@ -10,6 +10,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"text/template"
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/vuln/exp/govulncheck"
@@ -32,30 +33,55 @@ const (
 	lineLength = 55
 )
 
-func printText(r *govulncheck.Result, verbose, source bool) {
+func printText(r *govulncheck.Result, verbose, source bool) error {
+	lineWidth := 80 - labelWidth
+	funcMap := template.FuncMap{
+		// used in template for counting vulnerabilities
+		"inc": func(i int) int {
+			return i + 1
+		},
+		// indent reversed to support template pipelining
+		"indent": func(n int, s string) string {
+			return indent(s, n)
+		},
+		"wrap": func(s string) string {
+			return wrap(s, lineWidth)
+		},
+	}
+
+	tmplRes := createTmplResult(r, verbose, source)
+	tmpl, err := template.New("govulncheck").Funcs(funcMap).Parse(outputTemplate)
+	if err != nil {
+		return err
+	}
+	return tmpl.Execute(os.Stdout, tmplRes)
+}
+
+// createTmplResult transforms govulncheck.Result r into a
+// template structure for printing.
+func createTmplResult(r *govulncheck.Result, verbose, source bool) tmplResult {
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
-	var unaffected []*govulncheck.Vuln
+	var unaffected []tmplVulnInfo
 	uniqueVulns := 0
 	for _, v := range r.Vulns {
 		if !source || v.IsCalled() {
 			uniqueVulns++
 		} else {
 			// save arbitrary Vuln for informational message
-			unaffected = append(unaffected, v)
+			m := v.Modules[0]
+			p := m.Packages[0]
+			unaffected = append(unaffected, tmplVulnInfo{
+				ID:        v.OSV.ID,
+				Details:   v.OSV.Details,
+				Found:     packageVersionString(p.Path, m.FoundVersion),
+				Fixed:     packageVersionString(p.Path, m.FixedVersion),
+				Platforms: platforms(v.OSV),
+			})
 		}
 	}
-	switch uniqueVulns {
-	case 0:
-		fmt.Println("No vulnerabilities found.")
-	case 1:
-		fmt.Println("Found 1 known vulnerability.")
-	default:
-		fmt.Printf("Found %d known vulnerabilities.\n", uniqueVulns)
-	}
 
-	lineWidth := 80 - labelWidth
-	idx := 0
+	var affected []tmplVulnInfo
 	for _, v := range r.Vulns {
 		for _, m := range v.Modules {
 			for _, p := range m.Packages {
@@ -63,62 +89,33 @@ func printText(r *govulncheck.Result, verbose, source bool) {
 				if source && len(p.CallStacks) == 0 {
 					continue
 				}
-				fmt.Println()
 
-				id := v.OSV.ID
-				details := wrap(v.OSV.Details, lineWidth)
-				found := packageVersionString(p.Path, m.FoundVersion)
-				fixed := packageVersionString(p.Path, m.FixedVersion)
-
-				var stacksBuilder strings.Builder
+				var stacks string
 				if source { // there are no call stacks in binary mode
-					var stacks string
 					if !verbose {
 						stacks = defaultCallStacks(p.CallStacks)
 					} else {
 						stacks = verboseCallStacks(p.CallStacks)
 					}
-					if len(stacks) > 0 {
-						stacksBuilder.WriteString(indent("\n\nCall stacks in your code:\n", 2))
-						stacksBuilder.WriteString(indent(stacks, 6))
-					}
 				}
-				printVulnerability(idx+1, id, details, stacksBuilder.String(), found, fixed, platforms(v.OSV))
-				idx++
+
+				affected = append(affected, tmplVulnInfo{
+					ID:        v.OSV.ID,
+					Details:   v.OSV.Details,
+					Found:     packageVersionString(p.Path, m.FoundVersion),
+					Fixed:     packageVersionString(p.Path, m.FixedVersion),
+					Platforms: platforms(v.OSV),
+					Stacks:    stacks,
+				})
 			}
 		}
 	}
-	if len(unaffected) > 0 {
-		fmt.Println()
-		fmt.Println(informationalMessage)
-		idx = 0
-		for idx, un := range unaffected {
-			// We pick random module and package info for
-			// unaffected OSVs.
-			m := un.Modules[0]
-			p := m.Packages[0]
-			found := packageVersionString(p.Path, m.FoundVersion)
-			fixed := packageVersionString(p.Path, m.FixedVersion)
-			fmt.Println()
-			details := wrap(un.OSV.Details, lineWidth)
-			printVulnerability(idx+1, un.OSV.ID, details, "", found, fixed, platforms(un.OSV))
-		}
-	}
-}
 
-func printVulnerability(idx int, id, details, callstack, found, fixed, platforms string) {
-	if fixed == "" {
-		fixed = "N/A"
+	return tmplResult{
+		UniqueVulns: uniqueVulns,
+		Unaffected:  unaffected,
+		Affected:    affected,
 	}
-	if platforms != "" {
-		platforms = "  Platforms: " + platforms + "\n"
-	}
-	fmt.Printf(`Vulnerability #%d: %s
-%s%s
-  Found in: %s
-  Fixed in: %s
-%s  More info: https://pkg.go.dev/vuln/%s
-`, idx, id, indent(details, 2), callstack, found, fixed, platforms, id)
 }
 
 func defaultCallStacks(css []govulncheck.CallStack) string {

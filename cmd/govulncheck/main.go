@@ -37,6 +37,10 @@ func init() {
 const (
 	envGOVULNDB = "GOVULNDB"
 	vulndbHost  = "https://vuln.go.dev"
+
+	introMessage = `govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Scanning for dependencies with known vulnerabilities...`
 )
 
 func main() {
@@ -134,7 +138,9 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 		os.Exit(0)
 	}
 
-	printText(res, *verboseFlag, sourceAnalysis)
+	if err := printText(res, *verboseFlag, sourceAnalysis); err != nil {
+		return err
+	}
 	// Return exit status -3 if some vulnerabilities are actually
 	// called in source mode or just present in binary mode.
 	//
