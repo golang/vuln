@@ -6,6 +6,7 @@ package vulncheck
 
 import (
 	"bytes"
+	"context"
 	"go/token"
 	"go/types"
 	"strings"
@@ -57,10 +58,14 @@ func buildSSA(pkgs []*Package, fset *token.FileSet) (*ssa.Program, []*ssa.Packag
 }
 
 // callGraph builds a call graph of prog based on VTA analysis.
-func callGraph(prog *ssa.Program, entries []*ssa.Function) *callgraph.Graph {
+func callGraph(ctx context.Context, prog *ssa.Program, entries []*ssa.Function) (*callgraph.Graph, error) {
 	entrySlice := make(map[*ssa.Function]bool)
 	for _, e := range entries {
 		entrySlice[e] = true
+	}
+
+	if err := ctx.Err(); err != nil { // cancelled?
+		return nil, err
 	}
 	initial := cha.CallGraph(prog)
 	allFuncs := ssautil.AllFunctions(prog)
@@ -68,6 +73,10 @@ func callGraph(prog *ssa.Program, entries []*ssa.Function) *callgraph.Graph {
 	fslice := forwardReachableFrom(entrySlice, initial)
 	// Keep only actually linked functions.
 	pruneSet(fslice, allFuncs)
+
+	if err := ctx.Err(); err != nil { // cancelled?
+		return nil, err
+	}
 	vtaCg := vta.CallGraph(fslice, initial)
 
 	// Repeat the process once more, this time using
@@ -75,9 +84,12 @@ func callGraph(prog *ssa.Program, entries []*ssa.Function) *callgraph.Graph {
 	fslice = forwardReachableFrom(entrySlice, vtaCg)
 	pruneSet(fslice, allFuncs)
 
+	if err := ctx.Err(); err != nil { // cancelled?
+		return nil, err
+	}
 	cg := vta.CallGraph(fslice, vtaCg)
 	cg.DeleteSyntheticNodes()
-	return cg
+	return cg, nil
 }
 
 // siteCallees computes a set of callees for call site `call` given program `callgraph`.
