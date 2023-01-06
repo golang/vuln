@@ -45,10 +45,24 @@ type FSCache struct {
 // Assert that *FSCache implements client.Cache.
 var _ client.Cache = (*FSCache)(nil)
 
-var defaultCacheRoot = filepath.Join(internal.GoEnv("GOMODCACHE"), "/cache/download/vulndb")
+var (
+	initDefaultCache sync.Once
+	defaultCache     *FSCache
+	defaultCacheErr  error
+)
 
-func DefaultCache() *FSCache {
-	return &FSCache{rootDir: defaultCacheRoot}
+func DefaultCache() (*FSCache, error) {
+	initDefaultCache.Do(func() {
+		mod, err := internal.GoEnv("GOMODCACHE")
+		if err != nil {
+			defaultCacheErr = err
+			return
+		}
+		defaultCache = &FSCache{
+			rootDir: filepath.Join(mod, "/cache/download/vulndb"),
+		}
+	})
+	return defaultCache, defaultCacheErr
 }
 
 type cachedIndex struct {

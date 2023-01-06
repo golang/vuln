@@ -13,21 +13,19 @@ import (
 	"os/exec"
 )
 
-// GoEnv returns the value for key in `go env`. In
-// the unlikely case that `go env` fails, prints an
-// error message and returns an empty string.
+// GoEnv returns the value for key in `go env`.
 //
 // For debugging and testing purposes, the value of
 // undocumented environment variable TEST_GOVERSION
 // is used for go env GOVERSION.
-func GoEnv(key string) string {
+func GoEnv(key string) (string, error) {
 	out, err := exec.Command("go", "env", "-json", key).Output()
 	if err != nil {
-		return ""
+		return "", err
 	}
 	env := make(map[string]string)
 	if err := json.Unmarshal(out, &env); err != nil {
-		return ""
+		return "", err
 	}
 
 	if v := os.Getenv("TEST_GOVERSION"); v != "" {
@@ -35,5 +33,5 @@ func GoEnv(key string) string {
 		env["GOVERSION"] = v
 	}
 
-	return env[key]
+	return env[key], nil
 }

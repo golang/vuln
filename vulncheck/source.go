@@ -52,7 +52,11 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 	if cfg.SourceGoVersion != "" {
 		stdlibModule.Version = semver.GoTagToSemver(cfg.SourceGoVersion)
 	} else {
-		stdlibModule.Version = semver.GoTagToSemver(internal.GoEnv("GOVERSION"))
+		gover, err := internal.GoEnv("GOVERSION")
+		if err != nil {
+			return nil, err
+		}
+		stdlibModule.Version = semver.GoTagToSemver(gover)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)

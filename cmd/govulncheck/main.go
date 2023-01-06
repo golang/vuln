@@ -86,8 +86,14 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 	if db := os.Getenv(envGOVULNDB); db != "" {
 		dbs = strings.Split(db, ",")
 	}
+
+	cache, err := govulncheck.DefaultCache()
+	if err != nil {
+		return err
+	}
+
 	dbClient, err := client.NewClient(dbs, client.Options{
-		HTTPCache: govulncheck.DefaultCache(),
+		HTTPCache: cache,
 	})
 	if err != nil {
 		return err
