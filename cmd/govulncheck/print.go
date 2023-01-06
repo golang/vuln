@@ -162,8 +162,23 @@ func platforms(e *osv.Entry) string {
 	for _, a := range e.Affected {
 		for _, p := range a.EcosystemSpecific.Imports {
 			for _, os := range p.GOOS {
+				// In case there are no specific architectures,
+				// just list the os entries.
+				if len(p.GOARCH) == 0 {
+					platforms[os] = true
+					continue
+				}
+				// Otherwise, list all the os+arch combinations.
 				for _, arch := range p.GOARCH {
 					platforms[os+"/"+arch] = true
+				}
+			}
+
+			// Cover the case where there are no specific
+			// operating systems listed.
+			if len(p.GOOS) == 0 {
+				for _, arch := range p.GOARCH {
+					platforms[arch] = true
 				}
 			}
 		}

@@ -58,6 +58,40 @@ func TestPlatforms(t *testing.T) {
 			},
 			want: "linux/amd64, windows/amd64",
 		},
+		{
+			entry: &osv.Entry{
+				ID: "two-os-only",
+				Affected: []osv.Affected{{
+					Package: osv.Package{Name: "golang.org/vmod"},
+					Ranges:  osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{
+							{
+								GOOS: []string{"windows, linux"},
+							},
+						},
+					},
+				}},
+			},
+			want: "windows, linux",
+		},
+		{
+			entry: &osv.Entry{
+				ID: "one-arch-only",
+				Affected: []osv.Affected{{
+					Package: osv.Package{Name: "golang.org/vmod"},
+					Ranges:  osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Imports: []osv.EcosystemSpecificImport{
+							{
+								GOOS: []string{"amd64"},
+							},
+						},
+					},
+				}},
+			},
+			want: "amd64",
+		},
 	} {
 		t.Run(test.entry.ID, func(t *testing.T) {
 			got := platforms(test.entry)
