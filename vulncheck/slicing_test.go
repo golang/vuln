@@ -100,7 +100,7 @@ func Do(i I, input string) {
 
 	pkg := ssaPkgs[0]
 	sources := map[*ssa.Function]bool{pkg.Func("Apply"): true, pkg.Func("Do"): true}
-	fs := funcNames(forwardReachableFrom(sources, cha.CallGraph(prog)))
+	fs := funcNames(forwardSlice(sources, cha.CallGraph(prog)))
 	want := map[string]bool{
 		"Apply":   true,
 		"Apply$1": true,

@@ -9,39 +9,40 @@ import (
 	"golang.org/x/tools/go/ssa"
 )
 
-// forwardReachableFrom computes the set of functions forward reachable from `sources`.
-// A function f is reachable from a function g if f is an anonymous function defined
-// in g or a function called in g as given by the callgraph `cg`.
-func forwardReachableFrom(sources map[*ssa.Function]bool, cg *callgraph.Graph) map[*ssa.Function]bool {
-	m := make(map[*ssa.Function]bool)
-	for s := range sources {
-		forward(s, cg, m)
-	}
-	return m
-}
+// forwardSlice computes the transitive closure of functions forward reachable
+// via calls in cg or referred to in an instruction starting from `sources`.
+func forwardSlice(sources map[*ssa.Function]bool, cg *callgraph.Graph) map[*ssa.Function]bool {
+	seen := make(map[*ssa.Function]bool)
+	var visit func(f *ssa.Function)
+	visit = func(f *ssa.Function) {
+		if seen[f] {
+			return
+		}
+		seen[f] = true
 
-func forward(f *ssa.Function, cg *callgraph.Graph, seen map[*ssa.Function]bool) {
-	if seen[f] {
-		return
-	}
-	seen[f] = true
-	var buf [10]*ssa.Value // avoid alloc in common case
-	for _, b := range f.Blocks {
-		for _, instr := range b.Instrs {
-			switch i := instr.(type) {
-			case ssa.CallInstruction:
-				for _, c := range siteCallees(i, cg) {
-					forward(c, cg, seen)
+		if n := cg.Nodes[f]; n != nil {
+			for _, e := range n.Out {
+				if e.Site != nil {
+					visit(e.Callee.Func)
 				}
-			default:
-				for _, op := range i.Operands(buf[:0]) {
+			}
+		}
+
+		var buf [10]*ssa.Value // avoid alloc in common case
+		for _, b := range f.Blocks {
+			for _, instr := range b.Instrs {
+				for _, op := range instr.Operands(buf[:0]) {
 					if fn, ok := (*op).(*ssa.Function); ok {
-						forward(fn, cg, seen)
+						visit(fn)
 					}
 				}
 			}
 		}
 	}
+	for source := range sources {
+		visit(source)
+	}
+	return seen
 }
 
 // pruneSet removes functions in `set` that are in `toPrune`.

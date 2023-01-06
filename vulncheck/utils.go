@@ -70,7 +70,7 @@ func callGraph(ctx context.Context, prog *ssa.Program, entries []*ssa.Function) 
 	initial := cha.CallGraph(prog)
 	allFuncs := ssautil.AllFunctions(prog)
 
-	fslice := forwardReachableFrom(entrySlice, initial)
+	fslice := forwardSlice(entrySlice, initial)
 	// Keep only actually linked functions.
 	pruneSet(fslice, allFuncs)
 
@@ -81,7 +81,7 @@ func callGraph(ctx context.Context, prog *ssa.Program, entries []*ssa.Function) 
 
 	// Repeat the process once more, this time using
 	// the produced VTA call graph as the base graph.
-	fslice = forwardReachableFrom(entrySlice, vtaCg)
+	fslice = forwardSlice(entrySlice, vtaCg)
 	pruneSet(fslice, allFuncs)
 
 	if err := ctx.Err(); err != nil { // cancelled?
@@ -90,25 +90,6 @@ func callGraph(ctx context.Context, prog *ssa.Program, entries []*ssa.Function) 
 	cg := vta.CallGraph(fslice, vtaCg)
 	cg.DeleteSyntheticNodes()
 	return cg, nil
-}
-
-// siteCallees computes a set of callees for call site `call` given program `callgraph`.
-func siteCallees(call ssa.CallInstruction, callgraph *callgraph.Graph) []*ssa.Function {
-	var matches []*ssa.Function
-
-	node := callgraph.Nodes[call.Parent()]
-	if node == nil {
-		return nil
-	}
-
-	for _, edge := range node.Out {
-		// Some callgraph analyses, such as CHA, might return synthetic (interface)
-		// methods as well as the concrete methods. Skip such synthetic functions.
-		if edge.Site == call {
-			matches = append(matches, edge.Callee.Func)
-		}
-	}
-	return matches
 }
 
 // dbTypeFormat formats the name of t according how types
