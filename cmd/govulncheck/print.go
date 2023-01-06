@@ -155,8 +155,9 @@ func verboseCallStacks(css []govulncheck.CallStack) string {
 	return b.String()
 }
 
-// platforms returns a string describing the GOOS/GOARCH pairs that the vuln affects.
-// If it affects all of them, it returns the empty string.
+// platforms returns a string describing the GOOS, GOARCH,
+// or GOOS/GOARCH pairs that the vuln affects. If it affects
+// all of them, it returns the empty string.
 func platforms(e *osv.Entry) string {
 	platforms := map[string]bool{}
 	for _, a := range e.Affected {
