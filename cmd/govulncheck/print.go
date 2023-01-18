@@ -63,59 +63,115 @@ func createTmplResult(r *govulncheck.Result, verbose, source bool) tmplResult {
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
 	var unaffected []tmplVulnInfo
-	uniqueVulns := 0
+	var affected []tmplVulnInfo
 	for _, v := range r.Vulns {
 		if !source || v.IsCalled() {
-			uniqueVulns++
+			affected = append(affected, createTmplVulnInfo(v, verbose, source))
 		} else {
-			// save arbitrary Vuln for informational message
+			// save arbitrary module info for informational message
 			m := v.Modules[0]
-			p := m.Packages[0]
+			// For stdlib vulnerabilities, we use the path of one the
+			// packages (typically, there is only one package). Showing
+			// "Module: stdlib" to the user is confusing.
+			path := m.Path
+			if path == internal.GoStdModulePath {
+				path = m.Packages[0].Path
+			}
 			unaffected = append(unaffected, tmplVulnInfo{
-				ID:        v.OSV.ID,
-				Details:   v.OSV.Details,
-				Found:     packageVersionString(p.Path, m.FoundVersion),
-				Fixed:     packageVersionString(p.Path, m.FixedVersion),
-				Platforms: platforms(v.OSV),
+				ID:      v.OSV.ID,
+				Details: v.OSV.Details,
+				Modules: []tmplModVulnInfo{{
+					// We currently do not show module names in the
+					// "Informational" section. We hence leave the
+					// IsStd and Module fields empty.
+					Found:     moduleVersionString(path, m.FoundVersion),
+					Fixed:     moduleVersionString(path, m.FixedVersion),
+					Platforms: platforms("", v.OSV),
+				}},
 			})
 		}
 	}
 
-	var affected []tmplVulnInfo
-	for _, v := range r.Vulns {
-		for _, m := range v.Modules {
+	return tmplResult{
+		Unaffected: unaffected,
+		Affected:   affected,
+	}
+}
+
+// createTmplVulnInfo creates a template vuln info for
+// a vulnerability that is called by source code or
+// present in the binary.
+func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool) tmplVulnInfo {
+	vInfo := tmplVulnInfo{
+		ID:      v.OSV.ID,
+		Details: v.OSV.Details,
+	}
+
+	// stacks returns call stack info of p as a
+	// string depending on verbose and source mode.
+	stacks := func(p *govulncheck.Package) string {
+		if !source {
+			return ""
+		}
+
+		if verbose {
+			return verboseCallStacks(p.CallStacks)
+		}
+		return defaultCallStacks(p.CallStacks)
+	}
+
+	for _, m := range v.Modules {
+		if m.Path == internal.GoStdModulePath {
+			// For stdlib vulnerabilities, we pretend each package
+			// is effectively a module because showing "Module: stdlib"
+			// to the user is confusing. In most cases, stdlib
+			// vulnerabilities affect only one package anyhow.
 			for _, p := range m.Packages {
-				// In Binary mode there are no call stacks.
 				if source && len(p.CallStacks) == 0 {
+					// package symbols not exercised, nothing to do here
 					continue
 				}
 
-				var stacks string
-				if source { // there are no call stacks in binary mode
-					if !verbose {
-						stacks = defaultCallStacks(p.CallStacks)
-					} else {
-						stacks = verboseCallStacks(p.CallStacks)
-					}
-				}
-
-				affected = append(affected, tmplVulnInfo{
-					ID:        v.OSV.ID,
-					Details:   v.OSV.Details,
-					Found:     packageVersionString(p.Path, m.FoundVersion),
-					Fixed:     packageVersionString(p.Path, m.FixedVersion),
-					Platforms: platforms(v.OSV),
-					Stacks:    stacks,
+				vInfo.Modules = append(vInfo.Modules, tmplModVulnInfo{
+					IsStd:     true, // stdlib, so Module field is not needed
+					Found:     moduleVersionString(p.Path, m.FoundVersion),
+					Fixed:     moduleVersionString(p.Path, m.FixedVersion),
+					Platforms: platforms(m.Path, v.OSV),
+					Stacks:    stacks(p), // for binary mode, this will be ""
 				})
 			}
+			continue
 		}
-	}
 
-	return tmplResult{
-		UniqueVulns: uniqueVulns,
-		Unaffected:  unaffected,
-		Affected:    affected,
+		// For third-party packages, we create a single output entry for
+		// the whole module by merging call stack info of each exercised
+		// package (in source mode).
+		var moduleStacks []string
+		if source {
+			for _, p := range m.Packages {
+				if len(p.CallStacks) == 0 {
+					// package symbols not exercised, nothing to do here
+					continue
+				}
+				moduleStacks = append(moduleStacks, stacks(p))
+			}
+			if len(moduleStacks) == 0 {
+				// Some modules of a vuln have symbols exercised.
+				// Skip those that don't.
+				continue
+			}
+		}
+
+		vInfo.Modules = append(vInfo.Modules, tmplModVulnInfo{
+			IsStd:     false,
+			Module:    m.Path,
+			Found:     moduleVersionString(m.Path, m.FoundVersion),
+			Fixed:     moduleVersionString(m.Path, m.FixedVersion),
+			Platforms: platforms(m.Path, v.OSV),
+			Stacks:    strings.Join(moduleStacks, "\n"), // for binary mode, this will be ""
+		})
 	}
+	return vInfo
 }
 
 func defaultCallStacks(css []govulncheck.CallStack) string {
@@ -156,11 +212,18 @@ func verboseCallStacks(css []govulncheck.CallStack) string {
 }
 
 // platforms returns a string describing the GOOS, GOARCH,
-// or GOOS/GOARCH pairs that the vuln affects. If it affects
-// all of them, it returns the empty string.
-func platforms(e *osv.Entry) string {
+// or GOOS/GOARCH pairs that the vuln affects for a particular
+// module mod. If it affects all of them, it returns the empty
+// string.
+//
+// When mod is an empty string, returns platform information for
+// all modules of e.
+func platforms(mod string, e *osv.Entry) string {
 	platforms := map[string]bool{}
 	for _, a := range e.Affected {
+		if mod != "" && a.Package.Name != mod {
+			continue
+		}
 		for _, p := range a.EcosystemSpecific.Imports {
 			for _, os := range p.GOOS {
 				// In case there are no specific architectures,
@@ -210,11 +273,11 @@ func compact(s []string) []string {
 	return s[:i]
 }
 
-func packageVersionString(packagePath, version string) string {
+func moduleVersionString(modulePath, version string) string {
 	if version == "" {
 		return ""
 	}
-	return fmt.Sprintf("%s@%s", packagePath, version)
+	return fmt.Sprintf("%s@%s", modulePath, version)
 }
 
 // indent returns the output of prefixing n spaces to s at every line break,

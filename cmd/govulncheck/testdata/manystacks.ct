@@ -2,33 +2,35 @@ $ govulncheck -dir ${moddir}/manystacks . --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...
-Found 1 known vulnerability.
+Your code is affected by 1 vulnerability from 1 module.
 
 Vulnerability #1: GO-2020-0040
   Due to unchecked type assertions, maliciously crafted messages
   can cause panics, which may be used as a denial of service
   vector.
 
-  Call stacks in your code:
+  More info: https://pkg.go.dev/vuln/GO-2020-0040
+
+  Module: github.com/shiyanhui/dht
+    Found in: github.com/shiyanhui/dht@v0.0.0-20201219151056-5a20f3199263
+    Fixed in: N/A
+
+    Call stacks in your code:
       .../main.go:16:14: example.com/manystacks.main calls github.com/shiyanhui/dht.New
       .../main.go:27:2: example.com/manystacks.main calls example.com/manystacks/otherpkg.GetPeers, which eventually calls github.com/shiyanhui/dht.DHT.GetPeers
       .../main.go:44:7: example.com/manystacks.main calls github.com/shiyanhui/dht.DHT.Run
 
-  Found in: github.com/shiyanhui/dht@v0.0.0-20201219151056-5a20f3199263
-  Fixed in: N/A
-  More info: https://pkg.go.dev/vuln/GO-2020-0040
-
 === Informational ===
 
-The vulnerabilities below are in packages that you import, but your code
-doesn't appear to call any vulnerable functions. You may not need to take any
-action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+Found 1 vulnerability in packages that you import, but there are no call
+stacks leading to the use of this vulnerability. You may not need to
+take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
 for details.
 
 Vulnerability #1: GO-2022-0969
   HTTP/2 server connections can hang forever waiting for a clean
   shutdown that was preempted by a fatal error. This condition can
   be exploited by a malicious client to cause a denial of service.
+  More info: https://pkg.go.dev/vuln/GO-2022-0969
   Found in: net/http@go1.18
   Fixed in: net/http@go1.19.1
-  More info: https://pkg.go.dev/vuln/GO-2022-0969

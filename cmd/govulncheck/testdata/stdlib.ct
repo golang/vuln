@@ -4,14 +4,16 @@ $ govulncheck -dir ${moddir}/stdvuln . --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...
-Found 1 known vulnerability.
+Your code is affected by 1 vulnerability from the Go standard library.
 
 Vulnerability #1: STD
 
 
-  Call stacks in your code:
-      .../stdvuln.go:9:26: golang.org/stdvuln.main calls archive/zip.OpenReader
-
-  Found in: archive/zip@go1.18
-  Fixed in: N/A
   More info: https://pkg.go.dev/vuln/STD
+
+  Standard library
+    Found in: archive/zip@go1.18
+    Fixed in: N/A
+
+    Call stacks in your code:
+      .../stdvuln.go:9:26: golang.org/stdvuln.main calls archive/zip.OpenReader

@@ -94,7 +94,7 @@ func TestPlatforms(t *testing.T) {
 		},
 	} {
 		t.Run(test.entry.ID, func(t *testing.T) {
-			got := platforms(test.entry)
+			got := platforms("golang.org/vmod", test.entry)
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
