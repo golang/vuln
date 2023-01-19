@@ -60,11 +60,9 @@ func TestCommand(t *testing.T) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create GOVULNDB env var: %v", err)
 		}
-		// We set TEST_GOVERSION to always get the same results regardless of the underlying Go build system.
-		cmd.Env = append(os.Environ(), "GOVULNDB="+govulndbURI.String(), "TEST_GOVERSION=go1.18")
+		cmd.Env = append(os.Environ(), "GOVULNDB="+govulndbURI.String())
 		out, err := cmd.CombinedOutput()
 		out = filterGoFilePaths(out)
-		out = filterStdlibVersions(out)
 		out = filterHeapGo(out)
 		return out, err
 	}
@@ -75,17 +73,10 @@ func TestCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// skipBuild contains names of module directories
-	// that should not be Go built. For instance, they
-	// might contain expected build errors.
-	skipBuild := map[string]bool{
-		"nogomod": true,
-		"nogosum": true,
-	}
-
 	os.Setenv("moddir", filepath.Join(testDir, "testdata", "modules"))
 	for _, md := range moduleDirs {
-		if skipBuild[filepath.Base(md)] {
+		// Skip nogomod module. It has intended build issues.
+		if filepath.Base(md) == "nogomod" {
 			continue
 		}
 
@@ -104,9 +95,8 @@ func TestCommand(t *testing.T) {
 }
 
 var (
-	goFileRegexp        = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
-	stdlibVersionRegexp = regexp.MustCompile(`("Path": "stdlib",\s*"Version": ")v[^\s]+"`)
-	heapGoRegexp        = regexp.MustCompile(`heap\.go:(\d+)`)
+	goFileRegexp = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
+	heapGoRegexp = regexp.MustCompile(`heap\.go:(\d+)`)
 )
 
 // filterGoFilePaths modifies paths to Go files by replacing their directory with "...".
@@ -118,14 +108,6 @@ func filterGoFilePaths(data []byte) []byte {
 		s := string(b)
 		return []byte(fmt.Sprintf(`.../%s%c`, filepath.Base(s[:len(s)-1]), s[len(s)-1]))
 	})
-}
-
-// filterStdlibVersions removes Go standard library versions from JSON output,
-// since they depend on the system running the test. Some have different
-// versions than others, and on some we are unable to extract a version from
-// the binary so the version is empty.
-func filterStdlibVersions(data []byte) []byte {
-	return stdlibVersionRegexp.ReplaceAll(data, []byte(`${1}"`))
 }
 
 // There was a one-line change in container/heap/heap.go between 1.18

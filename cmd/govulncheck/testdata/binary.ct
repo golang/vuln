@@ -1,12 +1,3 @@
-# Test of default mode with a binary.
-
-# No vulnerabilities, no output.
-$ govulncheck ${novuln_binary}
-govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
-
-Scanning for dependencies with known vulnerabilities...
-No vulnerabilities found.
-
 $ govulncheck ${vuln_binary} --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 

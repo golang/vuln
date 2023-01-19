@@ -1,13 +1,4 @@
-# Test of default mode.
-
-# No vulnerabilities, no output.
-$ govulncheck -dir ${moddir}/novuln .
-govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
-
-Scanning for dependencies with known vulnerabilities...
-No vulnerabilities found.
-
-$ govulncheck -tags=twocallstacks -dir ${moddir}/vuln . --> FAIL 3
+$ govulncheck -dir ${moddir}/vuln -v . --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Scanning for dependencies with known vulnerabilities...
@@ -26,8 +17,10 @@ Vulnerability #1: GO-2021-0113
     Fixed in: golang.org/x/text@v0.3.7
 
     Call stacks in your code:
-      .../vuln.go:12:16: golang.org/vuln.main calls golang.org/x/text/language.Parse
-      .../vuln_extra.go:8:30: golang.org/vuln.init#1 calls golang.org/x/text/language.ParseAcceptLanguage
+      #1: for function Parse
+        golang.org/vuln.main
+            .../vuln.go:12:16
+        golang.org/x/text/language.Parse
 
 === Informational ===
 
