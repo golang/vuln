@@ -63,6 +63,7 @@ func TestCommand(t *testing.T) {
 		cmd.Env = append(os.Environ(), "GOVULNDB="+govulndbURI.String())
 		out, err := cmd.CombinedOutput()
 		out = filterGoFilePaths(out)
+		out = filterProgressNumbers(out)
 		out = filterHeapGo(out)
 		return out, err
 	}
@@ -95,8 +96,9 @@ func TestCommand(t *testing.T) {
 }
 
 var (
-	goFileRegexp = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
-	heapGoRegexp = regexp.MustCompile(`heap\.go:(\d+)`)
+	goFileRegexp   = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
+	heapGoRegexp   = regexp.MustCompile(`heap\.go:(\d+)`)
+	progressRegexp = regexp.MustCompile(`Scanning your code and (\d+) packages across (\d+)`)
 )
 
 // filterGoFilePaths modifies paths to Go files by replacing their directory with "...".
@@ -114,4 +116,8 @@ func filterGoFilePaths(data []byte) []byte {
 // and 1.19 that makes the stack traces different. Ignore it.
 func filterHeapGo(data []byte) []byte {
 	return heapGoRegexp.ReplaceAll(data, []byte(`N`))
+}
+
+func filterProgressNumbers(data []byte) []byte {
+	return progressRegexp.ReplaceAll(data, []byte("Scanning your code and P packages across M"))
 }

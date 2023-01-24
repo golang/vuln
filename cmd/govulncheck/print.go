@@ -16,6 +16,7 @@ import (
 	"golang.org/x/vuln/exp/govulncheck"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/vulncheck"
 )
 
 func printJSON(r *govulncheck.Result) error {
@@ -31,6 +32,12 @@ func printJSON(r *govulncheck.Result) error {
 const (
 	labelWidth = 16
 	lineLength = 55
+
+	introMessage = `govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.`
+
+	detailsMessage = `For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.`
+
+	binaryProgressMessage = `Scanning your binary for known vulnerabilities...`
 )
 
 func printText(r *govulncheck.Result, verbose, source bool) error {
@@ -295,4 +302,72 @@ func indent(s string, n int) string {
 		shouldAppend = c == '\n'
 	}
 	return string(result)
+}
+
+// sourceProgressMessage returns a string of the form
+//
+//	"Scanning your code and P packages across M dependent modules for known vulnerabilities..."
+//
+// P is the number of strictly dependent packages of
+// topPkgs and Y is the number of their modules.
+func sourceProgressMessage(topPkgs []*vulncheck.Package) string {
+	pkgs, mods := depPkgsAndMods(topPkgs)
+
+	pkgsPhrase := fmt.Sprintf("%d package", pkgs)
+	if pkgs != 1 {
+		pkgsPhrase += "s"
+	}
+
+	modsPhrase := fmt.Sprintf("%d dependent module", mods)
+	if mods != 1 {
+		modsPhrase += "s"
+	}
+
+	return fmt.Sprintf("Scanning your code and %s across %s for known vulnerabilities...", pkgsPhrase, modsPhrase)
+}
+
+// depPkgsAndMods returns the number of packages that
+// topPkgs depend on and the number of their modules.
+func depPkgsAndMods(topPkgs []*vulncheck.Package) (int, int) {
+	tops := make(map[string]bool)
+	depPkgs := make(map[string]bool)
+	depMods := make(map[string]bool)
+
+	for _, t := range topPkgs {
+		tops[t.PkgPath] = true
+	}
+
+	var visit func(*vulncheck.Package, bool)
+	visit = func(p *vulncheck.Package, top bool) {
+		path := p.PkgPath
+		if depPkgs[path] {
+			return
+		}
+		if tops[path] && !top {
+			// A top package that is a dependency
+			// will not be in depPkgs, so we skip
+			// reiterating on it here.
+			return
+		}
+
+		// We don't count a top-level package as
+		// a dependency even when they are used
+		// as a dependent package.
+		if !tops[path] {
+			depPkgs[path] = true
+			if p.Module != nil { // no module for stdlib
+				depMods[p.Module.Path] = true
+			}
+		}
+
+		for _, d := range p.Imports {
+			visit(d, false)
+		}
+	}
+
+	for _, t := range topPkgs {
+		visit(t, true)
+	}
+
+	return len(depPkgs), len(depMods)
 }

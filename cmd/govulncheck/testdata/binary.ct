@@ -1,7 +1,7 @@
 $ govulncheck ${vuln_binary} --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
-Scanning for dependencies with known vulnerabilities...
+Scanning your binary for known vulnerabilities...
 Your code is affected by 1 vulnerability from 1 module.
 
 Vulnerability #1: GO-2021-0113

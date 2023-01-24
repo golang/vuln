@@ -37,10 +37,6 @@ func init() {
 const (
 	envGOVULNDB = "GOVULNDB"
 	vulndbHost  = "https://vuln.go.dev"
-
-	introMessage = `govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
-
-Scanning for dependencies with known vulnerabilities...`
 )
 
 func main() {
@@ -51,9 +47,7 @@ func main() {
 
 `)
 		flag.PrintDefaults()
-		fmt.Fprintf(os.Stderr, `
-For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
-`)
+		fmt.Fprintf(os.Stderr, "\n%s\n", detailsMessage)
 	}
 	flag.Parse()
 
@@ -121,6 +115,9 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 			}
 			return err
 		}
+
+		fmt.Println()
+		fmt.Println(sourceProgressMessage(pkgs))
 		res, err = govulncheck.Source(ctx, cfg, pkgs)
 	} else {
 		var f *os.File
@@ -129,6 +126,9 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 			return err
 		}
 		defer f.Close()
+
+		fmt.Println()
+		fmt.Println(binaryProgressMessage)
 		res, err = gvc.Binary(ctx, cfg, f)
 	}
 	if err != nil {
