@@ -105,25 +105,6 @@ func TestPlatforms(t *testing.T) {
 	}
 }
 
-func TestIndent(t *testing.T) {
-	for _, test := range []struct {
-		name string
-		s    string
-		n    int
-		want string
-	}{
-		{"short", "hello", 2, "  hello"},
-		{"multi", "mulit\nline\nstring", 1, " mulit\n line\n string"},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			got := indent(test.s, test.n)
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Fatalf("mismatch (-want, +got):\n%s", diff)
-			}
-		})
-	}
-}
-
 // testVuln1 is a test third-party vulnerability.
 var testVuln1 = &osv.Entry{
 	ID:      "GO-0000-0001",
