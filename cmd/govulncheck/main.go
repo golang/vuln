@@ -116,8 +116,10 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 			return err
 		}
 
-		fmt.Println()
-		fmt.Println(sourceProgressMessage(pkgs))
+		if !*jsonFlag {
+			fmt.Println()
+			fmt.Println(sourceProgressMessage(pkgs))
+		}
 		res, err = govulncheck.Source(ctx, cfg, pkgs)
 	} else {
 		var f *os.File
@@ -127,8 +129,10 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 		}
 		defer f.Close()
 
-		fmt.Println()
-		fmt.Println(binaryProgressMessage)
+		if !*jsonFlag {
+			fmt.Println()
+			fmt.Println(binaryProgressMessage)
+		}
 		res, err = gvc.Binary(ctx, cfg, f)
 	}
 	if err != nil {
