@@ -5,9 +5,7 @@
 package main
 
 import (
-	"bytes"
-	"io"
-	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -139,47 +137,13 @@ var testVuln1 = &osv.Entry{
 		},
 	}}}
 
-// testVuln1 is a test stdlib vulnerability
+// testVuln1 is a test stdlib vulnerability.
 var testVuln2 = &osv.Entry{
 	ID:      "GO-0000-0002",
 	Details: "Stdlib vulnerability",
 	Affected: []osv.Affected{{
 		Package: osv.Package{Name: internal.GoStdModulePath},
 	}}}
-
-// testPrintText calls printText, redirects
-// its output, and returns it as a string.
-func testPrintText(r *govulncheck.Result, verbose, source bool) string {
-	old := os.Stdout
-	read, write, _ := os.Pipe()
-	os.Stdout = write
-
-	printText(r, verbose, source)
-
-	write.Close()
-	os.Stdout = old
-
-	var buf bytes.Buffer
-	io.Copy(&buf, read)
-	return buf.String()
-}
-
-// testPrintJSON calls printJSON, redirects
-// its output, and returns it as a string.
-func testPrintJSON(r *govulncheck.Result) string {
-	old := os.Stdout
-	read, write, _ := os.Pipe()
-	os.Stdout = write
-
-	printJSON(r)
-
-	write.Close()
-	os.Stdout = old
-
-	var buf bytes.Buffer
-	io.Copy(&buf, read)
-	return buf.String()
-}
 
 func TestPrintTextNoVulns(t *testing.T) {
 	r := &govulncheck.Result{Vulns: []*govulncheck.Vuln{
@@ -195,7 +159,10 @@ func TestPrintTextNoVulns(t *testing.T) {
 		},
 	}}
 
-	got := testPrintText(r, false, true)
+	got := new(strings.Builder)
+	if err := doPrintText(got, r, false, true); err != nil {
+		t.Fatal(err)
+	}
 	want := `No vulnerabilities found.
 
 === Informational ===
@@ -212,7 +179,7 @@ Vulnerability #1: GO-0000-0001
   Fixed in: golang.org/vmod@v0.1.3
   Platforms: amd
 `
-	if diff := cmp.Diff(want, got); diff != "" {
+	if diff := cmp.Diff(want, got.String()); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
@@ -249,7 +216,10 @@ func TestPrintTextSource(t *testing.T) {
 			},
 		}}}
 
-	got := testPrintText(r, false, true)
+	got := new(strings.Builder)
+	if err := doPrintText(got, r, false, true); err != nil {
+		t.Fatal(err)
+	}
 	want := `Your code is affected by 1 vulnerability from 1 module.
 
 Vulnerability #1: GO-0000-0001
@@ -278,7 +248,7 @@ Vulnerability #1: GO-0000-0002
   Found in: net/http@v0.0.1
   Fixed in: N/A
 `
-	if diff := cmp.Diff(want, got); diff != "" {
+	if diff := cmp.Diff(want, got.String()); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
@@ -312,7 +282,10 @@ func TestPrintTextBinary(t *testing.T) {
 			},
 		}}}
 
-	got := testPrintText(r, false, false)
+	got := new(strings.Builder)
+	if err := doPrintText(got, r, false, false); err != nil {
+		t.Fatal(err)
+	}
 	want := `Your code is affected by 2 vulnerabilities from 1 module and the Go standard library.
 
 Vulnerability #1: GO-0000-0001
@@ -334,7 +307,7 @@ Vulnerability #2: GO-0000-0002
     Found in: net/http@v0.0.1
     Fixed in: N/A
 `
-	if diff := cmp.Diff(want, got); diff != "" {
+	if diff := cmp.Diff(want, got.String()); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
@@ -370,7 +343,10 @@ func TestPrintTextMultiModuleAndStacks(t *testing.T) {
 			},
 		}}}
 
-	got := testPrintText(r, false, true)
+	got := new(strings.Builder)
+	if err := doPrintText(got, r, false, true); err != nil {
+		t.Fatal(err)
+	}
 	want := `Your code is affected by 1 vulnerability from 2 modules.
 
 Vulnerability #1: GO-0000-0001
@@ -396,7 +372,7 @@ Vulnerability #1: GO-0000-0001
 
       Bar calls vmod1.VulnFoo
 `
-	if diff := cmp.Diff(want, got); diff != "" {
+	if diff := cmp.Diff(want, got.String()); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }

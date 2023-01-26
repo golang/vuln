@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strings"
@@ -41,6 +42,10 @@ const (
 )
 
 func printText(r *govulncheck.Result, verbose, source bool) error {
+	return doPrintText(os.Stdout, r, verbose, source)
+}
+
+func doPrintText(w io.Writer, r *govulncheck.Result, verbose, source bool) error {
 	lineWidth := 80 - labelWidth
 	funcMap := template.FuncMap{
 		// used in template for counting vulnerabilities
@@ -61,7 +66,7 @@ func printText(r *govulncheck.Result, verbose, source bool) error {
 	if err != nil {
 		return err
 	}
-	return tmpl.Execute(os.Stdout, tmplRes)
+	return tmpl.Execute(w, tmplRes)
 }
 
 // createTmplResult transforms govulncheck.Result r into a
