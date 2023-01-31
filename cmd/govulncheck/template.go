@@ -4,6 +4,16 @@
 
 package main
 
+// introTemplate is a text template used to communicate to the
+// user the environment used for vulnerability analysis, namely
+// the Go version, govulncheck version, vuln dbs with their last
+// modified timestamp.
+const introTemplate = `govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Using {{.GoPhrase}}govulncheck{{.GovulncheckVersion}} with
+vulnerability data from {{.DBsPhrase}}{{.DBLastModifiedPhrase}}.
+`
+
 // outputTemplate is a text template used to print out
 // govulncheck output. It consists of three sections showing
 // 1) the number of vulnerabilities detected, 2) callstacks

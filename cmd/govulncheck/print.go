@@ -28,12 +28,47 @@ const (
 	labelWidth = 16
 	lineLength = 55
 
-	introMessage = `govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.`
-
 	detailsMessage = `For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.`
 
 	binaryProgressMessage = `Scanning your binary for known vulnerabilities...`
 )
+
+// printIntro communicates introductory message to the user.
+// See introTemplate for more details.
+func printIntro(ctx context.Context, dbClient client.Client, dbs []string, source bool) {
+	type intro struct {
+		GoPhrase             string
+		GovulncheckVersion   string
+		DBsPhrase            string
+		DBLastModifiedPhrase string
+	}
+
+	i := intro{DBsPhrase: strings.Join(dbs, ", ")}
+	// The go version at PATH is relevant for source analysis, but
+	// not for binary analysis.We omit mentioning the Go version
+	// used to build the binary under analysis for now.
+	if source {
+		if v, err := internal.GoEnv("GOVERSION"); err == nil {
+			i.GoPhrase = v + " and "
+		}
+	}
+
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		i.GovulncheckVersion = "@" + govulncheckVersion(bi)
+	}
+
+	if lmod, err := dbClient.LastModifiedTime(ctx); err == nil {
+		i.DBLastModifiedPhrase = " (last modified " + lmod.Format(time.RFC822) + ")"
+	}
+
+	tmpl, err := template.New("govulncheck-intro").Parse(introTemplate)
+	if err != nil {
+		// We do not want to break govulncheck
+		// run by failing to produce intro message.
+		return
+	}
+	tmpl.Execute(os.Stdout, i)
+}
 
 func printJSON(r *govulncheck.Result) error {
 	b, err := json.MarshalIndent(r, "", "\t")
@@ -288,36 +323,4 @@ func sourceProgressMessage(topPkgs []*vulncheck.Package) string {
 	}
 
 	return fmt.Sprintf("Scanning your code and %s across %s for known vulnerabilities...", pkgsPhrase, modsPhrase)
-}
-
-// environmentMessage returns a string of the form
-//
-//	"Using go1.18 and govulncheck@v0.0.0-<date>-<hash> with
-//	vulnerability data from db (last modified <date>)"
-//
-// This message describes the environment used for vulnerability
-// analysis, namely the Go version, govulncheck version, vuln dbs
-// with their last modified timestamp.
-func environmentMessage(ctx context.Context, dbClient client.Client, dbs []string, source bool) string {
-	goVer := ""
-	// The go version at PATH is not relevant for binary analysis.
-	// We omit mentioning the Go version used to build the binary
-	// under analysis for now.
-	if source {
-		if v, err := internal.GoEnv("GOVERSION"); err == nil {
-			goVer = v + " and "
-		}
-	}
-
-	govulncheckVer := ""
-	if bi, ok := debug.ReadBuildInfo(); ok {
-		govulncheckVer = "@" + govulncheckVersion(bi)
-	}
-
-	dbVer := ""
-	if lmod, err := dbClient.LastModifiedTime(ctx); err == nil {
-		dbVer = " (last modified " + lmod.Format(time.RFC822) + ")"
-	}
-
-	return fmt.Sprintf("Using %sgovulncheck%s with\nvulnerability data from %s%s.", goVer, govulncheckVer, strings.Join(dbs, ", "), dbVer)
 }

@@ -95,9 +95,7 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 
 	if !*jsonFlag {
 		// Print intro message when in text or verbose mode
-		fmt.Println(introMessage)
-		fmt.Println()
-		fmt.Println(environmentMessage(ctx, dbClient, dbs, sourceAnalysis))
+		printIntro(ctx, dbClient, dbs, sourceAnalysis)
 	}
 
 	// config GoVersion is "", which means use current
