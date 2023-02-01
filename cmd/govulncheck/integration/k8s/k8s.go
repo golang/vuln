@@ -52,9 +52,7 @@ func main() {
 	want := map[vuln]bool{
 		{"github.com/containernetworking/cni/pkg/invoke", "FindInPath"}:                                    true,
 		{"github.com/evanphx/json-patch", "Patch.Apply"}:                                                   true,
-		{"github.com/opencontainers/selinux/go-selinux", "FileLabel"}:                                      true,
-		{"github.com/opencontainers/selinux/go-selinux", "GetEnabled"}:                                     true,
-		{"github.com/opencontainers/selinux/go-selinux", "SetFileLabel"}:                                   true,
+		{"github.com/opencontainers/selinux/go-selinux", "readCon"}:                                        true,
 		{"github.com/prometheus/client_golang/prometheus/promhttp", "Handler"}:                             true,
 		{"github.com/prometheus/client_golang/prometheus/promhttp", "HandlerFor"}:                          true,
 		{"github.com/prometheus/client_golang/prometheus/promhttp", "flusherDelegator.Flush"}:              true,
