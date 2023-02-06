@@ -57,8 +57,6 @@ type Vuln struct {
 
 // IsCalled reports whether the vulnerability is called, therefore
 // affecting the target source code or binary.
-//
-// TODO: add unit tests
 func (v *Vuln) IsCalled() bool {
 	for _, m := range v.Modules {
 		for _, p := range m.Packages {
