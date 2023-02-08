@@ -61,6 +61,11 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 		return nil, nil, nil, err
 	}
 
+	value, base, r, err := x.SymbolInfo(funcSymName)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("reading %v: %v", funcSymName, err)
+	}
+
 	pclntab, textOffset := x.PCLNTab()
 	if pclntab == nil {
 		// TODO(roland): if we have build information, but not PCLN table, we should be able to
@@ -86,10 +91,6 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 			return nil, nil, nil, err
 		}
 		packageSymbols[pkgName] = append(packageSymbols[pkgName], symName)
-		value, base, r, err := x.SymbolInfo(funcSymName)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("reading %v: %v", funcSymName, err)
-		}
 		it, err := lineTab.InlineTree(&f, value, base, r)
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("InlineTree: %v", err)
