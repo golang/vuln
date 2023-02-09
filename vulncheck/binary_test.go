@@ -9,6 +9,7 @@ package vulncheck
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -62,7 +63,6 @@ func TestBinary(t *testing.T) {
 				"golang.org/amod/avuln"
 			)
 
-			//go:noinline
 			func C() {
 				v := avuln.VulnData{}
 				v.Vuln1() // vuln use
@@ -76,11 +76,13 @@ func TestBinary(t *testing.T) {
 
 			type VulnData struct {}
 
-			//go:noinline
-			func (v VulnData) Vuln1() {}
+			func (v VulnData) Vuln1() {
+				print("vuln1")
+			}
 
-			//go:noinline
-			func (v VulnData) Vuln2() {}
+			func (v VulnData) Vuln2() {
+				print("vuln2")
+			}
 			`},
 		},
 		{
@@ -88,11 +90,13 @@ func TestBinary(t *testing.T) {
 			Files: map[string]interface{}{"bvuln/bvuln.go": `
 			package bvuln
 
-			//go:noinline
-			func Vuln() {}
+			func Vuln() {
+				print("vuln")
+			}
 
-			//go:noinline
-			func NoVuln() {}
+			func NoVuln() {
+				print("novuln")
+			}
 			`},
 		},
 	})
@@ -200,4 +204,88 @@ func hasGoBuild() bool {
 func hasGoVersion(exe io.ReaderAt) bool {
 	_, _, bi, _ := buildinfo.ExtractPackagesAndSymbols(exe)
 	return semver.GoTagToSemver(bi.GoVersion) != ""
+}
+
+// Test58509 is supposed to test issue #58509 where a whole
+// vulnerable function is deleted from the binary so we
+// cannot detect its presence.
+//
+// Note: the issue is still not addressed and the test
+// expectations are set to fail once it gets addressed.
+func Test58509(t *testing.T) {
+	if !hasGoBuild() || runtime.GOOS == "plan9" {
+		t.Skip("fails on android and plan9")
+	}
+
+	vulnLib := `package bvuln
+
+%s debug = true
+
+func Vuln() {
+	if debug {
+		return
+	}
+	print("vuln")
+}`
+
+	for _, tc := range []struct {
+		gl   string
+		want []*Vuln
+	}{
+		{"const", nil}, // TODO(#58509): change expectations once issue is addressed
+		{"var", []*Vuln{{Symbol: "Vuln", PkgPath: "golang.org/bmod/bvuln", ModPath: "golang.org/bmod"}}},
+	} {
+		tc := tc
+		t.Run(tc.gl, func(t *testing.T) {
+			e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
+				{
+					Name: "golang.org/entry",
+					Files: map[string]interface{}{
+						"main.go": `
+			package main
+
+			import (
+				"golang.org/bmod/bvuln"
+			)
+
+			func main() {
+				bvuln.Vuln()
+			}
+			`,
+					}},
+				{
+					Name:  "golang.org/bmod@v0.5.0",
+					Files: map[string]interface{}{"bvuln/bvuln.go": fmt.Sprintf(vulnLib, tc.gl)},
+				},
+			})
+			defer e.Cleanup()
+
+			cmd := exec.Command("go", "build", "-o", "entry")
+			cmd.Dir = e.Config.Dir
+			cmd.Env = e.Config.Env
+			out, err := cmd.CombinedOutput()
+			if err != nil || len(out) > 0 {
+				t.Fatalf("failed to build the binary %v %v", err, string(out))
+			}
+
+			bin, err := os.Open(filepath.Join(e.Config.Dir, "entry"))
+			if err != nil {
+				t.Fatalf("failed to access the binary %v", err)
+			}
+			defer bin.Close()
+
+			cfg := &Config{Client: testClient}
+			res, err := Binary(context.Background(), bin, cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			diff := cmp.Diff(tc.want, res.Vulns,
+				cmpopts.IgnoreFields(Vuln{}, "OSV"),
+				cmpopts.SortSlices(func(v1, v2 *Vuln) bool { return v1.Symbol < v2.Symbol }))
+			if diff != "" {
+				t.Errorf("vulns mismatch (-want, +got)\n%s", diff)
+			}
+		})
+	}
 }
