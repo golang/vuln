@@ -21,7 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/semver"
-	"golang.org/x/vuln/vulncheck/internal/binscan"
+	"golang.org/x/vuln/vulncheck/internal/buildinfo"
 )
 
 // TODO: we build binary programatically, so what if the underlying tool chain changes?
@@ -198,6 +198,6 @@ func hasGoBuild() bool {
 }
 
 func hasGoVersion(exe io.ReaderAt) bool {
-	_, _, bi, _ := binscan.ExtractPackagesAndSymbols(exe)
+	_, _, bi, _ := buildinfo.ExtractPackagesAndSymbols(exe)
 	return semver.GoTagToSemver(bi.GoVersion) != ""
 }

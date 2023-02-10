@@ -5,9 +5,7 @@
 //go:build go1.18
 // +build go1.18
 
-// Package binscan contains methods for parsing Go binary files for the purpose
-// of extracting module dependency and symbol table information.
-package binscan
+package buildinfo
 
 // Code in this package is dervied from src/cmd/go/internal/version/version.go
 // and cmd/go/internal/version/exe.go.
