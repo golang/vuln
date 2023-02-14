@@ -9,7 +9,6 @@ package buildinfo
 
 import (
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,26 +16,40 @@ import (
 )
 
 func TestExtractPackagesAndSymbols(t *testing.T) {
-	for _, gg := range []string{"linux/amd64", "darwin/amd64", "windows/amd64"} {
-		t.Run(gg, func(t *testing.T) {
-			goos, goarch, _ := strings.Cut(gg, "/")
-			binary, done := buildtest.GoBuild(t, "testdata", "", "GOOS", goos, "GOARCH", goarch)
-			defer done()
+	unsupported := map[string]bool{
+		"darwin/386": true,
+		"darwin/arm": true,
+	}
 
-			f, err := os.Open(binary)
-			if err != nil {
-				t.Fatal(err)
+	for _, g := range []string{"linux", "darwin", "windows", "freebsd"} {
+		for _, a := range []string{"amd64", "386", "arm", "arm64"} {
+			goos := g
+			goarch := a
+
+			ga := goos + "/" + goarch
+			if unsupported[ga] {
+				continue
 			}
-			defer f.Close()
-			_, syms, _, err := ExtractPackagesAndSymbols(f)
-			if err != nil {
-				t.Fatal(err)
-			}
-			got := syms["main"]
-			want := []string{"main", "f", "g"}
-			if !cmp.Equal(got, want) {
-				t.Errorf("\ngot  %q\nwant %q", got, want)
-			}
-		})
+
+			t.Run(ga, func(t *testing.T) {
+				binary, done := buildtest.GoBuild(t, "testdata", "", "GOOS", goos, "GOARCH", goarch)
+				defer done()
+
+				f, err := os.Open(binary)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer f.Close()
+				_, syms, _, err := ExtractPackagesAndSymbols(f)
+				if err != nil {
+					t.Fatal(err)
+				}
+				got := syms["main"]
+				want := []string{"main", "f", "g"}
+				if !cmp.Equal(got, want) {
+					t.Errorf("\ngot  %q\nwant %q", got, want)
+				}
+			})
+		}
 	}
 }
