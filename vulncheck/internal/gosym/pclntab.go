@@ -312,7 +312,7 @@ func (t *LineTable) go12Funcs() []Func {
 		f.LineTable = t
 		f.FrameSize = int(info.deferreturn())
 
-		// Additions.
+		// Additions:
 		// numFuncField is the number of (32 bit) fields in _func (src/runtime/runtime2.go)
 		// Note that the last 4 fields are 32 bits combined. This number is 11 for go1.20,
 		// 10 for earlier versions down to go1.16, and 9 before that.
@@ -483,6 +483,7 @@ func (f funcData) field(n uint32) uint32 {
 	if n == 0 || n > 9 {
 		panic("bad funcdata field")
 	}
+	// Addition: some code deleted here to support inlining.
 	off := f.fieldOffset(n)
 	data := f.data[off:]
 	return f.t.binary.Uint32(data)

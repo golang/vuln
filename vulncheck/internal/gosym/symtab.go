@@ -137,6 +137,7 @@ type Func struct {
 	FrameSize int
 	LineTable *LineTable
 	Obj       *Obj
+	// Addition: extra data to support inlining.
 	inlTree
 }
 
