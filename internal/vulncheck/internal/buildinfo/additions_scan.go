@@ -40,9 +40,11 @@ func debugModulesToPackagesModules(debugModules []*debug.Module) []*packages.Mod
 	return packagesModules
 }
 
-// ExtractPackagesAndSymbols extracts the symbols, packages, their
-// associated module versions from a Go binary, and Go version used
-// to build the binary.
+// ExtractPackagesAndSymbols extracts symbols, packages, modules from
+// bin as well as bin's metadata.
+//
+// If the symbol table is not available, such as in the case of stripped
+// binaries, returns module and binary info but without the symbol info.
 func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string][]string, *debug.BuildInfo, error) {
 	bi, err := buildinfo.Read(bin)
 	if err != nil {
@@ -61,6 +63,10 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 
 	value, base, r, err := x.SymbolInfo(funcSymName)
 	if err != nil {
+		if errors.Is(err, ErrNoSymbols) {
+			// bin is stripped, so return just module info and metadata.
+			return debugModulesToPackagesModules(bi.Deps), nil, bi, nil
+		}
 		return nil, nil, nil, fmt.Errorf("reading %v: %v", funcSymName, err)
 	}
 
@@ -89,6 +95,8 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 			return nil, nil, nil, err
 		}
 		packageSymbols[pkgName] = append(packageSymbols[pkgName], symName)
+
+		// Collect symbols that were inlined in f.
 		it, err := lineTab.InlineTree(&f, value, base, r)
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("InlineTree: %v", err)

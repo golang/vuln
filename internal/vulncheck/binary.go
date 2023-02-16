@@ -51,12 +51,20 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 
 	modVulns = modVulns.filter(goos, goarch)
 	result := &Result{}
-	for pkg, symbols := range packageSymbols {
-		mod := findPackageModule(pkg, cmods)
-		if cfg.ImportsOnly {
-			addImportsOnlyVulns(pkg, mod, symbols, result, modVulns)
-		} else {
-			addSymbolVulns(pkg, mod, symbols, result, modVulns)
+
+	if packageSymbols == nil {
+		// The binary exe is stripped. We currently cannot detect inlined
+		// symbols for stripped binaries (see #57764), so we report
+		// vulnerabilities at the go.mod-level precision.
+		addRequiresOnlyVulns(result, modVulns)
+	} else {
+		for pkg, symbols := range packageSymbols {
+			mod := findPackageModule(pkg, cmods)
+			if cfg.ImportsOnly {
+				addImportsOnlyVulns(pkg, mod, symbols, result, modVulns)
+			} else {
+				addSymbolVulns(pkg, mod, symbols, result, modVulns)
+			}
 		}
 	}
 	setModules(result, cmods)
@@ -147,4 +155,41 @@ func findSetting(setting string, bi *debug.BuildInfo) string {
 		}
 	}
 	return ""
+}
+
+// addRequiresOnlyVulns adds to result all vulnerabilities in modVulns.
+// Used when the binary under analysis is stripped.
+func addRequiresOnlyVulns(result *Result, modVulns moduleVulnerabilities) {
+	for _, mv := range modVulns {
+		for _, osv := range mv.Vulns {
+			for _, affected := range osv.Affected {
+				for _, p := range affected.EcosystemSpecific.Packages {
+					syms := p.Symbols
+					if len(syms) == 0 {
+						// If every symbol of pkg is vulnerable, we would ideally
+						// compute every symbol mentioned in the pkg and then add
+						// Vuln entry for it, just as we do in Source. However,
+						// we don't have code of pkg here and we don't even have
+						// pkg symbols used in stripped binary, so we add a placeholder
+						// symbol.
+						//
+						// Note: this should not affect output of govulncheck since
+						// in binary mode no symbol/call stack information is
+						// communicated back to the user.
+						syms = []string{fmt.Sprintf("%s/*", p.Path)}
+					}
+
+					for _, symbol := range syms {
+						vuln := &Vuln{
+							OSV:     osv,
+							Symbol:  symbol,
+							PkgPath: p.Path,
+							ModPath: mv.Module.Path,
+						}
+						result.Vulns = append(result.Vulns, vuln)
+					}
+				}
+			}
+		}
+	}
 }

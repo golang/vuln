@@ -14,14 +14,22 @@ import (
 	"debug/macho"
 	"debug/pe"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 )
 
+// ErrNoSymbols represents non-existence of symbol
+// table in binaries supported by buildinfo.
+var ErrNoSymbols = errors.New("no symbol section")
+
 // SymbolInfo is derived from cmd/internal/objfile/elf.go:symbols, symbolData.
 func (x *elfExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
-	sym := x.lookupSymbol(name)
-	if sym == nil {
+	sym, err := x.lookupSymbol(name)
+	if err != nil {
+		if errors.Is(err, elf.ErrNoSymbols) {
+			return 0, 0, nil, ErrNoSymbols
+		}
 		return 0, 0, nil, fmt.Errorf("no symbol %q", name)
 	}
 	prog := x.progContaining(sym.Value)
@@ -31,16 +39,23 @@ func (x *elfExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
 	return sym.Value, prog.Vaddr, prog.ReaderAt, nil
 }
 
-func (x *elfExe) lookupSymbol(name string) *elf.Symbol {
+func (x *elfExe) lookupSymbol(name string) (*elf.Symbol, error) {
 	x.symbolsOnce.Do(func() {
-		syms, _ := x.f.Symbols()
+		syms, err := x.f.Symbols()
+		if err != nil {
+			x.symbolsErr = err
+			return
+		}
 		x.symbols = make(map[string]*elf.Symbol, len(syms))
 		for _, s := range syms {
 			s := s // make a copy to prevent aliasing
 			x.symbols[s.Name] = &s
 		}
 	})
-	return x.symbols[name]
+	if x.symbolsErr != nil {
+		return nil, x.symbolsErr
+	}
+	return x.symbols[name], nil
 }
 
 func (x *elfExe) progContaining(addr uint64) *elf.Prog {
@@ -112,7 +127,10 @@ func (x *elfExe) PCLNTab() ([]byte, uint64) {
 
 // SymbolInfo is derived from cmd/internal/objfile/pe.go:findPESymbol, loadPETable.
 func (x *peExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
-	sym := x.lookupSymbol(name)
+	sym, err := x.lookupSymbol(name)
+	if err != nil {
+		return 0, 0, nil, err
+	}
 	if sym == nil {
 		return 0, 0, nil, fmt.Errorf("no symbol %q", name)
 	}
@@ -121,17 +139,26 @@ func (x *peExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
 	return uint64(sym.Value), 0, sect.ReaderAt, nil
 }
 
-func (x *peExe) lookupSymbol(name string) *pe.Symbol {
+func (x *peExe) lookupSymbol(name string) (*pe.Symbol, error) {
 	x.symbolsOnce.Do(func() {
 		x.symbols = make(map[string]*pe.Symbol, len(x.f.Symbols))
+		if len(x.f.Symbols) == 0 {
+			x.symbolsErr = ErrNoSymbols
+			return
+		}
 		for _, s := range x.f.Symbols {
 			x.symbols[s.Name] = s
 		}
 	})
-	return x.symbols[name]
+	if x.symbolsErr != nil {
+		return nil, x.symbolsErr
+	}
+	return x.symbols[name], nil
 }
 
 // PCLNTab is derived from cmd/internal/objfile/pe.go:pcln.
+// Assumes that the underlying symbol table exists, otherwise
+// it might panic.
 func (x *peExe) PCLNTab() ([]byte, uint64) {
 	var textOffset uint64
 	for _, section := range x.f.Sections {
@@ -143,11 +170,11 @@ func (x *peExe) PCLNTab() ([]byte, uint64) {
 
 	var start, end int64
 	var section int
-	if s := x.lookupSymbol("runtime.pclntab"); s != nil {
+	if s, _ := x.lookupSymbol("runtime.pclntab"); s != nil {
 		start = int64(s.Value)
 		section = int(s.SectionNumber - 1)
 	}
-	if s := x.lookupSymbol("runtime.epclntab"); s != nil {
+	if s, _ := x.lookupSymbol("runtime.epclntab"); s != nil {
 		end = int64(s.Value)
 	}
 	if start == 0 || end == 0 {
@@ -165,7 +192,10 @@ func (x *peExe) PCLNTab() ([]byte, uint64) {
 
 // SymbolInfo is derived from cmd/internal/objfile/macho.go:symbols.
 func (x *machoExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
-	sym := x.lookupSymbol(name)
+	sym, err := x.lookupSymbol(name)
+	if err != nil {
+		return 0, 0, nil, err
+	}
 	if sym == nil {
 		return 0, 0, nil, fmt.Errorf("no symbol %q", name)
 	}
@@ -176,15 +206,22 @@ func (x *machoExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) 
 	return sym.Value, seg.Addr, seg.ReaderAt, nil
 }
 
-func (x *machoExe) lookupSymbol(name string) *macho.Symbol {
+func (x *machoExe) lookupSymbol(name string) (*macho.Symbol, error) {
 	x.symbolsOnce.Do(func() {
 		x.symbols = make(map[string]*macho.Symbol, len(x.f.Symtab.Syms))
+		if len(x.f.Symtab.Syms) == 0 {
+			x.symbolsErr = ErrNoSymbols
+			return
+		}
 		for _, s := range x.f.Symtab.Syms {
 			s := s // make a copy to prevent aliasing
 			x.symbols[s.Name] = &s
 		}
 	})
-	return x.symbols[name]
+	if x.symbolsErr != nil {
+		return nil, x.symbolsErr
+	}
+	return x.symbols[name], nil
 }
 
 func (x *machoExe) segmentContaining(addr uint64) *macho.Segment {

@@ -82,6 +82,7 @@ type elfExe struct {
 
 	symbols     map[string]*elf.Symbol // Addition: symbols in the binary
 	symbolsOnce sync.Once              // Addition: for computing symbols
+	symbolsErr  error                  // Addition: error for computing symbols
 }
 
 func (x *elfExe) ReadData(addr, size uint64) ([]byte, error) {
@@ -123,6 +124,7 @@ type peExe struct {
 
 	symbols     map[string]*pe.Symbol // Addition: symbols in the binary
 	symbolsOnce sync.Once             // Addition: for computing symbols
+	symbolsErr  error                 // Addition: error for computing symbols
 }
 
 func (x *peExe) imageBase() uint64 {
@@ -182,6 +184,7 @@ type machoExe struct {
 
 	symbols     map[string]*macho.Symbol // Addition: symbols in the binary
 	symbolsOnce sync.Once                // Addition: for computing symbols
+	symbolsErr  error                    // Addition: error for computing symbols
 }
 
 func (x *machoExe) ReadData(addr, size uint64) ([]byte, error) {

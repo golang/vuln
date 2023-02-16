@@ -41,7 +41,7 @@ func TestCommand(t *testing.T) {
 	// cmdtest.Program for this because it doesn't let us set the environment,
 	// and that is the only way to tell govulncheck about an alternative vuln
 	// database.
-	binary, cleanup := test.GoBuild(t, ".", "testmode") // build govulncheck
+	binary, cleanup := test.GoBuild(t, ".", "testmode", false) // build govulncheck
 	// Use Cleanup instead of defer, because when subtests are parallel, defer
 	// runs too early.
 	t.Cleanup(cleanup)
@@ -84,7 +84,12 @@ func TestCommand(t *testing.T) {
 			continue
 		}
 
-		binary, cleanup := test.GoBuild(t, md, "")
+		strip := false
+		// We want the strip module to produce a stripped binary.
+		if filepath.Base(md) == "strip" {
+			strip = true
+		}
+		binary, cleanup := test.GoBuild(t, md, "", strip)
 		t.Cleanup(cleanup)
 		// Set an environment variable to the path to the binary, so tests
 		// can refer to it.

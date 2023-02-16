@@ -32,7 +32,7 @@ func TestExtractPackagesAndSymbols(t *testing.T) {
 			}
 
 			t.Run(ga, func(t *testing.T) {
-				binary, done := test.GoBuild(t, "testdata", "", "GOOS", goos, "GOARCH", goarch)
+				binary, done := test.GoBuild(t, "testdata", "", false, "GOOS", goos, "GOARCH", goarch)
 				defer done()
 
 				f, err := os.Open(binary)
@@ -51,5 +51,25 @@ func TestExtractPackagesAndSymbols(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// TestStrippedBinary checks support for stripped binaries.
+// Currently, just checks that there is no symbol table.
+func TestStrippedBinary(t *testing.T) {
+	binary, done := test.GoBuild(t, "testdata", "", true, "GOOS", "linux", "GOARCH", "amd64")
+	defer done()
+
+	f, err := os.Open(binary)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	_, syms, _, err := ExtractPackagesAndSymbols(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if syms != nil {
+		t.Errorf("want empty symbol table; got %v", syms)
 	}
 }
