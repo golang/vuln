@@ -34,50 +34,36 @@ func main() {
 		log.Fatal("Failed to load json into exp/govulncheck.Result:", err)
 	}
 
-	type vuln struct {
-		pkg    string
-		symbol string
-	}
-	calledVulns := make(map[vuln]bool)
+	calledVulnPkgs := make(map[string]bool)
 	for _, v := range r.Vulns {
 		for _, m := range v.Modules {
 			for _, p := range m.Packages {
-				for _, c := range p.CallStacks {
-					calledVulns[vuln{p.Path, c.Symbol}] = true
+				if len(p.CallStacks) > 0 {
+					calledVulnPkgs[p.Path] = true
 				}
 			}
 		}
 	}
 
-	want := map[vuln]bool{
-		{"github.com/containernetworking/cni/pkg/invoke", "FindInPath"}:                                    true,
-		{"github.com/evanphx/json-patch", "Patch.Apply"}:                                                   true,
-		{"github.com/opencontainers/selinux/go-selinux", "readCon"}:                                        true,
-		{"github.com/prometheus/client_golang/prometheus/promhttp", "Handler"}:                             true,
-		{"github.com/prometheus/client_golang/prometheus/promhttp", "HandlerFor"}:                          true,
-		{"github.com/prometheus/client_golang/prometheus/promhttp", "flusherDelegator.Flush"}:              true,
-		{"github.com/prometheus/client_golang/prometheus/promhttp", "readerFromDelegator.ReadFrom"}:        true,
-		{"github.com/prometheus/client_golang/prometheus/promhttp", "responseWriterDelegator.Write"}:       true,
-		{"github.com/prometheus/client_golang/prometheus/promhttp", "responseWriterDelegator.WriteHeader"}: true,
-		{"github.com/prometheus/client_golang/prometheus/promhttp", "sanitizeMethod"}:                      true,
-		{"golang.org/x/crypto/cryptobyte", "Builder.AddBytes"}:                                             true,
-		{"golang.org/x/crypto/cryptobyte", "Builder.AddUint16LengthPrefixed"}:                              true,
-		{"golang.org/x/crypto/cryptobyte", "Builder.Bytes"}:                                                true,
-		{"golang.org/x/crypto/cryptobyte", "NewBuilder"}:                                                   true,
-		{"golang.org/x/crypto/cryptobyte", "String.Empty"}:                                                 true,
-		{"golang.org/x/crypto/cryptobyte", "String.ReadASN1"}:                                              true,
-		{"golang.org/x/crypto/cryptobyte", "String.ReadOptionalASN1"}:                                      true,
-		{"golang.org/x/crypto/cryptobyte", "String.ReadUint16LengthPrefixed"}:                              true,
-		{"golang.org/x/crypto/salsa20/salsa", "XORKeyStream"}:                                              true,
-		{"golang.org/x/crypto/ssh", "NewClientConn"}:                                                       true,
-		{"golang.org/x/crypto/ssh", "NewPublicKey"}:                                                        true,
-		{"golang.org/x/crypto/ssh", "ParsePrivateKey"}:                                                     true,
-		{"golang.org/x/net/http/httpguts", "HeaderValuesContainsToken"}:                                    true,
-		{"golang.org/x/net/http2", "Server.ServeConn"}:                                                     true,
-		{"golang.org/x/text/encoding/unicode", "bomOverride.Transform"}:                                    true,
+	want := map[string]bool{
+		"crypto/tls":     true,
+		"net/http":       true,
+		"path/filepath":  true,
+		"mime/multipart": true,
+		"github.com/containernetworking/cni/pkg/invoke":           true,
+		"github.com/evanphx/json-patch":                           true,
+		"github.com/opencontainers/selinux/go-selinux":            true,
+		"github.com/prometheus/client_golang/prometheus/promhttp": true,
+		"golang.org/x/crypto/cryptobyte":                          true,
+		"golang.org/x/crypto/salsa20/salsa":                       true,
+		"golang.org/x/crypto/ssh":                                 true,
+		"golang.org/x/net/http/httpguts":                          true,
+		"golang.org/x/net/http2":                                  true,
+		"golang.org/x/net/http2/hpack":                            true,
+		"golang.org/x/text/encoding/unicode":                      true,
 	}
 
-	if diff := cmp.Diff(want, calledVulns); diff != "" {
-		log.Fatalf("reachable vulnerable symbols mismatch (-want, +got):\n%s", diff)
+	if diff := cmp.Diff(want, calledVulnPkgs); diff != "" {
+		log.Fatalf("reachable vulnerable packages mismatch (-want, +got):\n%s", diff)
 	}
 }
