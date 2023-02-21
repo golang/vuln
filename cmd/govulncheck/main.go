@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -170,6 +171,11 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 	return nil
 }
 
+// jsonFail prints an error to stdout in the format {Error: errorString}
+func jsonFail(err error) {
+	fmt.Printf("{\"Error\": %q}\n", err)
+}
+
 func validateFlags(source bool) {
 	if !source {
 		if *testFlag {
@@ -190,8 +196,13 @@ func isFile(path string) bool {
 }
 
 func die(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format+"\n", args...)
-	os.Exit(1)
+	if !*jsonFlag {
+		fmt.Fprintf(os.Stderr, format+"\n", args...)
+		os.Exit(1)
+	} else {
+		jsonFail(errors.New(format))
+		os.Exit(0)
+	}
 }
 
 // loadPackages loads the packages matching patterns at dir using build tags
