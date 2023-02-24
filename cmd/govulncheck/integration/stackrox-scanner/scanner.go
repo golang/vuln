@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/vuln/exp/govulncheck"
+	"golang.org/x/vuln/internal/govulncheck"
 )
 
 const usage = `test helper for examining the output of running govulncheck on
@@ -32,7 +32,7 @@ func main() {
 
 	var r govulncheck.Result
 	if err := json.Unmarshal(outJson, &r); err != nil {
-		log.Fatal("Failed to load json into exp/govulncheck.Result:", err)
+		log.Fatal("Failed to load json into internal/govulncheck.Result:", err)
 	}
 
 	symbolVulnPkgs := make(map[string]bool)

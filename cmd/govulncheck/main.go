@@ -16,8 +16,7 @@ import (
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
-	"golang.org/x/vuln/exp/govulncheck"
-	gvc "golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/vulncheck"
 )
 
@@ -134,7 +133,7 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 			fmt.Println()
 			fmt.Println(binaryProgressMessage)
 		}
-		res, err = gvc.Binary(ctx, cfg, f)
+		res, err = govulncheck.Binary(ctx, cfg, f)
 	}
 	if err != nil {
 		return err

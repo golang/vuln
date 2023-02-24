@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/vuln/exp/govulncheck"
 	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 )
 

@@ -18,8 +18,8 @@ import (
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/vuln/client"
-	"golang.org/x/vuln/exp/govulncheck"
 	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
