@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/slices"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/osv"
@@ -457,7 +456,7 @@ vulnLoop:
 				if p.Path != importPath {
 					continue
 				}
-				if len(p.Symbols) > 0 && !slices.Contains(p.Symbols, symbol) {
+				if len(p.Symbols) > 0 && !contains(p.Symbols, symbol) {
 					continue
 				}
 				symbolVulns = append(symbolVulns, v)
@@ -466,6 +465,15 @@ vulnLoop:
 		}
 	}
 	return symbolVulns
+}
+
+func contains(symbols []string, target string) bool {
+	for _, s := range symbols {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }
 
 func newModuleConverter() func(m *packages.Module) *Module {
