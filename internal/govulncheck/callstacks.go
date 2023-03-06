@@ -21,7 +21,7 @@ func updateInitPositions(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, p
 	pMap := pkgMap(pkgs)
 	for _, css := range callStacks {
 		for _, cs := range css {
-			for i, _ := range cs {
+			for i := range cs {
 				updateInitPosition(&cs[i], pMap)
 				if i != len(cs)-1 {
 					updateInitCallPosition(&cs[i], cs[i+1], pMap)

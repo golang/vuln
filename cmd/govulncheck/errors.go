@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/packages"
-	"golang.org/x/vuln/vulncheck"
 )
 
+//lint:file-ignore ST1005 Ignore staticcheck message about error formatting
 var (
 	// errGoVersionMismatch is used to indicate that there is a mismatch between
 	// the Go version used to build govulncheck and the one currently on PATH.
@@ -66,35 +66,4 @@ func isGoVersionMismatchError(err error) bool {
 	// See golang.org/x/tools/go/packages/packages.go.
 	return strings.Contains(msg, "This application uses version go") &&
 		strings.Contains(msg, "It may fail to process source files")
-}
-
-// inGoPathMode checks if govulncheck is running in GOPATH mode by checking
-// if module information is available.
-func inGoPathMode(pkgs []*vulncheck.Package) bool {
-	packageModule := func(p *vulncheck.Package) *vulncheck.Module {
-		m := p.Module
-		if m == nil {
-			return nil
-		}
-		if r := m.Replace; r != nil {
-			return r
-		}
-		return m
-	}
-
-	hasModuleInfo := false
-	var visit func(p *vulncheck.Package)
-	visit = func(p *vulncheck.Package) {
-		if packageModule(p) != nil {
-			hasModuleInfo = true
-			return
-		}
-		for _, i := range p.Imports {
-			visit(i)
-		}
-	}
-	for _, p := range pkgs {
-		visit(p)
-	}
-	return !hasModuleInfo
 }

@@ -515,7 +515,7 @@ func (c *client) GetByAlias(ctx context.Context, alias string) (entries []*osv.E
 }
 
 // unionEntries returns the union of all entries obtained by calling get on the client's sources.
-func (c *client) unionEntries(ctx context.Context, get func(Client) ([]*osv.Entry, error)) ([]*osv.Entry, error) {
+func (c *client) unionEntries(_ context.Context, get func(Client) ([]*osv.Entry, error)) ([]*osv.Entry, error) {
 	var entries []*osv.Entry
 	// probably should be parallelized
 	seen := map[string]bool{}
