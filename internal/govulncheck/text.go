@@ -6,7 +6,6 @@ package govulncheck
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -66,16 +65,6 @@ func printIntro(ctx context.Context, dbClient client.Client, dbs []string, sourc
 		return
 	}
 	tmpl.Execute(os.Stdout, i)
-}
-
-func printJSON(r *Result) error {
-	b, err := json.MarshalIndent(r, "", "\t")
-	if err != nil {
-		return err
-	}
-	os.Stdout.Write(b)
-	fmt.Println()
-	return nil
 }
 
 func printText(r *Result, verbose, source bool) error {
