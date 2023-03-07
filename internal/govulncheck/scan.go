@@ -63,13 +63,13 @@ func parseFlags(args []string) (*config, error) {
 	flags.BoolVar(&cfg.test, "test", false, "analyze test files. Only valid for source code.")
 	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
 	flags.Usage = func() {
-		fmt.Fprint(os.Stderr, `usage:
+		fmt.Fprint(flags.Output(), `usage:
 	govulncheck [flags] package...
 	govulncheck [flags] binary
 
 `)
 		flags.PrintDefaults()
-		fmt.Fprintf(os.Stderr, "\n%s\n", detailsMessage)
+		fmt.Fprintf(flags.Output(), "\n%s\n", detailsMessage)
 	}
 	addTestFlags(flags, cfg)
 	if err := flags.Parse(args); err != nil {
