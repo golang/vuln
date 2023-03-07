@@ -20,18 +20,42 @@ import (
 	"golang.org/x/vuln/vulncheck"
 )
 
-var (
-	jsonFlag    = flag.Bool("json", false, "output JSON")
-	verboseFlag = flag.Bool("v", false, "print a full call stack for each vulnerability")
-	testFlag    = flag.Bool("test", false, "analyze test files. Only valid for source code.")
-	tagsFlag    buildutil.TagsFlag
+func main() {
+	cfg, err := parseFlags(os.Args[1:])
+	if err != nil {
+		switch err {
+		case flag.ErrHelp:
+			os.Exit(0)
+		case errMissingArgPatterns:
+			os.Exit(1)
+		default:
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	}
+	if !cfg.sourceAnalysis {
+		if cfg.test {
+			fmt.Fprintln(os.Stderr, err)
+			die(cfg, "govulncheck: the -test flag is invalid for binaries")
+		}
+		if cfg.tags != nil {
+			die(cfg, "govulncheck: the -tags flag is invalid for binaries")
+		}
+	}
+	if err := doGovulncheck(cfg); err != nil {
+		die(cfg, fmt.Sprintf("govulncheck: %v", err))
+	}
+}
 
-	// testmode flags. See main_testmode.go.
-	dirFlag string
-)
-
-func init() {
-	flag.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
+type config struct {
+	patterns       []string
+	sourceAnalysis bool
+	db             string
+	json           bool
+	dir            string
+	verbose        bool
+	tags           []string
+	test           bool
 }
 
 const (
@@ -39,42 +63,48 @@ const (
 	vulndbHost  = "https://vuln.go.dev"
 )
 
-func main() {
-	flag.Usage = func() {
+var errMissingArgPatterns = errors.New("missing any pattern args")
+
+func parseFlags(args []string) (*config, error) {
+	cfg := &config{}
+	var tagsFlag buildutil.TagsFlag
+	flags := flag.NewFlagSet("", flag.ContinueOnError)
+	flags.BoolVar(&cfg.json, "json", false, "output JSON")
+	flags.BoolVar(&cfg.verbose, "v", false, "print a full call stack for each vulnerability")
+	flags.BoolVar(&cfg.test, "test", false, "analyze test files. Only valid for source code.")
+	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
+	flags.Usage = func() {
 		fmt.Fprint(os.Stderr, `usage:
 	govulncheck [flags] package...
 	govulncheck [flags] binary
 
 `)
-		flag.PrintDefaults()
+		flags.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n%s\n", detailsMessage)
 	}
-	flag.Parse()
-
-	if len(flag.Args()) == 0 {
-		flag.Usage()
-		os.Exit(1)
+	flags = addTestFlags(flags, cfg)
+	if err := flags.Parse(args); err != nil {
+		return nil, err
 	}
-
-	patterns := flag.Args()
-
-	sourceAnalysis := true
-	if len(patterns) == 1 && isFile(patterns[0]) {
-		sourceAnalysis = false
+	cfg.patterns = flags.Args()
+	if len(cfg.patterns) == 0 {
+		flags.Usage()
+		return nil, errMissingArgPatterns
 	}
-	validateFlags(sourceAnalysis)
-
-	if err := doGovulncheck(patterns, sourceAnalysis); err != nil {
-		die(fmt.Sprintf("govulncheck: %v", err))
+	cfg.sourceAnalysis = true
+	if len(cfg.patterns) == 1 && isFile(cfg.patterns[0]) {
+		cfg.sourceAnalysis = false
 	}
+	cfg.tags = tagsFlag
+	return cfg, nil
 }
 
 // doGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func doGovulncheck(patterns []string, sourceAnalysis bool) error {
+func doGovulncheck(c *config) error {
 	ctx := context.Background()
-	dir := filepath.FromSlash(dirFlag)
+	dir := filepath.FromSlash(c.dir)
 
 	dbs := []string{vulndbHost}
 	if db := os.Getenv(envGOVULNDB); db != "" {
@@ -93,18 +123,18 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 		return err
 	}
 
-	if !*jsonFlag {
+	if !c.json {
 		// Print intro message when in text or verbose mode
-		printIntro(ctx, dbClient, dbs, sourceAnalysis)
+		printIntro(ctx, dbClient, dbs, c.sourceAnalysis)
 	}
 
 	// config GoVersion is "", which means use current
 	// Go version at path.
 	cfg := &govulncheck.Config{Client: dbClient}
 	var res *govulncheck.Result
-	if sourceAnalysis {
+	if c.sourceAnalysis {
 		var pkgs []*vulncheck.Package
-		pkgs, err = loadPackages(patterns, dir)
+		pkgs, err = loadPackages(c, dir)
 		if err != nil {
 			// Try to provide a meaningful and actionable error message.
 			if !fileExists(filepath.Join(dir, "go.mod")) {
@@ -116,20 +146,20 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 			return err
 		}
 
-		if !*jsonFlag {
+		if !c.json {
 			fmt.Println()
 			fmt.Println(sourceProgressMessage(pkgs))
 		}
 		res, err = govulncheck.Source(ctx, cfg, pkgs)
 	} else {
 		var f *os.File
-		f, err = os.Open(patterns[0])
+		f, err = os.Open(c.patterns[0])
 		if err != nil {
 			return err
 		}
 		defer f.Close()
 
-		if !*jsonFlag {
+		if !c.json {
 			fmt.Println()
 			fmt.Println(binaryProgressMessage)
 		}
@@ -139,7 +169,7 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 		return err
 	}
 
-	if *jsonFlag {
+	if c.json {
 		// Following golang.org/x/tools/go/analysis/singlechecker,
 		// return 0 exit code in -json mode.
 		if err := printJSON(res); err != nil {
@@ -148,7 +178,7 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 		os.Exit(0)
 	}
 
-	if err := printText(res, *verboseFlag, sourceAnalysis); err != nil {
+	if err := printText(res, c.verbose, c.sourceAnalysis); err != nil {
 		return err
 	}
 	// Return exit status -3 if some vulnerabilities are actually
@@ -157,7 +187,7 @@ func doGovulncheck(patterns []string, sourceAnalysis bool) error {
 	// This follows the style from
 	// golang.org/x/tools/go/analysis/singlechecker,
 	// which fails with 3 if there are some findings.
-	if sourceAnalysis {
+	if c.sourceAnalysis {
 		for _, v := range res.Vulns {
 			if v.IsCalled() {
 				os.Exit(3)
@@ -175,17 +205,6 @@ func jsonFail(err error) {
 	fmt.Printf("{\"Error\": %q}\n", err)
 }
 
-func validateFlags(source bool) {
-	if !source {
-		if *testFlag {
-			die("govulncheck: the -test flag is invalid for binaries")
-		}
-		if tagsFlag != nil {
-			die("govulncheck: the -tags flag is invalid for binaries")
-		}
-	}
-}
-
 func isFile(path string) bool {
 	s, err := os.Stat(path)
 	if err != nil {
@@ -194,8 +213,8 @@ func isFile(path string) bool {
 	return !s.IsDir()
 }
 
-func die(format string, args ...interface{}) {
-	if !*jsonFlag {
+func die(cfg *config, format string, args ...interface{}) {
+	if !cfg.json {
 		fmt.Fprintf(os.Stderr, format+"\n", args...)
 		os.Exit(1)
 	} else {
@@ -208,19 +227,19 @@ func die(format string, args ...interface{}) {
 // provided by tagsFlag. Uses load mode needed for vulncheck analysis. If the
 // packages contain errors, a packageError is returned containing a list of
 // the errors, along with the packages themselves.
-func loadPackages(patterns []string, dir string) ([]*vulncheck.Package, error) {
+func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
 	var buildFlags []string
-	if tagsFlag != nil {
-		buildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(tagsFlag, ","))}
+	if c.tags != nil {
+		buildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(c.tags, ","))}
 	}
 
-	cfg := &packages.Config{Dir: dir, Tests: *testFlag}
+	cfg := &packages.Config{Dir: dir, Tests: c.test}
 	cfg.Mode |= packages.NeedName | packages.NeedImports | packages.NeedTypes |
 		packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps |
 		packages.NeedModule
 	cfg.BuildFlags = buildFlags
 
-	pkgs, err := packages.Load(cfg, patterns...)
+	pkgs, err := packages.Load(cfg, c.patterns...)
 	vpkgs := vulncheck.Convert(pkgs)
 	if err != nil {
 		return nil, err

@@ -7,8 +7,11 @@
 
 package main
 
-import "flag"
+import (
+	"flag"
+)
 
-func init() {
-	flag.StringVar(&dirFlag, "dir", "", "directory to use for loading source files")
+func addTestFlags(flags *flag.FlagSet, cfg *config) *flag.FlagSet {
+	flags.StringVar(&cfg.dir, "dir", "", "directory to use for loading source files")
+	return flags
 }
