@@ -78,11 +78,6 @@ type Client interface {
 	unexported() // ensures that adding a method won't break users
 }
 
-type source interface {
-	Client
-	Index(context.Context) (DBIndex, error)
-}
-
 type localSource struct {
 	dir string
 }
@@ -149,10 +144,10 @@ func (ls *localSource) GetByAlias(ctx context.Context, alias string) (entries []
 	return getByIDs(ctx, ls, ids)
 }
 
-func getByIDs(ctx context.Context, s source, ids []string) ([]*osv.Entry, error) {
+func getByIDs(ctx context.Context, client Client, ids []string) ([]*osv.Entry, error) {
 	var entries []*osv.Entry
 	for _, id := range ids {
-		e, err := s.GetByID(ctx, id)
+		e, err := client.GetByID(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -448,7 +443,7 @@ func (hs *httpSource) readBody(ctx context.Context, url string) ([]byte, error) 
 }
 
 type client struct {
-	sources []source
+	sources []Client
 }
 
 type Options struct {
