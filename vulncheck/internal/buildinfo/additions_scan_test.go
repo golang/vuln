@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/vuln/internal/buildtest"
+	"golang.org/x/vuln/internal/test"
 )
 
 func TestExtractPackagesAndSymbols(t *testing.T) {
@@ -32,7 +32,7 @@ func TestExtractPackagesAndSymbols(t *testing.T) {
 			}
 
 			t.Run(ga, func(t *testing.T) {
-				binary, done := buildtest.GoBuild(t, "testdata", "", "GOOS", goos, "GOARCH", goarch)
+				binary, done := test.GoBuild(t, "testdata", "", "GOOS", goos, "GOARCH", goarch)
 				defer done()
 
 				f, err := os.Open(binary)

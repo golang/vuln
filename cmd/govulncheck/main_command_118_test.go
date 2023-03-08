@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmdtest"
-	"golang.org/x/vuln/internal/buildtest"
+	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/web"
 )
 
@@ -41,7 +41,7 @@ func TestCommand(t *testing.T) {
 	// cmdtest.Program for this because it doesn't let us set the environment,
 	// and that is the only way to tell govulncheck about an alternative vuln
 	// database.
-	binary, cleanup := buildtest.GoBuild(t, ".", "testmode") // build govulncheck
+	binary, cleanup := test.GoBuild(t, ".", "testmode") // build govulncheck
 	// Use Cleanup instead of defer, because when subtests are parallel, defer
 	// runs too early.
 	t.Cleanup(cleanup)
@@ -82,7 +82,7 @@ func TestCommand(t *testing.T) {
 			continue
 		}
 
-		binary, cleanup := buildtest.GoBuild(t, md, "")
+		binary, cleanup := test.GoBuild(t, md, "")
 		t.Cleanup(cleanup)
 		// Set an environment variable to the path to the binary, so tests
 		// can refer to it.

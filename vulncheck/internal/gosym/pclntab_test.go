@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/vuln/internal/buildtest"
+	"golang.org/x/vuln/internal/test"
 )
 
 func dotest(t *testing.T) (binaryName string, cleanup func()) {
@@ -31,7 +31,7 @@ func dotest(t *testing.T) (binaryName string, cleanup func()) {
 		t.Skipf("skipping in short mode on non-Linux system %s", runtime.GOARCH)
 	}
 
-	return buildtest.GoBuild(t, "testdata", "", "GOOS", "linux")
+	return test.GoBuild(t, "testdata", "", "GOOS", "linux")
 }
 
 // skipIfNotELF skips the test if we are not running on an ELF system.

@@ -2,9 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package buildtest provides support for running "go build"
-// in tests.
-package buildtest
+package test
 
 import (
 	"fmt"
