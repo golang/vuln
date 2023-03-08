@@ -82,7 +82,7 @@ func parseFlags(args []string) (*config, error) {
 		flags.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n%s\n", detailsMessage)
 	}
-	flags = addTestFlags(flags, cfg)
+	addTestFlags(flags, cfg)
 	if err := flags.Parse(args); err != nil {
 		return nil, err
 	}

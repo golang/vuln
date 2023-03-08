@@ -11,6 +11,5 @@ import (
 	"flag"
 )
 
-func addTestFlags(flags *flag.FlagSet, cfg *config) *flag.FlagSet {
-	return flags
+func addTestFlags(flags *flag.FlagSet, cfg *config) {
 }

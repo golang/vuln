@@ -11,7 +11,6 @@ import (
 	"flag"
 )
 
-func addTestFlags(flags *flag.FlagSet, cfg *config) *flag.FlagSet {
+func addTestFlags(flags *flag.FlagSet, cfg *config) {
 	flags.StringVar(&cfg.dir, "dir", "", "directory to use for loading source files")
-	return flags
 }
