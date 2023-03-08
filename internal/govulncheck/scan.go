@@ -33,7 +33,14 @@ func Main(ctx context.Context, args []string, w io.Writer) (err error) {
 			return fmt.Errorf("govulncheck: the -tags flag is invalid for binaries")
 		}
 	}
-	return doGovulncheck(cfg)
+	var out output
+	switch {
+	case cfg.json:
+		out = &jsonOutput{to: w}
+	default:
+		out = &readableOutput{to: w}
+	}
+	return doGovulncheck(cfg, out)
 }
 
 type config struct {
@@ -85,21 +92,21 @@ func parseFlags(args []string) (*config, error) {
 		cfg.sourceAnalysis = false
 	}
 	cfg.tags = tagsFlag
+	cfg.db = vulndbHost
+	if db := os.Getenv(envGOVULNDB); db != "" {
+		cfg.db = db
+	}
 	return cfg, nil
 }
 
 // doGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func doGovulncheck(c *config) error {
+func doGovulncheck(c *config, out output) (err error) {
 	ctx := context.Background()
 	dir := filepath.FromSlash(c.dir)
 
-	dbs := []string{vulndbHost}
-	if db := os.Getenv(envGOVULNDB); db != "" {
-		dbs = strings.Split(db, ",")
-	}
-
+	dbs := []string{c.db}
 	cache, err := DefaultCache()
 	if err != nil {
 		return err
@@ -111,11 +118,7 @@ func doGovulncheck(c *config) error {
 	if err != nil {
 		return err
 	}
-
-	if !c.json {
-		// Print intro message when in text or verbose mode
-		printIntro(ctx, dbClient, dbs, c.sourceAnalysis)
-	}
+	out.intro(ctx, dbClient, []string{c.db}, c.sourceAnalysis)
 
 	// config GoVersion is "", which means use current
 	// Go version at path.
@@ -134,11 +137,7 @@ func doGovulncheck(c *config) error {
 			}
 			return err
 		}
-
-		if !c.json {
-			fmt.Println()
-			fmt.Println(sourceProgressMessage(pkgs))
-		}
+		out.progress(sourceProgressMessage(pkgs))
 		res, err = Source(ctx, cfg, pkgs)
 	} else {
 		var f *os.File
@@ -147,29 +146,16 @@ func doGovulncheck(c *config) error {
 			return err
 		}
 		defer f.Close()
-
-		if !c.json {
-			fmt.Println()
-			fmt.Println(binaryProgressMessage)
-		}
+		out.progress(binaryProgressMessage)
 		res, err = Binary(ctx, cfg, f)
 	}
 	if err != nil {
 		return err
 	}
-
-	if c.json {
-		// Following golang.org/x/tools/go/analysis/singlechecker,
-		// return 0 exit code in -json mode.
-		if err := printJSON(res); err != nil {
-			return err
-		}
-		os.Exit(0)
-	}
-
-	if err := printText(res, c.verbose, c.sourceAnalysis); err != nil {
+	if err := out.result(res, c.verbose, c.sourceAnalysis); err != nil {
 		return err
 	}
+
 	// Return exit status -3 if some vulnerabilities are actually
 	// called in source mode or just present in binary mode.
 	//

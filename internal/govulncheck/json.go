@@ -5,17 +5,29 @@
 package govulncheck
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"os"
+
+	"io"
+
+	"golang.org/x/vuln/client"
 )
 
-func printJSON(r *Result) error {
+type jsonOutput struct {
+	to io.Writer
+}
+
+func (o *jsonOutput) intro(ctx context.Context, dbClient client.Client, dbs []string, source bool) {}
+
+func (o *jsonOutput) result(r *Result, verbose, source bool) error {
 	b, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
 		return err
 	}
-	os.Stdout.Write(b)
-	fmt.Println()
+	o.to.Write(b)
+	fmt.Fprintln(o.to)
 	return nil
 }
+
+func (o *jsonOutput) progress(msg string) {}

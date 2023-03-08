@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"runtime/debug"
 	"sort"
 	"strings"
@@ -30,9 +29,24 @@ const (
 	binaryProgressMessage = `Scanning your binary for known vulnerabilities...`
 )
 
-// printIntro communicates introductory message to the user.
-// See introTemplate for more details.
-func printIntro(ctx context.Context, dbClient client.Client, dbs []string, source bool) {
+// output communicates govulncheck output to the user.
+type output interface {
+	// intro communicates introductory message to the user.
+	intro(ctx context.Context, dbClient client.Client, dbs []string, source bool)
+
+	// result communicates the result of running govulncheck to the user.
+	result(r *Result, verbose, source bool) error
+
+	// progress communicates a progress update to the user.
+	progress(msg string)
+}
+
+// readableOutput provides a human-readable text output to the user.
+type readableOutput struct {
+	to io.Writer
+}
+
+func (o *readableOutput) intro(ctx context.Context, dbClient client.Client, dbs []string, source bool) {
 	type intro struct {
 		GoPhrase             string
 		GovulncheckVersion   string
@@ -64,14 +78,10 @@ func printIntro(ctx context.Context, dbClient client.Client, dbs []string, sourc
 		// run by failing to produce intro message.
 		return
 	}
-	tmpl.Execute(os.Stdout, i)
+	tmpl.Execute(o.to, i)
 }
 
-func printText(r *Result, verbose, source bool) error {
-	return doPrintText(os.Stdout, r, verbose, source)
-}
-
-func doPrintText(w io.Writer, r *Result, verbose, source bool) error {
+func (o *readableOutput) result(r *Result, verbose, source bool) error {
 	lineWidth := 80 - labelWidth
 	funcMap := template.FuncMap{
 		// used in template for counting vulnerabilities
@@ -92,7 +102,12 @@ func doPrintText(w io.Writer, r *Result, verbose, source bool) error {
 	if err != nil {
 		return err
 	}
-	return tmpl.Execute(w, tmplRes)
+	return tmpl.Execute(o.to, tmplRes)
+}
+
+func (o *readableOutput) progress(msg string) {
+	fmt.Fprintln(o.to)
+	fmt.Fprintln(o.to, msg)
 }
 
 // createTmplResult transforms Result r into a
