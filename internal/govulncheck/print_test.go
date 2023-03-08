@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package govulncheck
 
 import (
 	"strings"
@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal"
-	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 )
 
@@ -127,10 +126,10 @@ var testVuln2 = &osv.Entry{
 	}}}
 
 func TestPrintTextNoVulns(t *testing.T) {
-	r := &govulncheck.Result{Vulns: []*govulncheck.Vuln{
+	r := &Result{Vulns: []*Vuln{
 		{
 			OSV: testVuln1,
-			Modules: []*govulncheck.Module{
+			Modules: []*Module{
 				{
 					Path:         "golang.org/vmod",
 					FoundVersion: "v0.0.1",
@@ -166,17 +165,17 @@ Vulnerability #1: GO-0000-0001
 }
 
 func TestPrintTextSource(t *testing.T) {
-	r := &govulncheck.Result{Vulns: []*govulncheck.Vuln{
+	r := &Result{Vulns: []*Vuln{
 		{
 			OSV: testVuln1,
-			Modules: []*govulncheck.Module{
+			Modules: []*Module{
 				{
 					Path:         "golang.org/vmod",
 					FoundVersion: "v0.0.1",
 					FixedVersion: "v0.1.3",
-					Packages: []*govulncheck.Package{
+					Packages: []*Package{
 						{
-							CallStacks: []govulncheck.CallStack{{Summary: "main calls vmod.Vuln"}},
+							CallStacks: []CallStack{{Summary: "main calls vmod.Vuln"}},
 						},
 					},
 				},
@@ -184,11 +183,11 @@ func TestPrintTextSource(t *testing.T) {
 		},
 		{
 			OSV: testVuln2,
-			Modules: []*govulncheck.Module{
+			Modules: []*Module{
 				{
 					Path:         internal.GoStdModulePath,
 					FoundVersion: "v0.0.1",
-					Packages: []*govulncheck.Package{
+					Packages: []*Package{
 						{
 							Path: "net/http",
 						},
@@ -235,10 +234,10 @@ Vulnerability #1: GO-0000-0002
 }
 
 func TestPrintTextBinary(t *testing.T) {
-	r := &govulncheck.Result{Vulns: []*govulncheck.Vuln{
+	r := &Result{Vulns: []*Vuln{
 		{
 			OSV: testVuln1,
-			Modules: []*govulncheck.Module{
+			Modules: []*Module{
 				{
 					Path:         "golang.org/vmod",
 					FoundVersion: "v0.0.1",
@@ -250,11 +249,11 @@ func TestPrintTextBinary(t *testing.T) {
 		},
 		{
 			OSV: testVuln2,
-			Modules: []*govulncheck.Module{
+			Modules: []*Module{
 				{
 					Path:         internal.GoStdModulePath,
 					FoundVersion: "v0.0.1",
-					Packages: []*govulncheck.Package{
+					Packages: []*Package{
 						{
 							Path: "net/http",
 						},
@@ -294,17 +293,17 @@ Vulnerability #2: GO-0000-0002
 }
 
 func TestPrintTextMultiModuleAndStacks(t *testing.T) {
-	r := &govulncheck.Result{Vulns: []*govulncheck.Vuln{
+	r := &Result{Vulns: []*Vuln{
 		{
 			OSV: testVuln1,
-			Modules: []*govulncheck.Module{
+			Modules: []*Module{
 				{
 					Path:         "golang.org/vmod",
 					FoundVersion: "v0.0.1",
 					FixedVersion: "v0.1.3",
-					Packages: []*govulncheck.Package{
+					Packages: []*Package{
 						{
-							CallStacks: []govulncheck.CallStack{{Summary: "main calls vmod.Vuln"}, {Summary: "main calls vmod.VulnFoo"}},
+							CallStacks: []CallStack{{Summary: "main calls vmod.Vuln"}, {Summary: "main calls vmod.VulnFoo"}},
 						},
 					},
 				},
@@ -312,12 +311,12 @@ func TestPrintTextMultiModuleAndStacks(t *testing.T) {
 					Path:         "golang.org/vmod1",
 					FoundVersion: "v0.0.3",
 					FixedVersion: "v0.0.4",
-					Packages: []*govulncheck.Package{
+					Packages: []*Package{
 						{
-							CallStacks: []govulncheck.CallStack{{Summary: "Foo calls vmod1.Vuln"}},
+							CallStacks: []CallStack{{Summary: "Foo calls vmod1.Vuln"}},
 						},
 						{
-							CallStacks: []govulncheck.CallStack{{Summary: "Bar calls vmod1.VulnFoo"}},
+							CallStacks: []CallStack{{Summary: "Bar calls vmod1.VulnFoo"}},
 						},
 					},
 				},

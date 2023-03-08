@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package govulncheck
 
 import (
 	"context"
@@ -18,7 +18,6 @@ import (
 
 	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/internal"
-	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
@@ -69,7 +68,7 @@ func printIntro(ctx context.Context, dbClient client.Client, dbs []string, sourc
 	tmpl.Execute(os.Stdout, i)
 }
 
-func printJSON(r *govulncheck.Result) error {
+func printJSON(r *Result) error {
 	b, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
 		return err
@@ -79,11 +78,11 @@ func printJSON(r *govulncheck.Result) error {
 	return nil
 }
 
-func printText(r *govulncheck.Result, verbose, source bool) error {
+func printText(r *Result, verbose, source bool) error {
 	return doPrintText(os.Stdout, r, verbose, source)
 }
 
-func doPrintText(w io.Writer, r *govulncheck.Result, verbose, source bool) error {
+func doPrintText(w io.Writer, r *Result, verbose, source bool) error {
 	lineWidth := 80 - labelWidth
 	funcMap := template.FuncMap{
 		// used in template for counting vulnerabilities
@@ -107,9 +106,9 @@ func doPrintText(w io.Writer, r *govulncheck.Result, verbose, source bool) error
 	return tmpl.Execute(w, tmplRes)
 }
 
-// createTmplResult transforms govulncheck.Result r into a
+// createTmplResult transforms Result r into a
 // template structure for printing.
-func createTmplResult(r *govulncheck.Result, verbose, source bool) tmplResult {
+func createTmplResult(r *Result, verbose, source bool) tmplResult {
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
 	var unaffected []tmplVulnInfo
@@ -151,7 +150,7 @@ func createTmplResult(r *govulncheck.Result, verbose, source bool) tmplResult {
 // createTmplVulnInfo creates a template vuln info for
 // a vulnerability that is called by source code or
 // present in the binary.
-func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool) tmplVulnInfo {
+func createTmplVulnInfo(v *Vuln, verbose, source bool) tmplVulnInfo {
 	vInfo := tmplVulnInfo{
 		ID:      v.OSV.ID,
 		Details: v.OSV.Details,
@@ -159,7 +158,7 @@ func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool) tmplVulnInfo 
 
 	// stacks returns call stack info of p as a
 	// string depending on verbose and source mode.
-	stacks := func(p *govulncheck.Package) string {
+	stacks := func(p *Package) string {
 		if !source {
 			return ""
 		}
@@ -224,7 +223,7 @@ func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool) tmplVulnInfo 
 	return vInfo
 }
 
-func defaultCallStacks(css []govulncheck.CallStack) string {
+func defaultCallStacks(css []CallStack) string {
 	var summaries []string
 	for _, cs := range css {
 		summaries = append(summaries, cs.Summary)
@@ -244,7 +243,7 @@ func defaultCallStacks(css []govulncheck.CallStack) string {
 	return b.String()
 }
 
-func verboseCallStacks(css []govulncheck.CallStack) string {
+func verboseCallStacks(css []CallStack) string {
 	// Display one full call stack for each vuln.
 	i := 1
 	var b strings.Builder
