@@ -38,8 +38,6 @@ func newFileClient(uri *url.URL) (_ *localSource, err error) {
 	return &localSource{dir: dir}, nil
 }
 
-func (*localSource) unexported() {}
-
 func (ls *localSource) GetByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
 	defer derrors.Wrap(&err, "localSource.GetByModule(%q)", modulePath)
 

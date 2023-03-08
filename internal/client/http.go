@@ -113,8 +113,6 @@ func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
 	return index, nil
 }
 
-func (*httpSource) unexported() {}
-
 func (hs *httpSource) GetByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
 	defer derrors.Wrap(&err, "httpSource.GetByModule(%q)", modulePath)
 

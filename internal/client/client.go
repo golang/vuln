@@ -65,8 +65,6 @@ type Client interface {
 	// It can be used by tools that periodically check for vulnerabilities
 	// to avoid repeating work.
 	LastModifiedTime(context.Context) (time.Time, error)
-
-	unexported() // ensures that adding a method won't break users
 }
 
 func getByIDs(ctx context.Context, client Client, ids []string) ([]*osv.Entry, error) {
