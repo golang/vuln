@@ -21,6 +21,8 @@ func main() {
 			os.Exit(0)
 		case govulncheck.ErrMissingArgPatterns:
 			os.Exit(1)
+		case govulncheck.ErrVulnerabilitiesFound:
+			os.Exit(3)
 		default:
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)

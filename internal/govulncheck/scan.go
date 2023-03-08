@@ -59,7 +59,10 @@ const (
 	vulndbHost  = "https://vuln.go.dev"
 )
 
-var ErrMissingArgPatterns = errors.New("missing any pattern args")
+var (
+	ErrMissingArgPatterns   = errors.New("missing any pattern args")
+	ErrVulnerabilitiesFound = errors.New("vulnerabilities found")
+)
 
 func parseFlags(args []string) (*config, error) {
 	cfg := &config{}
@@ -165,13 +168,12 @@ func doGovulncheck(c *config, out output) (err error) {
 	if c.sourceAnalysis {
 		for _, v := range res.Vulns {
 			if v.IsCalled() {
-				os.Exit(3)
+				return ErrVulnerabilitiesFound
 			}
 		}
 	} else if len(res.Vulns) > 0 {
-		os.Exit(3)
+		return ErrVulnerabilitiesFound
 	}
-	os.Exit(0)
 	return nil
 }
 
@@ -186,16 +188,6 @@ func isFile(path string) bool {
 		return false
 	}
 	return !s.IsDir()
-}
-
-func die(cfg *config, format string, args ...interface{}) {
-	if !cfg.json {
-		fmt.Fprintf(os.Stderr, format+"\n", args...)
-		os.Exit(1)
-	} else {
-		jsonFail(errors.New(format))
-		os.Exit(0)
-	}
 }
 
 // loadPackages loads the packages matching patterns at dir using build tags
