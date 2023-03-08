@@ -11,6 +11,7 @@ import (
 	"io"
 	"sort"
 
+	"golang.org/x/vuln/internal/result"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
@@ -23,7 +24,7 @@ import (
 //
 // This function is used for source code analysis by cmd/govulncheck and
 // exp/govulncheck.
-func Source(ctx context.Context, cfg *Config, pkgs []*vulncheck.Package) (*Result, error) {
+func Source(ctx context.Context, cfg *Config, pkgs []*vulncheck.Package) (*result.Result, error) {
 	vcfg := &vulncheck.Config{
 		Client:          cfg.Client,
 		SourceGoVersion: cfg.GoVersion,
@@ -38,7 +39,7 @@ func Source(ctx context.Context, cfg *Config, pkgs []*vulncheck.Package) (*Resul
 // Binary detects presence of vulnerable symbols in exe.
 //
 // This function is used for binary analysis by cmd/govulncheck.
-func Binary(ctx context.Context, cfg *Config, exe io.ReaderAt) (*Result, error) {
+func Binary(ctx context.Context, cfg *Config, exe io.ReaderAt) (*result.Result, error) {
 	vcfg := &vulncheck.Config{
 		Client: cfg.Client,
 	}
@@ -49,7 +50,7 @@ func Binary(ctx context.Context, cfg *Config, exe io.ReaderAt) (*Result, error) 
 	return createBinaryResult(vr), nil
 }
 
-func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *Result {
+func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *result.Result {
 	topPkgs := map[string]bool{}
 	for _, p := range pkgs {
 		topPkgs[p.PkgPath] = true
@@ -75,27 +76,27 @@ func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *Result
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
 	// results later.
-	r := &Result{}
+	r := &result.Result{}
 	for _, vv := range vr.Vulns {
-		p := &Package{Path: vv.PkgPath}
-		m := &Module{
+		p := &result.Package{Path: vv.PkgPath}
+		m := &result.Module{
 			Path:         vv.ModPath,
 			FoundVersion: foundVersion(vv.ModPath, modVersions),
 			FixedVersion: fixedVersion(vv.ModPath, vv.OSV.Affected),
-			Packages:     []*Package{p},
+			Packages:     []*result.Package{p},
 		}
-		v := &Vuln{OSV: vv.OSV, Modules: []*Module{m}}
+		v := &result.Vuln{OSV: vv.OSV, Modules: []*result.Module{m}}
 
 		if vv.CallSink != 0 {
 			k := key{id: vv.OSV.ID, pkg: vv.PkgPath, mod: vv.ModPath}
 			vcs := uniqueCallStack(vv, callStacks[vv], vulnsPerPkg[k], vr)
 			if vcs != nil {
-				cs := CallStack{
+				cs := result.CallStack{
 					Frames: stackFramesfromEntries(vcs),
 					Symbol: vv.Symbol,
 				}
 				cs.Summary = summarizeCallStack(cs, topPkgs, p.Path)
-				p.CallStacks = []CallStack{cs}
+				p.CallStacks = []result.CallStack{cs}
 			}
 		}
 		r.Vulns = append(r.Vulns, v)
@@ -106,23 +107,23 @@ func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *Result
 	return r
 }
 
-func createBinaryResult(vr *vulncheck.Result) *Result {
+func createBinaryResult(vr *vulncheck.Result) *result.Result {
 	modVersions := moduleVersionMap(vr.Modules)
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
 	// results later.
-	r := &Result{}
+	r := &result.Result{}
 	for _, vv := range vr.Vulns {
-		p := &Package{Path: vv.PkgPath}
+		p := &result.Package{Path: vv.PkgPath}
 		// in binary mode, call stacks contain just the symbol data
-		p.CallStacks = []CallStack{{Symbol: vv.Symbol}}
-		m := &Module{
+		p.CallStacks = []result.CallStack{{Symbol: vv.Symbol}}
+		m := &result.Module{
 			Path:         vv.ModPath,
 			FoundVersion: foundVersion(vv.ModPath, modVersions),
 			FixedVersion: fixedVersion(vv.ModPath, vv.OSV.Affected),
-			Packages:     []*Package{p},
+			Packages:     []*result.Package{p},
 		}
-		v := &Vuln{OSV: vv.OSV, Modules: []*Module{m}}
+		v := &result.Vuln{OSV: vv.OSV, Modules: []*result.Module{m}}
 		r.Vulns = append(r.Vulns, v)
 	}
 
@@ -136,36 +137,36 @@ func createBinaryResult(vr *vulncheck.Result) *Result {
 // For instance, Vulns with the same OSV field are
 // merged into a single one. The same applies for
 // Modules of a Vuln, and Packages of a Module.
-func merge(r *Result) *Result {
-	nr := &Result{}
+func merge(r *result.Result) *result.Result {
+	nr := &result.Result{}
 	// merge vulns by their ID. Note that there can
 	// be several OSVs with the same ID but different
 	// pointer values
 	osvs := make(map[string]*osv.Entry)
-	vs := make(map[string][]*Module)
+	vs := make(map[string][]*result.Module)
 	for _, v := range r.Vulns {
 		osvs[v.OSV.ID] = v.OSV
 		vs[v.OSV.ID] = append(vs[v.OSV.ID], v.Modules...)
 	}
 
 	for id, mods := range vs {
-		v := &Vuln{OSV: osvs[id], Modules: mods}
+		v := &result.Vuln{OSV: osvs[id], Modules: mods}
 		nr.Vulns = append(nr.Vulns, v)
 	}
 
 	// merge modules
 	for _, v := range nr.Vulns {
-		ms := make(map[string][]*Module)
+		ms := make(map[string][]*result.Module)
 		for _, m := range v.Modules {
 			ms[m.Path] = append(ms[m.Path], m)
 		}
 
-		var nms []*Module
+		var nms []*result.Module
 		for mpath, mods := range ms {
 			// modules with the same path must have
 			// same found and fixed versions
 			validateModuleVersions(mods)
-			nm := &Module{
+			nm := &result.Module{
 				Path:         mpath,
 				FixedVersion: mods[0].FixedVersion,
 				FoundVersion: mods[0].FoundVersion,
@@ -181,14 +182,14 @@ func merge(r *Result) *Result {
 	// merge packages
 	for _, v := range nr.Vulns {
 		for _, m := range v.Modules {
-			ps := make(map[string][]*Package)
+			ps := make(map[string][]*result.Package)
 			for _, p := range m.Packages {
 				ps[p.Path] = append(ps[p.Path], p)
 			}
 
-			var nps []*Package
+			var nps []*result.Package
 			for ppath, pkgs := range ps {
-				np := &Package{Path: ppath}
+				np := &result.Package{Path: ppath}
 				for _, p := range pkgs {
 					np.CallStacks = append(np.CallStacks, p.CallStacks...)
 				}
@@ -202,7 +203,7 @@ func merge(r *Result) *Result {
 
 // validateModuleVersions checks that all modules have
 // the same found and fixed version. If not, panics.
-func validateModuleVersions(modules []*Module) {
+func validateModuleVersions(modules []*result.Module) {
 	var found, fixed string
 	for i, m := range modules {
 		if i == 0 {
@@ -217,7 +218,7 @@ func validateModuleVersions(modules []*Module) {
 }
 
 // sortResults sorts Vulns, Modules, and Packages of r.
-func sortResult(r *Result) {
+func sortResult(r *result.Result) {
 	sort.Slice(r.Vulns, func(i, j int) bool {
 		return r.Vulns[i].OSV.ID > r.Vulns[j].OSV.ID
 	})
@@ -236,10 +237,10 @@ func sortResult(r *Result) {
 // stackFramesFromEntries creates a sequence of stack
 // frames from vcs. Position of a StackFrame is the
 // call position of the corresponding stack entry.
-func stackFramesfromEntries(vcs vulncheck.CallStack) []*StackFrame {
-	var frames []*StackFrame
+func stackFramesfromEntries(vcs vulncheck.CallStack) []*result.StackFrame {
+	var frames []*result.StackFrame
 	for _, e := range vcs {
-		fr := &StackFrame{
+		fr := &result.StackFrame{
 			FuncName: e.Function.Name,
 			PkgPath:  e.Function.PkgPath,
 			RecvType: e.Function.RecvType,

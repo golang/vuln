@@ -12,6 +12,7 @@ import (
 	"io"
 
 	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal/result"
 )
 
 type jsonOutput struct {
@@ -20,7 +21,7 @@ type jsonOutput struct {
 
 func (o *jsonOutput) intro(ctx context.Context, dbClient client.Client, dbs []string, source bool) {}
 
-func (o *jsonOutput) result(r *Result, verbose, source bool) error {
+func (o *jsonOutput) result(r *result.Result, verbose, source bool) error {
 	b, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
 		return err

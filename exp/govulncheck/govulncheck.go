@@ -5,7 +5,10 @@
 // Package govulncheck provides an experimental govulncheck API.
 package govulncheck
 
-import "golang.org/x/vuln/internal/govulncheck"
+import (
+	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/result"
+)
 
 var (
 	// Source reports vulnerabilities that affect the analyzed packages.
@@ -20,22 +23,22 @@ type (
 	Config = govulncheck.Config
 
 	// Result is the result of executing Source.
-	Result = govulncheck.Result
+	Result = result.Result
 
 	// Vuln represents a single OSV entry.
-	Vuln = govulncheck.Vuln
+	Vuln = result.Vuln
 
 	// Module represents a specific vulnerability relevant to a
 	// single module or package.
-	Module = govulncheck.Module
+	Module = result.Module
 
 	// Package is a Go package with known vulnerable symbols.
-	Package = govulncheck.Package
+	Package = result.Package
 
 	// CallStacks contains a representative call stack for each
 	// vulnerable symbol that is called.
-	CallStack = govulncheck.CallStack
+	CallStack = result.CallStack
 
 	// StackFrame represents a call stack entry.
-	StackFrame = govulncheck.StackFrame
+	StackFrame = result.StackFrame
 )

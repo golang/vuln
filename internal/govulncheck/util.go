@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/mod/semver"
 	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/result"
 	isem "golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
@@ -64,7 +65,7 @@ func versionString(modulePath, version string) string {
 
 // highest returns the highest (one with the smallest index) entry in the call
 // stack for which f returns true.
-func highest(cs []*StackFrame, f func(e *StackFrame) bool) int {
+func highest(cs []*result.StackFrame, f func(e *result.StackFrame) bool) int {
 	for i := 0; i < len(cs); i++ {
 		if f(cs[i]) {
 			return i
@@ -75,7 +76,7 @@ func highest(cs []*StackFrame, f func(e *StackFrame) bool) int {
 
 // lowest returns the lowest (one with the largest index) entry in the call
 // stack for which f returns true.
-func lowest(cs []*StackFrame, f func(e *StackFrame) bool) int {
+func lowest(cs []*result.StackFrame, f func(e *result.StackFrame) bool) int {
 	for i := len(cs) - 1; i >= 0; i-- {
 		if f(cs[i]) {
 			return i

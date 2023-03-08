@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/result"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
 )
@@ -35,7 +36,7 @@ type output interface {
 	intro(ctx context.Context, dbClient client.Client, dbs []string, source bool)
 
 	// result communicates the result of running govulncheck to the user.
-	result(r *Result, verbose, source bool) error
+	result(r *result.Result, verbose, source bool) error
 
 	// progress communicates a progress update to the user.
 	progress(msg string)
@@ -81,7 +82,7 @@ func (o *readableOutput) intro(ctx context.Context, dbClient client.Client, dbs 
 	tmpl.Execute(o.to, i)
 }
 
-func (o *readableOutput) result(r *Result, verbose, source bool) error {
+func (o *readableOutput) result(r *result.Result, verbose, source bool) error {
 	lineWidth := 80 - labelWidth
 	funcMap := template.FuncMap{
 		// used in template for counting vulnerabilities
@@ -133,7 +134,7 @@ func (o *readableOutput) progress(msg string) {
 
 // createTmplResult transforms Result r into a
 // template structure for printing.
-func createTmplResult(r *Result, verbose, source bool) tmplResult {
+func createTmplResult(r *result.Result, verbose, source bool) tmplResult {
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
 	var unaffected []tmplVulnInfo
@@ -175,7 +176,7 @@ func createTmplResult(r *Result, verbose, source bool) tmplResult {
 // createTmplVulnInfo creates a template vuln info for
 // a vulnerability that is called by source code or
 // present in the binary.
-func createTmplVulnInfo(v *Vuln, verbose, source bool) tmplVulnInfo {
+func createTmplVulnInfo(v *result.Vuln, verbose, source bool) tmplVulnInfo {
 	vInfo := tmplVulnInfo{
 		ID:      v.OSV.ID,
 		Details: v.OSV.Details,
@@ -183,7 +184,7 @@ func createTmplVulnInfo(v *Vuln, verbose, source bool) tmplVulnInfo {
 
 	// stacks returns call stack info of p as a
 	// string depending on verbose and source mode.
-	stacks := func(p *Package) string {
+	stacks := func(p *result.Package) string {
 		if !source {
 			return ""
 		}
@@ -248,7 +249,7 @@ func createTmplVulnInfo(v *Vuln, verbose, source bool) tmplVulnInfo {
 	return vInfo
 }
 
-func defaultCallStacks(css []CallStack) string {
+func defaultCallStacks(css []result.CallStack) string {
 	var summaries []string
 	for _, cs := range css {
 		summaries = append(summaries, cs.Summary)
@@ -268,7 +269,7 @@ func defaultCallStacks(css []CallStack) string {
 	return b.String()
 }
 
-func verboseCallStacks(css []CallStack) string {
+func verboseCallStacks(css []result.CallStack) string {
 	// Display one full call stack for each vuln.
 	i := 1
 	var b strings.Builder

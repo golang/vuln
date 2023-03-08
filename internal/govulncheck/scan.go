@@ -17,6 +17,7 @@ import (
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal/result"
 	"golang.org/x/vuln/vulncheck"
 )
 
@@ -126,7 +127,7 @@ func doGovulncheck(c *config, out output) (err error) {
 	// config GoVersion is "", which means use current
 	// Go version at path.
 	cfg := &Config{Client: dbClient}
-	var res *Result
+	var res *result.Result
 	if c.sourceAnalysis {
 		var pkgs []*vulncheck.Package
 		pkgs, err = loadPackages(c, dir)

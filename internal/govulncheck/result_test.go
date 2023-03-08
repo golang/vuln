@@ -7,16 +7,18 @@ package govulncheck
 import (
 	"go/token"
 	"testing"
+
+	"golang.org/x/vuln/internal/result"
 )
 
 func TestStackFrame(t *testing.T) {
 	for _, test := range []struct {
-		sf       *StackFrame
+		sf       *result.StackFrame
 		wantFunc string
 		wantPos  string
 	}{
 		{
-			&StackFrame{
+			&result.StackFrame{
 				PkgPath:  "golang.org/x/vuln/vulncheck",
 				FuncName: "Foo",
 				Position: token.Position{Filename: "some/path/file.go", Line: 12},
@@ -25,7 +27,7 @@ func TestStackFrame(t *testing.T) {
 			"some/path/file.go:12",
 		},
 		{
-			&StackFrame{
+			&result.StackFrame{
 				PkgPath:  "golang.org/x/vuln/vulncheck",
 				RecvType: "golang.org/x/vuln/vulncheck.Bar",
 				FuncName: "Foo",
@@ -49,17 +51,17 @@ func TestVuln(t *testing.T) {
 	// p is both the module and package path, and
 	// s is the called symbol. If s is "", then
 	// there is no called symbol.
-	vuln := func(syms ...[2]string) *Vuln {
-		v := &Vuln{}
+	vuln := func(syms ...[2]string) *result.Vuln {
+		v := &result.Vuln{}
 		for _, sym := range syms {
-			p := &Package{Path: sym[0]}
-			v.Modules = append(v.Modules, &Module{
+			p := &result.Package{Path: sym[0]}
+			v.Modules = append(v.Modules, &result.Module{
 				Path:     sym[0],
-				Packages: []*Package{p},
+				Packages: []*result.Package{p},
 			})
 			if symbol := sym[1]; symbol != "" {
-				cs := CallStack{Symbol: symbol}
-				p.CallStacks = []CallStack{cs}
+				cs := result.CallStack{Symbol: symbol}
+				p.CallStacks = []result.CallStack{cs}
 			}
 		}
 		return v
@@ -67,7 +69,7 @@ func TestVuln(t *testing.T) {
 
 	for _, test := range []struct {
 		desc string
-		v    *Vuln
+		v    *result.Vuln
 		want bool
 	}{
 		{"called - single module", vuln([2]string{"golang.org/p1", "Foo"}), true},

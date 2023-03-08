@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/internal/result"
 	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/osv"
 	"golang.org/x/vuln/vulncheck"
@@ -115,11 +116,11 @@ func TestSummarizeCallStack(t *testing.T) {
 	}
 }
 
-func stringToCallStack(s string) CallStack {
-	var cs CallStack
+func stringToCallStack(s string) result.CallStack {
+	var cs result.CallStack
 	for _, e := range strings.Fields(s) {
 		parts := strings.Split(e, ".")
-		cs.Frames = append(cs.Frames, &StackFrame{
+		cs.Frames = append(cs.Frames, &result.StackFrame{
 			PkgPath:  parts[0],
 			FuncName: parts[1],
 		})
