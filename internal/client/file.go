@@ -8,9 +8,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/url"
 	"os"
-	"path/filepath"
+	"path"
 	"time"
 
 	"golang.org/x/vuln/internal"
@@ -20,7 +21,11 @@ import (
 )
 
 type localSource struct {
-	dir string
+	fs fs.FS
+}
+
+func newFSClient(fs fs.FS) (*localSource, error) {
+	return &localSource{fs: fs}, nil
 }
 
 func newFileClient(uri *url.URL) (_ *localSource, err error) {
@@ -35,7 +40,7 @@ func newFileClient(uri *url.URL) (_ *localSource, err error) {
 	if !fi.IsDir() {
 		return nil, fmt.Errorf("%s is not a directory", dir)
 	}
-	return &localSource{dir: dir}, nil
+	return newFSClient(os.DirFS(dir))
 }
 
 func (ls *localSource) GetByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
@@ -56,7 +61,7 @@ func (ls *localSource) GetByModule(ctx context.Context, modulePath string) (_ []
 	if err != nil {
 		return nil, err
 	}
-	content, err := os.ReadFile(filepath.Join(ls.dir, epath+".json"))
+	content, err := fs.ReadFile(ls.fs, epath+".json")
 	if os.IsNotExist(err) {
 		return nil, nil
 	} else if err != nil {
@@ -71,7 +76,7 @@ func (ls *localSource) GetByModule(ctx context.Context, modulePath string) (_ []
 
 func (ls *localSource) GetByID(_ context.Context, id string) (_ *osv.Entry, err error) {
 	defer derrors.Wrap(&err, "GetByID(%q)", id)
-	content, err := os.ReadFile(filepath.Join(ls.dir, internal.IDDirectory, id+".json"))
+	content, err := fs.ReadFile(ls.fs, path.Join(internal.IDDirectory, id+".json"))
 	if os.IsNotExist(err) {
 		return nil, nil
 	} else if err != nil {
@@ -101,14 +106,14 @@ func (ls *localSource) GetByAlias(ctx context.Context, alias string) (entries []
 func (ls *localSource) ListIDs(ctx context.Context) (_ []string, err error) {
 	defer derrors.Wrap(&err, "ListIDs()")
 
-	return localReadJSON[[]string](ctx, ls, filepath.Join(internal.IDDirectory, "index.json"))
+	return localReadJSON[[]string](ctx, ls, path.Join(internal.IDDirectory, "index.json"))
 }
 
 func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error) {
 	defer derrors.Wrap(&err, "LastModifiedTime()")
 
 	// Assume that if anything changes, the index does.
-	info, err := os.Stat(filepath.Join(ls.dir, "index.json"))
+	info, err := fs.Stat(ls.fs, "index.json")
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -123,7 +128,7 @@ func (ls *localSource) Index(ctx context.Context) (_ DBIndex, err error) {
 
 func localReadJSON[T any](_ context.Context, ls *localSource, relativePath string) (T, error) {
 	var zero T
-	content, err := os.ReadFile(filepath.Join(ls.dir, relativePath))
+	content, err := fs.ReadFile(ls.fs, relativePath)
 	if err != nil {
 		return zero, err
 	}
