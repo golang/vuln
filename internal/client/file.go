@@ -61,14 +61,10 @@ func (ls *localSource) GetByModule(ctx context.Context, modulePath string) (_ []
 	if err != nil {
 		return nil, err
 	}
-	content, err := fs.ReadFile(ls.fs, epath+".json")
+	e, err := localReadJSON[[]*osv.Entry](ls, epath+".json")
 	if os.IsNotExist(err) {
 		return nil, nil
 	} else if err != nil {
-		return nil, err
-	}
-	var e []*osv.Entry
-	if err = json.Unmarshal(content, &e); err != nil {
 		return nil, err
 	}
 	return e, nil
@@ -76,14 +72,11 @@ func (ls *localSource) GetByModule(ctx context.Context, modulePath string) (_ []
 
 func (ls *localSource) GetByID(_ context.Context, id string) (_ *osv.Entry, err error) {
 	defer derrors.Wrap(&err, "GetByID(%q)", id)
-	content, err := fs.ReadFile(ls.fs, path.Join(internal.IDDirectory, id+".json"))
+
+	e, err := localReadJSON[osv.Entry](ls, path.Join(internal.IDDirectory, id+".json"))
 	if os.IsNotExist(err) {
 		return nil, nil
 	} else if err != nil {
-		return nil, err
-	}
-	var e osv.Entry
-	if err = json.Unmarshal(content, &e); err != nil {
 		return nil, err
 	}
 	return &e, nil
@@ -92,7 +85,7 @@ func (ls *localSource) GetByID(_ context.Context, id string) (_ *osv.Entry, err 
 func (ls *localSource) GetByAlias(ctx context.Context, alias string) (entries []*osv.Entry, err error) {
 	defer derrors.Wrap(&err, "localSource.GetByAlias(%q)", alias)
 
-	aliasToIDs, err := localReadJSON[map[string][]string](ctx, ls, "aliases.json")
+	aliasToIDs, err := localReadJSON[map[string][]string](ls, "aliases.json")
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +99,7 @@ func (ls *localSource) GetByAlias(ctx context.Context, alias string) (entries []
 func (ls *localSource) ListIDs(ctx context.Context) (_ []string, err error) {
 	defer derrors.Wrap(&err, "ListIDs()")
 
-	return localReadJSON[[]string](ctx, ls, path.Join(internal.IDDirectory, "index.json"))
+	return localReadJSON[[]string](ls, path.Join(internal.IDDirectory, "index.json"))
 }
 
 func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error) {
@@ -123,10 +116,10 @@ func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error
 func (ls *localSource) Index(ctx context.Context) (_ DBIndex, err error) {
 	defer derrors.Wrap(&err, "Index()")
 
-	return localReadJSON[DBIndex](ctx, ls, "index.json")
+	return localReadJSON[DBIndex](ls, "index.json")
 }
 
-func localReadJSON[T any](_ context.Context, ls *localSource, relativePath string) (T, error) {
+func localReadJSON[T any](ls *localSource, relativePath string) (T, error) {
 	var zero T
 	content, err := fs.ReadFile(ls.fs, relativePath)
 	if err != nil {
