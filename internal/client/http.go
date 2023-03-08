@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path"
 	"time"
 
@@ -31,6 +32,20 @@ type httpSource struct {
 	// privacy properties of httpSource.
 	indexCalls int
 	httpCalls  int
+}
+
+func newHTTPClient(uri *url.URL, opts Options) (_ *httpSource, err error) {
+	hs := &httpSource{url: uri.String()}
+	hs.dbName = uri.Hostname()
+	if opts.HTTPCache != nil {
+		hs.cache = opts.HTTPCache
+	}
+	if opts.HTTPClient != nil {
+		hs.c = opts.HTTPClient
+	} else {
+		hs.c = new(http.Client)
+	}
+	return hs, nil
 }
 
 func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
@@ -226,10 +241,6 @@ func (hs *httpSource) readBody(ctx context.Context, url string) ([]byte, error) 
 	}
 	// might want this to be a LimitedReader
 	return io.ReadAll(resp.Body)
-}
-
-type client struct {
-	sources []Client
 }
 
 type Options struct {

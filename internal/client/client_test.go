@@ -141,7 +141,7 @@ func TestByModule(t *testing.T) {
 			cache: nil, detailPrefix: detailStartLowercase, wantVulns: 4},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient([]string{test.source}, Options{HTTPCache: test.cache})
+			client, err := NewClient(test.source, Options{HTTPCache: test.cache})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -192,11 +192,11 @@ func TestMustUseIndex(t *testing.T) {
 	// List of modules to query, some are repeated to exercise cache hits.
 	modulePaths := []string{"github.com/BeeGo/beego", "github.com/tidwall/gjson", "net/http", "abc.xyz", "github.com/BeeGo/beego"}
 	for _, cache := range []Cache{newTestCache(), nil} {
-		clt, err := NewClient([]string{srv.URL}, Options{HTTPCache: cache})
+		clt, err := NewClient(srv.URL, Options{HTTPCache: cache})
 		if err != nil {
 			t.Fatal(err)
 		}
-		hs := clt.(*client).sources[0].(*httpSource)
+		hs := clt.(*httpSource)
 		for _, modulePath := range modulePaths {
 			indexCalls := hs.indexCalls
 			httpCalls := hs.httpCalls
@@ -238,7 +238,7 @@ func TestSpecialPaths(t *testing.T) {
 		{"http", srv.URL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient([]string{test.source}, Options{})
+			client, err := NewClient(test.source, Options{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -307,7 +307,7 @@ func TestCorrectFetchesNoChangeIndex(t *testing.T) {
 	}
 	cache.WriteEntries(url.Hostname(), "a", []*osv.Entry{e})
 
-	client, err := NewClient([]string{ts.URL}, Options{HTTPCache: cache})
+	client, err := NewClient(ts.URL, Options{HTTPCache: cache})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -349,7 +349,7 @@ func TestClientByID(t *testing.T) {
 		{name: "http", in: "NO-SUCH-VULN", source: localURL, want: nil},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient([]string{test.source}, Options{})
+			client, err := NewClient(test.source, Options{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -393,7 +393,7 @@ func TestClientByAlias(t *testing.T) {
 		{name: "file", source: localURL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient([]string{test.source}, Options{})
+			client, err := NewClient(test.source, Options{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -425,7 +425,7 @@ func TestListIDs(t *testing.T) {
 		{name: "file", source: localURL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient([]string{test.source}, Options{})
+			client, err := NewClient(test.source, Options{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -461,7 +461,7 @@ func TestLastModifiedTime(t *testing.T) {
 		{name: "file", source: localURL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient([]string{test.source}, Options{})
+			client, err := NewClient(test.source, Options{})
 			if err != nil {
 				t.Fatal(err)
 			}

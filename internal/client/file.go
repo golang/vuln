@@ -7,17 +7,35 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/web"
 	"golang.org/x/vuln/osv"
 )
 
 type localSource struct {
 	dir string
+}
+
+func newFileClient(uri *url.URL) (_ *localSource, err error) {
+	dir, err := web.URLToFilePath(uri)
+	if err != nil {
+		return nil, err
+	}
+	fi, err := os.Stat(dir)
+	if err != nil {
+		return nil, err
+	}
+	if !fi.IsDir() {
+		return nil, fmt.Errorf("%s is not a directory", dir)
+	}
+	return &localSource{dir: dir}, nil
 }
 
 func (*localSource) unexported() {}

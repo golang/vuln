@@ -110,13 +110,11 @@ func doGovulncheck(c *config, out output) (err error) {
 	ctx := context.Background()
 	dir := filepath.FromSlash(c.dir)
 
-	dbs := []string{c.db}
 	cache, err := DefaultCache()
 	if err != nil {
 		return err
 	}
-
-	dbClient, err := client.NewClient(dbs, client.Options{
+	dbClient, err := client.NewClient(c.db, client.Options{
 		HTTPCache: cache,
 	})
 	if err != nil {

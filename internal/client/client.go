@@ -31,17 +31,12 @@ package client
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
-	"os"
-	"sort"
 	"strings"
 	"time"
 
 	"golang.org/x/mod/module"
 	"golang.org/x/vuln/internal"
-	"golang.org/x/vuln/internal/derrors"
-	"golang.org/x/vuln/internal/web"
 	"golang.org/x/vuln/osv"
 )
 
@@ -126,132 +121,18 @@ func latestModifiedTime(entries []*osv.Entry) time.Time {
 	return t
 }
 
-func NewClient(sources []string, opts Options) (_ Client, err error) {
-	defer derrors.Wrap(&err, "NewClient(%v, opts)", sources)
-	c := &client{}
-	for _, source := range sources {
-		source = strings.TrimRight(source, "/") // TODO: why?
-		uri, err := url.Parse(source)
-		if err != nil {
-			return nil, err
-		}
-		switch uri.Scheme {
-		case "http", "https":
-			hs := &httpSource{url: uri.String()}
-			hs.dbName = uri.Hostname()
-			if opts.HTTPCache != nil {
-				hs.cache = opts.HTTPCache
-			}
-			if opts.HTTPClient != nil {
-				hs.c = opts.HTTPClient
-			} else {
-				hs.c = new(http.Client)
-			}
-			c.sources = append(c.sources, hs)
-		case "file":
-			dir, err := web.URLToFilePath(uri)
-			if err != nil {
-				return nil, err
-			}
-			fi, err := os.Stat(dir)
-			if err != nil {
-				return nil, err
-			}
-			if !fi.IsDir() {
-				return nil, fmt.Errorf("%s is not a directory", dir)
-			}
-			c.sources = append(c.sources, &localSource{dir: dir})
-		default:
-			return nil, fmt.Errorf("source %q has unsupported scheme", uri)
-		}
+func NewClient(source string, opts Options) (_ Client, err error) {
+	source = strings.TrimRight(source, "/")
+	uri, err := url.Parse(source)
+	if err != nil {
+		return nil, err
 	}
-	return c, nil
-}
-
-func (*client) unexported() {}
-
-func (c *client) GetByModule(ctx context.Context, module string) (_ []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "GetByModule(%q)", module)
-	return c.unionEntries(ctx, func(c Client) ([]*osv.Entry, error) {
-		return c.GetByModule(ctx, module)
-	})
-}
-
-func (c *client) GetByAlias(ctx context.Context, alias string) (entries []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "GetByAlias(%q)", alias)
-	return c.unionEntries(ctx, func(c Client) ([]*osv.Entry, error) {
-		return c.GetByAlias(ctx, alias)
-	})
-}
-
-// unionEntries returns the union of all entries obtained by calling get on the client's sources.
-func (c *client) unionEntries(_ context.Context, get func(Client) ([]*osv.Entry, error)) ([]*osv.Entry, error) {
-	var entries []*osv.Entry
-	// probably should be parallelized
-	seen := map[string]bool{}
-	for _, s := range c.sources {
-		es, err := get(s)
-		if err != nil {
-			return nil, err // be failure tolerant?
-		}
-		for _, e := range es {
-			if !seen[e.ID] {
-				entries = append(entries, e)
-				seen[e.ID] = true
-			}
-		}
+	switch uri.Scheme {
+	case "http", "https":
+		return newHTTPClient(uri, opts)
+	case "file":
+		return newFileClient(uri)
+	default:
+		return nil, fmt.Errorf("source %q has unsupported scheme", uri)
 	}
-	return entries, nil
-}
-
-func (c *client) GetByID(ctx context.Context, id string) (_ *osv.Entry, err error) {
-	defer derrors.Wrap(&err, "GetByID(%q)", id)
-	for _, s := range c.sources {
-		entry, err := s.GetByID(ctx, id)
-		if err != nil {
-			return nil, err // be failure tolerant?
-		}
-		if entry != nil {
-			return entry, nil
-		}
-	}
-	return nil, nil
-}
-
-// ListIDs returns the union of the IDs from all sources,
-// sorted lexically.
-func (c *client) ListIDs(ctx context.Context) (_ []string, err error) {
-	defer derrors.Wrap(&err, "ListIDs()")
-	idSet := map[string]bool{}
-	for _, s := range c.sources {
-		ids, err := s.ListIDs(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, id := range ids {
-			idSet[id] = true
-		}
-	}
-	var ids []string
-	for id := range idSet {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
-	return ids, nil
-}
-
-// LastModifiedTime returns the latest modified time of all the sources.
-func (c *client) LastModifiedTime(ctx context.Context) (_ time.Time, err error) {
-	defer derrors.Wrap(&err, "LastModifiedTime()")
-	var lmt time.Time
-	for _, s := range c.sources {
-		t, err := s.LastModifiedTime(ctx)
-		if err != nil {
-			return time.Time{}, err
-		}
-		if t.After(lmt) {
-			lmt = t
-		}
-	}
-	return lmt, nil
 }
