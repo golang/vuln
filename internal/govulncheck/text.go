@@ -102,7 +102,28 @@ func (o *readableOutput) result(r *Result, verbose, source bool) error {
 	if err != nil {
 		return err
 	}
-	return tmpl.Execute(o.to, tmplRes)
+	if err := tmpl.Execute(o.to, tmplRes); err != nil {
+		return err
+	}
+
+	// Return exit status -3 if some vulnerabilities are actually
+	// called in source mode or just present in binary mode.
+	//
+	// This follows the style from
+	// golang.org/x/tools/go/analysis/singlechecker,
+	// which fails with 3 if there are some findings.
+	//
+	// TODO(https://go.dev/issue/58945): add a test for this
+	if source {
+		for _, v := range r.Vulns {
+			if v.IsCalled() {
+				return ErrVulnerabilitiesFound
+			}
+		}
+	} else if len(r.Vulns) > 0 {
+		return ErrVulnerabilitiesFound
+	}
+	return nil
 }
 
 func (o *readableOutput) progress(msg string) {

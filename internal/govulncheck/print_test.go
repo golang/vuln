@@ -141,7 +141,7 @@ func TestPrintTextNoVulns(t *testing.T) {
 
 	got := new(strings.Builder)
 	output := readableOutput{to: got}
-	if err := output.result(r, false, true); err != nil {
+	if err := output.result(r, false, true); err != nil && err != ErrVulnerabilitiesFound {
 		t.Fatal(err)
 	}
 	want := `No vulnerabilities found.
@@ -199,7 +199,7 @@ func TestPrintTextSource(t *testing.T) {
 
 	got := new(strings.Builder)
 	output := readableOutput{to: got}
-	if err := output.result(r, false, true); err != nil {
+	if err := output.result(r, false, true); err != nil && err != ErrVulnerabilitiesFound {
 		t.Fatal(err)
 	}
 	want := `Your code is affected by 1 vulnerability from 1 module.
@@ -266,7 +266,7 @@ func TestPrintTextBinary(t *testing.T) {
 
 	got := new(strings.Builder)
 	output := readableOutput{to: got}
-	if err := output.result(r, false, false); err != nil {
+	if err := output.result(r, false, false); err != nil && err != ErrVulnerabilitiesFound {
 		t.Fatal(err)
 	}
 	want := `Your code is affected by 2 vulnerabilities from 1 module and the Go standard library.
@@ -328,7 +328,7 @@ func TestPrintTextMultiModuleAndStacks(t *testing.T) {
 
 	got := new(strings.Builder)
 	output := readableOutput{to: got}
-	if err := output.result(r, false, true); err != nil {
+	if err := output.result(r, false, true); err != nil && err != ErrVulnerabilitiesFound {
 		t.Fatal(err)
 	}
 	want := `Your code is affected by 1 vulnerability from 2 modules.

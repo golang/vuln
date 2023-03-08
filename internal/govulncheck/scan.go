@@ -155,31 +155,7 @@ func doGovulncheck(c *config, out output) (err error) {
 	if err != nil {
 		return err
 	}
-	if err := out.result(res, c.verbose, c.sourceAnalysis); err != nil {
-		return err
-	}
-
-	// Return exit status -3 if some vulnerabilities are actually
-	// called in source mode or just present in binary mode.
-	//
-	// This follows the style from
-	// golang.org/x/tools/go/analysis/singlechecker,
-	// which fails with 3 if there are some findings.
-	if c.sourceAnalysis {
-		for _, v := range res.Vulns {
-			if v.IsCalled() {
-				return ErrVulnerabilitiesFound
-			}
-		}
-	} else if len(res.Vulns) > 0 {
-		return ErrVulnerabilitiesFound
-	}
-	return nil
-}
-
-// jsonFail prints an error to stdout in the format {Error: errorString}
-func jsonFail(err error) {
-	fmt.Printf("{\"Error\": %q}\n", err)
+	return out.result(res, c.verbose, c.sourceAnalysis)
 }
 
 func isFile(path string) bool {
