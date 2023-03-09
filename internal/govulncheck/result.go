@@ -6,8 +6,12 @@
 package govulncheck
 
 import (
+	"fmt"
+	"strings"
+
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal/result"
 )
 
 // LoadMode is the level of information needed for each package
@@ -27,4 +31,38 @@ type Config struct {
 	//
 	// By default, GoVersion is the go command version found from the PATH.
 	GoVersion string
+}
+
+// IsCalled reports whether the vulnerability is called, therefore
+// affecting the target source code or binary.
+func IsCalled(v *result.Vuln) bool {
+	for _, m := range v.Modules {
+		for _, p := range m.Packages {
+			if len(p.CallStacks) > 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// FuncName returns the full qualified function name from sf,
+// adjusted to remove pointer annotations.
+func FuncName(sf *result.StackFrame) string {
+	var n string
+	if sf.RecvType == "" {
+		n = fmt.Sprintf("%s.%s", sf.PkgPath, sf.FuncName)
+	} else {
+		n = fmt.Sprintf("%s.%s", sf.RecvType, sf.FuncName)
+	}
+	return strings.TrimPrefix(n, "*")
+}
+
+// Pos returns the position of the call in sf as string.
+// If position is not available, return "".
+func Pos(sf *result.StackFrame) string {
+	if sf.Position.IsValid() {
+		return sf.Position.String()
+	}
+	return ""
 }

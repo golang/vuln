@@ -141,7 +141,7 @@ func summarizeCallStack(cs result.CallStack, topPkgs map[string]bool, vulnPkg st
 		return ""
 	}
 
-	topPos := internal.AbsRelShorter(result.Pos(cs.Frames[iTop]))
+	topPos := internal.AbsRelShorter(Pos(cs.Frames[iTop]))
 	if topPos != "" {
 		topPos += ": "
 	}
@@ -159,7 +159,7 @@ func summarizeCallStack(cs result.CallStack, topPkgs map[string]bool, vulnPkg st
 	if iVulnStart != iTopEnd+1 {
 		// If there is something in between top and vuln segments of
 		// the stack, then also summarize that intermediate segment.
-		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, topFunc, result.FuncName(cs.Frames[iTopEnd+1]), vulnFunc)
+		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, topFunc, FuncName(cs.Frames[iTopEnd+1]), vulnFunc)
 	}
 	if vulnStartFunc != vulnFunc {
 		// The first function of the vuln segment is anonymous.
@@ -185,7 +185,7 @@ func summarizeTop(frames []*result.StackFrame, topPkgs map[string]bool) (iTop, i
 		return -1, -1, "", ""
 	}
 
-	topEndFunc = result.FuncName(frames[iTopEnd])
+	topEndFunc = FuncName(frames[iTopEnd])
 	if !isAnonymousFunction(topEndFunc) {
 		iTop = iTopEnd
 		topFunc = topEndFunc
@@ -203,7 +203,7 @@ func summarizeTop(frames []*result.StackFrame, topPkgs map[string]bool) (iTop, i
 		return
 	}
 
-	topFunc = result.FuncName(frames[iTop])
+	topFunc = FuncName(frames[iTop])
 	return
 }
 
@@ -225,7 +225,7 @@ func summarizeVuln(frames []*result.StackFrame, iTop int, vulnPkg string) (iVuln
 	}
 	iVulnStart += iTop + 1 // adjust for slice in call to highest.
 
-	vulnStartFunc = result.FuncName(frames[iVulnStart])
+	vulnStartFunc = FuncName(frames[iVulnStart])
 	if !isAnonymousFunction(vulnStartFunc) {
 		vulnFunc = vulnStartFunc
 		return
@@ -241,7 +241,7 @@ func summarizeVuln(frames []*result.StackFrame, iTop int, vulnPkg string) (iVuln
 		return
 	}
 
-	vulnFunc = result.FuncName(frames[iVuln+iVulnStart])
+	vulnFunc = FuncName(frames[iVuln+iVulnStart])
 	return
 }
 

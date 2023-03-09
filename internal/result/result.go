@@ -6,9 +6,7 @@
 package result
 
 import (
-	"fmt"
 	"go/token"
-	"strings"
 
 	"golang.org/x/vuln/osv"
 )
@@ -32,19 +30,6 @@ type Vuln struct {
 	// is vulnerable, will appear in this list if and only if p1 is imported by
 	// the target source code or binary.
 	Modules []*Module
-}
-
-// IsCalled reports whether the vulnerability is called, therefore
-// affecting the target source code or binary.
-func IsCalled(v *Vuln) bool {
-	for _, m := range v.Modules {
-		for _, p := range m.Packages {
-			if len(p.CallStacks) > 0 {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 // Module represents a specific vulnerability relevant to a single module.
@@ -131,25 +116,4 @@ type StackFrame struct {
 	// including the file, line, and column location.
 	// A Position is valid if the line number is > 0.
 	Position token.Position
-}
-
-// FuncName returns the full qualified function name from sf,
-// adjusted to remove pointer annotations.
-func FuncName(sf *StackFrame) string {
-	var n string
-	if sf.RecvType == "" {
-		n = fmt.Sprintf("%s.%s", sf.PkgPath, sf.FuncName)
-	} else {
-		n = fmt.Sprintf("%s.%s", sf.RecvType, sf.FuncName)
-	}
-	return strings.TrimPrefix(n, "*")
-}
-
-// Pos returns the position of the call in sf as string.
-// If position is not available, return "".
-func Pos(sf *StackFrame) string {
-	if sf.Position.IsValid() {
-		return sf.Position.String()
-	}
-	return ""
 }
