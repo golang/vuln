@@ -29,7 +29,7 @@ must have been compiled with Go 1.18 or greater.
 
 Both [Source] and [Binary] require information about known
 vulnerabilities in the form of a vulnerability database,
-specifically a [golang.org/x/vuln/client.Client].
+specifically a [golang.org/x/vuln/internal/client.Client].
 The vulnerabilities
 are modeled using the [golang.org/x/vuln/osv] format.
 

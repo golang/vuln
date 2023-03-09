@@ -14,11 +14,11 @@ import (
 	"text/template"
 	"time"
 
-	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/result"
+	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
-	"golang.org/x/vuln/vulncheck"
 )
 
 const (

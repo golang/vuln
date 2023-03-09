@@ -3,10 +3,7 @@
 ## Accessing the database
 
 The Go vulnerability database is rooted at
-`https://vuln.go.dev` and provides data as JSON. We
-recommend using
-[client.Client](https://pkg.go.dev/golang.org/x/vuln/client#Client) to read
-data from the Go vulnerability database.
+`https://vuln.go.dev` and provides data as JSON.
 
 Do not rely on the contents of the x/vulndb repository. The YAML files in that
 repository are maintained using an internal format that is subject to change

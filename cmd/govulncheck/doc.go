@@ -72,7 +72,7 @@ The -test flag causes govulncheck to include test files in the source analysis.
 
 # Limitations
 
-Govulncheck uses [golang.org/x/vuln/vulncheck], which has these limitations:
+Govulncheck has these limitations:
 
   - Govulncheck analyzes function pointer and interface calls conservatively,
     which may result in false positives or inaccurate call stacks in some cases.

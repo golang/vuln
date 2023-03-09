@@ -12,8 +12,8 @@ import (
 	"sort"
 
 	"golang.org/x/vuln/internal/result"
+	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
-	"golang.org/x/vuln/vulncheck"
 )
 
 // Source reports vulnerabilities that affect the analyzed packages.

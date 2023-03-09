@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"golang.org/x/tools/go/packages"
-	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/osv"
 )
 

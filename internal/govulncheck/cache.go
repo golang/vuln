@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/vuln/client"
 	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/osv"
 )
 

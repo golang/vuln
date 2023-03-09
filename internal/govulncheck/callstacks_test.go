@@ -16,8 +16,8 @@ import (
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/result"
 	"golang.org/x/vuln/internal/test"
+	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
-	"golang.org/x/vuln/vulncheck"
 )
 
 func TestUniqueCallStack(t *testing.T) {

@@ -11,8 +11,8 @@ import (
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/result"
 	isem "golang.org/x/vuln/internal/semver"
+	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
-	"golang.org/x/vuln/vulncheck"
 )
 
 // latestFixed returns the latest fixed version in the list of affected ranges,

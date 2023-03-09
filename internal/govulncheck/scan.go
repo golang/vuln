@@ -16,9 +16,9 @@ import (
 
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/packages"
-	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/result"
-	"golang.org/x/vuln/vulncheck"
+	"golang.org/x/vuln/internal/vulncheck"
 )
 
 func Main(ctx context.Context, args []string, w io.Writer) (err error) {

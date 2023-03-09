@@ -7,7 +7,7 @@ package test
 import (
 	"context"
 
-	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/osv"
 )
 

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/vuln/vulncheck"
+	"golang.org/x/vuln/internal/vulncheck"
 )
 
 // compact replaces consecutive runs of equal elements with a single copy.

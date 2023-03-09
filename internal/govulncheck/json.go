@@ -11,7 +11,7 @@ import (
 
 	"io"
 
-	"golang.org/x/vuln/client"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/result"
 )
 

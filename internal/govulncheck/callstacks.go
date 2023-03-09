@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/result"
-	"golang.org/x/vuln/vulncheck"
+	"golang.org/x/vuln/internal/vulncheck"
 )
 
 // updateInitPositions populates non-existing positions of init functions
