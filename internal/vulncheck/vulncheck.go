@@ -347,7 +347,7 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 					// TODO: issue warning for "" cases above?
 					continue
 				}
-				if !a.Ranges.AffectsSemver(modVersion) {
+				if !affectsSemver(a.Ranges, modVersion) {
 					continue
 				}
 				var filteredImports []osv.EcosystemSpecificImport
