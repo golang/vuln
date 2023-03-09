@@ -36,7 +36,7 @@ type Vuln struct {
 
 // IsCalled reports whether the vulnerability is called, therefore
 // affecting the target source code or binary.
-func (v *Vuln) IsCalled() bool {
+func IsCalled(v *Vuln) bool {
 	for _, m := range v.Modules {
 		for _, p := range m.Packages {
 			if len(p.CallStacks) > 0 {
@@ -133,9 +133,9 @@ type StackFrame struct {
 	Position token.Position
 }
 
-// Name returns the full qualified function name from sf,
+// FuncName returns the full qualified function name from sf,
 // adjusted to remove pointer annotations.
-func (sf *StackFrame) Name() string {
+func FuncName(sf *StackFrame) string {
 	var n string
 	if sf.RecvType == "" {
 		n = fmt.Sprintf("%s.%s", sf.PkgPath, sf.FuncName)
@@ -147,7 +147,7 @@ func (sf *StackFrame) Name() string {
 
 // Pos returns the position of the call in sf as string.
 // If position is not available, return "".
-func (sf *StackFrame) Pos() string {
+func Pos(sf *StackFrame) string {
 	if sf.Position.IsValid() {
 		return sf.Position.String()
 	}

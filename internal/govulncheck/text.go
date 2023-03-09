@@ -117,7 +117,7 @@ func (o *readableOutput) result(r *result.Result, verbose, source bool) error {
 	// TODO(https://go.dev/issue/58945): add a test for this
 	if source {
 		for _, v := range r.Vulns {
-			if v.IsCalled() {
+			if result.IsCalled(v) {
 				return ErrVulnerabilitiesFound
 			}
 		}
@@ -140,7 +140,7 @@ func createTmplResult(r *result.Result, verbose, source bool) tmplResult {
 	var unaffected []tmplVulnInfo
 	var affected []tmplVulnInfo
 	for _, v := range r.Vulns {
-		if !source || v.IsCalled() {
+		if !source || result.IsCalled(v) {
 			affected = append(affected, createTmplVulnInfo(v, verbose, source))
 		} else {
 			// save arbitrary module info for informational message
@@ -276,8 +276,8 @@ func verboseCallStacks(css []result.CallStack) string {
 	for _, cs := range css {
 		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, cs.Symbol))
 		for _, e := range cs.Frames {
-			b.WriteString(fmt.Sprintf("  %s\n", e.Name()))
-			if pos := internal.AbsRelShorter(e.Pos()); pos != "" {
+			b.WriteString(fmt.Sprintf("  %s\n", result.FuncName(e)))
+			if pos := internal.AbsRelShorter(result.Pos(e)); pos != "" {
 				b.WriteString(fmt.Sprintf("      %s\n", pos))
 			}
 		}

@@ -36,10 +36,10 @@ func TestStackFrame(t *testing.T) {
 			"",
 		},
 	} {
-		if got := test.sf.Name(); got != test.wantFunc {
+		if got := result.FuncName(test.sf); got != test.wantFunc {
 			t.Errorf("want %v func name; got %v", test.wantFunc, got)
 		}
-		if got := test.sf.Pos(); got != test.wantPos {
+		if got := result.Pos(test.sf); got != test.wantPos {
 			t.Errorf("want %v call position; got %v", test.wantPos, got)
 		}
 	}
@@ -79,7 +79,7 @@ func TestVuln(t *testing.T) {
 		{"not called - single module", vuln([2]string{"golang.org/p1", ""}), false},
 		{"not called - multi modules", vuln([2]string{"golang.org/p1", ""}, [2]string{"golang.org/p2", ""}), false},
 	} {
-		if test.v.IsCalled() != test.want {
+		if result.IsCalled(test.v) != test.want {
 			t.Errorf("want called=%t for %v; got the opposite", test.want, test.desc)
 		}
 	}
