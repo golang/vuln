@@ -5,30 +5,48 @@
 package govulncheck
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
 	"io"
 
-	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/result"
 )
 
-type jsonOutput struct {
-	to io.Writer
+type jsonHandler struct {
+	w     io.Writer
+	vulns []*result.Vuln
 }
 
-func (o *jsonOutput) intro(ctx context.Context, dbClient client.Client, dbs []string, source bool) {}
+// NewJSONHandler returns a handler that writes govulncheck output as json.
+func NewJSONHandler(to io.Writer) Handler {
+	return &jsonHandler{w: to}
+}
 
-func (o *jsonOutput) result(r *result.Result, verbose, source bool) error {
-	b, err := json.MarshalIndent(r, "", "\t")
+// Flush writes all vulnerabilities in JSON format.
+func (o *jsonHandler) Flush() error {
+	b, err := json.MarshalIndent(o.vulns, "", "\t")
+	o.vulns = nil
 	if err != nil {
 		return err
 	}
-	o.to.Write(b)
-	fmt.Fprintln(o.to)
+	_, err = o.w.Write(b)
+	fmt.Fprintln(o.w)
+	return err
+}
+
+// Vulnerability gathers vulnerabilities to be written.
+func (o *jsonHandler) Vulnerability(vuln *result.Vuln) error {
+	o.vulns = append(o.vulns, vuln)
 	return nil
 }
 
-func (o *jsonOutput) progress(msg string) {}
+// Preamble does not do anything in JSON mode.
+func (o *jsonHandler) Preamble(preamble *result.Preamble) error {
+	return nil
+}
+
+// Progress does not do anything in JSON mode.
+func (o *jsonHandler) Progress(msg string) error {
+	return nil
+}

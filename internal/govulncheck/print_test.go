@@ -139,12 +139,6 @@ func TestPrintTextNoVulns(t *testing.T) {
 			},
 		},
 	}}
-
-	got := new(strings.Builder)
-	output := readableOutput{to: got}
-	if err := output.result(r, false, true); err != nil && err != ErrVulnerabilitiesFound {
-		t.Fatal(err)
-	}
 	want := `No vulnerabilities found.
 
 === Informational ===
@@ -161,9 +155,7 @@ Vulnerability #1: GO-0000-0001
   Fixed in: golang.org/vmod@v0.1.3
   Platforms: amd
 `
-	if diff := cmp.Diff(want, got.String()); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
-	}
+	testPrint(t, false, true, r, want)
 }
 
 func TestPrintTextSource(t *testing.T) {
@@ -198,11 +190,6 @@ func TestPrintTextSource(t *testing.T) {
 			},
 		}}}
 
-	got := new(strings.Builder)
-	output := readableOutput{to: got}
-	if err := output.result(r, false, true); err != nil && err != ErrVulnerabilitiesFound {
-		t.Fatal(err)
-	}
 	want := `Your code is affected by 1 vulnerability from 1 module.
 
 Vulnerability #1: GO-0000-0001
@@ -231,9 +218,7 @@ Vulnerability #1: GO-0000-0002
   Found in: net/http@v0.0.1
   Fixed in: N/A
 `
-	if diff := cmp.Diff(want, got.String()); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
-	}
+	testPrint(t, false, true, r, want)
 }
 
 func TestPrintTextBinary(t *testing.T) {
@@ -265,11 +250,6 @@ func TestPrintTextBinary(t *testing.T) {
 			},
 		}}}
 
-	got := new(strings.Builder)
-	output := readableOutput{to: got}
-	if err := output.result(r, false, false); err != nil && err != ErrVulnerabilitiesFound {
-		t.Fatal(err)
-	}
 	want := `Your code is affected by 2 vulnerabilities from 1 module and the Go standard library.
 
 Vulnerability #1: GO-0000-0001
@@ -291,9 +271,7 @@ Vulnerability #2: GO-0000-0002
     Found in: net/http@v0.0.1
     Fixed in: N/A
 `
-	if diff := cmp.Diff(want, got.String()); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
-	}
+	testPrint(t, false, false, r, want)
 }
 
 func TestPrintTextMultiModuleAndStacks(t *testing.T) {
@@ -327,11 +305,6 @@ func TestPrintTextMultiModuleAndStacks(t *testing.T) {
 			},
 		}}}
 
-	got := new(strings.Builder)
-	output := readableOutput{to: got}
-	if err := output.result(r, false, true); err != nil && err != ErrVulnerabilitiesFound {
-		t.Fatal(err)
-	}
 	want := `Your code is affected by 1 vulnerability from 2 modules.
 
 Vulnerability #1: GO-0000-0001
@@ -357,6 +330,22 @@ Vulnerability #1: GO-0000-0001
 
       Bar calls vmod1.VulnFoo
 `
+	testPrint(t, false, true, r, want)
+}
+
+func testPrint(t *testing.T, verbose bool, source bool, r *result.Result, want string) {
+	t.Helper()
+
+	got := new(strings.Builder)
+	output := textHandler{w: got, verbose: verbose, source: source}
+	for _, v := range r.Vulns {
+		if err := output.Vulnerability(v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := output.Flush(); err != nil {
+		t.Fatal(err)
+	}
 	if diff := cmp.Diff(want, got.String()); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}

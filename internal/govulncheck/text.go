@@ -5,17 +5,13 @@
 package govulncheck
 
 import (
-	"context"
 	"fmt"
 	"io"
-	"runtime/debug"
 	"sort"
 	"strings"
 	"text/template"
-	"time"
 
 	"golang.org/x/vuln/internal"
-	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/result"
 	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
@@ -30,59 +26,25 @@ const (
 	binaryProgressMessage = `Scanning your binary for known vulnerabilities...`
 )
 
-// output communicates govulncheck output to the user.
-type output interface {
-	// intro communicates introductory message to the user.
-	intro(ctx context.Context, dbClient client.Client, dbs []string, source bool)
-
-	// result communicates the result of running govulncheck to the user.
-	result(r *result.Result, verbose, source bool) error
-
-	// progress communicates a progress update to the user.
-	progress(msg string)
+// textHandler provides a human-readable text output to the user.
+type textHandler struct {
+	w       io.Writer
+	vulns   []*result.Vuln
+	verbose bool
+	source  bool
 }
 
-// readableOutput provides a human-readable text output to the user.
-type readableOutput struct {
-	to io.Writer
+// NewTextHandler returns a handler that writes govulncheck output as text.
+func NewTextHandler(w io.Writer, verbose, source bool) Handler {
+	return &textHandler{
+		w:       w,
+		verbose: verbose,
+		source:  source,
+	}
 }
 
-func (o *readableOutput) intro(ctx context.Context, dbClient client.Client, dbs []string, source bool) {
-	type intro struct {
-		GoPhrase             string
-		GovulncheckVersion   string
-		DBsPhrase            string
-		DBLastModifiedPhrase string
-	}
-
-	i := intro{DBsPhrase: strings.Join(dbs, ", ")}
-	// The go version at PATH is relevant for source analysis, but
-	// not for binary analysis.We omit mentioning the Go version
-	// used to build the binary under analysis for now.
-	if source {
-		if v, err := internal.GoEnv("GOVERSION"); err == nil {
-			i.GoPhrase = v + " and "
-		}
-	}
-
-	if bi, ok := debug.ReadBuildInfo(); ok {
-		i.GovulncheckVersion = "@" + govulncheckVersion(bi)
-	}
-
-	if lmod, err := dbClient.LastModifiedTime(ctx); err == nil {
-		i.DBLastModifiedPhrase = " (last modified " + lmod.Format(time.RFC822) + ")"
-	}
-
-	tmpl, err := template.New("govulncheck-intro").Parse(introTemplate)
-	if err != nil {
-		// We do not want to break govulncheck
-		// run by failing to produce intro message.
-		return
-	}
-	tmpl.Execute(o.to, i)
-}
-
-func (o *readableOutput) result(r *result.Result, verbose, source bool) error {
+// Flush writes text output formatted according to govulncheck.tmpl.
+func (o *textHandler) Flush() error {
 	lineWidth := 80 - labelWidth
 	funcMap := template.FuncMap{
 		// used in template for counting vulnerabilities
@@ -98,48 +60,47 @@ func (o *readableOutput) result(r *result.Result, verbose, source bool) error {
 		},
 	}
 
-	tmplRes := createTmplResult(r, verbose, source)
+	tmplRes := createTmplResult(o.vulns, o.verbose, o.source)
+	o.vulns = nil
 	tmpl, err := template.New("govulncheck").Funcs(funcMap).Parse(outputTemplate)
 	if err != nil {
 		return err
 	}
-	if err := tmpl.Execute(o.to, tmplRes); err != nil {
-		return err
-	}
+	return tmpl.Execute(o.w, tmplRes)
+}
 
-	// Return exit status -3 if some vulnerabilities are actually
-	// called in source mode or just present in binary mode.
-	//
-	// This follows the style from
-	// golang.org/x/tools/go/analysis/singlechecker,
-	// which fails with 3 if there are some findings.
-	//
-	// TODO(https://go.dev/issue/58945): add a test for this
-	if source {
-		for _, v := range r.Vulns {
-			if IsCalled(v) {
-				return ErrVulnerabilitiesFound
-			}
-		}
-	} else if len(r.Vulns) > 0 {
-		return ErrVulnerabilitiesFound
-	}
+// Vulnerability gathers vulnerabilities to be written.
+func (o *textHandler) Vulnerability(vuln *result.Vuln) error {
+	o.vulns = append(o.vulns, vuln)
 	return nil
 }
 
-func (o *readableOutput) progress(msg string) {
-	fmt.Fprintln(o.to)
-	fmt.Fprintln(o.to, msg)
+// Preamble writes text output formatted according to govulncheck-intro.tmpl.
+func (o *textHandler) Preamble(preamble *result.Preamble) error {
+	tmpl, err := template.New("govulncheck-intro").Parse(introTemplate)
+	if err != nil {
+		// We do not want to break govulncheck
+		// run by failing to produce intro message.
+		return err
+	}
+	return tmpl.Execute(o.w, preamble)
+}
+
+// Progress writes progress updates during govulncheck execution..
+func (o *textHandler) Progress(msg string) error {
+	fmt.Fprintln(o.w)
+	fmt.Fprintln(o.w, msg)
+	return nil
 }
 
 // createTmplResult transforms Result r into a
 // template structure for printing.
-func createTmplResult(r *result.Result, verbose, source bool) tmplResult {
+func createTmplResult(vulns []*result.Vuln, verbose, source bool) tmplResult {
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
 	var unaffected []tmplVulnInfo
 	var affected []tmplVulnInfo
-	for _, v := range r.Vulns {
+	for _, v := range vulns {
 		if !source || IsCalled(v) {
 			affected = append(affected, createTmplVulnInfo(v, verbose, source))
 		} else {

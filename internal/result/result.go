@@ -11,6 +11,14 @@ import (
 	"golang.org/x/vuln/osv"
 )
 
+// Preamble contains metadata information about how govulncheck was executed.
+type Preamble struct {
+	GoPhrase             string `json:"go_version,omitempty"`
+	GovulncheckVersion   string `json:"tool_version,omitempty"`
+	DBsPhrase            string `json:"db,omitempty"`
+	DBLastModifiedPhrase string `json:"db_last_modified,omitempty"`
+}
+
 // Result is the result of executing Source or Binary.
 type Result struct {
 	// Vulns contains all vulnerabilities that are called or imported by

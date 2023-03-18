@@ -12,10 +12,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
+	"time"
 
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/packages"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/result"
 	"golang.org/x/vuln/internal/vulncheck"
@@ -34,14 +37,19 @@ func Main(ctx context.Context, args []string, w io.Writer) (err error) {
 			return fmt.Errorf("govulncheck: the -tags flag is invalid for binaries")
 		}
 	}
-	var out output
+
+	var output Handler
 	switch {
 	case cfg.json:
-		out = &jsonOutput{to: w}
+		output = NewJSONHandler(w)
 	default:
-		out = &readableOutput{to: w}
+		output = NewTextHandler(w, cfg.verbose, cfg.sourceAnalysis)
 	}
-	return doGovulncheck(cfg, out)
+	err = doGovulncheck(cfg, output)
+	if cfg.json && err == ErrVulnerabilitiesFound {
+		return nil
+	}
+	return err
 }
 
 type config struct {
@@ -106,7 +114,7 @@ func parseFlags(args []string) (*config, error) {
 // doGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func doGovulncheck(c *config, out output) (err error) {
+func doGovulncheck(c *config, output Handler) error {
 	ctx := context.Background()
 	dir := filepath.FromSlash(c.dir)
 
@@ -120,41 +128,70 @@ func doGovulncheck(c *config, out output) (err error) {
 	if err != nil {
 		return err
 	}
-	out.intro(ctx, dbClient, []string{c.db}, c.sourceAnalysis)
+
+	// Write the introductory message to the user.
+	if err := output.Preamble(newPreamble(ctx, dbClient, c.db, c.sourceAnalysis)); err != nil {
+		return err
+	}
 
 	// config GoVersion is "", which means use current
 	// Go version at path.
 	cfg := &Config{Client: dbClient}
 	var res *result.Result
 	if c.sourceAnalysis {
-		var pkgs []*vulncheck.Package
-		pkgs, err = loadPackages(c, dir)
-		if err != nil {
-			// Try to provide a meaningful and actionable error message.
-			if !fileExists(filepath.Join(dir, "go.mod")) {
-				return fmt.Errorf("govulncheck: %v", errNoGoMod)
-			}
-			if isGoVersionMismatchError(err) {
-				return fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
-			}
-			return err
-		}
-		out.progress(sourceProgressMessage(pkgs))
-		res, err = Source(ctx, cfg, pkgs)
+		res, err = sourceAnalysis(ctx, output, c, cfg, dir)
 	} else {
-		var f *os.File
-		f, err = os.Open(c.patterns[0])
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		out.progress(binaryProgressMessage)
-		res, err = Binary(ctx, cfg, f)
+		res, err = binaryAnalysis(ctx, output, c, cfg)
 	}
 	if err != nil {
 		return err
 	}
-	return out.result(res, c.verbose, c.sourceAnalysis)
+
+	// For each vulnerability, queue it to be written to the output.
+	for _, v := range res.Vulns {
+		if err := output.Vulnerability(v); err != nil {
+			return err
+		}
+	}
+	if err := output.Flush(); err != nil {
+		return err
+	}
+	if len(res.Vulns) > 0 {
+		return ErrVulnerabilitiesFound
+	}
+	return nil
+}
+
+func sourceAnalysis(ctx context.Context, output Handler, c *config, cfg *Config, dir string) (*result.Result, error) {
+	var pkgs []*vulncheck.Package
+	pkgs, err := loadPackages(c, dir)
+	if err != nil {
+		// Try to provide a meaningful and actionable error message.
+		if !fileExists(filepath.Join(dir, "go.mod")) {
+			return nil, fmt.Errorf("govulncheck: %v", errNoGoMod)
+		}
+		if isGoVersionMismatchError(err) {
+			return nil, fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
+		}
+		return nil, err
+	}
+	if err := output.Progress(sourceProgressMessage(pkgs)); err != nil {
+		return nil, err
+	}
+	return Source(ctx, cfg, pkgs)
+}
+
+func binaryAnalysis(ctx context.Context, output Handler, c *config, cfg *Config) (*result.Result, error) {
+	var f *os.File
+	f, err := os.Open(c.patterns[0])
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	if err := output.Progress(binaryProgressMessage); err != nil {
+		return nil, err
+	}
+	return Binary(ctx, cfg, f)
 }
 
 func isFile(path string) bool {
@@ -194,4 +231,24 @@ func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
 		err = &packageError{perrs}
 	}
 	return vpkgs, err
+}
+
+func newPreamble(ctx context.Context, dbClient client.Client, db string, source bool) *result.Preamble {
+	preamble := result.Preamble{
+		DBsPhrase: db,
+	}
+	// The Go version is only relevant for source analysis, so omit it for
+	// binary mode.
+	if source {
+		if v, err := internal.GoEnv("GOVERSION"); err == nil {
+			preamble.GoPhrase = fmt.Sprintf("%s and ", v)
+		}
+	}
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		preamble.GovulncheckVersion = fmt.Sprintf("@%s", govulncheckVersion(bi))
+	}
+	if lmod, err := dbClient.LastModifiedTime(ctx); err == nil {
+		preamble.DBLastModifiedPhrase = fmt.Sprintf(" (last modified %s )", lmod.Format(time.RFC822))
+	}
+	return &preamble
 }
