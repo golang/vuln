@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/packages"
-	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/result"
 )
 
@@ -19,19 +18,6 @@ import (
 var LoadMode = packages.NeedName | packages.NeedImports | packages.NeedTypes |
 	packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps |
 	packages.NeedModule
-
-// Config is used for configuring the output of govulncheck.
-type Config struct {
-	// Client is the client used to make requests to a vulnerability
-	// database(s). If nil, a default client is constructed that makes requests
-	// to vuln.go.dev.
-	Client client.Client
-
-	// GoVersion specifies the Go version used when analyzing source code.
-	//
-	// By default, GoVersion is the go command version found from the PATH.
-	GoVersion string
-}
 
 // IsCalled reports whether the vulnerability is called, therefore
 // affecting the target source code or binary.

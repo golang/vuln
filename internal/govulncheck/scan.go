@@ -114,15 +114,15 @@ func parseFlags(args []string) (*config, error) {
 // doGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func doGovulncheck(c *config, output Handler) error {
+func doGovulncheck(cfg *config, output Handler) error {
 	ctx := context.Background()
-	dir := filepath.FromSlash(c.dir)
+	dir := filepath.FromSlash(cfg.dir)
 
 	cache, err := DefaultCache()
 	if err != nil {
 		return err
 	}
-	dbClient, err := client.NewClient(c.db, client.Options{
+	dbClient, err := client.NewClient(cfg.db, client.Options{
 		HTTPCache: cache,
 	})
 	if err != nil {
@@ -130,18 +130,15 @@ func doGovulncheck(c *config, output Handler) error {
 	}
 
 	// Write the introductory message to the user.
-	if err := output.Preamble(newPreamble(ctx, dbClient, c.db, c.sourceAnalysis)); err != nil {
+	if err := output.Preamble(newPreamble(ctx, dbClient, cfg.db, cfg.sourceAnalysis)); err != nil {
 		return err
 	}
 
-	// config GoVersion is "", which means use current
-	// Go version at path.
-	cfg := &Config{Client: dbClient}
 	var res *result.Result
-	if c.sourceAnalysis {
-		res, err = sourceAnalysis(ctx, output, c, cfg, dir)
+	if cfg.sourceAnalysis {
+		res, err = runSource(ctx, output, cfg, dbClient, dir)
 	} else {
-		res, err = binaryAnalysis(ctx, output, c, cfg)
+		res, err = runBinary(ctx, output, cfg, dbClient)
 	}
 	if err != nil {
 		return err
@@ -160,38 +157,6 @@ func doGovulncheck(c *config, output Handler) error {
 		return ErrVulnerabilitiesFound
 	}
 	return nil
-}
-
-func sourceAnalysis(ctx context.Context, output Handler, c *config, cfg *Config, dir string) (*result.Result, error) {
-	var pkgs []*vulncheck.Package
-	pkgs, err := loadPackages(c, dir)
-	if err != nil {
-		// Try to provide a meaningful and actionable error message.
-		if !fileExists(filepath.Join(dir, "go.mod")) {
-			return nil, fmt.Errorf("govulncheck: %v", errNoGoMod)
-		}
-		if isGoVersionMismatchError(err) {
-			return nil, fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
-		}
-		return nil, err
-	}
-	if err := output.Progress(sourceProgressMessage(pkgs)); err != nil {
-		return nil, err
-	}
-	return Source(ctx, cfg, pkgs)
-}
-
-func binaryAnalysis(ctx context.Context, output Handler, c *config, cfg *Config) (*result.Result, error) {
-	var f *os.File
-	f, err := os.Open(c.patterns[0])
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	if err := output.Progress(binaryProgressMessage); err != nil {
-		return nil, err
-	}
-	return Binary(ctx, cfg, f)
 }
 
 func isFile(path string) bool {

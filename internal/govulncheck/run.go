@@ -8,26 +8,39 @@ import (
 	"context"
 	"fmt"
 	"go/token"
-	"io"
+	"os"
+	"path/filepath"
 	"sort"
 
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/result"
 	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
 )
 
-// Source reports vulnerabilities that affect the analyzed packages.
+// runSource reports vulnerabilities that affect the analyzed packages.
 //
 // Vulnerabilities can be called (affecting the package, because a vulnerable
 // symbol is actually exercised) or just imported by the package
 // (likely having a non-affecting outcome).
-//
-// This function is used for source code analysis by cmd/govulncheck and
-// exp/govulncheck.
-func Source(ctx context.Context, cfg *Config, pkgs []*vulncheck.Package) (*result.Result, error) {
+func runSource(ctx context.Context, output Handler, cfg *config, dbClient client.Client, dir string) (*result.Result, error) {
+	var pkgs []*vulncheck.Package
+	pkgs, err := loadPackages(cfg, dir)
+	if err != nil {
+		// Try to provide a meaningful and actionable error message.
+		if !fileExists(filepath.Join(dir, "go.mod")) {
+			return nil, fmt.Errorf("govulncheck: %v", errNoGoMod)
+		}
+		if isGoVersionMismatchError(err) {
+			return nil, fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
+		}
+		return nil, err
+	}
+	if err := output.Progress(sourceProgressMessage(pkgs)); err != nil {
+		return nil, err
+	}
 	vcfg := &vulncheck.Config{
-		Client:          cfg.Client,
-		SourceGoVersion: cfg.GoVersion,
+		Client: dbClient,
 	}
 	vr, err := vulncheck.Source(ctx, pkgs, vcfg)
 	if err != nil {
@@ -36,12 +49,19 @@ func Source(ctx context.Context, cfg *Config, pkgs []*vulncheck.Package) (*resul
 	return createSourceResult(vr, pkgs), nil
 }
 
-// Binary detects presence of vulnerable symbols in exe.
-//
-// This function is used for binary analysis by cmd/govulncheck.
-func Binary(ctx context.Context, cfg *Config, exe io.ReaderAt) (*result.Result, error) {
+// runBinary detects presence of vulnerable symbols in an executable.
+func runBinary(ctx context.Context, output Handler, cfg *config, dbClient client.Client) (*result.Result, error) {
+	var exe *os.File
+	exe, err := os.Open(cfg.patterns[0])
+	if err != nil {
+		return nil, err
+	}
+	defer exe.Close()
+	if err := output.Progress(binaryProgressMessage); err != nil {
+		return nil, err
+	}
 	vcfg := &vulncheck.Config{
-		Client: cfg.Client,
+		Client: dbClient,
 	}
 	vr, err := binary(ctx, exe, vcfg)
 	if err != nil {
