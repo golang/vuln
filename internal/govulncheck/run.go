@@ -261,9 +261,9 @@ func stackFramesfromEntries(vcs vulncheck.CallStack) []*result.StackFrame {
 	var frames []*result.StackFrame
 	for _, e := range vcs {
 		fr := &result.StackFrame{
-			FuncName: e.Function.Name,
-			PkgPath:  e.Function.PkgPath,
-			RecvType: e.Function.RecvType,
+			Function: e.Function.Name,
+			Package:  e.Function.PkgPath,
+			Receiver: e.Function.RecvType,
 		}
 		if e.Call == nil || e.Call.Pos == nil {
 			fr.Position = token.Position{}

@@ -10,8 +10,8 @@ package govulncheck
 // modified timestamp.
 const introTemplate = `govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
-Using {{.GoPhrase}}govulncheck{{.GovulncheckVersion}} with
-vulnerability data from {{.DBsPhrase}}{{.DBLastModifiedPhrase}}.
+Using {{.GoVersion}}govulncheck{{.GovulncheckVersion}} with
+vulnerability data from {{.DB}}{{.DBLastModifiedPhrase}}.
 `
 
 // outputTemplate is a text template used to print out

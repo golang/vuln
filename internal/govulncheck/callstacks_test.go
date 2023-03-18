@@ -121,8 +121,8 @@ func stringToCallStack(s string) result.CallStack {
 	for _, e := range strings.Fields(s) {
 		parts := strings.Split(e, ".")
 		cs.Frames = append(cs.Frames, &result.StackFrame{
-			PkgPath:  parts[0],
-			FuncName: parts[1],
+			Package:  parts[0],
+			Function: parts[1],
 		})
 	}
 	return cs

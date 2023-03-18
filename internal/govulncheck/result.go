@@ -36,10 +36,10 @@ func IsCalled(v *result.Vuln) bool {
 // adjusted to remove pointer annotations.
 func FuncName(sf *result.StackFrame) string {
 	var n string
-	if sf.RecvType == "" {
-		n = fmt.Sprintf("%s.%s", sf.PkgPath, sf.FuncName)
+	if sf.Receiver == "" {
+		n = fmt.Sprintf("%s.%s", sf.Package, sf.Function)
 	} else {
-		n = fmt.Sprintf("%s.%s", sf.RecvType, sf.FuncName)
+		n = fmt.Sprintf("%s.%s", sf.Receiver, sf.Function)
 	}
 	return strings.TrimPrefix(n, "*")
 }

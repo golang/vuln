@@ -19,8 +19,8 @@ func TestStackFrame(t *testing.T) {
 	}{
 		{
 			&result.StackFrame{
-				PkgPath:  "golang.org/x/vuln/internal/vulncheck",
-				FuncName: "Foo",
+				Package:  "golang.org/x/vuln/internal/vulncheck",
+				Function: "Foo",
 				Position: token.Position{Filename: "some/path/file.go", Line: 12},
 			},
 			"golang.org/x/vuln/internal/vulncheck.Foo",
@@ -28,9 +28,9 @@ func TestStackFrame(t *testing.T) {
 		},
 		{
 			&result.StackFrame{
-				PkgPath:  "golang.org/x/vuln/internal/vulncheck",
-				RecvType: "golang.org/x/vuln/internal/vulncheck.Bar",
-				FuncName: "Foo",
+				Package:  "golang.org/x/vuln/internal/vulncheck",
+				Receiver: "golang.org/x/vuln/internal/vulncheck.Bar",
+				Function: "Foo",
 			},
 			"golang.org/x/vuln/internal/vulncheck.Bar.Foo",
 			"",

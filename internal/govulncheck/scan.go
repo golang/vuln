@@ -200,13 +200,13 @@ func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
 
 func newPreamble(ctx context.Context, dbClient client.Client, db string, source bool) *result.Preamble {
 	preamble := result.Preamble{
-		DBsPhrase: db,
+		DB: db,
 	}
 	// The Go version is only relevant for source analysis, so omit it for
 	// binary mode.
 	if source {
 		if v, err := internal.GoEnv("GOVERSION"); err == nil {
-			preamble.GoPhrase = fmt.Sprintf("%s and ", v)
+			preamble.GoVersion = fmt.Sprintf("%s and ", v)
 		}
 	}
 	if bi, ok := debug.ReadBuildInfo(); ok {

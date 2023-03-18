@@ -25,7 +25,7 @@ func NewJSONHandler(to io.Writer) Handler {
 
 // Flush writes all vulnerabilities in JSON format.
 func (o *jsonHandler) Flush() error {
-	b, err := json.MarshalIndent(o.vulns, "", "\t")
+	b, err := json.MarshalIndent(o.vulns, "", " ")
 	o.vulns = nil
 	if err != nil {
 		return err

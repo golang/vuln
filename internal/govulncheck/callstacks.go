@@ -179,7 +179,7 @@ func summarizeCallStack(cs result.CallStack, topPkgs map[string]bool, vulnPkg st
 //	[p.V p.W p.Z$1 q.Q ...]  -> (1, 2, p.W, p.Z)
 func summarizeTop(frames []*result.StackFrame, topPkgs map[string]bool) (iTop, iTopEnd int, topFunc, topEndFunc string) {
 	iTopEnd = lowest(frames, func(e *result.StackFrame) bool {
-		return topPkgs[e.PkgPath]
+		return topPkgs[e.Package]
 	})
 	if iTopEnd < 0 {
 		return -1, -1, "", ""
@@ -195,7 +195,7 @@ func summarizeTop(frames []*result.StackFrame, topPkgs map[string]bool) (iTop, i
 	topEndFunc = creatorName(topEndFunc)
 
 	iTop = lowest(frames, func(e *result.StackFrame) bool {
-		return topPkgs[e.PkgPath] && !isAnonymousFunction(e.FuncName)
+		return topPkgs[e.Package] && !isAnonymousFunction(e.Function)
 	})
 	if iTop < 0 {
 		iTop = iTopEnd
@@ -218,7 +218,7 @@ func summarizeTop(frames []*result.StackFrame, topPkgs map[string]bool) (iTop, i
 //	[x x q.Q v.V$1 v.W] -> (3, v.V, v.W)
 func summarizeVuln(frames []*result.StackFrame, iTop int, vulnPkg string) (iVulnStart int, vulnStartFunc, vulnFunc string) {
 	iVulnStart = highest(frames[iTop+1:], func(e *result.StackFrame) bool {
-		return e.PkgPath == vulnPkg
+		return e.Package == vulnPkg
 	})
 	if iVulnStart < 0 {
 		return -1, "", ""
@@ -234,7 +234,7 @@ func summarizeVuln(frames []*result.StackFrame, iTop int, vulnPkg string) (iVuln
 	vulnStartFunc = creatorName(vulnStartFunc)
 
 	iVuln := highest(frames[iVulnStart:], func(e *result.StackFrame) bool {
-		return e.PkgPath == vulnPkg && !isAnonymousFunction(e.FuncName)
+		return e.Package == vulnPkg && !isAnonymousFunction(e.Function)
 	})
 	if iVuln < 0 {
 		vulnFunc = vulnStartFunc // for sanity
