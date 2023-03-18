@@ -1,0 +1,24 @@
+Your code is affected by 1 vulnerability from 2 modules.
+
+Vulnerability #1: GO-0000-0001
+  Third-party vulnerability
+
+  More info: https://pkg.go.dev/vuln/GO-0000-0001
+
+  Module: golang.org/vmod
+    Found in: golang.org/vmod@v0.0.1
+    Fixed in: golang.org/vmod@v0.1.3
+    Platforms: amd
+
+    Call stacks in your code:
+      main calls vmod.Vuln
+      main calls vmod.VulnFoo
+
+  Module: golang.org/vmod1
+    Found in: golang.org/vmod1@v0.0.3
+    Fixed in: golang.org/vmod1@v0.0.4
+
+    Call stacks in your code:
+      Foo calls vmod1.Vuln
+
+      Bar calls vmod1.VulnFoo

@@ -5,6 +5,8 @@
 package govulncheck
 
 import (
+	"io/fs"
+	"os"
 	"strings"
 	"testing"
 
@@ -127,7 +129,8 @@ var testVuln2 = &osv.Entry{
 	}}}
 
 func TestPrintTextNoVulns(t *testing.T) {
-	r := &result.Result{Vulns: []*result.Vuln{
+	testdata := os.DirFS("testdata")
+	r := []*result.Vuln{
 		{
 			OSV: testVuln1,
 			Modules: []*result.Module{
@@ -138,28 +141,14 @@ func TestPrintTextNoVulns(t *testing.T) {
 				},
 			},
 		},
-	}}
-	want := `No vulnerabilities found.
-
-=== Informational ===
-
-Found 1 vulnerability in packages that you import, but there are no call
-stacks leading to the use of this vulnerability. You may not need to
-take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
-for details.
-
-Vulnerability #1: GO-0000-0001
-  Third-party vulnerability
-  More info: https://pkg.go.dev/vuln/GO-0000-0001
-  Found in: golang.org/vmod@v0.0.1
-  Fixed in: golang.org/vmod@v0.1.3
-  Platforms: amd
-`
-	testPrint(t, false, true, r, want)
+	}
+	want, _ := fs.ReadFile(testdata, "no_vulns.txt")
+	testPrint(t, false, true, r, string(want))
 }
 
 func TestPrintTextSource(t *testing.T) {
-	r := &result.Result{Vulns: []*result.Vuln{
+	testdata := os.DirFS("testdata")
+	r := []*result.Vuln{
 		{
 			OSV: testVuln1,
 			Modules: []*result.Module{
@@ -188,41 +177,15 @@ func TestPrintTextSource(t *testing.T) {
 					},
 				},
 			},
-		}}}
+		}}
 
-	want := `Your code is affected by 1 vulnerability from 1 module.
-
-Vulnerability #1: GO-0000-0001
-  Third-party vulnerability
-
-  More info: https://pkg.go.dev/vuln/GO-0000-0001
-
-  Module: golang.org/vmod
-    Found in: golang.org/vmod@v0.0.1
-    Fixed in: golang.org/vmod@v0.1.3
-    Platforms: amd
-
-    Call stacks in your code:
-      main calls vmod.Vuln
-
-=== Informational ===
-
-Found 1 vulnerability in packages that you import, but there are no call
-stacks leading to the use of this vulnerability. You may not need to
-take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
-for details.
-
-Vulnerability #1: GO-0000-0002
-  Stdlib vulnerability
-  More info: https://pkg.go.dev/vuln/GO-0000-0002
-  Found in: net/http@v0.0.1
-  Fixed in: N/A
-`
-	testPrint(t, false, true, r, want)
+	want, _ := fs.ReadFile(testdata, "source.txt")
+	testPrint(t, false, true, r, string(want))
 }
 
 func TestPrintTextBinary(t *testing.T) {
-	r := &result.Result{Vulns: []*result.Vuln{
+	testdata := os.DirFS("testdata")
+	r := []*result.Vuln{
 		{
 			OSV: testVuln1,
 			Modules: []*result.Module{
@@ -248,34 +211,14 @@ func TestPrintTextBinary(t *testing.T) {
 					},
 				},
 			},
-		}}}
-
-	want := `Your code is affected by 2 vulnerabilities from 1 module and the Go standard library.
-
-Vulnerability #1: GO-0000-0001
-  Third-party vulnerability
-
-  More info: https://pkg.go.dev/vuln/GO-0000-0001
-
-  Module: golang.org/vmod
-    Found in: golang.org/vmod@v0.0.1
-    Fixed in: golang.org/vmod@v0.1.3
-    Platforms: amd
-
-Vulnerability #2: GO-0000-0002
-  Stdlib vulnerability
-
-  More info: https://pkg.go.dev/vuln/GO-0000-0002
-
-  Standard library
-    Found in: net/http@v0.0.1
-    Fixed in: N/A
-`
-	testPrint(t, false, false, r, want)
+		}}
+	want, _ := fs.ReadFile(testdata, "binary.txt")
+	testPrint(t, false, false, r, string(want))
 }
 
 func TestPrintTextMultiModuleAndStacks(t *testing.T) {
-	r := &result.Result{Vulns: []*result.Vuln{
+	testdata := os.DirFS("testdata")
+	r := []*result.Vuln{
 		{
 			OSV: testVuln1,
 			Modules: []*result.Module{
@@ -303,42 +246,18 @@ func TestPrintTextMultiModuleAndStacks(t *testing.T) {
 					},
 				},
 			},
-		}}}
+		}}
 
-	want := `Your code is affected by 1 vulnerability from 2 modules.
-
-Vulnerability #1: GO-0000-0001
-  Third-party vulnerability
-
-  More info: https://pkg.go.dev/vuln/GO-0000-0001
-
-  Module: golang.org/vmod
-    Found in: golang.org/vmod@v0.0.1
-    Fixed in: golang.org/vmod@v0.1.3
-    Platforms: amd
-
-    Call stacks in your code:
-      main calls vmod.Vuln
-      main calls vmod.VulnFoo
-
-  Module: golang.org/vmod1
-    Found in: golang.org/vmod1@v0.0.3
-    Fixed in: golang.org/vmod1@v0.0.4
-
-    Call stacks in your code:
-      Foo calls vmod1.Vuln
-
-      Bar calls vmod1.VulnFoo
-`
-	testPrint(t, false, true, r, want)
+	want, _ := fs.ReadFile(testdata, "multi_stacks.txt")
+	testPrint(t, false, true, r, string(want))
 }
 
-func testPrint(t *testing.T, verbose bool, source bool, r *result.Result, want string) {
+func testPrint(t *testing.T, verbose bool, source bool, r []*result.Vuln, want string) {
 	t.Helper()
 
 	got := new(strings.Builder)
 	output := textHandler{w: got, verbose: verbose, source: source}
-	for _, v := range r.Vulns {
+	for _, v := range r {
 		if err := output.Vulnerability(v); err != nil {
 			t.Fatal(err)
 		}
