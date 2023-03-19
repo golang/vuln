@@ -1,0 +1,8 @@
+{{- /*
+This template is used to provide an introductory message to the user, which
+contains configuration information about how they are running govulncheck.
+*/ -}}
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Using {{.GoVersion}}govulncheck{{.GovulncheckVersion}} with
+vulnerability data from {{.DB}}{{.DBLastModified}}.
