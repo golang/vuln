@@ -34,7 +34,7 @@ type httpSource struct {
 	httpCalls  int
 }
 
-func newHTTPClient(uri *url.URL, opts Options) (_ *httpSource, err error) {
+func newHTTPClient(uri *url.URL, opts Options) (_ *httpSource) {
 	hs := &httpSource{url: uri.String()}
 	hs.dbName = uri.Hostname()
 	if opts.HTTPCache != nil {
@@ -45,7 +45,7 @@ func newHTTPClient(uri *url.URL, opts Options) (_ *httpSource, err error) {
 	} else {
 		hs.c = new(http.Client)
 	}
-	return hs, nil
+	return hs
 }
 
 func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {

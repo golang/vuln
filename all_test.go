@@ -26,7 +26,7 @@ func Test(t *testing.T) {
 		t.Skipf("skipping: %v", err)
 	}
 
-	cmd := exec.Command(bash, "./checks.bash")
+	cmd := exec.Command(bash, "./checks.bash", "trybots")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

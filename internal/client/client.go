@@ -127,7 +127,7 @@ func NewClient(source string, opts Options) (_ Client, err error) {
 	}
 	switch uri.Scheme {
 	case "http", "https":
-		return newHTTPClient(uri, opts)
+		return newHTTPClient(uri, opts), nil
 	case "file":
 		return newFileClient(uri)
 	default:

@@ -59,10 +59,8 @@ check_headers() {
 
 # check_unparam runs unparam on source files.
 check_unparam() {
-  if [[ $(go version) = *go1.17* ]]; then
     ensure_go_binary mvdan.cc/unparam
     runcmd unparam ./...
-  fi
 }
 
 # check_vet runs go vet on source files.
@@ -72,10 +70,8 @@ check_vet() {
 
 # check_staticcheck runs staticcheck on source files.
 check_staticcheck() {
-  if [[ $(go version) = *go1.17* ]]; then
-    ensure_go_binary honnef.co/go/tools/cmd/staticcheck
-    runcmd staticcheck ./...
-  fi
+  ensure_go_binary honnef.co/go/tools/cmd/staticcheck
+  runcmd staticcheck ./...
 }
 
 # check_misspell runs misspell on source files.
@@ -117,16 +113,23 @@ check_vulncheck_result_version() {
 
 go_linters() {
   check_vet
-  check_staticcheck
   check_misspell
-  check_unparam
 }
 
 go_modtidy() {
   runcmd go mod tidy
 }
 
+# runchecks runs all checks and is intended to run as a precommit hook.
 runchecks() {
+  trybots
+  check_unparam
+  check_staticcheck
+}
+
+
+# trybots runs checks supported by TryBots.
+trybots() {
   check_headers
   go_linters
   go_modtidy
@@ -148,6 +151,9 @@ main() {
       ;;
     "")
       runchecks
+      ;;
+    trybots)
+      trybots
       ;;
     v)
       check_vulncheck_result_version
