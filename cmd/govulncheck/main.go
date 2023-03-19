@@ -15,7 +15,8 @@ import (
 
 func main() {
 	ctx := context.Background()
-	if err := govulncheck.Main(ctx, os.Args[1:], os.Stdout); err != nil {
+	err := govulncheck.Command(ctx, os.Args[0], os.Args[1:]...).Run()
+	if err != nil {
 		switch err {
 		case flag.ErrHelp:
 			os.Exit(0)

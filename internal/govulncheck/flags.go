@@ -28,7 +28,7 @@ const (
 	vulndbHost  = "https://vuln.go.dev"
 )
 
-func parseFlags(args []string) (*config, error) {
+func (c *Cmd) parseFlags() (*config, error) {
 	cfg := &config{}
 	var tagsFlag buildutil.TagsFlag
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
@@ -46,7 +46,7 @@ func parseFlags(args []string) (*config, error) {
 		fmt.Fprintf(flags.Output(), "\n%s\n", detailsMessage)
 	}
 	addTestFlags(flags, cfg)
-	if err := flags.Parse(args); err != nil {
+	if err := flags.Parse(c.Args[1:]); err != nil {
 		return nil, err
 	}
 	cfg.patterns = flags.Args()
