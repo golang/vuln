@@ -17,6 +17,21 @@ import (
 	"golang.org/x/vuln/osv"
 )
 
+// NewTextHandler returns a handler that writes govulncheck output as text.
+func NewTextHandler(w io.Writer, p *result.Preamble) Handler {
+	o := &textHandler{
+		w:        w,
+		preamble: p,
+	}
+	return o
+}
+
+type textHandler struct {
+	w        io.Writer
+	vulns    []*result.Vuln
+	preamble *result.Preamble
+}
+
 const (
 	labelWidth = 16
 	lineLength = 55
@@ -26,24 +41,6 @@ const (
 	binaryProgressMessage = `Scanning your binary for known vulnerabilities...`
 )
 
-// textHandler provides a human-readable text output to the user.
-type textHandler struct {
-	w       io.Writer
-	vulns   []*result.Vuln
-	verbose bool
-	source  bool
-}
-
-// NewTextHandler returns a handler that writes govulncheck output as text.
-func NewTextHandler(w io.Writer, verbose, source bool) Handler {
-	return &textHandler{
-		w:       w,
-		verbose: verbose,
-		source:  source,
-	}
-}
-
-// Flush writes text output formatted according to govulncheck.tmpl.
 func (o *textHandler) Flush() error {
 	lineWidth := 80 - labelWidth
 	funcMap := template.FuncMap{
@@ -60,7 +57,9 @@ func (o *textHandler) Flush() error {
 		},
 	}
 
-	tmplRes := createTmplResult(o.vulns, o.verbose, o.source)
+	source := o.preamble.Analysis == result.AnalysisSource
+	verbose := o.preamble.Mode == result.ModeVerbose
+	tmplRes := createTmplResult(o.vulns, verbose, source)
 	o.vulns = nil
 	tmpl, err := template.New("govulncheck").Funcs(funcMap).Parse(outputTemplate)
 	if err != nil {
@@ -77,10 +76,9 @@ func (o *textHandler) Vulnerability(vuln *result.Vuln) error {
 
 // Preamble writes text output formatted according to govulncheck-intro.tmpl.
 func (o *textHandler) Preamble(preamble *result.Preamble) error {
+	// Print preamble to the user.
 	tmpl, err := template.New("govulncheck-intro").Parse(introTemplate)
 	if err != nil {
-		// We do not want to break govulncheck
-		// run by failing to produce intro message.
 		return err
 	}
 	return tmpl.Execute(o.w, preamble)

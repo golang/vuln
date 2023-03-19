@@ -38,14 +38,7 @@ func Main(ctx context.Context, args []string, w io.Writer) (err error) {
 		}
 	}
 
-	var output Handler
-	switch {
-	case cfg.json:
-		output = NewJSONHandler(w)
-	default:
-		output = NewTextHandler(w, cfg.verbose, cfg.sourceAnalysis)
-	}
-	err = doGovulncheck(cfg, output)
+	err = doGovulncheck(cfg, w)
 	if cfg.json && err == ErrVulnerabilitiesFound {
 		return nil
 	}
@@ -114,7 +107,7 @@ func parseFlags(args []string) (*config, error) {
 // doGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func doGovulncheck(cfg *config, output Handler) error {
+func doGovulncheck(cfg *config, w io.Writer) error {
 	ctx := context.Background()
 	dir := filepath.FromSlash(cfg.dir)
 
@@ -129,8 +122,17 @@ func doGovulncheck(cfg *config, output Handler) error {
 		return err
 	}
 
+	preamble := newPreamble(ctx, dbClient, cfg)
+	var output Handler
+	switch {
+	case cfg.json:
+		output = NewJSONHandler(w)
+	default:
+		output = NewTextHandler(w, preamble)
+	}
+
 	// Write the introductory message to the user.
-	if err := output.Preamble(newPreamble(ctx, dbClient, cfg.db, cfg.sourceAnalysis)); err != nil {
+	if err := output.Preamble(preamble); err != nil {
 		return err
 	}
 
@@ -198,13 +200,20 @@ func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
 	return vpkgs, err
 }
 
-func newPreamble(ctx context.Context, dbClient client.Client, db string, source bool) *result.Preamble {
+func newPreamble(ctx context.Context, dbClient client.Client, cfg *config) *result.Preamble {
 	preamble := result.Preamble{
-		DB: db,
+		DB:       cfg.db,
+		Analysis: result.AnalysisBinary,
+		Mode:     result.ModeCompact,
 	}
-	// The Go version is only relevant for source analysis, so omit it for
-	// binary mode.
-	if source {
+	if cfg.verbose {
+		preamble.Mode = result.ModeVerbose
+	}
+	if cfg.sourceAnalysis {
+		preamble.Analysis = result.AnalysisSource
+
+		// The Go version is only relevant for source analysis, so omit it for
+		// binary mode.
 		if v, err := internal.GoEnv("GOVERSION"); err == nil {
 			preamble.GoVersion = fmt.Sprintf("%s and ", v)
 		}
@@ -213,7 +222,7 @@ func newPreamble(ctx context.Context, dbClient client.Client, db string, source 
 		preamble.GovulncheckVersion = fmt.Sprintf("@%s", govulncheckVersion(bi))
 	}
 	if lmod, err := dbClient.LastModifiedTime(ctx); err == nil {
-		preamble.DBLastModifiedPhrase = fmt.Sprintf(" (last modified %s )", lmod.Format(time.RFC822))
+		preamble.DBLastModified = fmt.Sprintf(" (last modified %s )", lmod.Format(time.RFC822))
 	}
 	return &preamble
 }

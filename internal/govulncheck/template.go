@@ -11,7 +11,7 @@ package govulncheck
 const introTemplate = `govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Using {{.GoVersion}}govulncheck{{.GovulncheckVersion}} with
-vulnerability data from {{.DB}}{{.DBLastModifiedPhrase}}.
+vulnerability data from {{.DB}}{{.DBLastModified}}.
 `
 
 // outputTemplate is a text template used to print out

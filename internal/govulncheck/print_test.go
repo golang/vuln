@@ -1,7 +1,6 @@
-// Copyright 2022 The Go Authors. All rights reserved.
+// Copyright 2023 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
 package govulncheck
 
 import (
@@ -130,6 +129,10 @@ var testVuln2 = &osv.Entry{
 
 func TestPrintTextNoVulns(t *testing.T) {
 	testdata := os.DirFS("testdata")
+	preamble := &result.Preamble{
+		Analysis: result.AnalysisSource,
+		Mode:     result.ModeCompact,
+	}
 	r := []*result.Vuln{
 		{
 			OSV: testVuln1,
@@ -143,11 +146,14 @@ func TestPrintTextNoVulns(t *testing.T) {
 		},
 	}
 	want, _ := fs.ReadFile(testdata, "no_vulns.txt")
-	testPrint(t, false, true, r, string(want))
+	testPrint(t, preamble, r, string(want))
 }
-
 func TestPrintTextSource(t *testing.T) {
 	testdata := os.DirFS("testdata")
+	preamble := &result.Preamble{
+		Analysis: result.AnalysisSource,
+		Mode:     result.ModeCompact,
+	}
 	r := []*result.Vuln{
 		{
 			OSV: testVuln1,
@@ -178,13 +184,15 @@ func TestPrintTextSource(t *testing.T) {
 				},
 			},
 		}}
-
 	want, _ := fs.ReadFile(testdata, "source.txt")
-	testPrint(t, false, true, r, string(want))
+	testPrint(t, preamble, r, string(want))
 }
-
 func TestPrintTextBinary(t *testing.T) {
 	testdata := os.DirFS("testdata")
+	preamble := &result.Preamble{
+		Analysis: result.AnalysisBinary,
+		Mode:     result.ModeCompact,
+	}
 	r := []*result.Vuln{
 		{
 			OSV: testVuln1,
@@ -213,11 +221,14 @@ func TestPrintTextBinary(t *testing.T) {
 			},
 		}}
 	want, _ := fs.ReadFile(testdata, "binary.txt")
-	testPrint(t, false, false, r, string(want))
+	testPrint(t, preamble, r, string(want))
 }
-
 func TestPrintTextMultiModuleAndStacks(t *testing.T) {
 	testdata := os.DirFS("testdata")
+	preamble := &result.Preamble{
+		Analysis: result.AnalysisSource,
+		Mode:     result.ModeCompact,
+	}
 	r := []*result.Vuln{
 		{
 			OSV: testVuln1,
@@ -247,17 +258,15 @@ func TestPrintTextMultiModuleAndStacks(t *testing.T) {
 				},
 			},
 		}}
-
 	want, _ := fs.ReadFile(testdata, "multi_stacks.txt")
-	testPrint(t, false, true, r, string(want))
+	testPrint(t, preamble, r, string(want))
 }
 
-func testPrint(t *testing.T, verbose bool, source bool, r []*result.Vuln, want string) {
-	t.Helper()
-
+func testPrint(t *testing.T, preamble *result.Preamble, vulns []*result.Vuln, want string) {
 	got := new(strings.Builder)
-	output := textHandler{w: got, verbose: verbose, source: source}
-	for _, v := range r {
+	output := NewTextHandler(got, preamble)
+	output.Preamble(preamble)
+	for _, v := range vulns {
 		if err := output.Vulnerability(v); err != nil {
 			t.Fatal(err)
 		}

@@ -11,12 +11,30 @@ import (
 	"golang.org/x/vuln/osv"
 )
 
-// Preamble contains metadata information about how govulncheck was executed.
+// Mode indicates the display mode that the user specified for running
+// govulncheck.
+type Mode string
+
+const (
+	ModeCompact Mode = "Compact"
+	ModeVerbose Mode = "Verbose"
+)
+
+// AnalysisType indicates the type of analysis performed by govulncheck.
+type AnalysisType string
+
+const (
+	AnalysisSource AnalysisType = "Source"
+	AnalysisBinary AnalysisType = "Binary"
+)
+
 type Preamble struct {
-	GoVersion            string `json:"go_version,omitempty"`
-	GovulncheckVersion   string `json:"govulncheck_version,omitempty"`
-	DB                   string `json:"db,omitempty"`
-	DBLastModifiedPhrase string `json:"db_last_modified,omitempty"`
+	GoVersion          string       `json:"go_version,omitempty"`
+	GovulncheckVersion string       `json:"tool_version,omitempty"`
+	DB                 string       `json:"db,omitempty"`
+	DBLastModified     string       `json:"db_last_modified,omitempty"`
+	Analysis           AnalysisType `json:"query_kind,omitempty"`     // TODO: rename struct tag
+	Mode               Mode         `json:"callstack_mode,omitempty"` // TODO: rename struct tag
 }
 
 // Result is the result of executing Source or Binary.
