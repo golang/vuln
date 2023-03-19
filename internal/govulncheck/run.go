@@ -8,15 +8,79 @@ import (
 	"context"
 	"fmt"
 	"go/token"
+	"io"
 	"os"
+	"path"
 	"path/filepath"
+	"runtime/debug"
 	"sort"
+	"strings"
+	"time"
 
+	"golang.org/x/tools/go/packages"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/result"
 	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
 )
+
+// doGovulncheck performs main govulncheck functionality and exits the
+// program upon success with an appropriate exit status. Otherwise,
+// returns an error.
+func doGovulncheck(cfg *config, w io.Writer) error {
+	ctx := context.Background()
+	dir := filepath.FromSlash(cfg.dir)
+
+	cache, err := DefaultCache()
+	if err != nil {
+		return err
+	}
+	dbClient, err := client.NewClient(cfg.db, client.Options{
+		HTTPCache: cache,
+	})
+	if err != nil {
+		return err
+	}
+
+	preamble := newPreamble(ctx, dbClient, cfg)
+	var output Handler
+	switch {
+	case cfg.json:
+		output = NewJSONHandler(w)
+	default:
+		output = NewTextHandler(w)
+	}
+
+	// Write the introductory message to the user.
+	if err := output.Preamble(preamble); err != nil {
+		return err
+	}
+
+	var res *result.Result
+	if cfg.sourceAnalysis {
+		res, err = runSource(ctx, output, cfg, dbClient, dir)
+	} else {
+		res, err = runBinary(ctx, output, cfg, dbClient)
+	}
+	if err != nil {
+		return err
+	}
+
+	// For each vulnerability, queue it to be written to the output.
+	for _, v := range res.Vulns {
+		if err := output.Vulnerability(v); err != nil {
+			return err
+		}
+	}
+	if err := output.Flush(); err != nil {
+		return err
+	}
+	if len(res.Vulns) > 0 {
+		return ErrVulnerabilitiesFound
+	}
+	return nil
+}
 
 // runSource reports vulnerabilities that affect the analyzed packages.
 //
@@ -68,6 +132,168 @@ func runBinary(ctx context.Context, output Handler, cfg *config, dbClient client
 		return nil, err
 	}
 	return createBinaryResult(vr), nil
+}
+
+// loadPackages loads the packages matching patterns at dir using build tags
+// provided by tagsFlag. Uses load mode needed for vulncheck analysis. If the
+// packages contain errors, a packageError is returned containing a list of
+// the errors, along with the packages themselves.
+func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
+	var buildFlags []string
+	if c.tags != nil {
+		buildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(c.tags, ","))}
+	}
+
+	cfg := &packages.Config{Dir: dir, Tests: c.test}
+	cfg.Mode |= packages.NeedName | packages.NeedImports | packages.NeedTypes |
+		packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps |
+		packages.NeedModule
+	cfg.BuildFlags = buildFlags
+
+	pkgs, err := packages.Load(cfg, c.patterns...)
+	vpkgs := vulncheck.Convert(pkgs)
+	if err != nil {
+		return nil, err
+	}
+	var perrs []packages.Error
+	packages.Visit(pkgs, nil, func(p *packages.Package) {
+		perrs = append(perrs, p.Errors...)
+	})
+	if len(perrs) > 0 {
+		err = &packageError{perrs}
+	}
+	return vpkgs, err
+}
+
+// sourceProgressMessage returns a string of the form
+//
+//	"Scanning your code and P packages across M dependent modules for known vulnerabilities..."
+//
+// P is the number of strictly dependent packages of
+// topPkgs and Y is the number of their modules.
+func sourceProgressMessage(topPkgs []*vulncheck.Package) string {
+	pkgs, mods := depPkgsAndMods(topPkgs)
+
+	pkgsPhrase := fmt.Sprintf("%d package", pkgs)
+	if pkgs != 1 {
+		pkgsPhrase += "s"
+	}
+
+	modsPhrase := fmt.Sprintf("%d dependent module", mods)
+	if mods != 1 {
+		modsPhrase += "s"
+	}
+
+	return fmt.Sprintf("Scanning your code and %s across %s for known vulnerabilities...", pkgsPhrase, modsPhrase)
+}
+
+func newPreamble(ctx context.Context, dbClient client.Client, cfg *config) *result.Preamble {
+	preamble := result.Preamble{
+		DB:       cfg.db,
+		Analysis: result.AnalysisBinary,
+		Mode:     result.ModeCompact,
+	}
+	if cfg.verbose {
+		preamble.Mode = result.ModeVerbose
+	}
+	if cfg.sourceAnalysis {
+		preamble.Analysis = result.AnalysisSource
+
+		// The Go version is only relevant for source analysis, so omit it for
+		// binary mode.
+		if v, err := internal.GoEnv("GOVERSION"); err == nil {
+			preamble.GoVersion = v
+		}
+	}
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		preamble.GovulncheckVersion = scannerVersion(bi)
+	}
+	if mod, err := dbClient.LastModifiedTime(ctx); err == nil {
+		preamble.DBLastModified = &mod
+	}
+	return &preamble
+}
+
+// depPkgsAndMods returns the number of packages that
+// topPkgs depend on and the number of their modules.
+func depPkgsAndMods(topPkgs []*vulncheck.Package) (int, int) {
+	tops := make(map[string]bool)
+	depPkgs := make(map[string]bool)
+	depMods := make(map[string]bool)
+
+	for _, t := range topPkgs {
+		tops[t.PkgPath] = true
+	}
+
+	var visit func(*vulncheck.Package, bool)
+	visit = func(p *vulncheck.Package, top bool) {
+		path := p.PkgPath
+		if depPkgs[path] {
+			return
+		}
+		if tops[path] && !top {
+			// A top package that is a dependency
+			// will not be in depPkgs, so we skip
+			// reiterating on it here.
+			return
+		}
+
+		// We don't count a top-level package as
+		// a dependency even when they are used
+		// as a dependent package.
+		if !tops[path] {
+			depPkgs[path] = true
+			if p.Module != nil { // no module for stdlib
+				depMods[p.Module.Path] = true
+			}
+		}
+
+		for _, d := range p.Imports {
+			visit(d, false)
+		}
+	}
+
+	for _, t := range topPkgs {
+		visit(t, true)
+	}
+
+	return len(depPkgs), len(depMods)
+}
+
+// scannerVersion reconstructs the current version of
+// this binary used from the build info.
+func scannerVersion(bi *debug.BuildInfo) string {
+	var revision, at string
+	for _, s := range bi.Settings {
+		if s.Key == "vcs.revision" {
+			revision = s.Value
+		}
+		if s.Key == "vcs.time" {
+			at = s.Value
+		}
+	}
+	buf := strings.Builder{}
+	if bi.Path != "" {
+		buf.WriteString(path.Base(bi.Path))
+		buf.WriteString("@")
+	}
+	// TODO: we manually change this after every
+	// minor revision? bi.Main.Version seems not
+	// to work (see #29228).
+	buf.WriteString("v0.0.0")
+	if revision != "" {
+		buf.WriteString("-")
+		buf.WriteString(revision[:12])
+	}
+	if at != "" {
+		// commit time is of the form 2023-01-25T19:57:54Z
+		p, err := time.Parse(time.RFC3339, at)
+		if err == nil {
+			buf.WriteString("-")
+			buf.WriteString(p.Format("20060102150405"))
+		}
+	}
+	return buf.String()
 }
 
 func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *result.Result {

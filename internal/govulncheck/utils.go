@@ -6,12 +6,7 @@ package govulncheck
 
 import (
 	"fmt"
-	"path"
-	"runtime/debug"
 	"strings"
-	"time"
-
-	"golang.org/x/vuln/internal/vulncheck"
 )
 
 // compact replaces consecutive runs of equal elements with a single copy.
@@ -57,86 +52,4 @@ func indent(s string, n int) string {
 		shouldAppend = c == '\n'
 	}
 	return string(result)
-}
-
-// depPkgsAndMods returns the number of packages that
-// topPkgs depend on and the number of their modules.
-func depPkgsAndMods(topPkgs []*vulncheck.Package) (int, int) {
-	tops := make(map[string]bool)
-	depPkgs := make(map[string]bool)
-	depMods := make(map[string]bool)
-
-	for _, t := range topPkgs {
-		tops[t.PkgPath] = true
-	}
-
-	var visit func(*vulncheck.Package, bool)
-	visit = func(p *vulncheck.Package, top bool) {
-		path := p.PkgPath
-		if depPkgs[path] {
-			return
-		}
-		if tops[path] && !top {
-			// A top package that is a dependency
-			// will not be in depPkgs, so we skip
-			// reiterating on it here.
-			return
-		}
-
-		// We don't count a top-level package as
-		// a dependency even when they are used
-		// as a dependent package.
-		if !tops[path] {
-			depPkgs[path] = true
-			if p.Module != nil { // no module for stdlib
-				depMods[p.Module.Path] = true
-			}
-		}
-
-		for _, d := range p.Imports {
-			visit(d, false)
-		}
-	}
-
-	for _, t := range topPkgs {
-		visit(t, true)
-	}
-
-	return len(depPkgs), len(depMods)
-}
-
-// scannerVersion reconstructs the current version of
-// this binary used from the build info.
-func scannerVersion(bi *debug.BuildInfo) string {
-	var revision, at string
-	for _, s := range bi.Settings {
-		if s.Key == "vcs.revision" {
-			revision = s.Value
-		}
-		if s.Key == "vcs.time" {
-			at = s.Value
-		}
-	}
-	buf := strings.Builder{}
-	if bi.Path != "" {
-		buf.WriteString(path.Base(bi.Path))
-		buf.WriteString("@")
-	}
-	// TODO: we manually change this after every
-	// minor revision? bi.Main.Version seems not
-	// to work (see #29228).
-	buf.WriteString("v0.0.0")
-	if revision != "" {
-		buf.WriteString("-")
-		buf.WriteString(revision[:12])
-	}
-	if at != "" {
-		// commit time is of the form 2023-01-25T19:57:54Z
-		p, err := time.Parse(time.RFC3339, at)
-		if err == nil {
-			buf.WriteString("-")
-			buf.WriteString(p.Format("20060102150405"))
-		}
-	}
-	return buf.String()
 }

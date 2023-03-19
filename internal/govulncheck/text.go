@@ -13,7 +13,6 @@ import (
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/result"
-	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
 )
 
@@ -265,26 +264,4 @@ func mapkeys[M ~map[K]V, K comparable, V any](m M) []K {
 		r = append(r, k)
 	}
 	return r
-}
-
-// sourceProgressMessage returns a string of the form
-//
-//	"Scanning your code and P packages across M dependent modules for known vulnerabilities..."
-//
-// P is the number of strictly dependent packages of
-// topPkgs and Y is the number of their modules.
-func sourceProgressMessage(topPkgs []*vulncheck.Package) string {
-	pkgs, mods := depPkgsAndMods(topPkgs)
-
-	pkgsPhrase := fmt.Sprintf("%d package", pkgs)
-	if pkgs != 1 {
-		pkgsPhrase += "s"
-	}
-
-	modsPhrase := fmt.Sprintf("%d dependent module", mods)
-	if mods != 1 {
-		modsPhrase += "s"
-	}
-
-	return fmt.Sprintf("Scanning your code and %s across %s for known vulnerabilities...", pkgsPhrase, modsPhrase)
 }

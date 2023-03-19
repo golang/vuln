@@ -13,6 +13,11 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+var (
+	ErrMissingArgPatterns   = errors.New("missing any pattern args")
+	ErrVulnerabilitiesFound = errors.New("vulnerabilities found")
+)
+
 //lint:file-ignore ST1005 Ignore staticcheck message about error formatting
 var (
 	// errGoVersionMismatch is used to indicate that there is a mismatch between
