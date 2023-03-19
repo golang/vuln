@@ -6,6 +6,7 @@ package govulncheck
 
 import (
 	"fmt"
+	"path"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -104,24 +105,38 @@ func depPkgsAndMods(topPkgs []*vulncheck.Package) (int, int) {
 	return len(depPkgs), len(depMods)
 }
 
-// govulncheckVersion reconstructs the current version of
-// govulncheck used from the build info.
-func govulncheckVersion(bi *debug.BuildInfo) string {
-	var r, t string
+// scannerVersion reconstructs the current version of
+// this binary used from the build info.
+func scannerVersion(bi *debug.BuildInfo) string {
+	var revision, at string
 	for _, s := range bi.Settings {
 		if s.Key == "vcs.revision" {
-			r = "-" + s.Value[:12]
+			revision = s.Value
 		}
 		if s.Key == "vcs.time" {
-			// commit time is of the form 2023-01-25T19:57:54Z
-			p, err := time.Parse(time.RFC3339, s.Value)
-			if err == nil {
-				t = "-" + p.Format("20060102150405")
-			}
+			at = s.Value
 		}
+	}
+	buf := strings.Builder{}
+	if bi.Path != "" {
+		buf.WriteString(path.Base(bi.Path))
+		buf.WriteString("@")
 	}
 	// TODO: we manually change this after every
 	// minor revision? bi.Main.Version seems not
 	// to work (see #29228).
-	return "v0.0.0" + r + t
+	buf.WriteString("v0.0.0")
+	if revision != "" {
+		buf.WriteString("-")
+		buf.WriteString(revision[:12])
+	}
+	if at != "" {
+		// commit time is of the form 2023-01-25T19:57:54Z
+		p, err := time.Parse(time.RFC3339, at)
+		if err == nil {
+			buf.WriteString("-")
+			buf.WriteString(p.Format("20060102150405"))
+		}
+	}
+	return buf.String()
 }

@@ -7,6 +7,7 @@ package result
 
 import (
 	"go/token"
+	"time"
 
 	"golang.org/x/vuln/osv"
 )
@@ -38,9 +39,9 @@ type Message struct {
 
 type Preamble struct {
 	GoVersion          string       `json:"go_version,omitempty"`
-	GovulncheckVersion string       `json:"tool_version,omitempty"`
+	GovulncheckVersion string       `json:"tool_version,omitempty"` // TODO: rename struct tag
 	DB                 string       `json:"db,omitempty"`
-	DBLastModified     string       `json:"db_last_modified,omitempty"`
+	DBLastModified     *time.Time   `json:"db_last_modified,omitempty"`
 	Analysis           AnalysisType `json:"query_kind,omitempty"`     // TODO: rename struct tag
 	Mode               Mode         `json:"callstack_mode,omitempty"` // TODO: rename struct tag
 }

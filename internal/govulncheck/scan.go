@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strings"
-	"time"
 
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/packages"
@@ -215,14 +214,14 @@ func newPreamble(ctx context.Context, dbClient client.Client, cfg *config) *resu
 		// The Go version is only relevant for source analysis, so omit it for
 		// binary mode.
 		if v, err := internal.GoEnv("GOVERSION"); err == nil {
-			preamble.GoVersion = fmt.Sprintf("%s and ", v)
+			preamble.GoVersion = v
 		}
 	}
 	if bi, ok := debug.ReadBuildInfo(); ok {
-		preamble.GovulncheckVersion = fmt.Sprintf("@%s", govulncheckVersion(bi))
+		preamble.GovulncheckVersion = scannerVersion(bi)
 	}
-	if lmod, err := dbClient.LastModifiedTime(ctx); err == nil {
-		preamble.DBLastModified = fmt.Sprintf(" (last modified %s )", lmod.Format(time.RFC822))
+	if mod, err := dbClient.LastModifiedTime(ctx); err == nil {
+		preamble.DBLastModified = &mod
 	}
 	return &preamble
 }
