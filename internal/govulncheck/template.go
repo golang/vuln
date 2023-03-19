@@ -16,16 +16,36 @@ var outputTemplate string
 
 // tmplResult is a structure containing summarized
 // govulncheck.Result, passed to outputTemplate.
-type tmplResult struct {
-	Unaffected []tmplVulnInfo
-	Affected   []tmplVulnInfo
+type tmplResult []tmplVulnInfo
+
+func (r tmplResult) AffectedCount() int {
+	count := 0
+	for _, a := range r {
+		if a.Affected {
+			count++
+		}
+	}
+	return count
+}
+
+func (r tmplResult) UnaffectedCount() int {
+	count := 0
+	for _, a := range r {
+		if !a.Affected {
+			count++
+		}
+	}
+	return count
 }
 
 // AffectedModules returns the number of unique modules
 // whose vulnerabilties are detected.
 func (r tmplResult) AffectedModules() int {
 	mods := make(map[string]bool)
-	for _, a := range r.Affected {
+	for _, a := range r {
+		if !a.Affected {
+			continue
+		}
 		for _, m := range a.Modules {
 			if !m.IsStd {
 				mods[m.Module] = true
@@ -38,7 +58,10 @@ func (r tmplResult) AffectedModules() int {
 // StdlibAffected tells if some of the vulnerabilities
 // detected come from standard library.
 func (r tmplResult) StdlibAffected() bool {
-	for _, a := range r.Affected {
+	for _, a := range r {
+		if !a.Affected {
+			continue
+		}
 		for _, m := range a.Modules {
 			if m.IsStd {
 				return true
@@ -51,9 +74,10 @@ func (r tmplResult) StdlibAffected() bool {
 // tmplVulnInfo is a vulnerability info
 // structure used by the outputTemplate.
 type tmplVulnInfo struct {
-	ID      string
-	Details string
-	Modules []tmplModVulnInfo
+	ID       string
+	Details  string
+	Modules  []tmplModVulnInfo
+	Affected bool
 }
 
 // tmplModVulnInfo is a module vulnerability

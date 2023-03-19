@@ -95,40 +95,11 @@ func (o *textHandler) Progress(msg string) error {
 func createTmplResult(vulns []*result.Vuln, verbose, source bool) tmplResult {
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
-	var unaffected []tmplVulnInfo
-	var affected []tmplVulnInfo
+	var result []tmplVulnInfo
 	for _, v := range vulns {
-		if !source || IsCalled(v) {
-			affected = append(affected, createTmplVulnInfo(v, verbose, source))
-		} else if len(v.Modules) > 0 {
-			// save arbitrary module info for informational message
-			m := v.Modules[0]
-			// For stdlib vulnerabilities, we use the path of one the
-			// packages (typically, there is only one package). Showing
-			// "Module: stdlib" to the user is confusing.
-			path := m.Path
-			if path == internal.GoStdModulePath {
-				path = m.Packages[0].Path
-			}
-			unaffected = append(unaffected, tmplVulnInfo{
-				ID:      v.OSV.ID,
-				Details: v.OSV.Details,
-				Modules: []tmplModVulnInfo{{
-					// We currently do not show module names in the
-					// "Informational" section. We hence leave the
-					// IsStd and Module fields empty.
-					Found:     moduleVersionString(path, m.FoundVersion),
-					Fixed:     moduleVersionString(path, m.FixedVersion),
-					Platforms: platforms("", v.OSV),
-				}},
-			})
-		}
+		result = append(result, createTmplVulnInfo(v, verbose, source))
 	}
-
-	return tmplResult{
-		Unaffected: unaffected,
-		Affected:   affected,
-	}
+	return result
 }
 
 // createTmplVulnInfo creates a template vuln info for
@@ -136,8 +107,9 @@ func createTmplResult(vulns []*result.Vuln, verbose, source bool) tmplResult {
 // present in the binary.
 func createTmplVulnInfo(v *result.Vuln, verbose, source bool) tmplVulnInfo {
 	vInfo := tmplVulnInfo{
-		ID:      v.OSV.ID,
-		Details: v.OSV.Details,
+		ID:       v.OSV.ID,
+		Details:  v.OSV.Details,
+		Affected: !source || IsCalled(v),
 	}
 
 	// stacks returns call stack info of p as a
@@ -164,14 +136,15 @@ func createTmplVulnInfo(v *result.Vuln, verbose, source bool) tmplVulnInfo {
 					// package symbols not exercised, nothing to do here
 					continue
 				}
-
-				vInfo.Modules = append(vInfo.Modules, tmplModVulnInfo{
-					IsStd:     true, // stdlib, so Module field is not needed
-					Found:     moduleVersionString(p.Path, m.FoundVersion),
-					Fixed:     moduleVersionString(p.Path, m.FixedVersion),
-					Platforms: platforms(m.Path, v.OSV),
-					Stacks:    stacks(p), // for binary mode, this will be ""
-				})
+				tm := createTmplModule(m, p.Path, v.OSV)
+				tm.Stacks = stacks(p) // for binary mode, this will be ""
+				vInfo.Modules = append(vInfo.Modules, tm)
+			}
+			if len(vInfo.Modules) == 0 {
+				p := m.Packages[0]
+				tm := createTmplModule(m, p.Path, v.OSV)
+				tm.Stacks = stacks(p) // for binary mode, this will be ""
+				vInfo.Modules = append(vInfo.Modules, tm)
 			}
 			continue
 		}
@@ -188,23 +161,22 @@ func createTmplVulnInfo(v *result.Vuln, verbose, source bool) tmplVulnInfo {
 				}
 				moduleStacks = append(moduleStacks, stacks(p))
 			}
-			if len(moduleStacks) == 0 {
-				// Some modules of a vuln have symbols exercised.
-				// Skip those that don't.
-				continue
-			}
 		}
-
-		vInfo.Modules = append(vInfo.Modules, tmplModVulnInfo{
-			IsStd:     false,
-			Module:    m.Path,
-			Found:     moduleVersionString(m.Path, m.FoundVersion),
-			Fixed:     moduleVersionString(m.Path, m.FixedVersion),
-			Platforms: platforms(m.Path, v.OSV),
-			Stacks:    strings.Join(moduleStacks, "\n"), // for binary mode, this will be ""
-		})
+		tm := createTmplModule(m, m.Path, v.OSV)
+		tm.Stacks = strings.Join(moduleStacks, "\n") // for binary mode, this will be ""
+		vInfo.Modules = append(vInfo.Modules, tm)
 	}
 	return vInfo
+}
+
+func createTmplModule(m *result.Module, path string, osv *osv.Entry) tmplModVulnInfo {
+	return tmplModVulnInfo{
+		IsStd:     m.Path == internal.GoStdModulePath,
+		Module:    path,
+		Found:     moduleVersionString(path, m.FoundVersion),
+		Fixed:     moduleVersionString(path, m.FixedVersion),
+		Platforms: platforms(m.Path, osv),
+	}
 }
 
 func defaultCallStacks(css []result.CallStack) string {
