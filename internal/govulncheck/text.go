@@ -18,11 +18,8 @@ import (
 )
 
 // NewTextHandler returns a handler that writes govulncheck output as text.
-func NewTextHandler(w io.Writer, p *result.Preamble) Handler {
-	o := &textHandler{
-		w:        w,
-		preamble: p,
-	}
+func NewTextHandler(w io.Writer) Handler {
+	o := &textHandler{w: w}
 	return o
 }
 
@@ -76,6 +73,8 @@ func (o *textHandler) Vulnerability(vuln *result.Vuln) error {
 
 // Preamble writes text output formatted according to govulncheck-intro.tmpl.
 func (o *textHandler) Preamble(preamble *result.Preamble) error {
+	p := *preamble
+	o.preamble = &p
 	// Print preamble to the user.
 	tmpl, err := template.New("govulncheck-intro").Parse(introTemplate)
 	if err != nil {

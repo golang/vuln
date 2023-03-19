@@ -128,7 +128,7 @@ func doGovulncheck(cfg *config, w io.Writer) error {
 	case cfg.json:
 		output = NewJSONHandler(w)
 	default:
-		output = NewTextHandler(w, preamble)
+		output = NewTextHandler(w)
 	}
 
 	// Write the introductory message to the user.
