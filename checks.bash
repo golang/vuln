@@ -92,6 +92,11 @@ check_shellcheck() {
   runcmd shellcheck ./**/*.sh
 }
 
+# check_govulncheck runs govulncheck.
+check_govulncheck() {
+  runcmd go run ./cmd/govulncheck ./...
+}
+
 clean_workspace() {
   [[ $(git status --porcelain) == '' ]]
 }
@@ -140,8 +145,8 @@ runchecks() {
   check_shellcheck
   check_unparam
   check_staticcheck
+  check_govulncheck
 }
-
 
 # trybots runs checks supported by TryBots.
 trybots() {
