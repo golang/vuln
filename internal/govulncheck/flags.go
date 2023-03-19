@@ -10,9 +10,11 @@ import (
 	"os"
 
 	"golang.org/x/tools/go/buildutil"
+	"golang.org/x/vuln/internal/vulncheck"
 )
 
 type config struct {
+	vulncheck.Config
 	patterns       []string
 	sourceAnalysis bool
 	db             string

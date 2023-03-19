@@ -36,14 +36,14 @@ func doGovulncheck(cfg *config, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	dbClient, err := client.NewClient(cfg.db, client.Options{
+	cfg.Client, err = client.NewClient(cfg.db, client.Options{
 		HTTPCache: cache,
 	})
 	if err != nil {
 		return err
 	}
 
-	preamble := newPreamble(ctx, dbClient, cfg)
+	preamble := newPreamble(ctx, cfg)
 	var output Handler
 	switch {
 	case cfg.json:
@@ -59,9 +59,9 @@ func doGovulncheck(cfg *config, w io.Writer) error {
 
 	var res *result.Result
 	if cfg.sourceAnalysis {
-		res, err = runSource(ctx, output, cfg, dbClient, dir)
+		res, err = runSource(ctx, output, cfg, dir)
 	} else {
-		res, err = runBinary(ctx, output, cfg, dbClient)
+		res, err = runBinary(ctx, output, cfg)
 	}
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func doGovulncheck(cfg *config, w io.Writer) error {
 // Vulnerabilities can be called (affecting the package, because a vulnerable
 // symbol is actually exercised) or just imported by the package
 // (likely having a non-affecting outcome).
-func runSource(ctx context.Context, output Handler, cfg *config, dbClient client.Client, dir string) (*result.Result, error) {
+func runSource(ctx context.Context, output Handler, cfg *config, dir string) (*result.Result, error) {
 	var pkgs []*vulncheck.Package
 	pkgs, err := loadPackages(cfg, dir)
 	if err != nil {
@@ -103,10 +103,7 @@ func runSource(ctx context.Context, output Handler, cfg *config, dbClient client
 	if err := output.Progress(sourceProgressMessage(pkgs)); err != nil {
 		return nil, err
 	}
-	vcfg := &vulncheck.Config{
-		Client: dbClient,
-	}
-	vr, err := vulncheck.Source(ctx, pkgs, vcfg)
+	vr, err := vulncheck.Source(ctx, pkgs, &cfg.Config)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +111,7 @@ func runSource(ctx context.Context, output Handler, cfg *config, dbClient client
 }
 
 // runBinary detects presence of vulnerable symbols in an executable.
-func runBinary(ctx context.Context, output Handler, cfg *config, dbClient client.Client) (*result.Result, error) {
+func runBinary(ctx context.Context, output Handler, cfg *config) (*result.Result, error) {
 	var exe *os.File
 	exe, err := os.Open(cfg.patterns[0])
 	if err != nil {
@@ -124,10 +121,7 @@ func runBinary(ctx context.Context, output Handler, cfg *config, dbClient client
 	if err := output.Progress(binaryProgressMessage); err != nil {
 		return nil, err
 	}
-	vcfg := &vulncheck.Config{
-		Client: dbClient,
-	}
-	vr, err := binary(ctx, exe, vcfg)
+	vr, err := binary(ctx, exe, &cfg.Config)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +181,7 @@ func sourceProgressMessage(topPkgs []*vulncheck.Package) string {
 	return fmt.Sprintf("Scanning your code and %s across %s for known vulnerabilities...", pkgsPhrase, modsPhrase)
 }
 
-func newPreamble(ctx context.Context, dbClient client.Client, cfg *config) *result.Preamble {
+func newPreamble(ctx context.Context, cfg *config) *result.Preamble {
 	preamble := result.Preamble{
 		DB:       cfg.db,
 		Analysis: result.AnalysisBinary,
@@ -208,7 +202,7 @@ func newPreamble(ctx context.Context, dbClient client.Client, cfg *config) *resu
 	if bi, ok := debug.ReadBuildInfo(); ok {
 		preamble.GovulncheckVersion = scannerVersion(bi)
 	}
-	if mod, err := dbClient.LastModifiedTime(ctx); err == nil {
+	if mod, err := cfg.Client.LastModifiedTime(ctx); err == nil {
 		preamble.DBLastModified = &mod
 	}
 	return &preamble
