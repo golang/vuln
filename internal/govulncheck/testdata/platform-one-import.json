@@ -1,0 +1,58 @@
+{
+  "preamble": {
+    "query_kind": "Source",
+    "callstack_mode": "Compact"
+  }
+}
+{
+  "vulnerability": {
+    "osv": {
+      "id": "one-import",
+      "published": "0001-01-01T00:00:00Z",
+      "modified": "0001-01-01T00:00:00Z",
+      "details": "",
+      "affected": [
+        {
+          "package": {
+            "name": "golang.org/vmod",
+            "ecosystem": ""
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "1.2.0"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "url": ""
+          },
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "goos": [
+                  "windows",
+                  "linux"
+                ],
+                "goarch": [
+                  "amd64",
+                  "wasm"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "modules": [
+      {
+        "path": "golang.org/vmod",
+        "found_version": "v0.0.1",
+        "fixed_version": "v0.1.3"
+      }
+    ]
+  }
+}

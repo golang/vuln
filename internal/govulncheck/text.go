@@ -100,7 +100,7 @@ func createTmplResult(vulns []*result.Vuln, verbose, source bool) tmplResult {
 	for _, v := range vulns {
 		if !source || IsCalled(v) {
 			affected = append(affected, createTmplVulnInfo(v, verbose, source))
-		} else {
+		} else if len(v.Modules) > 0 {
 			// save arbitrary module info for informational message
 			m := v.Modules[0]
 			// For stdlib vulnerabilities, we use the path of one the

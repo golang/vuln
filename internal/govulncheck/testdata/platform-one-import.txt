@@ -1,0 +1,19 @@
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Using govulncheck with
+vulnerability data from .
+No vulnerabilities found.
+
+=== Informational ===
+
+Found 1 vulnerability in packages that you import, but there are no call
+stacks leading to the use of this vulnerability. You may not need to
+take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+for details.
+
+Vulnerability #1: one-import
+
+  More info: https://pkg.go.dev/vuln/one-import
+  Found in: golang.org/vmod@v0.0.1
+  Fixed in: golang.org/vmod@v0.1.3
+  Platforms: linux/amd64, linux/wasm, windows/amd64, windows/wasm
