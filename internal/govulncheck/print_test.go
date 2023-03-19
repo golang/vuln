@@ -128,7 +128,6 @@ var testVuln2 = &osv.Entry{
 	}}}
 
 func TestPrintTextNoVulns(t *testing.T) {
-	testdata := os.DirFS("testdata")
 	preamble := &result.Preamble{
 		Analysis: result.AnalysisSource,
 		Mode:     result.ModeCompact,
@@ -145,11 +144,9 @@ func TestPrintTextNoVulns(t *testing.T) {
 			},
 		},
 	}
-	want, _ := fs.ReadFile(testdata, "no_vulns.txt")
-	testPrint(t, preamble, r, string(want))
+	testPrint(t, preamble, r, "no_vulns")
 }
 func TestPrintTextSource(t *testing.T) {
-	testdata := os.DirFS("testdata")
 	preamble := &result.Preamble{
 		Analysis: result.AnalysisSource,
 		Mode:     result.ModeCompact,
@@ -184,11 +181,10 @@ func TestPrintTextSource(t *testing.T) {
 				},
 			},
 		}}
-	want, _ := fs.ReadFile(testdata, "source.txt")
-	testPrint(t, preamble, r, string(want))
+
+	testPrint(t, preamble, r, "source")
 }
 func TestPrintTextBinary(t *testing.T) {
-	testdata := os.DirFS("testdata")
 	preamble := &result.Preamble{
 		Analysis: result.AnalysisBinary,
 		Mode:     result.ModeCompact,
@@ -220,11 +216,9 @@ func TestPrintTextBinary(t *testing.T) {
 				},
 			},
 		}}
-	want, _ := fs.ReadFile(testdata, "binary.txt")
-	testPrint(t, preamble, r, string(want))
+	testPrint(t, preamble, r, "binary")
 }
 func TestPrintTextMultiModuleAndStacks(t *testing.T) {
-	testdata := os.DirFS("testdata")
 	preamble := &result.Preamble{
 		Analysis: result.AnalysisSource,
 		Mode:     result.ModeCompact,
@@ -258,13 +252,27 @@ func TestPrintTextMultiModuleAndStacks(t *testing.T) {
 				},
 			},
 		}}
-	want, _ := fs.ReadFile(testdata, "multi_stacks.txt")
-	testPrint(t, preamble, r, string(want))
+
+	testPrint(t, preamble, r, "multi_stacks")
 }
 
-func testPrint(t *testing.T, preamble *result.Preamble, vulns []*result.Vuln, want string) {
-	got := new(strings.Builder)
-	output := NewTextHandler(got, preamble)
+func testPrint(t *testing.T, preamble *result.Preamble, vulns []*result.Vuln, name string) {
+	testdata := os.DirFS("testdata")
+	wantText, _ := fs.ReadFile(testdata, name+".txt")
+	wantJSON, _ := fs.ReadFile(testdata, name+".json")
+	got := &strings.Builder{}
+	testRunHandler(t, preamble, vulns, NewTextHandler(got, preamble))
+	if diff := cmp.Diff(string(wantText), got.String()); diff != "" {
+		t.Errorf("Readable mismatch (-want, +got):\n%s", diff)
+	}
+	got.Reset()
+	testRunHandler(t, preamble, vulns, NewJSONHandler(got))
+	if diff := cmp.Diff(string(wantJSON), got.String()); diff != "" {
+		t.Errorf("JSON mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func testRunHandler(t *testing.T, preamble *result.Preamble, vulns []*result.Vuln, output Handler) {
 	output.Preamble(preamble)
 	for _, v := range vulns {
 		if err := output.Vulnerability(v); err != nil {
@@ -273,8 +281,5 @@ func testPrint(t *testing.T, preamble *result.Preamble, vulns []*result.Vuln, wa
 	}
 	if err := output.Flush(); err != nil {
 		t.Fatal(err)
-	}
-	if diff := cmp.Diff(want, got.String()); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }

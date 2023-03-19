@@ -1,0 +1,83 @@
+{
+  "preamble": {
+    "query_kind": "Source",
+    "callstack_mode": "Compact"
+  }
+}
+{
+  "vulnerability": {
+    "osv": {
+      "id": "GO-0000-0001",
+      "published": "0001-01-01T00:00:00Z",
+      "modified": "0001-01-01T00:00:00Z",
+      "details": "Third-party vulnerability",
+      "affected": [
+        {
+          "package": {
+            "name": "golang.org/vmod",
+            "ecosystem": ""
+          },
+          "database_specific": {
+            "url": ""
+          },
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "goos": [
+                  "amd"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "modules": [
+      {
+        "path": "golang.org/vmod",
+        "found_version": "v0.0.1",
+        "fixed_version": "v0.1.3",
+        "packages": [
+          {
+            "path": "",
+            "callstacks": [
+              {
+                "symbol": "",
+                "summary": "main calls vmod.Vuln"
+              },
+              {
+                "symbol": "",
+                "summary": "main calls vmod.VulnFoo"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "golang.org/vmod1",
+        "found_version": "v0.0.3",
+        "fixed_version": "v0.0.4",
+        "packages": [
+          {
+            "path": "",
+            "callstacks": [
+              {
+                "symbol": "",
+                "summary": "Foo calls vmod1.Vuln"
+              }
+            ]
+          },
+          {
+            "path": "",
+            "callstacks": [
+              {
+                "symbol": "",
+                "summary": "Bar calls vmod1.VulnFoo"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

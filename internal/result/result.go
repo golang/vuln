@@ -28,6 +28,14 @@ const (
 	AnalysisBinary AnalysisType = "Binary"
 )
 
+// Message is an entry in the output stream. It will always have exactly one
+// field filled in.
+type Message struct {
+	Preamble      *Preamble `json:"preamble,omitempty"`
+	Progress      string    `json:"progress,omitempty"`
+	Vulnerability *Vuln     `json:"vulnerability,omitempty"`
+}
+
 type Preamble struct {
 	GoVersion          string       `json:"go_version,omitempty"`
 	GovulncheckVersion string       `json:"tool_version,omitempty"`
@@ -87,7 +95,7 @@ type Module struct {
 // Package is a Go package with known vulnerable symbols.
 type Package struct {
 	// Path is the import path of the package containing the vulnerability.
-	Path string `json:"path,omitempty"`
+	Path string `json:"path"`
 
 	// CallStacks contains a representative call stack for each
 	// vulnerable symbol that is called.
@@ -107,7 +115,7 @@ type CallStack struct {
 	// or method.
 	//
 	// This follows the naming convention in the OSV report.
-	Symbol string `json:"symbol,omitempty"`
+	Symbol string `json:"symbol"`
 
 	// Summary is a one-line description of the callstack, used by the
 	// default govulncheck mode.
