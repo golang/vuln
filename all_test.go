@@ -10,6 +10,7 @@ package main
 import (
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 
 	"golang.org/x/mod/modfile"
@@ -42,8 +43,14 @@ func Test(t *testing.T) {
 		t.Fatalf("modfile.Parse: %v", err)
 	}
 	for _, r := range f.Require {
-		if excluded[r.Mod.Path] {
-			t.Errorf("go.mod contains %q as a dependency, which should not happen", r.Mod.Path)
+		// This is used by staticcheck.
+		if strings.HasPrefix(r.Mod.Path, "golang.org/x/exp/typeparams") {
+			continue
+		}
+		for ex := range excluded {
+			if strings.HasPrefix(r.Mod.Path, ex) {
+				t.Errorf("go.mod contains %q as a dependency, which should not happen", r.Mod.Path)
+			}
 		}
 	}
 }
