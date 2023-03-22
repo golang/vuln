@@ -86,7 +86,7 @@ check_misspell() {
 # check_shellcheck runs shellcheck on .bash and .sh files.
 check_shellcheck() {
   if ! [ -x "$(command -v shellcheck)" ]; then
-    echo "Please install shellcheck. See https://github.com/koalaman/shellcheck#installing."
+    die "Please install shellcheck. See https://github.com/koalaman/shellcheck#installing."
   fi
   runcmd shellcheck -x checks.bash
   runcmd shellcheck ./**/*.sh
