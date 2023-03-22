@@ -76,10 +76,19 @@ func doGovulncheck(cfg *config, w io.Writer) error {
 	if err := output.Flush(); err != nil {
 		return err
 	}
-	if len(res.Vulns) > 0 {
+	if containsAffectedVulnerabilities(res) {
 		return ErrVulnerabilitiesFound
 	}
 	return nil
+}
+
+func containsAffectedVulnerabilities(r *result.Result) bool {
+	for _, v := range r.Vulns {
+		if IsCalled(v) {
+			return true
+		}
+	}
+	return false
 }
 
 // runSource reports vulnerabilities that affect the analyzed packages.

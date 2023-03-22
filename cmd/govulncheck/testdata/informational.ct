@@ -1,0 +1,30 @@
+$ govulncheck -dir ${moddir}/informational -v .
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with
+vulnerability data from testdata/vulndb (last modified 01 Jan 21 00:00 UTC).
+
+Scanning your code and P packages across M dependent modules for known vulnerabilities...
+No vulnerabilities found.
+
+=== Informational ===
+
+Found 2 vulnerabilities in packages that you import, but there are no call
+stacks leading to the use of these vulnerabilities. You may not need to
+take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+for details.
+
+Vulnerability #1: GO-2022-0592
+  A maliciously crafted path can cause Get and other query
+  functions to consume excessive amounts of CPU and time.
+  More info: https://pkg.go.dev/vuln/GO-2022-0592
+  Found in: github.com/tidwall/gjson@v1.9.2
+  Fixed in: github.com/tidwall/gjson@v1.9.3
+
+Vulnerability #2: GO-2021-0265
+  GJSON allowed a ReDoS (regular expression denial of service)
+  attack.
+  More info: https://pkg.go.dev/vuln/GO-2021-0265
+  Found in: github.com/tidwall/gjson@v1.9.2
+  Fixed in: github.com/tidwall/gjson@v1.9.3
+  Platforms: linux/amd64, windows/amd64
