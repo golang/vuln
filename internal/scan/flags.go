@@ -26,11 +26,6 @@ type config struct {
 	test     bool
 }
 
-const (
-	envGOVULNDB = "GOVULNDB"
-	vulndbHost  = "https://vuln.go.dev"
-)
-
 func (c *Cmd) parseFlags() (*config, error) {
 	cfg := &config{}
 	var tagsFlag buildutil.TagsFlag
@@ -38,6 +33,7 @@ func (c *Cmd) parseFlags() (*config, error) {
 	flags.BoolVar(&cfg.json, "json", false, "output JSON")
 	flags.BoolVar(&cfg.verbose, "v", false, "print a full call stack for each vulnerability")
 	flags.BoolVar(&cfg.test, "test", false, "analyze test files. Only valid for source code.")
+	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database URL")
 	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
 	flags.Usage = func() {
 		fmt.Fprint(flags.Output(), `usage:
@@ -64,10 +60,6 @@ func (c *Cmd) parseFlags() (*config, error) {
 		}
 	}
 	cfg.tags = tagsFlag
-	cfg.db = vulndbHost
-	if db := os.Getenv(envGOVULNDB); db != "" {
-		cfg.db = db
-	}
 	return cfg, nil
 }
 

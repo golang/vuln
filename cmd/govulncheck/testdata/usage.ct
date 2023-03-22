@@ -3,6 +3,8 @@ usage:
 	govulncheck [flags] package...
 	govulncheck [flags] binary
 
+  -db string
+    	vulnerability database URL (default "https://vuln.go.dev")
   -dir string
     	directory to use for loading source files
   -json
@@ -22,6 +24,8 @@ usage:
 	govulncheck [flags] package...
 	govulncheck [flags] binary
 
+  -db string
+    	vulnerability database URL (default "https://vuln.go.dev")
   -dir string
     	directory to use for loading source files
   -json

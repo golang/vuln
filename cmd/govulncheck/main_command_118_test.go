@@ -47,10 +47,6 @@ func TestCommand(t *testing.T) {
 	t.Cleanup(cleanup)
 
 	ts.Commands["govulncheck"] = func(args []string, inputFile string) ([]byte, error) {
-		cmd := exec.Command(binary, args...)
-		if inputFile != "" {
-			return nil, errors.New("input redirection makes no sense")
-		}
 		// We set GOVERSION to always get the same results regardless of the underlying Go build system.
 		vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb"))
 		if err != nil {
@@ -60,7 +56,13 @@ func TestCommand(t *testing.T) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create GOVULNDB env var: %v", err)
 		}
-		cmd.Env = append(os.Environ(), "GOVULNDB="+govulndbURI.String(), "TEST_GOVERSION=go1.18")
+
+		newargs := append([]string{"-db", govulndbURI.String()}, args...)
+		cmd := exec.Command(binary, newargs...)
+		if inputFile != "" {
+			return nil, errors.New("input redirection makes no sense")
+		}
+		cmd.Env = append(os.Environ(), "TEST_GOVERSION=go1.18")
 		out, err := cmd.CombinedOutput()
 		out = filterGoFilePaths(out)
 		out = filterProgressNumbers(out)
