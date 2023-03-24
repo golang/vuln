@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package govulncheck
+package scan
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/go/packages/packagestest"
-	"golang.org/x/vuln/internal/result"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
@@ -116,11 +116,11 @@ func TestSummarizeCallStack(t *testing.T) {
 	}
 }
 
-func stringToCallStack(s string) result.CallStack {
-	var cs result.CallStack
+func stringToCallStack(s string) govulncheck.CallStack {
+	var cs govulncheck.CallStack
 	for _, e := range strings.Fields(s) {
 		parts := strings.Split(e, ".")
-		cs.Frames = append(cs.Frames, &result.StackFrame{
+		cs.Frames = append(cs.Frames, &govulncheck.StackFrame{
 			Package:  parts[0],
 			Function: parts[1],
 		})

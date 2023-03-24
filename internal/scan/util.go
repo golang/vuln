@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package govulncheck
+package scan
 
 import (
 	"strings"
 
 	"golang.org/x/mod/semver"
 	"golang.org/x/vuln/internal"
-	"golang.org/x/vuln/internal/result"
+	"golang.org/x/vuln/internal/govulncheck"
 	isem "golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
@@ -65,7 +65,7 @@ func versionString(modulePath, version string) string {
 
 // highest returns the highest (one with the smallest index) entry in the call
 // stack for which f returns true.
-func highest(cs []*result.StackFrame, f func(e *result.StackFrame) bool) int {
+func highest(cs []*govulncheck.StackFrame, f func(e *govulncheck.StackFrame) bool) int {
 	for i := 0; i < len(cs); i++ {
 		if f(cs[i]) {
 			return i
@@ -76,7 +76,7 @@ func highest(cs []*result.StackFrame, f func(e *result.StackFrame) bool) int {
 
 // lowest returns the lowest (one with the largest index) entry in the call
 // stack for which f returns true.
-func lowest(cs []*result.StackFrame, f func(e *result.StackFrame) bool) int {
+func lowest(cs []*govulncheck.StackFrame, f func(e *govulncheck.StackFrame) bool) int {
 	for i := len(cs) - 1; i >= 0; i-- {
 		if f(cs[i]) {
 			return i

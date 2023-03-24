@@ -10,19 +10,19 @@ import (
 	"fmt"
 	"os"
 
-	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/scan"
 )
 
 func main() {
 	ctx := context.Background()
-	err := govulncheck.Command(ctx, os.Args[0], os.Args[1:]...).Run()
+	err := scan.Command(ctx, os.Args[0], os.Args[1:]...).Run()
 	if err != nil {
 		switch err {
 		case flag.ErrHelp:
 			os.Exit(0)
-		case govulncheck.ErrMissingArgPatterns:
+		case scan.ErrMissingArgPatterns:
 			os.Exit(1)
-		case govulncheck.ErrVulnerabilitiesFound:
+		case scan.ErrVulnerabilitiesFound:
 			os.Exit(3)
 		default:
 			fmt.Fprintln(os.Stderr, err)

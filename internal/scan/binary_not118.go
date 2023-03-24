@@ -5,7 +5,7 @@
 //go:build !go1.18
 // +build !go1.18
 
-package govulncheck
+package scan
 
 import (
 	"context"

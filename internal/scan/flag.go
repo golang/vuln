@@ -5,7 +5,7 @@
 //go:build !testmode
 // +build !testmode
 
-package govulncheck
+package scan
 
 import (
 	"flag"

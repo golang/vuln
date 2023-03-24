@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package govulncheck
+package scan
 
 import (
 	"encoding/json"
 
 	"io"
 
-	"golang.org/x/vuln/internal/result"
+	"golang.org/x/vuln/internal/govulncheck"
 )
 
 type jsonHandler struct {
@@ -28,7 +28,7 @@ func NewJSONHandler(w io.Writer) Handler {
 func HandleJSON(from io.Reader, to Handler) error {
 	dec := json.NewDecoder(from)
 	for dec.More() {
-		msg := result.Message{}
+		msg := govulncheck.Message{}
 		// decode the next message in the stream
 		if err := dec.Decode(&msg); err != nil {
 			return err
@@ -58,16 +58,16 @@ func (o *jsonHandler) Flush() error {
 }
 
 // Vulnerability gathers vulnerabilities to be written.
-func (o *jsonHandler) Vulnerability(vuln *result.Vuln) error {
-	return o.enc.Encode(result.Message{Vulnerability: vuln})
+func (o *jsonHandler) Vulnerability(vuln *govulncheck.Vuln) error {
+	return o.enc.Encode(govulncheck.Message{Vulnerability: vuln})
 }
 
 // Preamble does not do anything in JSON mode.
-func (o *jsonHandler) Preamble(preamble *result.Preamble) error {
-	return o.enc.Encode(result.Message{Preamble: preamble})
+func (o *jsonHandler) Preamble(preamble *govulncheck.Preamble) error {
+	return o.enc.Encode(govulncheck.Message{Preamble: preamble})
 }
 
 // Progress does not do anything in JSON mode.
 func (o *jsonHandler) Progress(msg string) error {
-	return o.enc.Encode(result.Message{Progress: msg})
+	return o.enc.Encode(govulncheck.Message{Progress: msg})
 }

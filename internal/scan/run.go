@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package govulncheck
+package scan
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
-	"golang.org/x/vuln/internal/result"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
 )
@@ -57,7 +57,7 @@ func doGovulncheck(cfg *config, w io.Writer) error {
 		return err
 	}
 
-	var res *result.Result
+	var res *govulncheck.Result
 	if cfg.sourceAnalysis {
 		res, err = runSource(ctx, output, cfg, dir)
 	} else {
@@ -82,7 +82,7 @@ func doGovulncheck(cfg *config, w io.Writer) error {
 	return nil
 }
 
-func containsAffectedVulnerabilities(r *result.Result) bool {
+func containsAffectedVulnerabilities(r *govulncheck.Result) bool {
 	for _, v := range r.Vulns {
 		if IsCalled(v) {
 			return true
@@ -96,7 +96,7 @@ func containsAffectedVulnerabilities(r *result.Result) bool {
 // Vulnerabilities can be called (affecting the package, because a vulnerable
 // symbol is actually exercised) or just imported by the package
 // (likely having a non-affecting outcome).
-func runSource(ctx context.Context, output Handler, cfg *config, dir string) (*result.Result, error) {
+func runSource(ctx context.Context, output Handler, cfg *config, dir string) (*govulncheck.Result, error) {
 	var pkgs []*vulncheck.Package
 	pkgs, err := loadPackages(cfg, dir)
 	if err != nil {
@@ -120,7 +120,7 @@ func runSource(ctx context.Context, output Handler, cfg *config, dir string) (*r
 }
 
 // runBinary detects presence of vulnerable symbols in an executable.
-func runBinary(ctx context.Context, output Handler, cfg *config) (*result.Result, error) {
+func runBinary(ctx context.Context, output Handler, cfg *config) (*govulncheck.Result, error) {
 	var exe *os.File
 	exe, err := os.Open(cfg.patterns[0])
 	if err != nil {
@@ -190,17 +190,17 @@ func sourceProgressMessage(topPkgs []*vulncheck.Package) string {
 	return fmt.Sprintf("Scanning your code and %s across %s for known vulnerabilities...", pkgsPhrase, modsPhrase)
 }
 
-func newPreamble(ctx context.Context, cfg *config) *result.Preamble {
-	preamble := result.Preamble{
+func newPreamble(ctx context.Context, cfg *config) *govulncheck.Preamble {
+	preamble := govulncheck.Preamble{
 		DB:       cfg.db,
-		Analysis: result.AnalysisBinary,
-		Mode:     result.ModeCompact,
+		Analysis: govulncheck.AnalysisBinary,
+		Mode:     govulncheck.ModeCompact,
 	}
 	if cfg.verbose {
-		preamble.Mode = result.ModeVerbose
+		preamble.Mode = govulncheck.ModeVerbose
 	}
 	if cfg.sourceAnalysis {
-		preamble.Analysis = result.AnalysisSource
+		preamble.Analysis = govulncheck.AnalysisSource
 
 		// The Go version is only relevant for source analysis, so omit it for
 		// binary mode.
@@ -299,7 +299,7 @@ func scannerVersion(bi *debug.BuildInfo) string {
 	return buf.String()
 }
 
-func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *result.Result {
+func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *govulncheck.Result {
 	topPkgs := map[string]bool{}
 	for _, p := range pkgs {
 		topPkgs[p.PkgPath] = true
@@ -325,27 +325,27 @@ func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *result
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
 	// results later.
-	r := &result.Result{}
+	r := &govulncheck.Result{}
 	for _, vv := range vr.Vulns {
-		p := &result.Package{Path: vv.PkgPath}
-		m := &result.Module{
+		p := &govulncheck.Package{Path: vv.PkgPath}
+		m := &govulncheck.Module{
 			Path:         vv.ModPath,
 			FoundVersion: foundVersion(vv.ModPath, modVersions),
 			FixedVersion: fixedVersion(vv.ModPath, vv.OSV.Affected),
-			Packages:     []*result.Package{p},
+			Packages:     []*govulncheck.Package{p},
 		}
-		v := &result.Vuln{OSV: vv.OSV, Modules: []*result.Module{m}}
+		v := &govulncheck.Vuln{OSV: vv.OSV, Modules: []*govulncheck.Module{m}}
 
 		if vv.CallSink != 0 {
 			k := key{id: vv.OSV.ID, pkg: vv.PkgPath, mod: vv.ModPath}
 			vcs := uniqueCallStack(vv, callStacks[vv], vulnsPerPkg[k], vr)
 			if vcs != nil {
-				cs := result.CallStack{
+				cs := govulncheck.CallStack{
 					Frames: stackFramesfromEntries(vcs),
 					Symbol: vv.Symbol,
 				}
 				cs.Summary = summarizeCallStack(cs, topPkgs, p.Path)
-				p.CallStacks = []result.CallStack{cs}
+				p.CallStacks = []govulncheck.CallStack{cs}
 			}
 		}
 		r.Vulns = append(r.Vulns, v)
@@ -356,23 +356,23 @@ func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *result
 	return r
 }
 
-func createBinaryResult(vr *vulncheck.Result) *result.Result {
+func createBinaryResult(vr *vulncheck.Result) *govulncheck.Result {
 	modVersions := moduleVersionMap(vr.Modules)
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
 	// results later.
-	r := &result.Result{}
+	r := &govulncheck.Result{}
 	for _, vv := range vr.Vulns {
-		p := &result.Package{Path: vv.PkgPath}
+		p := &govulncheck.Package{Path: vv.PkgPath}
 		// in binary mode, call stacks contain just the symbol data
-		p.CallStacks = []result.CallStack{{Symbol: vv.Symbol}}
-		m := &result.Module{
+		p.CallStacks = []govulncheck.CallStack{{Symbol: vv.Symbol}}
+		m := &govulncheck.Module{
 			Path:         vv.ModPath,
 			FoundVersion: foundVersion(vv.ModPath, modVersions),
 			FixedVersion: fixedVersion(vv.ModPath, vv.OSV.Affected),
-			Packages:     []*result.Package{p},
+			Packages:     []*govulncheck.Package{p},
 		}
-		v := &result.Vuln{OSV: vv.OSV, Modules: []*result.Module{m}}
+		v := &govulncheck.Vuln{OSV: vv.OSV, Modules: []*govulncheck.Module{m}}
 		r.Vulns = append(r.Vulns, v)
 	}
 
@@ -386,36 +386,36 @@ func createBinaryResult(vr *vulncheck.Result) *result.Result {
 // For instance, Vulns with the same OSV field are
 // merged into a single one. The same applies for
 // Modules of a Vuln, and Packages of a Module.
-func merge(r *result.Result) *result.Result {
-	nr := &result.Result{}
+func merge(r *govulncheck.Result) *govulncheck.Result {
+	nr := &govulncheck.Result{}
 	// merge vulns by their ID. Note that there can
 	// be several OSVs with the same ID but different
 	// pointer values
 	osvs := make(map[string]*osv.Entry)
-	vs := make(map[string][]*result.Module)
+	vs := make(map[string][]*govulncheck.Module)
 	for _, v := range r.Vulns {
 		osvs[v.OSV.ID] = v.OSV
 		vs[v.OSV.ID] = append(vs[v.OSV.ID], v.Modules...)
 	}
 
 	for id, mods := range vs {
-		v := &result.Vuln{OSV: osvs[id], Modules: mods}
+		v := &govulncheck.Vuln{OSV: osvs[id], Modules: mods}
 		nr.Vulns = append(nr.Vulns, v)
 	}
 
 	// merge modules
 	for _, v := range nr.Vulns {
-		ms := make(map[string][]*result.Module)
+		ms := make(map[string][]*govulncheck.Module)
 		for _, m := range v.Modules {
 			ms[m.Path] = append(ms[m.Path], m)
 		}
 
-		var nms []*result.Module
+		var nms []*govulncheck.Module
 		for mpath, mods := range ms {
 			// modules with the same path must have
 			// same found and fixed versions
 			validateModuleVersions(mods)
-			nm := &result.Module{
+			nm := &govulncheck.Module{
 				Path:         mpath,
 				FixedVersion: mods[0].FixedVersion,
 				FoundVersion: mods[0].FoundVersion,
@@ -431,14 +431,14 @@ func merge(r *result.Result) *result.Result {
 	// merge packages
 	for _, v := range nr.Vulns {
 		for _, m := range v.Modules {
-			ps := make(map[string][]*result.Package)
+			ps := make(map[string][]*govulncheck.Package)
 			for _, p := range m.Packages {
 				ps[p.Path] = append(ps[p.Path], p)
 			}
 
-			var nps []*result.Package
+			var nps []*govulncheck.Package
 			for ppath, pkgs := range ps {
-				np := &result.Package{Path: ppath}
+				np := &govulncheck.Package{Path: ppath}
 				for _, p := range pkgs {
 					np.CallStacks = append(np.CallStacks, p.CallStacks...)
 				}
@@ -452,7 +452,7 @@ func merge(r *result.Result) *result.Result {
 
 // validateModuleVersions checks that all modules have
 // the same found and fixed version. If not, panics.
-func validateModuleVersions(modules []*result.Module) {
+func validateModuleVersions(modules []*govulncheck.Module) {
 	var found, fixed string
 	for i, m := range modules {
 		if i == 0 {
@@ -467,7 +467,7 @@ func validateModuleVersions(modules []*result.Module) {
 }
 
 // sortResults sorts Vulns, Modules, and Packages of r.
-func sortResult(r *result.Result) {
+func sortResult(r *govulncheck.Result) {
 	sort.Slice(r.Vulns, func(i, j int) bool {
 		return r.Vulns[i].OSV.ID > r.Vulns[j].OSV.ID
 	})
@@ -486,10 +486,10 @@ func sortResult(r *result.Result) {
 // stackFramesFromEntries creates a sequence of stack
 // frames from vcs. Position of a StackFrame is the
 // call position of the corresponding stack entry.
-func stackFramesfromEntries(vcs vulncheck.CallStack) []*result.StackFrame {
-	var frames []*result.StackFrame
+func stackFramesfromEntries(vcs vulncheck.CallStack) []*govulncheck.StackFrame {
+	var frames []*govulncheck.StackFrame
 	for _, e := range vcs {
-		fr := &result.StackFrame{
+		fr := &govulncheck.StackFrame{
 			Function: e.Function.Name,
 			Package:  e.Function.PkgPath,
 			Receiver: e.Function.RecvType,

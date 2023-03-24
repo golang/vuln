@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package govulncheck
+package scan
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"text/template"
 
 	"golang.org/x/vuln/internal"
-	"golang.org/x/vuln/internal/result"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/osv"
 )
 
@@ -24,8 +24,8 @@ func NewTextHandler(w io.Writer) Handler {
 
 type textHandler struct {
 	w        io.Writer
-	vulns    []*result.Vuln
-	preamble *result.Preamble
+	vulns    []*govulncheck.Vuln
+	preamble *govulncheck.Preamble
 }
 
 const (
@@ -53,8 +53,8 @@ func (o *textHandler) Flush() error {
 		},
 	}
 
-	source := o.preamble.Analysis == result.AnalysisSource
-	verbose := o.preamble.Mode == result.ModeVerbose
+	source := o.preamble.Analysis == govulncheck.AnalysisSource
+	verbose := o.preamble.Mode == govulncheck.ModeVerbose
 	tmplRes := createTmplResult(o.vulns, verbose, source)
 	o.vulns = nil
 	tmpl, err := template.New("govulncheck").Funcs(funcMap).Parse(outputTemplate)
@@ -65,13 +65,13 @@ func (o *textHandler) Flush() error {
 }
 
 // Vulnerability gathers vulnerabilities to be written.
-func (o *textHandler) Vulnerability(vuln *result.Vuln) error {
+func (o *textHandler) Vulnerability(vuln *govulncheck.Vuln) error {
 	o.vulns = append(o.vulns, vuln)
 	return nil
 }
 
 // Preamble writes text output formatted according to govulncheck-intro.tmpl.
-func (o *textHandler) Preamble(preamble *result.Preamble) error {
+func (o *textHandler) Preamble(preamble *govulncheck.Preamble) error {
 	p := *preamble
 	o.preamble = &p
 	// Print preamble to the user.
@@ -91,7 +91,7 @@ func (o *textHandler) Progress(msg string) error {
 
 // createTmplResult transforms Result r into a
 // template structure for printing.
-func createTmplResult(vulns []*result.Vuln, verbose, source bool) tmplResult {
+func createTmplResult(vulns []*govulncheck.Vuln, verbose, source bool) tmplResult {
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
 	var result []tmplVulnInfo
@@ -104,7 +104,7 @@ func createTmplResult(vulns []*result.Vuln, verbose, source bool) tmplResult {
 // createTmplVulnInfo creates a template vuln info for
 // a vulnerability that is called by source code or
 // present in the binary.
-func createTmplVulnInfo(v *result.Vuln, verbose, source bool) tmplVulnInfo {
+func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool) tmplVulnInfo {
 	vInfo := tmplVulnInfo{
 		ID:       v.OSV.ID,
 		Details:  v.OSV.Details,
@@ -113,7 +113,7 @@ func createTmplVulnInfo(v *result.Vuln, verbose, source bool) tmplVulnInfo {
 
 	// stacks returns call stack info of p as a
 	// string depending on verbose and source mode.
-	stacks := func(p *result.Package) string {
+	stacks := func(p *govulncheck.Package) string {
 		if !source {
 			return ""
 		}
@@ -168,7 +168,7 @@ func createTmplVulnInfo(v *result.Vuln, verbose, source bool) tmplVulnInfo {
 	return vInfo
 }
 
-func createTmplModule(m *result.Module, path string, osv *osv.Entry) tmplModVulnInfo {
+func createTmplModule(m *govulncheck.Module, path string, osv *osv.Entry) tmplModVulnInfo {
 	return tmplModVulnInfo{
 		IsStd:     m.Path == internal.GoStdModulePath,
 		Module:    path,
@@ -178,7 +178,7 @@ func createTmplModule(m *result.Module, path string, osv *osv.Entry) tmplModVuln
 	}
 }
 
-func defaultCallStacks(css []result.CallStack) string {
+func defaultCallStacks(css []govulncheck.CallStack) string {
 	var summaries []string
 	for _, cs := range css {
 		summaries = append(summaries, cs.Summary)
@@ -198,7 +198,7 @@ func defaultCallStacks(css []result.CallStack) string {
 	return b.String()
 }
 
-func verboseCallStacks(css []result.CallStack) string {
+func verboseCallStacks(css []govulncheck.CallStack) string {
 	// Display one full call stack for each vuln.
 	i := 1
 	var b strings.Builder
