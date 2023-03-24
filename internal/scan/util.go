@@ -6,6 +6,7 @@ package scan
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"golang.org/x/mod/semver"
@@ -15,6 +16,108 @@ import (
 	"golang.org/x/vuln/internal/vulncheck"
 	"golang.org/x/vuln/osv"
 )
+
+// merge takes r and creates a Result where duplicate
+// vulns, modules, and packages are merged together.
+// For instance, Vulns with the same OSV field are
+// merged into a single one. The same applies for
+// Modules of a Vuln, and Packages of a Module.
+func merge(r *govulncheck.Result) *govulncheck.Result {
+	nr := &govulncheck.Result{}
+	// merge vulns by their ID. Note that there can
+	// be several OSVs with the same ID but different
+	// pointer values
+	osvs := make(map[string]*osv.Entry)
+	vs := make(map[string][]*govulncheck.Module)
+	for _, v := range r.Vulns {
+		osvs[v.OSV.ID] = v.OSV
+		vs[v.OSV.ID] = append(vs[v.OSV.ID], v.Modules...)
+	}
+
+	for id, mods := range vs {
+		v := &govulncheck.Vuln{OSV: osvs[id], Modules: mods}
+		nr.Vulns = append(nr.Vulns, v)
+	}
+
+	// merge modules
+	for _, v := range nr.Vulns {
+		ms := make(map[string][]*govulncheck.Module)
+		for _, m := range v.Modules {
+			ms[m.Path] = append(ms[m.Path], m)
+		}
+
+		var nms []*govulncheck.Module
+		for mpath, mods := range ms {
+			// modules with the same path must have
+			// same found and fixed versions
+			validateModuleVersions(mods)
+			nm := &govulncheck.Module{
+				Path:         mpath,
+				FixedVersion: mods[0].FixedVersion,
+				FoundVersion: mods[0].FoundVersion,
+			}
+			for _, mod := range mods {
+				nm.Packages = append(nm.Packages, mod.Packages...)
+			}
+			nms = append(nms, nm)
+		}
+		v.Modules = nms
+	}
+
+	// merge packages
+	for _, v := range nr.Vulns {
+		for _, m := range v.Modules {
+			ps := make(map[string][]*govulncheck.Package)
+			for _, p := range m.Packages {
+				ps[p.Path] = append(ps[p.Path], p)
+			}
+
+			var nps []*govulncheck.Package
+			for ppath, pkgs := range ps {
+				np := &govulncheck.Package{Path: ppath}
+				for _, p := range pkgs {
+					np.CallStacks = append(np.CallStacks, p.CallStacks...)
+				}
+				nps = append(nps, np)
+			}
+			m.Packages = nps
+		}
+	}
+	return nr
+}
+
+// validateModuleVersions checks that all modules have
+// the same found and fixed version. If not, panics.
+func validateModuleVersions(modules []*govulncheck.Module) {
+	var found, fixed string
+	for i, m := range modules {
+		if i == 0 {
+			found = m.FoundVersion
+			fixed = m.FixedVersion
+			continue
+		}
+		if m.FoundVersion != found || m.FixedVersion != fixed {
+			panic(fmt.Sprintf("found or fixed version incompatible for module %s", m.Path))
+		}
+	}
+}
+
+// sortResults sorts Vulns, Modules, and Packages of r.
+func sortResult(r *govulncheck.Result) {
+	sort.Slice(r.Vulns, func(i, j int) bool {
+		return r.Vulns[i].OSV.ID > r.Vulns[j].OSV.ID
+	})
+	for _, v := range r.Vulns {
+		sort.Slice(v.Modules, func(i, j int) bool {
+			return v.Modules[i].Path < v.Modules[j].Path
+		})
+		for _, m := range v.Modules {
+			sort.Slice(m.Packages, func(i, j int) bool {
+				return m.Packages[i].Path < m.Packages[j].Path
+			})
+		}
+	}
+}
 
 // latestFixed returns the latest fixed version in the list of affected ranges,
 // or the empty string if there are no fixed versions.
