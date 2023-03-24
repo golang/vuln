@@ -44,10 +44,10 @@ func doGovulncheck(cfg *config, w io.Writer) error {
 	}
 
 	preamble := newPreamble(ctx, cfg)
-	var output Handler
+	var output govulncheck.Handler
 	switch {
 	case cfg.json:
-		output = NewJSONHandler(w)
+		output = govulncheck.NewJSONHandler(w)
 	default:
 		output = NewTextHandler(w)
 	}
@@ -96,7 +96,7 @@ func containsAffectedVulnerabilities(r *govulncheck.Result) bool {
 // Vulnerabilities can be called (affecting the package, because a vulnerable
 // symbol is actually exercised) or just imported by the package
 // (likely having a non-affecting outcome).
-func runSource(ctx context.Context, output Handler, cfg *config, dir string) (*govulncheck.Result, error) {
+func runSource(ctx context.Context, output govulncheck.Handler, cfg *config, dir string) (*govulncheck.Result, error) {
 	var pkgs []*vulncheck.Package
 	pkgs, err := loadPackages(cfg, dir)
 	if err != nil {
@@ -120,7 +120,7 @@ func runSource(ctx context.Context, output Handler, cfg *config, dir string) (*g
 }
 
 // runBinary detects presence of vulnerable symbols in an executable.
-func runBinary(ctx context.Context, output Handler, cfg *config) (*govulncheck.Result, error) {
+func runBinary(ctx context.Context, output govulncheck.Handler, cfg *config) (*govulncheck.Result, error) {
 	var exe *os.File
 	exe, err := os.Open(cfg.patterns[0])
 	if err != nil {

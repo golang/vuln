@@ -2,11 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package scan
-
-import (
-	"golang.org/x/vuln/internal/govulncheck"
-)
+package govulncheck
 
 // Handler handles messages to be presented in a vulnerability scan output
 // stream.
@@ -15,10 +11,10 @@ type Handler interface {
 	Flush() error
 
 	// Vulnerability adds a vulnerability to be printed to the output.
-	Vulnerability(vuln *govulncheck.Vuln) error
+	Vulnerability(vuln *Vuln) error
 
 	// Preamble communicates introductory message to the user.
-	Preamble(preamble *govulncheck.Preamble) error
+	Preamble(preamble *Preamble) error
 
 	// Progress is called to display a progress message.
 	Progress(msg string) error

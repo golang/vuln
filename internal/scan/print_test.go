@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/scan"
 )
 
@@ -32,7 +33,7 @@ func TestPrinting(t *testing.T) {
 			}
 			got.Reset()
 			// this effectively tests that we can round trip the json
-			testRunHandler(t, rawJSON, scan.NewJSONHandler(got))
+			testRunHandler(t, rawJSON, govulncheck.NewJSONHandler(got))
 			if diff := cmp.Diff(string(rawJSON), got.String()); diff != "" {
 				t.Errorf("JSON mismatch (-want, +got):\n%s", diff)
 			}
@@ -40,8 +41,8 @@ func TestPrinting(t *testing.T) {
 	}
 }
 
-func testRunHandler(t *testing.T, rawJSON []byte, output scan.Handler) {
-	if err := scan.HandleJSON(bytes.NewReader(rawJSON), output); err != nil {
+func testRunHandler(t *testing.T, rawJSON []byte, output govulncheck.Handler) {
+	if err := govulncheck.HandleJSON(bytes.NewReader(rawJSON), output); err != nil {
 		t.Fatal(err)
 	}
 	if err := output.Flush(); err != nil {

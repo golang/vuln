@@ -17,7 +17,7 @@ import (
 )
 
 // NewTextHandler returns a handler that writes govulncheck output as text.
-func NewTextHandler(w io.Writer) Handler {
+func NewTextHandler(w io.Writer) govulncheck.Handler {
 	o := &textHandler{w: w}
 	return o
 }
