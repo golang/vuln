@@ -27,14 +27,7 @@ func Test(t *testing.T) {
 		t.Skipf("skipping: %v", err)
 	}
 
-	var cmd *exec.Cmd
-	v := os.Getenv("GOPROXY")
-	if strings.Contains(v, "symbolic-datum") {
-		// Trybots run using a custom GOPROXY.
-		cmd = exec.Command(bash, "./checks.bash", "trybots")
-	} else {
-		cmd = exec.Command(bash, "./checks.bash")
-	}
+	cmd := exec.Command(bash, "./checks.bash", "trybots")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
