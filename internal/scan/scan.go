@@ -18,8 +18,8 @@ type Cmd struct {
 	Env    []string
 	Dir    string
 	Stdin  io.Reader
-	Stdout io.Writer
-	Stderr io.Writer
+	Stdout io.WriteCloser
+	Stderr io.WriteCloser
 
 	ctx  context.Context
 	done chan struct{}
@@ -77,6 +77,14 @@ func (c *Cmd) Start() error {
 	c.done = make(chan struct{})
 	go func() {
 		defer close(c.done)
+		defer func() {
+			if c.Stdout != os.Stdout {
+				c.Stdout.Close()
+			}
+			if c.Stderr != os.Stderr {
+				c.Stderr.Close()
+			}
+		}()
 		c.err = c.scan()
 	}()
 	return nil
