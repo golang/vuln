@@ -14,7 +14,6 @@ const IDDirectory = "ID"
 // mustn't pass them to module.EscapePath.
 // Keep in sync with vulndb/internal/database/generate.go.
 const (
-
 	// GoStdModulePath is the internal Go module path string used
 	// when listing vulnerabilities in standard library.
 	GoStdModulePath = "stdlib"

@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/vulncheck"
 )
@@ -141,7 +140,7 @@ func summarizeCallStack(cs govulncheck.CallStack, topPkgs map[string]bool, vulnP
 		return ""
 	}
 
-	topPos := internal.AbsRelShorter(Pos(cs.Frames[iTop]))
+	topPos := AbsRelShorter(Pos(cs.Frames[iTop]))
 	if topPos != "" {
 		topPos += ": "
 	}

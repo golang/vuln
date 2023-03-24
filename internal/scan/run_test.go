@@ -4,4 +4,21 @@
 
 package scan
 
-// TODO: add tests
+import (
+	"runtime/debug"
+	"testing"
+)
+
+func TestGovulncheckVersion(t *testing.T) {
+	bi := &debug.BuildInfo{
+		Settings: []debug.BuildSetting{
+			{Key: "vcs.revision", Value: "1234567890001234"},
+			{Key: "vcs.time", Value: "2023-01-25T19:57:54Z"},
+		},
+	}
+
+	want := "v0.0.0-123456789000-20230125195754"
+	if got := scannerVersion(bi); got != want {
+		t.Errorf("got %s; want %s", got, want)
+	}
+}

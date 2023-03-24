@@ -206,7 +206,7 @@ func verboseCallStacks(css []govulncheck.CallStack) string {
 		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, cs.Symbol))
 		for _, e := range cs.Frames {
 			b.WriteString(fmt.Sprintf("  %s\n", FuncName(e)))
-			if pos := internal.AbsRelShorter(Pos(e)); pos != "" {
+			if pos := AbsRelShorter(Pos(e)); pos != "" {
 				b.WriteString(fmt.Sprintf("      %s\n", pos))
 			}
 		}
@@ -264,4 +264,25 @@ func mapkeys[M ~map[K]V, K comparable, V any](m M) []K {
 		r = append(r, k)
 	}
 	return r
+}
+
+// wrap wraps s to fit in maxWidth by breaking it into lines at whitespace. If a
+// single word is longer than maxWidth, it is retained as its own line.
+func wrap(s string, maxWidth int) string {
+	var b strings.Builder
+	w := 0
+
+	for _, f := range strings.Fields(s) {
+		if w > 0 && w+len(f)+1 > maxWidth {
+			b.WriteByte('\n')
+			w = 0
+		}
+		if w != 0 {
+			b.WriteByte(' ')
+			w++
+		}
+		b.WriteString(f)
+		w += len(f)
+	}
+	return b.String()
 }
