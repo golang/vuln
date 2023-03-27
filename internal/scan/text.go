@@ -70,6 +70,14 @@ func (o *textHandler) Vulnerability(vuln *govulncheck.Vuln) error {
 	return nil
 }
 
+func (o *textHandler) Ignored(vuln *govulncheck.Vuln) error {
+	// @TODO Improve formatting? Probably the user should still see more details than just the ID of the vuln?
+	fmt.Fprintln(o.w)
+	fmt.Fprintf(o.w, "Ignoring vulnerability %s", vuln.OSV.ID)
+	fmt.Fprintln(o.w)
+	return nil
+}
+
 // Preamble writes text output formatted according to govulncheck-intro.tmpl.
 func (o *textHandler) Preamble(preamble *govulncheck.Preamble) error {
 	p := *preamble

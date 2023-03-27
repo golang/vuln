@@ -35,6 +35,7 @@ type Message struct {
 	Preamble      *Preamble `json:"preamble,omitempty"`
 	Progress      string    `json:"progress,omitempty"`
 	Vulnerability *Vuln     `json:"vulnerability,omitempty"`
+	Ignored       *bool     `json:"ignored,omitempty"`
 }
 
 type Preamble struct {

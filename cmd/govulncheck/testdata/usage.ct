@@ -5,6 +5,8 @@ usage:
 
   -dir string
     	directory to use for loading source files
+  -ignore-file string
+    	ignore vulnerability IDs listed in this file, one ID per line
   -json
     	output JSON
   -tags list
@@ -24,6 +26,8 @@ usage:
 
   -dir string
     	directory to use for loading source files
+  -ignore-file string
+    	ignore vulnerability IDs listed in this file, one ID per line
   -json
     	output JSON
   -tags list
