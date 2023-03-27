@@ -13,6 +13,9 @@ type Handler interface {
 	// Vulnerability adds a vulnerability to be printed to the output.
 	Vulnerability(vuln *Vuln) error
 
+	// Ignored adds a vulnerability to be printed as ignored in the output
+	Ignored(vuln *Vuln) error
+
 	// Preamble communicates introductory message to the user.
 	Preamble(preamble *Preamble) error
 

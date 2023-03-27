@@ -5,8 +5,10 @@
 package scan
 
 import (
+	"bufio"
 	"context"
 	"io"
+	"os"
 	"path"
 	"path/filepath"
 	"runtime/debug"
@@ -60,23 +62,68 @@ func doGovulncheck(cfg *config, w io.Writer) error {
 		return err
 	}
 
+	ignored, err := readIgnoreFile(cfg)
+	if err != nil {
+		return err
+	}
+
 	// For each vulnerability, queue it to be written to the output.
 	for _, v := range res.Vulns {
-		if err := output.Vulnerability(v); err != nil {
-			return err
+		if ignored[v.OSV.ID] {
+			if err := output.Ignored(v); err != nil {
+				return err
+			}
+		} else {
+			if err := output.Vulnerability(v); err != nil {
+				return err
+			}
 		}
 	}
 	if err := output.Flush(); err != nil {
 		return err
 	}
-	if containsAffectedVulnerabilities(res) {
+	if containsAffectedVulnerabilities(filterIgnoredVulnerabilities(res.Vulns, ignored)) {
 		return ErrVulnerabilitiesFound
 	}
 	return nil
 }
 
-func containsAffectedVulnerabilities(r *govulncheck.Result) bool {
-	for _, v := range r.Vulns {
+func readIgnoreFile(cfg *config) (map[string]bool, error) {
+	if cfg.ignoreFile == "" {
+		return nil, nil
+	}
+	ignored := make(map[string]bool)
+	file, err := os.Open(cfg.ignoreFile)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	// @TODO Limitation: need to resize scanner's capacity for lines over 64K
+	for scanner.Scan() {
+		id := scanner.Text()
+		ignored[id] = true
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return ignored, nil
+
+}
+
+func filterIgnoredVulnerabilities(vulns []*govulncheck.Vuln, ignored map[string]bool) (ret []*govulncheck.Vuln) {
+	for _, v := range vulns {
+		if ignored[v.OSV.ID] {
+			continue
+		}
+		ret = append(ret, v)
+	}
+	return
+}
+
+func containsAffectedVulnerabilities(vulns []*govulncheck.Vuln) bool {
+	for _, v := range vulns {
 		if IsCalled(v) {
 			return true
 		}

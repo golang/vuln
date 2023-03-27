@@ -60,6 +60,11 @@ func (o *jsonHandler) Vulnerability(vuln *Vuln) error {
 	return o.enc.Encode(Message{Vulnerability: vuln})
 }
 
+func (o *jsonHandler) Ignored(vuln *Vuln) error {
+	// @TODO using a pointer here so that 'ignored' field gets skipped in the output. Is that good?
+	return o.enc.Encode(Message{Vulnerability: vuln, Ignored: new(bool)})
+}
+
 // Preamble does not do anything in JSON mode.
 func (o *jsonHandler) Preamble(preamble *Preamble) error {
 	return o.enc.Encode(Message{Preamble: preamble})

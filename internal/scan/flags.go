@@ -18,6 +18,7 @@ type config struct {
 	patterns       []string
 	sourceAnalysis bool
 	db             string
+	ignoreFile     string
 	json           bool
 	dir            string
 	verbose        bool
@@ -35,6 +36,7 @@ func (c *Cmd) parseFlags() (*config, error) {
 	var tagsFlag buildutil.TagsFlag
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
 	flags.BoolVar(&cfg.json, "json", false, "output JSON")
+	flags.StringVar(&cfg.ignoreFile, "ignore-file", "", "ignore vulnerability IDs listed in this file, one ID per line")
 	flags.BoolVar(&cfg.verbose, "v", false, "print a full call stack for each vulnerability")
 	flags.BoolVar(&cfg.test, "test", false, "analyze test files. Only valid for source code.")
 	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
