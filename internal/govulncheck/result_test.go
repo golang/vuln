@@ -12,6 +12,6 @@ import (
 
 func TestImports(t *testing.T) {
 	test.VerifyImports(t,
-		"golang.org/x/vuln/osv", // allowed to pull in the osv json entries
+		"golang.org/x/vuln/internal/osv", // allowed to pull in the osv json entries
 	)
 }

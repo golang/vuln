@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/vulncheck"
-	"golang.org/x/vuln/osv"
 )
 
 func TestPkgPath(t *testing.T) {

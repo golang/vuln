@@ -31,7 +31,7 @@ Both [Source] and [Binary] require information about known
 vulnerabilities in the form of a vulnerability database,
 specifically a [golang.org/x/vuln/internal/client.Client].
 The vulnerabilities
-are modeled using the [golang.org/x/vuln/osv] format.
+are modeled using the [golang.org/x/vuln/internal/osv] format.
 
 # Results
 

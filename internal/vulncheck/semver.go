@@ -8,8 +8,8 @@ import (
 	"sort"
 
 	"golang.org/x/mod/semver"
+	"golang.org/x/vuln/internal/osv"
 	isem "golang.org/x/vuln/internal/semver"
-	"golang.org/x/vuln/osv"
 )
 
 func affectsSemver(a osv.Affects, v string) bool {

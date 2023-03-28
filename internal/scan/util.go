@@ -12,9 +12,9 @@ import (
 	"golang.org/x/mod/semver"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/osv"
 	isem "golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/internal/vulncheck"
-	"golang.org/x/vuln/osv"
 )
 
 // merge takes r and creates a Result where duplicate

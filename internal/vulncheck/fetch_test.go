@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
+	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/test"
-	"golang.org/x/vuln/osv"
 )
 
 func TestFetchVulnerabilities(t *testing.T) {

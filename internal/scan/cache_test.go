@@ -14,7 +14,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/vuln/internal/client"
-	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/internal/osv"
 )
 
 func TestCache(t *testing.T) {

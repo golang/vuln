@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
-	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/internal/osv"
 )
 
 // NewTextHandler returns a handler that writes govulncheck output as text.

@@ -7,7 +7,7 @@ package vulncheck
 import (
 	"testing"
 
-	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/internal/osv"
 )
 
 func TestAffectsSemver(t *testing.T) {

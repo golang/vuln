@@ -15,8 +15,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/test"
-	"golang.org/x/vuln/osv"
 )
 
 // TestImports checks for imports graph correctness. The inlined

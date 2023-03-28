@@ -16,7 +16,7 @@ import (
 	"golang.org/x/tools/go/callgraph/vta"
 	"golang.org/x/tools/go/ssa/ssautil"
 	"golang.org/x/tools/go/types/typeutil"
-	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/internal/osv"
 
 	"golang.org/x/tools/go/ssa"
 )

@@ -7,7 +7,7 @@ package client
 import (
 	"time"
 
-	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/internal/osv"
 )
 
 // A Cache caches vuln DB entries for modules.

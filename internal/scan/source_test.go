@@ -15,9 +15,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/vulncheck"
-	"golang.org/x/vuln/osv"
 )
 
 func TestUniqueCallStack(t *testing.T) {

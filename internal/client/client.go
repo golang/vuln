@@ -21,7 +21,7 @@
 // for each module file is simply the import path of the module.
 // For example, vulnerabilities in golang.org/x/crypto are contained in the
 // golang.org/x/crypto.json file. The per-module JSON files contain a slice of
-// https://pkg.go.dev/golang.org/x/vuln/osv#Entry.
+// https://pkg.go.dev/golang.org/x/vuln/internal/osv#Entry.
 //
 // A single client.Client can be used to access multiple vulnerability
 // databases. When looking up vulnerable modules, each database is
@@ -37,7 +37,7 @@ import (
 
 	"golang.org/x/mod/module"
 	"golang.org/x/vuln/internal"
-	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/internal/osv"
 )
 
 // DBIndex contains a mapping of vulnerable packages to the last time a new

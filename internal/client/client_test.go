@@ -21,8 +21,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/web"
-	"golang.org/x/vuln/osv"
 )
 
 // testCache for testing purposes

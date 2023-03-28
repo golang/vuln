@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
-	"golang.org/x/vuln/osv"
+	"golang.org/x/vuln/internal/osv"
 )
 
 // The cache uses a single JSON index file for each vulnerability database

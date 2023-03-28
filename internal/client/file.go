@@ -16,8 +16,8 @@ import (
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/derrors"
+	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/web"
-	"golang.org/x/vuln/osv"
 )
 
 type localSource struct {
