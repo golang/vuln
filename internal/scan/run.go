@@ -21,8 +21,7 @@ import (
 // doGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func doGovulncheck(cfg *config, w io.Writer) error {
-	ctx := context.Background()
+func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 	dir := filepath.FromSlash(cfg.dir)
 
 	cache, err := DefaultCache()

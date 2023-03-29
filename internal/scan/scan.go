@@ -153,5 +153,5 @@ func (c *Cmd) scan() error {
 	if err != nil {
 		return err
 	}
-	return doGovulncheck(cfg, c.Stdout)
+	return doGovulncheck(c.ctx, cfg, c.Stdout)
 }
