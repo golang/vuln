@@ -3,13 +3,9 @@
 [![Go Reference](https://pkg.go.dev/badge/golang.org/x/vuln.svg)](https://pkg.go.dev/golang.org/x/vuln)
 
 This repository contains packages for accessing and analyzing data from the
-[Go Vulnerability Database](https://vuln.go.dev). It contains the following:
+[Go Vulnerability Database](https://vuln.go.dev).
 
-- Package client: a client for interacting with the Go vulnerability database
-- Package vulncheck: an API for detecting vulnerabilities in Go packages
-- Command govulncheck: a CLI for detecting vulnerabilities in Go packages
-
-Check out [https://go.dev/security/vuln](https://go.dev/security/vuln) for more
+See [https://go.dev/security/vuln](https://go.dev/security/vuln) for more
 information about the Go vulnerability management system.
 
 ## Privacy Policy
