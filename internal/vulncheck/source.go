@@ -548,3 +548,55 @@ func addCallSinkForVuln(callID int, osv *osv.Entry, symbol, pkg string, result *
 		}
 	}
 }
+
+var stdlibModule = &Module{
+	Path: internal.GoStdModulePath,
+	// Version is populated by Source and Binary based on user input
+}
+
+// modKey creates a unique string identifier for mod.
+func modKey(mod *Module) string {
+	if mod == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s@%s", mod.Path, mod.Version)
+}
+
+// extractModules collects modules in `pkgs` up to uniqueness of
+// module path and version.
+func extractModules(pkgs []*Package) []*Module {
+	modMap := map[string]*Module{}
+
+	// Add "stdlib" module. Even if stdlib is not used, which
+	// is unlikely, it won't appear in vulncheck.Modules nor
+	// other results.
+	modMap[stdlibModule.Path] = stdlibModule
+
+	seen := map[*Package]bool{}
+	var extract func(*Package, map[string]*Module)
+	extract = func(pkg *Package, modMap map[string]*Module) {
+		if pkg == nil || seen[pkg] {
+			return
+		}
+		if pkg.Module != nil {
+			if pkg.Module.Replace != nil {
+				modMap[modKey(pkg.Module.Replace)] = pkg.Module
+			} else {
+				modMap[modKey(pkg.Module)] = pkg.Module
+			}
+		}
+		seen[pkg] = true
+		for _, imp := range pkg.Imports {
+			extract(imp, modMap)
+		}
+	}
+	for _, pkg := range pkgs {
+		extract(pkg, modMap)
+	}
+
+	modules := []*Module{}
+	for _, mod := range modMap {
+		modules = append(modules, mod)
+	}
+	return modules
+}
