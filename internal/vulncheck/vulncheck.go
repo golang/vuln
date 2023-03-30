@@ -301,26 +301,26 @@ type PkgNode struct {
 // moduleVulnerabilities is an internal structure for
 // holding and querying vulnerabilities provided by a
 // vulnerability database client.
-type moduleVulnerabilities []modVulns
+type moduleVulnerabilities []*ModVulns
 
-// modVulns groups vulnerabilities per module.
-type modVulns struct {
-	mod   *Module
-	vulns []*osv.Entry
+// ModVulns groups vulnerabilities per module.
+type ModVulns struct {
+	Module *Module
+	Vulns  []*osv.Entry
 }
 
 func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 	now := time.Now()
 	var filteredMod moduleVulnerabilities
 	for _, mod := range mv {
-		module := mod.mod
+		module := mod.Module
 		modVersion := module.Version
 		if module.Replace != nil {
 			modVersion = module.Replace.Version
 		}
 		// TODO(https://golang.org/issues/49264): if modVersion == "", try vcs?
 		var filteredVulns []*osv.Entry
-		for _, v := range mod.vulns {
+		for _, v := range mod.Vulns {
 			// Ignore vulnerabilities that have been withdrawn
 			if v.Withdrawn != nil && v.Withdrawn.Before(now) {
 				continue
@@ -371,9 +371,9 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 			newV.Affected = filteredAffected
 			filteredVulns = append(filteredVulns, &newV)
 		}
-		filteredMod = append(filteredMod, modVulns{
-			mod:   module,
-			vulns: filteredVulns,
+		filteredMod = append(filteredMod, &ModVulns{
+			Module: module,
+			Vulns:  filteredVulns,
 		})
 	}
 	return filteredMod
@@ -404,16 +404,16 @@ func matchesPlatformComponent(s string, ps []string) bool {
 // vulnerabilities.
 func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry {
 	isStd := isStdPackage(importPath)
-	var mostSpecificMod *modVulns
+	var mostSpecificMod *ModVulns
 	for _, mod := range mv {
 		md := mod
-		if isStd && mod.mod == stdlibModule {
+		if isStd && mod.Module == stdlibModule {
 			// standard library packages do not have an associated module,
 			// so we relate them to the artificial stdlib module.
-			mostSpecificMod = &md
-		} else if strings.HasPrefix(importPath, md.mod.Path) {
-			if mostSpecificMod == nil || len(mostSpecificMod.mod.Path) < len(md.mod.Path) {
-				mostSpecificMod = &md
+			mostSpecificMod = md
+		} else if strings.HasPrefix(importPath, md.Module.Path) {
+			if mostSpecificMod == nil || len(mostSpecificMod.Module.Path) < len(md.Module.Path) {
+				mostSpecificMod = md
 			}
 		}
 	}
@@ -421,11 +421,11 @@ func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry 
 		return nil
 	}
 
-	if mostSpecificMod.mod.Replace != nil {
+	if mostSpecificMod.Module.Replace != nil {
 		// standard libraries do not have a module nor replace module
-		importPath = fmt.Sprintf("%s%s", mostSpecificMod.mod.Replace.Path, strings.TrimPrefix(importPath, mostSpecificMod.mod.Path))
+		importPath = fmt.Sprintf("%s%s", mostSpecificMod.Module.Replace.Path, strings.TrimPrefix(importPath, mostSpecificMod.Module.Path))
 	}
-	vulns := mostSpecificMod.vulns
+	vulns := mostSpecificMod.Vulns
 	packageVulns := []*osv.Entry{}
 Vuln:
 	for _, v := range vulns {

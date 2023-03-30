@@ -82,10 +82,11 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 	}
 
 	mods := extractModules(pkgs)
-	modVulns, err := fetchVulnerabilities(ctx, cfg.Client, mods)
+	mv, err := FetchVulnerabilities(ctx, cfg.Client, mods)
 	if err != nil {
 		return nil, err
 	}
+	modVulns := moduleVulnerabilities(mv)
 	modVulns = modVulns.filter(cfg.GOOS, cfg.GOARCH)
 	result := &Result{
 		Imports:  &ImportGraph{Packages: make(map[int]*PkgNode)},

@@ -37,10 +37,11 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 	// Add "stdlib" module.
 	cmods = append(cmods, stdlibModule)
 
-	modVulns, err := fetchVulnerabilities(ctx, cfg.Client, cmods)
+	mv, err := FetchVulnerabilities(ctx, cfg.Client, cmods)
 	if err != nil {
 		return nil, err
 	}
+	modVulns := moduleVulnerabilities(mv)
 
 	goos := findSetting("GOOS", bi)
 	goarch := findSetting("GOARCH", bi)

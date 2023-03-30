@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package vulncheck
+package vulncheck_test
 
 import (
 	"context"
-	"reflect"
+	"log"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/test"
+	"golang.org/x/vuln/internal/vulncheck"
 )
 
 func TestFetchVulnerabilities(t *testing.T) {
@@ -23,37 +25,37 @@ func TestFetchVulnerabilities(t *testing.T) {
 		},
 	}
 
-	mv, err := fetchVulnerabilities(context.Background(), mc, []*Module{
+	got, err := vulncheck.FetchVulnerabilities(context.Background(), mc, []*vulncheck.Module{
 		{Path: "example.mod/a", Version: "v1.0.0"},
 		{Path: "example.mod/b", Version: "v1.0.4"},
-		{Path: "example.mod/c", Replace: &Module{Path: "example.mod/d", Version: "v1.0.0"}, Version: "v2.0.0"},
-		{Path: "example.mod/e", Replace: &Module{Path: "../local/example.mod/d", Version: "v1.0.1"}, Version: "v2.1.0"},
+		{Path: "example.mod/c", Replace: &vulncheck.Module{Path: "example.mod/d", Version: "v1.0.0"}, Version: "v2.0.0"},
+		{Path: "example.mod/e", Replace: &vulncheck.Module{Path: "../local/example.mod/d", Version: "v1.0.1"}, Version: "v2.1.0"},
 	})
 	if err != nil {
 		t.Fatalf("FetchVulnerabilities failed: %s", err)
 	}
 
-	expected := moduleVulnerabilities{
+	want := []*vulncheck.ModVulns{
 		{
-			mod: &Module{Path: "example.mod/a", Version: "v1.0.0"},
-			vulns: []*osv.Entry{
+			Module: &vulncheck.Module{Path: "example.mod/a", Version: "v1.0.0"},
+			Vulns: []*osv.Entry{
 				{ID: "a", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
 			},
 		},
 		{
-			mod: &Module{Path: "example.mod/b", Version: "v1.0.4"},
-			vulns: []*osv.Entry{
+			Module: &vulncheck.Module{Path: "example.mod/b", Version: "v1.0.4"},
+			Vulns: []*osv.Entry{
 				{ID: "b", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/b"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}},
 			},
 		},
 		{
-			mod: &Module{Path: "example.mod/c", Replace: &Module{Path: "example.mod/d", Version: "v1.0.0"}, Version: "v2.0.0"},
-			vulns: []*osv.Entry{
+			Module: &vulncheck.Module{Path: "example.mod/c", Replace: &vulncheck.Module{Path: "example.mod/d", Version: "v1.0.0"}, Version: "v2.0.0"},
+			Vulns: []*osv.Entry{
 				{ID: "c", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/d"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
 			},
 		},
 	}
-	if !reflect.DeepEqual(mv, expected) {
-		t.Fatalf("FetchVulnerabilities returned unexpected results, got:\n%s\nwant:\n%s", moduleVulnerabilitiesToString(mv), moduleVulnerabilitiesToString(expected))
+	if diff := cmp.Diff(got, want); diff != "" {
+		log.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }

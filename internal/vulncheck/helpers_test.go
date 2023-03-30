@@ -72,8 +72,8 @@ var testClient = &test.MockClient{
 func moduleVulnerabilitiesToString(mv moduleVulnerabilities) string {
 	var s string
 	for _, m := range mv {
-		s += fmt.Sprintf("mod: %v\n", m.mod)
-		for _, v := range m.vulns {
+		s += fmt.Sprintf("Module: %v\n", m.Module)
+		for _, v := range m.Vulns {
 			s += fmt.Sprintf("\t%v\n", v)
 		}
 	}
