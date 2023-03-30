@@ -50,9 +50,10 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 	}
 
 	var res *govulncheck.Result
-	if cfg.sourceAnalysis {
+	switch cfg.analysis {
+	case govulncheck.AnalysisSource:
 		res, err = runSource(ctx, output, cfg, dir)
-	} else {
+	case govulncheck.AnalysisBinary:
 		res, err = runBinary(ctx, output, cfg)
 	}
 	if err != nil {
@@ -86,15 +87,13 @@ func containsAffectedVulnerabilities(r *govulncheck.Result) bool {
 func newPreamble(ctx context.Context, cfg *config) *govulncheck.Preamble {
 	preamble := govulncheck.Preamble{
 		DB:       cfg.db,
-		Analysis: govulncheck.AnalysisBinary,
+		Analysis: cfg.analysis,
 		Mode:     govulncheck.ModeCompact,
 	}
 	if cfg.verbose {
 		preamble.Mode = govulncheck.ModeVerbose
 	}
-	if cfg.sourceAnalysis {
-		preamble.Analysis = govulncheck.AnalysisSource
-
+	if cfg.analysis == govulncheck.AnalysisSource {
 		// The Go version is only relevant for source analysis, so omit it for
 		// binary mode.
 		if v, err := internal.GoEnv("GOVERSION"); err == nil {

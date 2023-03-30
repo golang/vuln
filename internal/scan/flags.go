@@ -10,19 +10,20 @@ import (
 	"os"
 
 	"golang.org/x/tools/go/buildutil"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
 type config struct {
 	vulncheck.Config
-	patterns       []string
-	sourceAnalysis bool
-	db             string
-	json           bool
-	dir            string
-	verbose        bool
-	tags           []string
-	test           bool
+	patterns []string
+	analysis govulncheck.AnalysisType
+	db       string
+	json     bool
+	dir      string
+	verbose  bool
+	tags     []string
+	test     bool
 }
 
 const (
@@ -56,9 +57,11 @@ func (c *Cmd) parseFlags() (*config, error) {
 		flags.Usage()
 		return nil, ErrMissingArgPatterns
 	}
-	cfg.sourceAnalysis = true
-	if len(cfg.patterns) == 1 && isFile(cfg.patterns[0]) {
-		cfg.sourceAnalysis = false
+	cfg.analysis = govulncheck.AnalysisSource
+	if len(cfg.patterns) == 1 {
+		if isFile(cfg.patterns[0]) {
+			cfg.analysis = govulncheck.AnalysisBinary
+		}
 	}
 	cfg.tags = tagsFlag
 	cfg.db = vulndbHost
