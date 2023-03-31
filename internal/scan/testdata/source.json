@@ -1,5 +1,5 @@
 {
-  "preamble": {
+  "config": {
     "query_kind": "Source",
     "callstack_mode": "Compact"
   }

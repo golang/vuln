@@ -32,12 +32,12 @@ const (
 // Message is an entry in the output stream. It will always have exactly one
 // field filled in.
 type Message struct {
-	Preamble      *Preamble `json:"preamble,omitempty"`
-	Progress      string    `json:"progress,omitempty"`
-	Vulnerability *Vuln     `json:"vulnerability,omitempty"`
+	Config        *Config `json:"config,omitempty"`
+	Progress      string  `json:"progress,omitempty"`
+	Vulnerability *Vuln   `json:"vulnerability,omitempty"`
 }
 
-type Preamble struct {
+type Config struct {
 	GoVersion          string       `json:"go_version,omitempty"`
 	GovulncheckVersion string       `json:"tool_version,omitempty"` // TODO: rename struct tag
 	DB                 string       `json:"db,omitempty"`

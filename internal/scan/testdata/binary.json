@@ -1,5 +1,5 @@
 {
-  "preamble": {
+  "config": {
     "query_kind": "Binary",
     "callstack_mode": "Compact"
   }

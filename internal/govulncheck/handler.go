@@ -18,8 +18,8 @@ type Handler interface {
 	// Vulnerability adds a vulnerability to be printed to the output.
 	Vulnerability(vuln *Vuln) error
 
-	// Preamble communicates introductory message to the user.
-	Preamble(preamble *Preamble) error
+	// Config communicates introductory message to the user.
+	Config(config *Config) error
 
 	// Progress is called to display a progress message.
 	Progress(msg string) error
@@ -38,8 +38,8 @@ func HandleJSON(from io.Reader, to Handler) error {
 		// dispatch the message
 		//TODO: should we verify only one field was set?
 		var err error
-		if msg.Preamble != nil {
-			err = to.Preamble(msg.Preamble)
+		if msg.Config != nil {
+			err = to.Config(msg.Config)
 		}
 		if msg.Vulnerability != nil {
 			err = to.Vulnerability(msg.Vulnerability)

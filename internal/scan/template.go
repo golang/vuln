@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	//go:embed preamble.tmpl
+	//go:embed config.tmpl
 	introTemplate string
 
 	//go:embed output.tmpl

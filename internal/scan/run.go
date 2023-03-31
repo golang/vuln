@@ -29,7 +29,7 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 		return err
 	}
 
-	preamble := newPreamble(ctx, cfg)
+	config := newConfig(ctx, cfg)
 	var output govulncheck.Handler
 	switch {
 	case cfg.json:
@@ -39,7 +39,7 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 	}
 
 	// Write the introductory message to the user.
-	if err := output.Preamble(preamble); err != nil {
+	if err := output.Config(config); err != nil {
 		return err
 	}
 
@@ -78,29 +78,29 @@ func containsAffectedVulnerabilities(r *govulncheck.Result) bool {
 	return false
 }
 
-func newPreamble(ctx context.Context, cfg *config) *govulncheck.Preamble {
-	preamble := govulncheck.Preamble{
+func newConfig(ctx context.Context, cfg *config) *govulncheck.Config {
+	config := govulncheck.Config{
 		DB:       cfg.db,
 		Analysis: cfg.analysis,
 		Mode:     govulncheck.ModeCompact,
 	}
 	if cfg.verbose {
-		preamble.Mode = govulncheck.ModeVerbose
+		config.Mode = govulncheck.ModeVerbose
 	}
 	if cfg.analysis == govulncheck.AnalysisSource {
 		// The Go version is only relevant for source analysis, so omit it for
 		// binary mode.
 		if v, err := internal.GoEnv("GOVERSION"); err == nil {
-			preamble.GoVersion = v
+			config.GoVersion = v
 		}
 	}
 	if bi, ok := debug.ReadBuildInfo(); ok {
-		preamble.GovulncheckVersion = scannerVersion(bi)
+		config.GovulncheckVersion = scannerVersion(bi)
 	}
 	if mod, err := cfg.Client.LastModifiedTime(ctx); err == nil {
-		preamble.DBLastModified = &mod
+		config.DBLastModified = &mod
 	}
-	return &preamble
+	return &config
 }
 
 // scannerVersion reconstructs the current version of

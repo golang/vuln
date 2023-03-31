@@ -19,9 +19,9 @@ func NewTextHandler(w io.Writer) govulncheck.Handler {
 }
 
 type textHandler struct {
-	w        io.Writer
-	vulns    []*govulncheck.Vuln
-	preamble *govulncheck.Preamble
+	w      io.Writer
+	vulns  []*govulncheck.Vuln
+	config *govulncheck.Config
 }
 
 const (
@@ -49,8 +49,8 @@ func (o *textHandler) Flush() error {
 		},
 	}
 
-	source := o.preamble.Analysis == govulncheck.AnalysisSource
-	verbose := o.preamble.Mode == govulncheck.ModeVerbose
+	source := o.config.Analysis == govulncheck.AnalysisSource
+	verbose := o.config.Mode == govulncheck.ModeVerbose
 	tmplRes := createTmplResult(o.vulns, verbose, source)
 	o.vulns = nil
 	tmpl, err := template.New("govulncheck").Funcs(funcMap).Parse(outputTemplate)
@@ -66,16 +66,16 @@ func (o *textHandler) Vulnerability(vuln *govulncheck.Vuln) error {
 	return nil
 }
 
-// Preamble writes text output formatted according to govulncheck-intro.tmpl.
-func (o *textHandler) Preamble(preamble *govulncheck.Preamble) error {
-	p := *preamble
-	o.preamble = &p
-	// Print preamble to the user.
+// Config writes text output formatted according to govulncheck-intro.tmpl.
+func (o *textHandler) Config(config *govulncheck.Config) error {
+	p := *config
+	o.config = &p
+	// Print config to the user.
 	tmpl, err := template.New("govulncheck-intro").Parse(introTemplate)
 	if err != nil {
 		return err
 	}
-	return tmpl.Execute(o.w, preamble)
+	return tmpl.Execute(o.w, config)
 }
 
 // Progress writes progress updates during govulncheck execution..

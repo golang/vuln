@@ -31,9 +31,9 @@ func (o *jsonHandler) Vulnerability(vuln *Vuln) error {
 	return o.enc.Encode(Message{Vulnerability: vuln})
 }
 
-// Preamble does not do anything in JSON mode.
-func (o *jsonHandler) Preamble(preamble *Preamble) error {
-	return o.enc.Encode(Message{Preamble: preamble})
+// Config does not do anything in JSON mode.
+func (o *jsonHandler) Config(config *Config) error {
+	return o.enc.Encode(Message{Config: config})
 }
 
 // Progress does not do anything in JSON mode.
