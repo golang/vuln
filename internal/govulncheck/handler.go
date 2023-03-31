@@ -4,6 +4,11 @@
 
 package govulncheck
 
+import (
+	"encoding/json"
+	"io"
+)
+
 // Handler handles messages to be presented in a vulnerability scan output
 // stream.
 type Handler interface {
@@ -18,4 +23,33 @@ type Handler interface {
 
 	// Progress is called to display a progress message.
 	Progress(msg string) error
+}
+
+// HandleJSON reads the json from the supplied stream and hands the decoded
+// output to the handler.
+func HandleJSON(from io.Reader, to Handler) error {
+	dec := json.NewDecoder(from)
+	for dec.More() {
+		msg := Message{}
+		// decode the next message in the stream
+		if err := dec.Decode(&msg); err != nil {
+			return err
+		}
+		// dispatch the message
+		//TODO: should we verify only one field was set?
+		var err error
+		if msg.Preamble != nil {
+			err = to.Preamble(msg.Preamble)
+		}
+		if msg.Vulnerability != nil {
+			err = to.Vulnerability(msg.Vulnerability)
+		}
+		if msg.Progress != "" {
+			err = to.Progress(msg.Progress)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
