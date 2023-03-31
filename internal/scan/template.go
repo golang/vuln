@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	//go:embed config.tmpl
+	//go:embed template/config.tmpl
 	introTemplate string
 
-	//go:embed output.tmpl
+	//go:embed template/output.tmpl
 	outputTemplate string
 )
 
