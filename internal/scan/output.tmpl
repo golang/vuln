@@ -21,7 +21,7 @@ It consists of three sections showing:
 
 {{- define "Affected" -}}
 {{- if .AffectedCount -}}
-{{$idx := 0}}{{range $vulnInfo := .}}
+{{$idx := 0}}{{range $vulnInfo := .Vulns}}
 {{- if not $vulnInfo.Affected}}{{continue}}{{end}}
 {{- $idx = inc $idx}}
 Vulnerability #{{$idx}}: {{$vulnInfo.ID}}
@@ -55,7 +55,7 @@ Found {{if eq .UnaffectedCount 1}}1 vulnerability{{else}}{{.UnaffectedCount}} vu
 stacks leading to the use of {{if eq .UnaffectedCount 1}}this vulnerability{{else}}these vulnerabilities{{end}}. You may not need to
 take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
 for details.
-{{$idx := 0}}{{range $vulnInfo := .}}
+{{$idx := 0}}{{range $vulnInfo := .Vulns}}
 {{- if $vulnInfo.Affected}}{{continue}}{{end}}
 {{- $idx = inc $idx}}
 Vulnerability #{{$idx}}: {{$vulnInfo.ID}}{{$modInfo:= index $vulnInfo.Modules 0}}

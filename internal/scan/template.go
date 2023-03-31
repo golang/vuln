@@ -15,31 +15,42 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-//go:embed preamble.tmpl
-var introTemplate string
+var (
+	//go:embed preamble.tmpl
+	introTemplate string
 
-//go:embed output.tmpl
-var outputTemplate string
+	//go:embed output.tmpl
+	outputTemplate string
+)
 
-// tmplResult is a structure containing summarized
-// govulncheck.Result, passed to outputTemplate.
-type tmplResult []tmplVulnInfo
+// tmplResult is a structure containing summarized govulncheck.Result, passed
+// to outputTemplate.
+type tmplResult struct {
+	AffectedCount   int
+	UnaffectedCount int
+	AffectedModules int
+	StdlibAffected  bool
+	Vulns           []tmplVulnInfo
+}
 
 // createTmplResult transforms Result r into a
 // template structure for printing.
 func createTmplResult(vulns []*govulncheck.Vuln, verbose, source bool) tmplResult {
-	// unaffected are (imported) OSVs none of
-	// which vulnerabilities are called.
-	var result []tmplVulnInfo
+	// unaffected are (imported) OSVs, none of which vulnerabilities are called.
+	var r tmplResult
 	for _, v := range vulns {
-		result = append(result, createTmplVulnInfo(v, verbose, source))
+		r.Vulns = append(r.Vulns, createTmplVulnInfo(v, verbose, source))
 	}
-	return result
+	r.AffectedCount = affectedCount(r.Vulns)
+	r.UnaffectedCount = unaffectedCount(r.Vulns)
+	r.AffectedModules = affectedModules(r.Vulns)
+	r.StdlibAffected = stdlibAffected(r.Vulns)
+	return r
 }
 
-func (r tmplResult) AffectedCount() int {
+func affectedCount(vulns []tmplVulnInfo) int {
 	count := 0
-	for _, a := range r {
+	for _, a := range vulns {
 		if a.Affected {
 			count++
 		}
@@ -47,9 +58,9 @@ func (r tmplResult) AffectedCount() int {
 	return count
 }
 
-func (r tmplResult) UnaffectedCount() int {
+func unaffectedCount(vulns []tmplVulnInfo) int {
 	count := 0
-	for _, a := range r {
+	for _, a := range vulns {
 		if !a.Affected {
 			count++
 		}
@@ -59,9 +70,9 @@ func (r tmplResult) UnaffectedCount() int {
 
 // AffectedModules returns the number of unique modules
 // whose vulnerabilties are detected.
-func (r tmplResult) AffectedModules() int {
+func affectedModules(vulns []tmplVulnInfo) int {
 	mods := make(map[string]bool)
-	for _, a := range r {
+	for _, a := range vulns {
 		if !a.Affected {
 			continue
 		}
@@ -74,10 +85,10 @@ func (r tmplResult) AffectedModules() int {
 	return len(mods)
 }
 
-// StdlibAffected tells if some of the vulnerabilities
+// stdlibAffected tells if some of the vulnerabilities
 // detected come from standard library.
-func (r tmplResult) StdlibAffected() bool {
-	for _, a := range r {
+func stdlibAffected(vulns []tmplVulnInfo) bool {
+	for _, a := range vulns {
 		if !a.Affected {
 			continue
 		}
