@@ -15,6 +15,7 @@ import (
 
 var (
 	ErrMissingArgPatterns   = errors.New("missing any pattern args")
+	ErrInvalidArg           = errors.New("invalid arg")
 	ErrVulnerabilitiesFound = errors.New("vulnerabilities found")
 )
 

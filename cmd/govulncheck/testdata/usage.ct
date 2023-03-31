@@ -1,7 +1,7 @@
 $ govulncheck -h
 usage:
 	govulncheck [flags] package...
-	govulncheck [flags] binary
+	govulncheck -mode=binary [flags] binary
 
   -db string
     	vulnerability database URL (default "https://vuln.go.dev")
@@ -9,6 +9,8 @@ usage:
     	directory to use for loading source files
   -json
     	output JSON
+  -mode string
+    	source or binary modes are supported, default is source
   -tags list
     	comma-separated list of build tags
   -test
@@ -22,7 +24,7 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 $ govulncheck --> FAIL 1
 usage:
 	govulncheck [flags] package...
-	govulncheck [flags] binary
+	govulncheck -mode=binary [flags] binary
 
   -db string
     	vulnerability database URL (default "https://vuln.go.dev")
@@ -30,6 +32,8 @@ usage:
     	directory to use for loading source files
   -json
     	output JSON
+  -mode string
+    	source or binary modes are supported, default is source
   -tags list
     	comma-separated list of build tags
   -test
