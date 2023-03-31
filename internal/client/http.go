@@ -20,26 +20,19 @@ import (
 )
 
 type httpSource struct {
-	url    string // the base URI of the source (without trailing "/"). e.g. https://vuln.golang.org
-	c      *http.Client
-	cache  Cache
-	dbName string
+	c   *http.Client
+	url string // the base URI of the source (without trailing "/"). e.g. https://vuln.golang.org
 
-	// indexCalls counts the number of times Index()
-	// method has been called. httpCalls counts the
-	// number of times ByModule makes an http request
-	// to the vuln db for a module path. Used for testing
-	// privacy properties of httpSource.
+	// indexCalls counts the number of times Index() has been called.
+	// httpCalls counts the number of times ByModule makes an http request
+	// to  vulndb for a module path. Used for testing privacy properties of
+	// httpSource.
 	indexCalls int
 	httpCalls  int
 }
 
 func newHTTPClient(uri *url.URL, opts Options) (_ *httpSource) {
 	hs := &httpSource{url: uri.String()}
-	hs.dbName = uri.Hostname()
-	if opts.HTTPCache != nil {
-		hs.cache = opts.HTTPCache
-	}
 	if opts.HTTPClient != nil {
 		hs.c = opts.HTTPClient
 	} else {
@@ -51,47 +44,15 @@ func newHTTPClient(uri *url.URL, opts Options) (_ *httpSource) {
 func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
 	hs.indexCalls++ // for testing privacy properties
 	defer derrors.Wrap(&err, "Index()")
-
-	var cachedIndex DBIndex
-	var cachedIndexRetrieved *time.Time
-
-	if hs.cache != nil {
-		index, retrieved, err := hs.cache.ReadIndex(hs.dbName)
-		if err != nil {
-			return nil, err
-		}
-
-		cachedIndex = index
-		if cachedIndex != nil {
-			if time.Since(retrieved) < time.Hour*2 {
-				return cachedIndex, nil
-			}
-
-			cachedIndexRetrieved = &retrieved
-		}
-	}
-
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/index.json", hs.url), nil)
 	if err != nil {
 		return nil, err
-	}
-	if cachedIndexRetrieved != nil {
-		req.Header.Add("If-Modified-Since", cachedIndexRetrieved.Format(http.TimeFormat))
 	}
 	resp, err := hs.c.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if cachedIndexRetrieved != nil && resp.StatusCode == http.StatusNotModified {
-		// If status has not been modified, this is equivalent to returning the
-		// same index. We update the timestamp so the next cache index read does
-		// not require a roundtrip to the server.
-		if err = hs.cache.WriteIndex(hs.dbName, cachedIndex, time.Now()); err != nil {
-			return nil, err
-		}
-		return cachedIndex, nil
-	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
@@ -103,39 +64,19 @@ func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
 	if err = json.Unmarshal(b, &index); err != nil {
 		return nil, err
 	}
-
-	if hs.cache != nil {
-		if err = hs.cache.WriteIndex(hs.dbName, index, time.Now()); err != nil {
-			return nil, err
-		}
-	}
-
 	return index, nil
 }
 
 func (hs *httpSource) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
 	defer derrors.Wrap(&err, "httpSource.ByModule(%q)", modulePath)
-
 	index, err := hs.Index(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	lastModified, present := index[modulePath]
+	_, present := index[modulePath]
 	if !present {
 		return nil, nil
 	}
-
-	if hs.cache != nil {
-		cached, err := hs.cache.ReadEntries(hs.dbName, modulePath)
-		if err != nil {
-			return nil, err
-		}
-		if len(cached) > 0 && !latestModifiedTime(cached).Before(lastModified) {
-			return cached, nil
-		}
-	}
-
 	epath, err := EscapeModulePath(modulePath)
 	if err != nil {
 		return nil, err
@@ -144,13 +85,6 @@ func (hs *httpSource) ByModule(ctx context.Context, modulePath string) (_ []*osv
 	entries, err := httpReadJSON[[]*osv.Entry](ctx, hs, epath+".json")
 	if err != nil || entries == nil {
 		return nil, err
-	}
-	// TODO: we may want to check that the returned entries actually match
-	// the module we asked about, so that the cache cannot be poisoned
-	if hs.cache != nil {
-		if err := hs.cache.WriteEntries(hs.dbName, modulePath, entries); err != nil {
-			return nil, err
-		}
 	}
 	return entries, nil
 }
@@ -229,5 +163,4 @@ func (hs *httpSource) readBody(ctx context.Context, url string) ([]byte, error) 
 
 type Options struct {
 	HTTPClient *http.Client
-	HTTPCache  Cache
 }

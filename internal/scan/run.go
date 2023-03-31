@@ -23,14 +23,8 @@ import (
 // returns an error.
 func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 	dir := filepath.FromSlash(cfg.dir)
-
-	cache, err := DefaultCache()
-	if err != nil {
-		return err
-	}
-	cfg.Client, err = client.NewClient(cfg.db, client.Options{
-		HTTPCache: cache,
-	})
+	var err error
+	cfg.Client, err = client.NewClient(cfg.db, client.Options{})
 	if err != nil {
 		return err
 	}

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -19,67 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	"golang.org/x/vuln/internal"
-	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/web"
 )
-
-// testCache for testing purposes
-type testCache struct {
-	indexMap   map[string]DBIndex
-	indexStamp map[string]time.Time
-	vulnMap    map[string]map[string][]*osv.Entry
-}
-
-func newTestCache() *testCache {
-	return &testCache{
-		indexMap:   make(map[string]DBIndex),
-		indexStamp: make(map[string]time.Time),
-		vulnMap:    make(map[string]map[string][]*osv.Entry),
-	}
-}
-
-func (tc *testCache) ReadIndex(db string) (DBIndex, time.Time, error) {
-	index, ok := tc.indexMap[db]
-	if !ok {
-		return nil, time.Time{}, nil
-	}
-	stamp, ok := tc.indexStamp[db]
-	if !ok {
-		return nil, time.Time{}, nil
-	}
-	return index, stamp, nil
-}
-
-func (tc *testCache) WriteIndex(db string, index DBIndex, stamp time.Time) error {
-	tc.indexMap[db] = index
-	tc.indexStamp[db] = stamp
-	return nil
-}
-
-func (tc *testCache) ReadEntries(db, module string) ([]*osv.Entry, error) {
-	mMap, ok := tc.vulnMap[db]
-	if !ok {
-		return nil, nil
-	}
-	return mMap[module], nil
-}
-
-func (tc *testCache) WriteEntries(db, module string, entries []*osv.Entry) error {
-	mMap, ok := tc.vulnMap[db]
-	if !ok {
-		mMap = make(map[string][]*osv.Entry)
-		tc.vulnMap[db] = mMap
-	}
-	mMap[module] = nil
-	for _, e := range entries {
-		e2 := *e
-		e2.Details = "cached: " + e2.Details
-		mMap[module] = append(mMap[module], &e2)
-	}
-	return nil
-}
 
 func newTestServer() *httptest.Server {
 	mux := http.NewServeMux()
@@ -119,29 +59,16 @@ func TestByModule(t *testing.T) {
 		name         string
 		source       string
 		module       string
-		cache        Cache
 		detailPrefix string
 		wantVulns    int
 	}{
-		// Test the http client without any cache.
-		{name: "http-no-cache", source: srv.URL, module: modulePath,
-			cache: nil, detailPrefix: detailStart, wantVulns: 3},
-		{name: "http-cache", source: srv.URL, module: modulePath,
-			cache: newTestCache(), detailPrefix: "cached: Route", wantVulns: 3},
-		// Repeat the same for local file client.
-		{name: "file-no-cache", source: localURL, module: modulePath,
-			cache: nil, detailPrefix: detailStart, wantVulns: 3},
-		// Cache does not play a role in local file databases.
-		{name: "file-cache", source: localURL, module: modulePath,
-			cache: newTestCache(), detailPrefix: detailStart, wantVulns: 3},
-		// Test all-lowercase module path.
-		{name: "lower-http", source: srv.URL, module: modulePathLowercase,
-			cache: nil, detailPrefix: detailStartLowercase, wantVulns: 4},
-		{name: "lower-file", source: localURL, module: modulePathLowercase,
-			cache: nil, detailPrefix: detailStartLowercase, wantVulns: 4},
+		{name: "http", source: srv.URL, module: modulePath, detailPrefix: detailStart, wantVulns: 3},
+		{name: "file", source: localURL, module: modulePath, detailPrefix: detailStart, wantVulns: 3},
+		{name: "lower-http", source: srv.URL, module: modulePathLowercase, detailPrefix: detailStartLowercase, wantVulns: 4},
+		{name: "lower-file", source: localURL, module: modulePathLowercase, detailPrefix: detailStartLowercase, wantVulns: 4},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient(test.source, Options{HTTPCache: test.cache})
+			client, err := NewClient(test.source, Options{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -191,32 +118,30 @@ func TestMustUseIndex(t *testing.T) {
 
 	// List of modules to query, some are repeated to exercise cache hits.
 	modulePaths := []string{"github.com/BeeGo/beego", "github.com/tidwall/gjson", "net/http", "abc.xyz", "github.com/BeeGo/beego"}
-	for _, cache := range []Cache{newTestCache(), nil} {
-		clt, err := NewClient(srv.URL, Options{HTTPCache: cache})
-		if err != nil {
+	clt, err := NewClient(srv.URL, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	hs := clt.(*httpSource)
+	for _, modulePath := range modulePaths {
+		indexCalls := hs.indexCalls
+		httpCalls := hs.httpCalls
+		if _, err := clt.ByModule(ctx, modulePath); err != nil {
 			t.Fatal(err)
 		}
-		hs := clt.(*httpSource)
-		for _, modulePath := range modulePaths {
-			indexCalls := hs.indexCalls
-			httpCalls := hs.httpCalls
-			if _, err := clt.ByModule(ctx, modulePath); err != nil {
+		// Number of index Calls should be increased.
+		if hs.indexCalls == indexCalls {
+			t.Errorf("ByModule(ctx, %s) did not call Index(...)", modulePath)
+		}
+		// If http request was made, then the modulePath must be in the index.
+		if hs.httpCalls > httpCalls {
+			index, err := hs.Index(ctx)
+			if err != nil {
 				t.Fatal(err)
 			}
-			// Number of index Calls should be increased.
-			if hs.indexCalls == indexCalls {
-				t.Errorf("ByModule(ctx, %s) [cache:%t] did not call Index(...)", modulePath, cache != nil)
-			}
-			// If http request was made, then the modulePath must be in the index.
-			if hs.httpCalls > httpCalls {
-				index, err := hs.Index(ctx)
-				if err != nil {
-					t.Fatal(err)
-				}
-				_, present := index[modulePath]
-				if !present {
-					t.Errorf("ByModule(ctx, %s) [cache:%t] issued http request for module not in Index(...)", modulePath, cache != nil)
-				}
+			_, present := index[modulePath]
+			if !present {
+				t.Errorf("ByModule(ctx, %s) issued http request for module not in Index(...)", modulePath)
 			}
 		}
 	}
@@ -280,64 +205,6 @@ func TestCorrectFetchesNoCache(t *testing.T) {
 	if !reflect.DeepEqual(fetches, expectedFetches) {
 		t.Errorf("unexpected fetches, got %v, want %v", fetches, expectedFetches)
 	}
-}
-
-// Make sure that a cached index is used in the case it is stale
-// but there were no changes to it at the server side.
-func TestCorrectFetchesNoChangeIndex(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/index.json" {
-			w.WriteHeader(http.StatusNotModified)
-		}
-	}))
-	defer ts.Close()
-	url, _ := url.Parse(ts.URL)
-
-	// set timestamp so that cached index is stale,
-	// i.e., more than two hours old.
-	timeStamp := time.Now().Add(time.Hour * (-3))
-	index := DBIndex{"a": timeStamp}
-	cache := newTestCache()
-	cache.WriteIndex(url.Hostname(), index, timeStamp)
-
-	e := &osv.Entry{
-		ID:       "ID1",
-		Details:  "details",
-		Modified: timeStamp,
-	}
-	cache.WriteEntries(url.Hostname(), "a", []*osv.Entry{e})
-
-	client, err := NewClient(ts.URL, Options{HTTPCache: cache})
-	if err != nil {
-		t.Fatal(err)
-	}
-	gots, err := client.ByModule(context.Background(), "a")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(gots) != 1 {
-		t.Errorf("got %d vulns, want 1", len(gots))
-	} else {
-		got := gots[0]
-		want := *e
-		want.Details = "cached: " + want.Details
-		if !cmp.Equal(got, &want) {
-			t.Errorf("\ngot %+v\nwant %+v", got, &want)
-		}
-	}
-}
-
-func mustReadEntry(t *testing.T, vulnID string) *osv.Entry {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join("testdata", "vulndb", internal.IDDirectory, vulnID+".json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var e *osv.Entry
-	if err := json.Unmarshal(data, &e); err != nil {
-		t.Fatal(err)
-	}
-	return e
 }
 
 func TestLastModifiedTime(t *testing.T) {

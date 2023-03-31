@@ -11,8 +11,7 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-// MockClient is an in-memory vulnerability
-// database client.
+// MockClient is an in-memory vulnerability database client.
 type MockClient struct {
 	client.Client
 	Ret map[string][]*osv.Entry
