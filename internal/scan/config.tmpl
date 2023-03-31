@@ -6,18 +6,18 @@ modified timestamp.
 */ -}}
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
-Using {{template "Go" .}}{{template "Scanner" .}}with
-vulnerability data from {{.DB}}{{template "DBModified" .}}.
+Using {{template "Go" .}}{{template "Version" .}}with
+vulnerability data from {{.DataSource}}{{template "LastModified" .}}.
 {{/* This is the end of the main template */ -}}
 
 {{- define "Go" -}}
   {{if .GoVersion}}{{.GoVersion}} and {{end}}
 {{- end -}}
 
-{{- define "Scanner" -}}
-  {{if .GovulncheckVersion}}{{.GovulncheckVersion}} {{else}}govulncheck {{end}}
+{{- define "Version" -}}
+  {{if .Version}}{{.Version}} {{else}}govulncheck {{end}}
 {{- end -}}
 
-{{- define "DBModified" -}}
-  {{if .DBLastModified}} (last modified {{.DBLastModified}}){{end}}
+{{- define "LastModified" -}}
+  {{if .LastModified}} (last modified {{.LastModified}}){{end}}
 {{- end -}}

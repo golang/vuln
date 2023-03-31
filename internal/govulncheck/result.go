@@ -38,12 +38,29 @@ type Message struct {
 }
 
 type Config struct {
-	GoVersion          string       `json:"go_version,omitempty"`
-	GovulncheckVersion string       `json:"tool_version,omitempty"` // TODO: rename struct tag
-	DB                 string       `json:"db,omitempty"`
-	DBLastModified     *time.Time   `json:"db_last_modified,omitempty"`
-	Analysis           AnalysisType `json:"query_kind,omitempty"`     // TODO: rename struct tag
-	Mode               Mode         `json:"callstack_mode,omitempty"` // TODO: rename struct tag
+	// Name is the name of the tool, for example, govulncheck.
+	Name string `json:"name,omitempty"`
+
+	// Version is the version of the tool.
+	Version string `json:"govulncheck_version,omitempty"`
+
+	// DataSource is the data source used by the tool, for example,
+	// vuln.go.dev.
+	DataSource string `json:"data_source,omitempty"`
+
+	// LastModified is the last modified time of the data source.
+	LastModified *time.Time `json:"last_modified,omitempty"`
+
+	// GoVersion is the version of Go used for analyzing standard library
+	// vulnerabilities.
+	GoVersion string `json:"go_version,omitempty"`
+
+	// Analysis is the analysis type.
+	Analysis AnalysisType `json:"analysis,omitempty"`
+
+	// Mode controls the information that is printed to the user, either
+	// compact or verbose.
+	Mode Mode `json:"callstack_mode,omitempty"` // TODO: remove field and verbose mode
 }
 
 // Result is the result of executing Source or Binary.

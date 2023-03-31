@@ -1,6 +1,6 @@
 {
   "config": {
-    "query_kind": "Binary",
+    "analysis": "Binary",
     "callstack_mode": "Compact"
   }
 }

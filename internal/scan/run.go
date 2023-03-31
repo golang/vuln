@@ -80,9 +80,9 @@ func containsAffectedVulnerabilities(r *govulncheck.Result) bool {
 
 func newConfig(ctx context.Context, cfg *config) *govulncheck.Config {
 	config := govulncheck.Config{
-		DB:       cfg.db,
-		Analysis: cfg.analysis,
-		Mode:     govulncheck.ModeCompact,
+		DataSource: cfg.db,
+		Analysis:   cfg.analysis,
+		Mode:       govulncheck.ModeCompact,
 	}
 	if cfg.verbose {
 		config.Mode = govulncheck.ModeVerbose
@@ -95,10 +95,10 @@ func newConfig(ctx context.Context, cfg *config) *govulncheck.Config {
 		}
 	}
 	if bi, ok := debug.ReadBuildInfo(); ok {
-		config.GovulncheckVersion = scannerVersion(bi)
+		config.Version = scannerVersion(bi)
 	}
 	if mod, err := cfg.Client.LastModifiedTime(ctx); err == nil {
-		config.DBLastModified = &mod
+		config.LastModified = &mod
 	}
 	return &config
 }

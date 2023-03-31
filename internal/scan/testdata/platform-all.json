@@ -1,6 +1,6 @@
 {
   "config": {
-    "query_kind": "Source",
+    "analysis": "Source",
     "callstack_mode": "Compact"
   }
 }
