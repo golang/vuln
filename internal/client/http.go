@@ -27,7 +27,7 @@ type httpSource struct {
 
 	// indexCalls counts the number of times Index()
 	// method has been called. httpCalls counts the
-	// number of times GetByModule makes an http request
+	// number of times ByModule makes an http request
 	// to the vuln db for a module path. Used for testing
 	// privacy properties of httpSource.
 	indexCalls int
@@ -113,8 +113,8 @@ func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
 	return index, nil
 }
 
-func (hs *httpSource) GetByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "httpSource.GetByModule(%q)", modulePath)
+func (hs *httpSource) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
+	defer derrors.Wrap(&err, "httpSource.ByModule(%q)", modulePath)
 
 	index, err := hs.Index(ctx)
 	if err != nil {
@@ -155,24 +155,10 @@ func (hs *httpSource) GetByModule(ctx context.Context, modulePath string) (_ []*
 	return entries, nil
 }
 
-func (hs *httpSource) GetByID(ctx context.Context, id string) (_ *osv.Entry, err error) {
-	defer derrors.Wrap(&err, "GetByID(%q)", id)
+func (hs *httpSource) ByID(ctx context.Context, id string) (_ *osv.Entry, err error) {
+	defer derrors.Wrap(&err, "ByID(%q)", id)
 
 	return httpReadJSON[*osv.Entry](ctx, hs, fmt.Sprintf("%s/%s.json", internal.IDDirectory, id))
-}
-
-func (hs *httpSource) GetByAlias(ctx context.Context, alias string) (entries []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "httpSource.GetByAlias(%q)", alias)
-
-	aliasToIDs, err := httpReadJSON[map[string][]string](ctx, hs, "aliases.json")
-	if err != nil {
-		return nil, err
-	}
-	ids := aliasToIDs[alias]
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	return getByIDs(ctx, hs, ids)
 }
 
 func (hs *httpSource) ListIDs(ctx context.Context) (_ []string, err error) {

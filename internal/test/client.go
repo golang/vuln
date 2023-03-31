@@ -18,6 +18,6 @@ type MockClient struct {
 	Ret map[string][]*osv.Entry
 }
 
-func (mc *MockClient) GetByModule(ctx context.Context, a string) ([]*osv.Entry, error) {
+func (mc *MockClient) ByModule(ctx context.Context, a string) ([]*osv.Entry, error) {
 	return mc.Ret[a], nil
 }

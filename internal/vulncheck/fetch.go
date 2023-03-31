@@ -18,7 +18,7 @@ func FetchVulnerabilities(ctx context.Context, client client.Client, modules []*
 		if mod.Replace != nil {
 			modPath = mod.Replace.Path
 		}
-		vulns, err := client.GetByModule(ctx, modPath)
+		vulns, err := client.ByModule(ctx, modPath)
 		if err != nil {
 			return nil, err
 		}

@@ -46,37 +46,14 @@ type DBIndex map[string]time.Time
 
 // Client interface for fetching vulnerabilities based on module path or ID.
 type Client interface {
-	// GetByModule returns the entries that affect the given module path.
+	// ByModule returns the entries that affect the given module path.
 	// It returns (nil, nil) if there are none.
-	GetByModule(context.Context, string) ([]*osv.Entry, error)
-
-	// GetByID returns the entry with the given ID, or (nil, nil) if there isn't
-	// one.
-	GetByID(context.Context, string) (*osv.Entry, error)
-
-	// GetByAlias returns the entries that have the given aliases, or (nil, nil)
-	// if there are none.
-	GetByAlias(context.Context, string) ([]*osv.Entry, error)
-
-	// ListIDs returns the IDs of all entries in the database.
-	ListIDs(context.Context) ([]string, error)
+	ByModule(context.Context, string) ([]*osv.Entry, error)
 
 	// LastModifiedTime returns the time that the database was last modified.
 	// It can be used by tools that periodically check for vulnerabilities
 	// to avoid repeating work.
 	LastModifiedTime(context.Context) (time.Time, error)
-}
-
-func getByIDs(ctx context.Context, client Client, ids []string) ([]*osv.Entry, error) {
-	var entries []*osv.Entry
-	for _, id := range ids {
-		e, err := client.GetByID(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-		entries = append(entries, e)
-	}
-	return entries, nil
 }
 
 // Pseudo-module paths used for parts of the Go system.

@@ -43,14 +43,14 @@ func newFileClient(uri *url.URL) (_ *localSource, err error) {
 	return newFSClient(os.DirFS(dir))
 }
 
-func (ls *localSource) GetByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "localSource.GetByModule(%q)", modulePath)
+func (ls *localSource) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
+	defer derrors.Wrap(&err, "localSource.ByModule(%q)", modulePath)
 
 	index, err := ls.Index(ctx)
 	if err != nil {
 		return nil, err
 	}
-	// Query index first to be consistent with the way httpSource.GetByModule works.
+	// Query index first to be consistent with the way httpSource.ByModule works.
 	// Prevents opening and stating files on disk that don't need to be touched. Also
 	// solves #56179.
 	if _, present := index[modulePath]; !present {
@@ -70,8 +70,8 @@ func (ls *localSource) GetByModule(ctx context.Context, modulePath string) (_ []
 	return e, nil
 }
 
-func (ls *localSource) GetByID(_ context.Context, id string) (_ *osv.Entry, err error) {
-	defer derrors.Wrap(&err, "GetByID(%q)", id)
+func (ls *localSource) ByID(_ context.Context, id string) (_ *osv.Entry, err error) {
+	defer derrors.Wrap(&err, "ByID(%q)", id)
 
 	e, err := localReadJSON[osv.Entry](ls, path.Join(internal.IDDirectory, id+".json"))
 	if os.IsNotExist(err) {
@@ -80,26 +80,6 @@ func (ls *localSource) GetByID(_ context.Context, id string) (_ *osv.Entry, err 
 		return nil, err
 	}
 	return &e, nil
-}
-
-func (ls *localSource) GetByAlias(ctx context.Context, alias string) (entries []*osv.Entry, err error) {
-	defer derrors.Wrap(&err, "localSource.GetByAlias(%q)", alias)
-
-	aliasToIDs, err := localReadJSON[map[string][]string](ls, "aliases.json")
-	if err != nil {
-		return nil, err
-	}
-	ids := aliasToIDs[alias]
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	return getByIDs(ctx, ls, ids)
-}
-
-func (ls *localSource) ListIDs(ctx context.Context) (_ []string, err error) {
-	defer derrors.Wrap(&err, "ListIDs()")
-
-	return localReadJSON[[]string](ls, path.Join(internal.IDDirectory, "index.json"))
 }
 
 func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error) {

@@ -147,10 +147,10 @@ func TestByModule(t *testing.T) {
 			}
 
 			// First call fills cache, if present.
-			if _, err := client.GetByModule(ctx, test.module); err != nil {
+			if _, err := client.ByModule(ctx, test.module); err != nil {
 				t.Fatal(err)
 			}
-			vulns, err := client.GetByModule(ctx, test.module)
+			vulns, err := client.ByModule(ctx, test.module)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -172,7 +172,7 @@ func TestByModule(t *testing.T) {
 
 // TestMustUseIndex checks that httpSource in NewClient(...)
 //   - always calls Index function before making an http
-//     request in GetByModule.
+//     request in ByModule.
 //   - if an http request was made, then the module path
 //     must be in the index.
 //
@@ -200,12 +200,12 @@ func TestMustUseIndex(t *testing.T) {
 		for _, modulePath := range modulePaths {
 			indexCalls := hs.indexCalls
 			httpCalls := hs.httpCalls
-			if _, err := clt.GetByModule(ctx, modulePath); err != nil {
+			if _, err := clt.ByModule(ctx, modulePath); err != nil {
 				t.Fatal(err)
 			}
 			// Number of index Calls should be increased.
 			if hs.indexCalls == indexCalls {
-				t.Errorf("GetByModule(ctx, %s) [cache:%t] did not call Index(...)", modulePath, cache != nil)
+				t.Errorf("ByModule(ctx, %s) [cache:%t] did not call Index(...)", modulePath, cache != nil)
 			}
 			// If http request was made, then the modulePath must be in the index.
 			if hs.httpCalls > httpCalls {
@@ -215,7 +215,7 @@ func TestMustUseIndex(t *testing.T) {
 				}
 				_, present := index[modulePath]
 				if !present {
-					t.Errorf("GetByModule(ctx, %s) [cache:%t] issued http request for module not in Index(...)", modulePath, cache != nil)
+					t.Errorf("ByModule(ctx, %s) [cache:%t] issued http request for module not in Index(...)", modulePath, cache != nil)
 				}
 			}
 		}
@@ -244,7 +244,7 @@ func TestSpecialPaths(t *testing.T) {
 			}
 			for specialPath := range specialCaseModulePaths {
 				t.Run(test.name+"-"+specialPath, func(t *testing.T) {
-					if _, err := client.GetByModule(ctx, specialPath); err != nil {
+					if _, err := client.ByModule(ctx, specialPath); err != nil {
 						t.Fatal(err)
 					}
 				})
@@ -271,7 +271,7 @@ func TestCorrectFetchesNoCache(t *testing.T) {
 
 	hs := &httpSource{url: ts.URL, c: new(http.Client)}
 	for _, module := range []string{"m.com/a", "m.com/b", "m.com/c"} {
-		if _, err := hs.GetByModule(context.Background(), module); err != nil {
+		if _, err := hs.ByModule(context.Background(), module); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
 	}
@@ -311,7 +311,7 @@ func TestCorrectFetchesNoChangeIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	gots, err := client.GetByModule(context.Background(), "a")
+	gots, err := client.ByModule(context.Background(), "a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -327,43 +327,6 @@ func TestCorrectFetchesNoChangeIndex(t *testing.T) {
 	}
 }
 
-func TestClientByID(t *testing.T) {
-	if runtime.GOOS == "js" {
-		t.Skip("skipping test: no network on js")
-	}
-
-	const vulnID = "GO-2022-0463"
-	want := mustReadEntry(t, vulnID)
-	srv := newTestServer()
-	defer srv.Close()
-
-	for _, test := range []struct {
-		name   string
-		source string
-		in     string
-		want   *osv.Entry
-	}{
-		{name: "http", in: vulnID, source: srv.URL, want: want},
-		{name: "file", in: vulnID, source: localURL, want: want},
-		{name: "http", in: "NO-SUCH-VULN", source: srv.URL, want: nil},
-		{name: "http", in: "NO-SUCH-VULN", source: localURL, want: nil},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient(test.source, Options{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			got, err := client.GetByID(context.Background(), vulnID)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !cmp.Equal(got, want) {
-				t.Errorf("got\n%+v\nwant\n%+v", got, want)
-			}
-		})
-	}
-}
-
 func mustReadEntry(t *testing.T, vulnID string) *osv.Entry {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("testdata", "vulndb", internal.IDDirectory, vulnID+".json"))
@@ -375,69 +338,6 @@ func mustReadEntry(t *testing.T, vulnID string) *osv.Entry {
 		t.Fatal(err)
 	}
 	return e
-}
-
-func TestClientByAlias(t *testing.T) {
-	if runtime.GOOS == "js" {
-		t.Skip("skipping test: no network on js")
-	}
-	const alias = "CVE-2015-5739"
-	want := []*osv.Entry{mustReadEntry(t, "GO-2021-0157"), mustReadEntry(t, "GO-2021-0159")}
-	srv := newTestServer()
-	defer srv.Close()
-	for _, test := range []struct {
-		name   string
-		source string
-	}{
-		{name: "http", source: srv.URL},
-		{name: "file", source: localURL},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient(test.source, Options{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			got, err := client.GetByAlias(context.Background(), alias)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !cmp.Equal(got, want) {
-				t.Errorf("got\n%+v\nwant\n%+v", got, want)
-			}
-		})
-	}
-}
-
-func TestListIDs(t *testing.T) {
-	if runtime.GOOS == "js" {
-		t.Skip("skipping test: no network on js")
-	}
-
-	srv := newTestServer()
-	defer srv.Close()
-
-	want := []string{"GO-2022-0463", "GO-2022-0569", "GO-2022-0572"}
-	for _, test := range []struct {
-		name   string
-		source string
-	}{
-		{name: "http", source: srv.URL},
-		{name: "file", source: localURL},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient(test.source, Options{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			got, err := client.ListIDs(context.Background())
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !cmp.Equal(got, want) {
-				t.Errorf("got\n%+v\nwant\n%+v", got, want)
-			}
-		})
-	}
 }
 
 func TestLastModifiedTime(t *testing.T) {
