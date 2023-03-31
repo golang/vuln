@@ -79,8 +79,8 @@ func (o *textHandler) Config(config *govulncheck.Config) error {
 }
 
 // Progress writes progress updates during govulncheck execution..
-func (o *textHandler) Progress(msg string) error {
+func (o *textHandler) Progress(progress *govulncheck.Progress) error {
 	fmt.Fprintln(o.w)
-	fmt.Fprintln(o.w, msg)
+	fmt.Fprintln(o.w, progress.Message)
 	return nil
 }

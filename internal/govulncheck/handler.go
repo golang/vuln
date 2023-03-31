@@ -22,7 +22,7 @@ type Handler interface {
 	Config(config *Config) error
 
 	// Progress is called to display a progress message.
-	Progress(msg string) error
+	Progress(progress *Progress) error
 }
 
 // HandleJSON reads the json from the supplied stream and hands the decoded
@@ -44,7 +44,7 @@ func HandleJSON(from io.Reader, to Handler) error {
 		if msg.Vulnerability != nil {
 			err = to.Vulnerability(msg.Vulnerability)
 		}
-		if msg.Progress != "" {
+		if msg.Progress != nil {
 			err = to.Progress(msg.Progress)
 		}
 		if err != nil {

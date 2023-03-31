@@ -37,6 +37,6 @@ func (o *jsonHandler) Config(config *Config) error {
 }
 
 // Progress does not do anything in JSON mode.
-func (o *jsonHandler) Progress(msg string) error {
-	return o.enc.Encode(Message{Progress: msg})
+func (o *jsonHandler) Progress(progress *Progress) error {
+	return o.enc.Encode(Message{Progress: progress})
 }

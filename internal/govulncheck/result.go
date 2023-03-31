@@ -32,9 +32,9 @@ const (
 // Message is an entry in the output stream. It will always have exactly one
 // field filled in.
 type Message struct {
-	Config        *Config `json:"config,omitempty"`
-	Progress      string  `json:"progress,omitempty"`
-	Vulnerability *Vuln   `json:"vulnerability,omitempty"`
+	Config        *Config   `json:"config,omitempty"`
+	Progress      *Progress `json:"progress,omitempty"`
+	Vulnerability *Vuln     `json:"vulnerability,omitempty"`
 }
 
 type Config struct {
@@ -61,6 +61,11 @@ type Config struct {
 	// Mode controls the information that is printed to the user, either
 	// compact or verbose.
 	Mode Mode `json:"callstack_mode,omitempty"` // TODO: remove field and verbose mode
+}
+
+type Progress struct {
+	// Message is the progress message.
+	Message string `json:"message,omitempty"`
 }
 
 // Result is the result of executing Source or Binary.

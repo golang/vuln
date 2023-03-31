@@ -23,7 +23,9 @@ func runBinary(ctx context.Context, output govulncheck.Handler, cfg *config) (*g
 		return nil, err
 	}
 	defer exe.Close()
-	if err := output.Progress(binaryProgressMessage); err != nil {
+
+	p := &govulncheck.Progress{Message: binaryProgressMessage}
+	if err := output.Progress(p); err != nil {
 		return nil, err
 	}
 	vr, err := binary(ctx, exe, &cfg.Config)

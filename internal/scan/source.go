@@ -161,7 +161,7 @@ func stackFramesfromEntries(vcs vulncheck.CallStack) []*govulncheck.StackFrame {
 //
 // P is the number of strictly dependent packages of
 // topPkgs and Y is the number of their modules.
-func sourceProgressMessage(topPkgs []*vulncheck.Package) string {
+func sourceProgressMessage(topPkgs []*vulncheck.Package) *govulncheck.Progress {
 	pkgs, mods := depPkgsAndMods(topPkgs)
 
 	pkgsPhrase := fmt.Sprintf("%d package", pkgs)
@@ -174,7 +174,8 @@ func sourceProgressMessage(topPkgs []*vulncheck.Package) string {
 		modsPhrase += "s"
 	}
 
-	return fmt.Sprintf("Scanning your code and %s across %s for known vulnerabilities...", pkgsPhrase, modsPhrase)
+	msg := fmt.Sprintf("Scanning your code and %s across %s for known vulnerabilities...", pkgsPhrase, modsPhrase)
+	return &govulncheck.Progress{Message: msg}
 }
 
 // depPkgsAndMods returns the number of packages that
