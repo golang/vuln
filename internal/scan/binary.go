@@ -16,7 +16,7 @@ import (
 )
 
 // runBinary detects presence of vulnerable symbols in an executable.
-func runBinary(ctx context.Context, output govulncheck.Handler, cfg *config) (*govulncheck.Result, error) {
+func runBinary(ctx context.Context, output govulncheck.Handler, cfg *config) ([]*govulncheck.Vuln, error) {
 	var exe *os.File
 	exe, err := os.Open(cfg.patterns[0])
 	if err != nil {
@@ -35,12 +35,12 @@ func runBinary(ctx context.Context, output govulncheck.Handler, cfg *config) (*g
 	return createBinaryResult(vr), nil
 }
 
-func createBinaryResult(vr *vulncheck.Result) *govulncheck.Result {
+func createBinaryResult(vr *vulncheck.Result) []*govulncheck.Vuln {
 	modVersions := moduleVersionMap(vr.Modules)
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
 	// results later.
-	r := &govulncheck.Result{}
+	var vulns []*govulncheck.Vuln
 	for _, vv := range vr.Vulns {
 		p := &govulncheck.Package{Path: vv.PkgPath}
 		// in binary mode, call stacks contain just the symbol data
@@ -51,11 +51,12 @@ func createBinaryResult(vr *vulncheck.Result) *govulncheck.Result {
 			FixedVersion: fixedVersion(vv.ModPath, vv.OSV.Affected),
 			Packages:     []*govulncheck.Package{p},
 		}
+
 		v := &govulncheck.Vuln{OSV: vv.OSV, Modules: []*govulncheck.Module{m}}
-		r.Vulns = append(r.Vulns, v)
+		vulns = append(vulns, v)
 	}
 
-	r = merge(r)
-	sortResult(r)
-	return r
+	vulns = merge(vulns)
+	sortResult(vulns)
+	return vulns
 }

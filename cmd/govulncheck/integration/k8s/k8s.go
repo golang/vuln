@@ -29,13 +29,13 @@ func main() {
 		log.Fatal("Failed to read:", out)
 	}
 
-	var r govulncheck.Result
-	if err := json.Unmarshal(outJson, &r); err != nil {
-		log.Fatal("Failed to load json into internal/govulncheck.Result:", err)
+	var vulns []*govulncheck.Vuln
+	if err := json.Unmarshal(outJson, &vulns); err != nil {
+		log.Fatalf("Failed to load json: %v", err)
 	}
 
 	calledVulnPkgs := make(map[string]bool)
-	for _, v := range r.Vulns {
+	for _, v := range vulns {
 		for _, m := range v.Modules {
 			for _, p := range m.Packages {
 				if len(p.CallStacks) > 0 {

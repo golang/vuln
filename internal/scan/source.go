@@ -23,7 +23,7 @@ import (
 // Vulnerabilities can be called (affecting the package, because a vulnerable
 // symbol is actually exercised) or just imported by the package
 // (likely having a non-affecting outcome).
-func runSource(ctx context.Context, output govulncheck.Handler, cfg *config, dir string) (*govulncheck.Result, error) {
+func runSource(ctx context.Context, output govulncheck.Handler, cfg *config, dir string) ([]*govulncheck.Vuln, error) {
 	var pkgs []*vulncheck.Package
 	pkgs, err := loadPackages(cfg, dir)
 	if err != nil {
@@ -77,7 +77,7 @@ func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
 	return vpkgs, err
 }
 
-func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *govulncheck.Result {
+func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) []*govulncheck.Vuln {
 	topPkgs := map[string]bool{}
 	for _, p := range pkgs {
 		topPkgs[p.PkgPath] = true
@@ -103,7 +103,7 @@ func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *govuln
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
 	// results later.
-	r := &govulncheck.Result{}
+	var vulns []*govulncheck.Vuln
 	for _, vv := range vr.Vulns {
 		p := &govulncheck.Package{Path: vv.PkgPath}
 		m := &govulncheck.Module{
@@ -126,12 +126,12 @@ func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *govuln
 				p.CallStacks = []govulncheck.CallStack{cs}
 			}
 		}
-		r.Vulns = append(r.Vulns, v)
+		vulns = append(vulns, v)
 	}
 
-	r = merge(r)
-	sortResult(r)
-	return r
+	vulns = merge(vulns)
+	sortResult(vulns)
+	return vulns
 }
 
 // stackFramesFromEntries creates a sequence of stack

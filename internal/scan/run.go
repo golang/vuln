@@ -43,19 +43,19 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 		return err
 	}
 
-	var res *govulncheck.Result
+	var vulns []*govulncheck.Vuln
 	switch cfg.analysis {
 	case govulncheck.AnalysisSource:
-		res, err = runSource(ctx, output, cfg, dir)
+		vulns, err = runSource(ctx, output, cfg, dir)
 	case govulncheck.AnalysisBinary:
-		res, err = runBinary(ctx, output, cfg)
+		vulns, err = runBinary(ctx, output, cfg)
 	}
 	if err != nil {
 		return err
 	}
 
 	// For each vulnerability, queue it to be written to the output.
-	for _, v := range res.Vulns {
+	for _, v := range vulns {
 		if err := output.Vulnerability(v); err != nil {
 			return err
 		}
@@ -63,14 +63,14 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 	if err := output.Flush(); err != nil {
 		return err
 	}
-	if containsAffectedVulnerabilities(res) {
+	if containsAffectedVulnerabilities(vulns) {
 		return ErrVulnerabilitiesFound
 	}
 	return nil
 }
 
-func containsAffectedVulnerabilities(r *govulncheck.Result) bool {
-	for _, v := range r.Vulns {
+func containsAffectedVulnerabilities(vulns []*govulncheck.Vuln) bool {
+	for _, v := range vulns {
 		if IsCalled(v) {
 			return true
 		}
