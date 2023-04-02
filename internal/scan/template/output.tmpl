@@ -37,7 +37,7 @@ Vulnerability #{{$idx}}: {{$vulnInfo.ID}}
     Found in: {{$modInfo.Found}}
     Fixed in: {{if $modInfo.Fixed}}{{$modInfo.Fixed}}{{else}}N/A{{end}}
 {{- if $modInfo.Platforms}}
-    Platforms: {{$modInfo.Platforms}}
+    Platforms: {{template "Platforms" $modInfo.Platforms}}
 {{- end}}
 {{if $modInfo.Stacks}}
     Call stacks in your code:
@@ -64,7 +64,11 @@ Vulnerability #{{$idx}}: {{$vulnInfo.ID}}{{$modInfo:= index $vulnInfo.Modules 0}
   Found in: {{$modInfo.Found}}
   Fixed in: {{if $modInfo.Fixed}}{{$modInfo.Fixed}}{{else}}N/A{{end}}
   {{- if $modInfo.Platforms}}
-  Platforms: {{$modInfo.Platforms}}{{end}}
+  Platforms: {{template "Platforms" $modInfo.Platforms}}{{end}}
 {{end}}
 {{- end -}}
+{{- end -}}
+
+{{- define "Platforms" -}}
+  {{$sep := ""}}{{range .}}{{$sep}}{{.}}{{$sep = ", "}}{{end}}
 {{- end -}}

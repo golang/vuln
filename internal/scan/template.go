@@ -184,7 +184,7 @@ type tmplModVulnInfo struct {
 	Module    string
 	Found     string
 	Fixed     string
-	Platforms string
+	Platforms []string
 	Stacks    string
 }
 
@@ -242,7 +242,10 @@ func verboseCallStacks(css []govulncheck.CallStack) string {
 //
 // When mod is an empty string, returns platform information for
 // all modules of e.
-func platforms(mod string, e *osv.Entry) string {
+func platforms(mod string, e *osv.Entry) []string {
+	if e == nil {
+		return nil
+	}
 	platforms := map[string]bool{}
 	for _, a := range e.Affected {
 		if mod != "" && a.Module.Path != mod {
@@ -261,7 +264,6 @@ func platforms(mod string, e *osv.Entry) string {
 					platforms[os+"/"+arch] = true
 				}
 			}
-
 			// Cover the case where there are no specific
 			// operating systems listed.
 			if len(p.GOOS) == 0 {
@@ -271,19 +273,12 @@ func platforms(mod string, e *osv.Entry) string {
 			}
 		}
 	}
-	keys := mapkeys(platforms)
-	sort.Strings(keys)
-	return strings.Join(keys, ", ")
-}
-
-// mapkeys returns the keys of the map m.
-// The keys will be in an indeterminate order.
-func mapkeys[M ~map[K]V, K comparable, V any](m M) []K {
-	r := make([]K, 0, len(m))
-	for k := range m {
-		r = append(r, k)
+	var keys []string
+	for k := range platforms {
+		keys = append(keys, k)
 	}
-	return r
+	sort.Strings(keys)
+	return keys
 }
 
 // wrap wraps s to fit in maxWidth by breaking it into lines at whitespace. If a
