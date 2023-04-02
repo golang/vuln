@@ -71,7 +71,6 @@ func TestUniqueCallStack(t *testing.T) {
 
 func TestSummarizeCallStack(t *testing.T) {
 	topPkgs := map[string]bool{"t1": true, "t2": true}
-	vulnPkg := "v"
 
 	for _, test := range []struct {
 		in, want string
@@ -109,7 +108,7 @@ func TestSummarizeCallStack(t *testing.T) {
 		},
 	} {
 		in := stringToCallStack(test.in)
-		got := summarizeCallStack(in, topPkgs, vulnPkg)
+		got := summarizeCallStack(in, topPkgs)
 		if got != test.want {
 			t.Errorf("%s:\ngot  %s\nwant %s", test.in, got, test.want)
 		}

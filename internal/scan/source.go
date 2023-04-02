@@ -122,7 +122,7 @@ func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) *govuln
 					Frames: stackFramesfromEntries(vcs),
 					Symbol: vv.Symbol,
 				}
-				cs.Summary = summarizeCallStack(cs, topPkgs, p.Path)
+				cs.Summary = summarizeCallStack(cs, topPkgs)
 				p.CallStacks = []govulncheck.CallStack{cs}
 			}
 		}
@@ -238,12 +238,16 @@ func depPkgsAndMods(topPkgs []*vulncheck.Package) (int, int) {
 //     "F calls W, which eventually calls V"
 //
 // If it can't find any of these functions, summarizeCallStack returns the empty string.
-func summarizeCallStack(cs govulncheck.CallStack, topPkgs map[string]bool, vulnPkg string) string {
+func summarizeCallStack(cs govulncheck.CallStack, topPkgs map[string]bool) string {
+	if len(cs.Frames) == 0 {
+		return ""
+	}
 	iTop, iTopEnd, topFunc, topEndFunc := summarizeTop(cs.Frames, topPkgs)
 	if iTop < 0 {
 		return ""
 	}
 
+	vulnPkg := cs.Frames[len(cs.Frames)-1].Package
 	iVulnStart, vulnStartFunc, vulnFunc := summarizeVuln(cs.Frames, iTopEnd, vulnPkg)
 	if iVulnStart < 0 {
 		return ""
@@ -287,7 +291,8 @@ func summarizeCallStack(cs govulncheck.CallStack, topPkgs map[string]bool, vulnP
 //	[p.V p.W p.Z$1 q.Q ...]  -> (1, 2, p.W, p.Z)
 func summarizeTop(frames []*govulncheck.StackFrame, topPkgs map[string]bool) (iTop, iTopEnd int, topFunc, topEndFunc string) {
 	iTopEnd = lowest(frames, func(e *govulncheck.StackFrame) bool {
-		return topPkgs[e.Package]
+		_, found := topPkgs[e.Package]
+		return found
 	})
 	if iTopEnd < 0 {
 		return -1, -1, "", ""
@@ -303,7 +308,8 @@ func summarizeTop(frames []*govulncheck.StackFrame, topPkgs map[string]bool) (iT
 	topEndFunc = creatorName(topEndFunc)
 
 	iTop = lowest(frames, func(e *govulncheck.StackFrame) bool {
-		return topPkgs[e.Package] && !isAnonymousFunction(e.Function)
+		_, found := topPkgs[e.Package]
+		return found && !isAnonymousFunction(e.Function)
 	})
 	if iTop < 0 {
 		iTop = iTopEnd
