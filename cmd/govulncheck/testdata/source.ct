@@ -22,7 +22,7 @@ Vulnerability #1: GO-2021-0113
     Call stacks in your code:
       #1: for function Parse
         golang.org/vuln.main
-            .../vuln.go:12:16
+            .../vuln.go:13:16
         golang.org/x/text/language.Parse
 
 === Informational ===
