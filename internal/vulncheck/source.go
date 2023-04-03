@@ -208,7 +208,7 @@ func vulnImportSlice(pkg *Package, modVulns moduleVulnerabilities, result *Resul
 	// Create Vuln entry for each symbol of known OSV entries for pkg.
 	for _, osv := range vulns {
 		for _, affected := range osv.Affected {
-			for _, p := range affected.EcosystemSpecific.Imports {
+			for _, p := range affected.EcosystemSpecific.Packages {
 				if p.Path != pkgNode.Path {
 					continue
 				}

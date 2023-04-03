@@ -8,8 +8,8 @@
   "vulnerability": {
     "osv": {
       "id": "one-import",
-      "published": "0001-01-01T00:00:00Z",
       "modified": "0001-01-01T00:00:00Z",
+      "published": "0001-01-01T00:00:00Z",
       "details": "",
       "affected": [
         {
@@ -27,9 +27,6 @@
               ]
             }
           ],
-          "database_specific": {
-            "url": ""
-          },
           "ecosystem_specific": {
             "imports": [
               {

@@ -48,9 +48,9 @@ func TestLatestFixed(t *testing.T) {
 			"no semver",
 			[]osv.Affected{
 				{
-					Ranges: osv.Affects{
+					Ranges: []osv.Range{
 						{
-							Type: osv.TypeGit,
+							Type: osv.RangeType("unspecified"),
 							Events: []osv.RangeEvent{
 								{Introduced: "v1.0.0", Fixed: "v1.2.3"},
 							},
@@ -63,9 +63,9 @@ func TestLatestFixed(t *testing.T) {
 			"one",
 			[]osv.Affected{
 				{
-					Ranges: osv.Affects{
+					Ranges: []osv.Range{
 						{
-							Type: osv.TypeSemver,
+							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
 								{Introduced: "v1.0.0", Fixed: "v1.2.3"},
 							},
@@ -78,9 +78,9 @@ func TestLatestFixed(t *testing.T) {
 			"several",
 			[]osv.Affected{
 				{
-					Ranges: osv.Affects{
+					Ranges: []osv.Range{
 						{
-							Type: osv.TypeSemver,
+							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
 								{Introduced: "v1.0.0", Fixed: "v1.2.3"},
 								{Introduced: "v1.5.0", Fixed: "v1.5.6"},
@@ -88,9 +88,9 @@ func TestLatestFixed(t *testing.T) {
 						}},
 				},
 				{
-					Ranges: osv.Affects{
+					Ranges: []osv.Range{
 						{
-							Type: osv.TypeSemver,
+							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
 								{Introduced: "v1.3.0", Fixed: "v1.4.1"},
 							},
@@ -103,18 +103,18 @@ func TestLatestFixed(t *testing.T) {
 			"no v prefix",
 			[]osv.Affected{
 				{
-					Ranges: osv.Affects{
+					Ranges: []osv.Range{
 						{
-							Type: osv.TypeSemver,
+							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
 								{Fixed: "1.17.2"},
 							},
 						}},
 				},
 				{
-					Ranges: osv.Affects{
+					Ranges: []osv.Range{
 						{
-							Type: osv.TypeSemver,
+							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
 								{Introduced: "1.18.0", Fixed: "1.18.4"},
 							},

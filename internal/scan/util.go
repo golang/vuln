@@ -125,7 +125,7 @@ func latestFixed(as []osv.Affected) string {
 	v := ""
 	for _, a := range as {
 		for _, r := range a.Ranges {
-			if r.Type == osv.TypeSemver {
+			if r.Type == osv.RangeTypeSemver {
 				for _, e := range r.Events {
 					if e.Fixed != "" && (v == "" ||
 						semver.Compare(isem.CanonicalizeSemverPrefix(e.Fixed), isem.CanonicalizeSemverPrefix(v)) > 0) {

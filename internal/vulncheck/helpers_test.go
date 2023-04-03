@@ -25,9 +25,9 @@ var testClient = &test.MockClient{
 			{
 				ID: "VA",
 				Affected: []osv.Affected{{
-					Package: osv.Package{Name: "golang.org/amod"},
-					Ranges:  osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.0.0"}, {Fixed: "1.0.4"}, {Introduced: "1.1.2"}}}},
-					EcosystemSpecific: osv.EcosystemSpecific{Imports: []osv.EcosystemSpecificImport{{
+					Module: osv.Module{Path: "golang.org/amod"},
+					Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Introduced: "1.0.0"}, {Fixed: "1.0.4"}, {Introduced: "1.1.2"}}}},
+					EcosystemSpecific: osv.EcosystemSpecific{Packages: []osv.Package{{
 						Path:    "golang.org/amod/avuln",
 						Symbols: []string{"VulnData.Vuln1", "VulnData.Vuln2"}},
 					}},
@@ -38,10 +38,10 @@ var testClient = &test.MockClient{
 			{
 				ID: "VB",
 				Affected: []osv.Affected{{
-					Package: osv.Package{Name: "golang.org/bmod"},
-					Ranges:  osv.Affects{{Type: osv.TypeSemver}},
+					Module: osv.Module{Path: "golang.org/bmod"},
+					Ranges: []osv.Range{{Type: osv.RangeTypeSemver}},
 					EcosystemSpecific: osv.EcosystemSpecific{
-						Imports: []osv.EcosystemSpecificImport{{
+						Packages: []osv.Package{{
 							Path:    "golang.org/bmod/bvuln",
 							Symbols: []string{"Vuln"},
 						}},
@@ -53,12 +53,12 @@ var testClient = &test.MockClient{
 			{
 				ID: "STD",
 				Affected: []osv.Affected{{
-					Package: osv.Package{Name: "stdlib"},
+					Module: osv.Module{Path: osv.GoStdModulePath},
 					// Range is populated also using runtime info for testing binaries since
 					// setting fixed Go version for binaries is very difficult.
-					Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Introduced: "1.18"}, {Introduced: semver.GoTagToSemver(runtime.Version())}}}},
+					Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Introduced: "1.18"}, {Introduced: semver.GoTagToSemver(runtime.Version())}}}},
 					EcosystemSpecific: osv.EcosystemSpecific{
-						Imports: []osv.EcosystemSpecificImport{{
+						Packages: []osv.Package{{
 							Path:    "archive/zip",
 							Symbols: []string{"OpenReader"},
 						}},

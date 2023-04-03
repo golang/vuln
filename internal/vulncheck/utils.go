@@ -250,7 +250,7 @@ func allSymbols(pkg *types.Package) []string {
 // vulnMatchesPackage reports whether an entry applies to pkg (an import path).
 func vulnMatchesPackage(v *osv.Entry, pkg string) bool {
 	for _, a := range v.Affected {
-		for _, p := range a.EcosystemSpecific.Imports {
+		for _, p := range a.EcosystemSpecific.Packages {
 			if p.Path == pkg {
 				return true
 			}

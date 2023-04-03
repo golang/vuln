@@ -334,7 +334,7 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 				// information out as it might lead to incorrect results:
 				// Computing a latest fix could consider versions of these
 				// different packages.
-				if a.Package.Name != module.Path {
+				if a.Module.Path != module.Path {
 					continue
 				}
 
@@ -350,16 +350,16 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 				if !affectsSemver(a.Ranges, modVersion) {
 					continue
 				}
-				var filteredImports []osv.EcosystemSpecificImport
-				for _, p := range a.EcosystemSpecific.Imports {
+				var filteredImports []osv.Package
+				for _, p := range a.EcosystemSpecific.Packages {
 					if matchesPlatform(os, arch, p) {
 						filteredImports = append(filteredImports, p)
 					}
 				}
-				if len(a.EcosystemSpecific.Imports) != 0 && len(filteredImports) == 0 {
+				if len(a.EcosystemSpecific.Packages) != 0 && len(filteredImports) == 0 {
 					continue
 				}
-				a.EcosystemSpecific.Imports = filteredImports
+				a.EcosystemSpecific.Packages = filteredImports
 				filteredAffected = append(filteredAffected, a)
 			}
 			if len(filteredAffected) == 0 {
@@ -379,7 +379,7 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 	return filteredMod
 }
 
-func matchesPlatform(os, arch string, e osv.EcosystemSpecificImport) bool {
+func matchesPlatform(os, arch string, e osv.Package) bool {
 	return matchesPlatformComponent(os, e.GOOS) &&
 		matchesPlatformComponent(arch, e.GOARCH)
 }
@@ -430,7 +430,7 @@ func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry 
 Vuln:
 	for _, v := range vulns {
 		for _, a := range v.Affected {
-			for _, p := range a.EcosystemSpecific.Imports {
+			for _, p := range a.EcosystemSpecific.Packages {
 				if p.Path == importPath {
 					packageVulns = append(packageVulns, v)
 					continue Vuln
@@ -452,7 +452,7 @@ func (mv moduleVulnerabilities) vulnsForSymbol(importPath, symbol string) []*osv
 vulnLoop:
 	for _, v := range vulns {
 		for _, a := range v.Affected {
-			for _, p := range a.EcosystemSpecific.Imports {
+			for _, p := range a.EcosystemSpecific.Packages {
 				if p.Path != importPath {
 					continue
 				}

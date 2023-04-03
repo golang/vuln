@@ -135,8 +135,8 @@ func TestInits(t *testing.T) {
 		Ret: map[string][]*osv.Entry{
 			"golang.org/amod": []*osv.Entry{
 				{
-					ID: "A", Affected: []osv.Affected{{Package: osv.Package{Name: "golang.org/amod"}, Ranges: osv.Affects{{Type: osv.TypeSemver}},
-						EcosystemSpecific: osv.EcosystemSpecific{Imports: []osv.EcosystemSpecificImport{{
+					ID: "A", Affected: []osv.Affected{{Module: osv.Module{Path: "golang.org/amod"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver}},
+						EcosystemSpecific: osv.EcosystemSpecific{Packages: []osv.Package{{
 							Path: "golang.org/amod/avuln", Symbols: []string{"A"}},
 						}},
 					}},
@@ -144,8 +144,8 @@ func TestInits(t *testing.T) {
 			},
 			"golang.org/cmod": []*osv.Entry{
 				{
-					ID: "C", Affected: []osv.Affected{{Package: osv.Package{Name: "golang.org/cmod"}, Ranges: osv.Affects{{Type: osv.TypeSemver}},
-						EcosystemSpecific: osv.EcosystemSpecific{Imports: []osv.EcosystemSpecificImport{{
+					ID: "C", Affected: []osv.Affected{{Module: osv.Module{Path: "golang.org/cmod"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver}},
+						EcosystemSpecific: osv.EcosystemSpecific{Packages: []osv.Package{{
 							Path: "golang.org/cmod/cvuln", Symbols: []string{"C"}},
 						}},
 					}},

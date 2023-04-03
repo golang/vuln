@@ -12,14 +12,14 @@ import (
 	isem "golang.org/x/vuln/internal/semver"
 )
 
-func affectsSemver(a osv.Affects, v string) bool {
+func affectsSemver(a []osv.Range, v string) bool {
 	if len(a) == 0 {
 		// No ranges implies all versions are affected
 		return true
 	}
 	var semverRangePresent bool
 	for _, r := range a {
-		if r.Type != osv.TypeSemver {
+		if r.Type != osv.RangeTypeSemver {
 			continue
 		}
 		semverRangePresent = true
@@ -44,8 +44,8 @@ func affectsSemver(a osv.Affects, v string) bool {
 //   - beginning of time is encoded with .Introduced="0"
 //   - no-fix is not an event, as opposed to being an
 //     event where Introduced="" and Fixed=""
-func containsSemver(ar osv.AffectsRange, v string) bool {
-	if ar.Type != osv.TypeSemver {
+func containsSemver(ar osv.Range, v string) bool {
+	if ar.Type != osv.RangeTypeSemver {
 		return false
 	}
 	if len(ar.Events) == 0 {

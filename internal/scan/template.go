@@ -234,10 +234,10 @@ func verboseCallStacks(css []govulncheck.CallStack) string {
 func platforms(mod string, e *osv.Entry) string {
 	platforms := map[string]bool{}
 	for _, a := range e.Affected {
-		if mod != "" && a.Package.Name != mod {
+		if mod != "" && a.Module.Path != mod {
 			continue
 		}
-		for _, p := range a.EcosystemSpecific.Imports {
+		for _, p := range a.EcosystemSpecific.Packages {
 			for _, os := range p.GOOS {
 				// In case there are no specific architectures,
 				// just list the os entries.

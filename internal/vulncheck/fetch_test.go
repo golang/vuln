@@ -18,10 +18,10 @@ import (
 func TestFetchVulnerabilities(t *testing.T) {
 	mc := &test.MockClient{
 		Ret: map[string][]*osv.Entry{
-			"example.mod/a": {{ID: "a", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}}},
-			"example.mod/b": {{ID: "b", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/b"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}}},
-			"example.mod/d": {{ID: "c", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/d"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}}},
-			"example.mod/e": {{ID: "e", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/e"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.2.0"}}}}}}}},
+			"example.mod/a": {{ID: "a", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/a"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}}},
+			"example.mod/b": {{ID: "b", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/b"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}}},
+			"example.mod/d": {{ID: "c", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/d"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}}},
+			"example.mod/e": {{ID: "e", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/e"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.2.0"}}}}}}}},
 		},
 	}
 
@@ -39,19 +39,19 @@ func TestFetchVulnerabilities(t *testing.T) {
 		{
 			Module: &vulncheck.Module{Path: "example.mod/a", Version: "v1.0.0"},
 			Vulns: []*osv.Entry{
-				{ID: "a", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/a"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
+				{ID: "a", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/a"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
 			},
 		},
 		{
 			Module: &vulncheck.Module{Path: "example.mod/b", Version: "v1.0.4"},
 			Vulns: []*osv.Entry{
-				{ID: "b", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/b"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}},
+				{ID: "b", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/b"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}},
 			},
 		},
 		{
 			Module: &vulncheck.Module{Path: "example.mod/c", Replace: &vulncheck.Module{Path: "example.mod/d", Version: "v1.0.0"}, Version: "v2.0.0"},
 			Vulns: []*osv.Entry{
-				{ID: "c", Affected: []osv.Affected{{Package: osv.Package{Name: "example.mod/d"}, Ranges: osv.Affects{{Type: osv.TypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
+				{ID: "c", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/d"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
 			},
 		},
 	}

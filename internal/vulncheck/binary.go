@@ -68,7 +68,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 func addImportsOnlyVulns(pkg, mod string, symbols []string, result *Result, modVulns moduleVulnerabilities) {
 	for _, osv := range modVulns.vulnsForPackage(pkg) {
 		for _, affected := range osv.Affected {
-			for _, p := range affected.EcosystemSpecific.Imports {
+			for _, p := range affected.EcosystemSpecific.Packages {
 				if p.Path != pkg {
 					continue
 				}
