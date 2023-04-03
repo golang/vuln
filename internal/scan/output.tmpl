@@ -14,7 +14,7 @@ It consists of three sections showing:
 {{if eq .AffectedCount 0}}No vulnerabilities found.
 {{else}}Your code is affected by
 {{- if eq .AffectedCount 1}} 1 vulnerability{{else}} {{.AffectedCount}} vulnerabilities{{end}} from
-{{- if eq .AffectedModules 1}} 1 module{{else}} {{.AffectedModules}} modules{{end}}
+{{- if eq .AffectedModules 1}} 1 module{{else if gt .AffectedModules 1}} {{.AffectedModules}} modules{{else}} {{end}}
 {{- if .StdlibAffected}}{{if .AffectedModules}} and {{end}}the Go standard library{{end}}.
 {{end}}
 {{- end -}}

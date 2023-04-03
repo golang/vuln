@@ -1,0 +1,25 @@
+$ govulncheck -dir ${moddir}/stdlib -v . --> FAIL 3
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with
+vulnerability data from testdata/vulndb (last modified 01 Jan 21 00:00 UTC).
+
+Scanning your code and P packages across M dependent modules for known vulnerabilities...
+Your code is affected by 1 vulnerability from the Go standard library.
+
+Vulnerability #1: GO-2022-0969
+  HTTP/2 server connections can hang forever waiting for a clean
+  shutdown that was preempted by a fatal error. This condition can
+  be exploited by a malicious client to cause a denial of service.
+
+  More info: https://pkg.go.dev/vuln/GO-2022-0969
+
+  Standard library
+    Found in: net/http@go1.18
+    Fixed in: net/http@go1.19.1
+
+    Call stacks in your code:
+      #1: for function ListenAndServe
+        golang.org/stdlib.main
+            .../stdlib.go:17:31
+        net/http.ListenAndServe
