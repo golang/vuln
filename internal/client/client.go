@@ -86,16 +86,6 @@ func UnescapeModulePath(path string) (string, error) {
 	return module.UnescapePath(path)
 }
 
-func latestModifiedTime(entries []*osv.Entry) time.Time {
-	var t time.Time
-	for _, e := range entries {
-		if e.Modified.After(t) {
-			t = e.Modified
-		}
-	}
-	return t
-}
-
 func NewClient(source string, opts Options) (_ Client, err error) {
 	source = strings.TrimRight(source, "/")
 	uri, err := url.Parse(source)
