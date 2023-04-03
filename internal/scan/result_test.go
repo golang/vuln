@@ -84,3 +84,34 @@ func TestVuln(t *testing.T) {
 		}
 	}
 }
+
+func TestFuncName(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		frame *govulncheck.StackFrame
+		want  string
+	}{
+		{
+			"function and receiver",
+			&govulncheck.StackFrame{Receiver: "*ServeMux", Function: "Handle"},
+			"ServeMux.Handle",
+		},
+		{
+			"package and function",
+			&govulncheck.StackFrame{Package: "net/http", Function: "Get"},
+			"net/http.Get",
+		},
+		{
+			"package, function and receiver",
+			&govulncheck.StackFrame{Package: "net/http", Receiver: "*ServeMux", Function: "Handle"},
+			"ServeMux.Handle",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got := FuncName(test.frame)
+			if got != test.want {
+				t.Errorf("got = %q; want = %q", got, test.want)
+			}
+		})
+	}
+}

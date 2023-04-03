@@ -32,16 +32,17 @@ func IsCalled(v *govulncheck.Vuln) bool {
 	return false
 }
 
-// FuncName returns the full qualified function name from sf,
+// FuncName returns the full qualified function name from a stack frame,
 // adjusted to remove pointer annotations.
-func FuncName(sf *govulncheck.StackFrame) string {
-	var n string
-	if sf.Receiver == "" {
-		n = fmt.Sprintf("%s.%s", sf.Package, sf.Function)
-	} else {
-		n = fmt.Sprintf("%s.%s", sf.Receiver, sf.Function)
+func FuncName(frame *govulncheck.StackFrame) string {
+	switch {
+	case frame.Receiver != "":
+		return fmt.Sprintf("%s.%s", strings.TrimPrefix(frame.Receiver, "*"), frame.Function)
+	case frame.Package != "":
+		return fmt.Sprintf("%s.%s", frame.Package, frame.Function)
+	default:
+		return frame.Function
 	}
-	return strings.TrimPrefix(n, "*")
 }
 
 // Pos returns the position of the call in sf as string.
