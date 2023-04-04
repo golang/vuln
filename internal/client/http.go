@@ -11,10 +11,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path"
 	"time"
 
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/osv"
 )
@@ -23,7 +21,7 @@ type httpSource struct {
 	c   *http.Client
 	url string // the base URI of the source (without trailing "/"). e.g. https://vuln.golang.org
 
-	// indexCalls counts the number of times Index() has been called.
+	// indexCalls counts the number of times index() has been called.
 	// httpCalls counts the number of times ByModule makes an http request
 	// to  vulndb for a module path. Used for testing privacy properties of
 	// httpSource.
@@ -41,7 +39,7 @@ func newHTTPClient(uri *url.URL, opts Options) (_ *httpSource) {
 	return hs
 }
 
-func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
+func (hs *httpSource) index(ctx context.Context) (_ dbIndex, err error) {
 	hs.indexCalls++ // for testing privacy properties
 	defer derrors.Wrap(&err, "Index()")
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/index.json", hs.url), nil)
@@ -60,7 +58,7 @@ func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
 	if err != nil {
 		return nil, err
 	}
-	var index DBIndex
+	var index dbIndex
 	if err = json.Unmarshal(b, &index); err != nil {
 		return nil, err
 	}
@@ -69,7 +67,7 @@ func (hs *httpSource) Index(ctx context.Context) (_ DBIndex, err error) {
 
 func (hs *httpSource) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
 	defer derrors.Wrap(&err, "httpSource.ByModule(%q)", modulePath)
-	index, err := hs.Index(ctx)
+	index, err := hs.index(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +75,7 @@ func (hs *httpSource) ByModule(ctx context.Context, modulePath string) (_ []*osv
 	if !present {
 		return nil, nil
 	}
-	epath, err := EscapeModulePath(modulePath)
+	epath, err := escapeModulePath(modulePath)
 	if err != nil {
 		return nil, err
 	}
@@ -87,18 +85,6 @@ func (hs *httpSource) ByModule(ctx context.Context, modulePath string) (_ []*osv
 		return nil, err
 	}
 	return entries, nil
-}
-
-func (hs *httpSource) ByID(ctx context.Context, id string) (_ *osv.Entry, err error) {
-	defer derrors.Wrap(&err, "ByID(%q)", id)
-
-	return httpReadJSON[*osv.Entry](ctx, hs, fmt.Sprintf("%s/%s.json", internal.IDDirectory, id))
-}
-
-func (hs *httpSource) ListIDs(ctx context.Context) (_ []string, err error) {
-	defer derrors.Wrap(&err, "ListIDs()")
-
-	return httpReadJSON[[]string](ctx, hs, path.Join(internal.IDDirectory, "index.json"))
 }
 
 func httpReadJSON[T any](ctx context.Context, hs *httpSource, relativePath string) (T, error) {

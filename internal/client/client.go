@@ -40,9 +40,9 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-// DBIndex contains a mapping of vulnerable packages to the last time a new
+// dbIndex contains a mapping of vulnerable packages to the last time a new
 // vulnerability was added to the database.
-type DBIndex map[string]time.Time
+type dbIndex map[string]time.Time
 
 // Client interface for fetching vulnerabilities based on module path or ID.
 type Client interface {
@@ -65,25 +65,15 @@ var specialCaseModulePaths = map[string]bool{
 	internal.GoCmdModulePath: true,
 }
 
-// EscapeModulePath should be called by cache implementations or other users of
+// escapeModulePath should be called by cache implementations or other users of
 // this package that want to use module paths as filesystem paths. It is like
 // golang.org/x/mod/module, but accounts for special paths used by the
 // vulnerability database.
-func EscapeModulePath(path string) (string, error) {
+func escapeModulePath(path string) (string, error) {
 	if specialCaseModulePaths[path] {
 		return path, nil
 	}
 	return module.EscapePath(path)
-}
-
-// UnescapeModulePath should be called to convert filesystem paths into module
-// paths. It is like golang.org/x/mod/module, but accounts for special paths
-// used by the vulnerability database.
-func UnescapeModulePath(path string) (string, error) {
-	if specialCaseModulePaths[path] {
-		return path, nil
-	}
-	return module.UnescapePath(path)
 }
 
 func NewClient(source string, opts Options) (_ Client, err error) {

@@ -11,10 +11,8 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
-	"path"
 	"time"
 
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/web"
@@ -46,7 +44,7 @@ func newFileClient(uri *url.URL) (_ *localSource, err error) {
 func (ls *localSource) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
 	defer derrors.Wrap(&err, "localSource.ByModule(%q)", modulePath)
 
-	index, err := ls.Index(ctx)
+	index, err := localReadJSON[dbIndex](ls, "index.json")
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +55,7 @@ func (ls *localSource) ByModule(ctx context.Context, modulePath string) (_ []*os
 		return nil, nil
 	}
 
-	epath, err := EscapeModulePath(modulePath)
+	epath, err := escapeModulePath(modulePath)
 	if err != nil {
 		return nil, err
 	}
@@ -70,18 +68,6 @@ func (ls *localSource) ByModule(ctx context.Context, modulePath string) (_ []*os
 	return e, nil
 }
 
-func (ls *localSource) ByID(_ context.Context, id string) (_ *osv.Entry, err error) {
-	defer derrors.Wrap(&err, "ByID(%q)", id)
-
-	e, err := localReadJSON[osv.Entry](ls, path.Join(internal.IDDirectory, id+".json"))
-	if os.IsNotExist(err) {
-		return nil, nil
-	} else if err != nil {
-		return nil, err
-	}
-	return &e, nil
-}
-
 func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error) {
 	defer derrors.Wrap(&err, "LastModifiedTime()")
 
@@ -91,12 +77,6 @@ func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error
 		return time.Time{}, err
 	}
 	return info.ModTime(), nil
-}
-
-func (ls *localSource) Index(ctx context.Context) (_ DBIndex, err error) {
-	defer derrors.Wrap(&err, "Index()")
-
-	return localReadJSON[DBIndex](ls, "index.json")
 }
 
 func localReadJSON[T any](ls *localSource, relativePath string) (T, error) {

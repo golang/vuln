@@ -135,7 +135,7 @@ func TestMustUseIndex(t *testing.T) {
 		}
 		// If http request was made, then the modulePath must be in the index.
 		if hs.httpCalls > httpCalls {
-			index, err := hs.Index(ctx)
+			index, err := hs.index(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -183,7 +183,7 @@ func TestCorrectFetchesNoCache(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fetches[r.URL.Path]++
 		if r.URL.Path == "/index.json" {
-			j, _ := json.Marshal(DBIndex{
+			j, _ := json.Marshal(dbIndex{
 				"m.com/a": time.Now(),
 				"m.com/b": time.Now(),
 			})
