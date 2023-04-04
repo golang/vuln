@@ -9,13 +9,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
+	"golang.org/x/mod/module"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/osv"
+	"golang.org/x/vuln/internal/web"
 )
+
+// dbIndex contains a mapping of vulnerable packages to the last time a new
+// vulnerability was added to the database.
+type dbIndex map[string]time.Time
 
 type httpSource struct {
 	c   *http.Client
@@ -87,6 +95,17 @@ func (hs *httpSource) ByModule(ctx context.Context, modulePath string) (_ []*osv
 	return entries, nil
 }
 
+// escapeModulePath should be called by cache implementations or other users of
+// this package that want to use module paths as filesystem paths. It is like
+// golang.org/x/mod/module, but accounts for special paths used by the
+// vulnerability database.
+func escapeModulePath(path string) (string, error) {
+	if specialCaseModulePaths[path] {
+		return path, nil
+	}
+	return module.EscapePath(path)
+}
+
 func httpReadJSON[T any](ctx context.Context, hs *httpSource, relativePath string) (T, error) {
 	var zero T
 	content, err := hs.readBody(ctx, fmt.Sprintf("%s/%s", hs.url, relativePath))
@@ -149,4 +168,78 @@ func (hs *httpSource) readBody(ctx context.Context, url string) ([]byte, error) 
 
 type Options struct {
 	HTTPClient *http.Client
+}
+
+type localSource struct {
+	fs fs.FS
+}
+
+func newFSClient(fs fs.FS) (*localSource, error) {
+	return &localSource{fs: fs}, nil
+}
+
+func newFileClient(uri *url.URL) (_ *localSource, err error) {
+	dir, err := web.URLToFilePath(uri)
+	if err != nil {
+		return nil, err
+	}
+	fi, err := os.Stat(dir)
+	if err != nil {
+		return nil, err
+	}
+	if !fi.IsDir() {
+		return nil, fmt.Errorf("%s is not a directory", dir)
+	}
+	return newFSClient(os.DirFS(dir))
+}
+
+func (ls *localSource) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
+	defer derrors.Wrap(&err, "localSource.ByModule(%q)", modulePath)
+
+	index, err := localReadJSON[dbIndex](ls, "index.json")
+	if err != nil {
+		return nil, err
+	}
+	// Query index first to be consistent with the way httpSource.ByModule works.
+	// Prevents opening and stating files on disk that don't need to be touched. Also
+	// solves #56179.
+	if _, present := index[modulePath]; !present {
+		return nil, nil
+	}
+
+	epath, err := escapeModulePath(modulePath)
+	if err != nil {
+		return nil, err
+	}
+	e, err := localReadJSON[[]*osv.Entry](ls, epath+".json")
+	if os.IsNotExist(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	return e, nil
+}
+
+func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error) {
+	defer derrors.Wrap(&err, "LastModifiedTime()")
+
+	// Assume that if anything changes, the index does.
+	info, err := fs.Stat(ls.fs, "index.json")
+	if err != nil {
+		return time.Time{}, err
+	}
+	return info.ModTime(), nil
+}
+
+func localReadJSON[T any](ls *localSource, relativePath string) (T, error) {
+	var zero T
+	content, err := fs.ReadFile(ls.fs, relativePath)
+	if err != nil {
+		return zero, err
+	}
+	var t T
+	if err := json.Unmarshal(content, &t); err != nil {
+		return zero, err
+	}
+	return t, nil
 }
