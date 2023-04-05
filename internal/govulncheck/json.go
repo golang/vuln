@@ -21,16 +21,6 @@ func NewJSONHandler(w io.Writer) Handler {
 	return &jsonHandler{enc: enc}
 }
 
-// Flush writes all vulnerabilities in JSON format.
-func (o *jsonHandler) Flush() error {
-	return nil
-}
-
-// Vulnerability gathers vulnerabilities to be written.
-func (o *jsonHandler) Vulnerability(vuln *Vuln) error {
-	return o.enc.Encode(Message{Vulnerability: vuln})
-}
-
 // Config does not do anything in JSON mode.
 func (o *jsonHandler) Config(config *Config) error {
 	return o.enc.Encode(Message{Config: config})
@@ -39,4 +29,9 @@ func (o *jsonHandler) Config(config *Config) error {
 // Progress does not do anything in JSON mode.
 func (o *jsonHandler) Progress(progress *Progress) error {
 	return o.enc.Encode(Message{Progress: progress})
+}
+
+// Vulnerability gathers vulnerabilities to be written.
+func (o *jsonHandler) Vulnerability(vuln *Vuln) error {
+	return o.enc.Encode(Message{Vulnerability: vuln})
 }

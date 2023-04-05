@@ -60,7 +60,7 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 			return err
 		}
 	}
-	if err := output.Flush(); err != nil {
+	if err := Flush(output); err != nil {
 		return err
 	}
 	if containsAffectedVulnerabilities(vulns) {

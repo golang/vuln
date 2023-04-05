@@ -12,7 +12,7 @@ import (
 	"golang.org/x/vuln/internal/govulncheck"
 )
 
-// NewTextHandler returns a handler that writes govulncheck output as text.
+// NewtextHandler returns a handler that writes govulncheck output as text.
 func NewTextHandler(w io.Writer) govulncheck.Handler {
 	o := &textHandler{w: w}
 	return o
@@ -32,6 +32,13 @@ const (
 
 	binaryProgressMessage = `Scanning your binary for known vulnerabilities...`
 )
+
+func Flush(h govulncheck.Handler) error {
+	if th, ok := h.(*textHandler); ok {
+		return th.Flush()
+	}
+	return nil
+}
 
 func (o *textHandler) Flush() error {
 	lineWidth := 80 - labelWidth

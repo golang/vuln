@@ -45,7 +45,7 @@ func testRunHandler(t *testing.T, rawJSON []byte, output govulncheck.Handler) {
 	if err := govulncheck.HandleJSON(bytes.NewReader(rawJSON), output); err != nil {
 		t.Fatal(err)
 	}
-	if err := output.Flush(); err != nil {
+	if err := scan.Flush(output); err != nil {
 		t.Fatal(err)
 	}
 }

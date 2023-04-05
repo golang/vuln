@@ -12,9 +12,6 @@ import (
 // Handler handles messages to be presented in a vulnerability scan output
 // stream.
 type Handler interface {
-	// Flush writes any output the handler is buffering.
-	Flush() error
-
 	// Vulnerability adds a vulnerability to be printed to the output.
 	Vulnerability(vuln *Vuln) error
 
