@@ -42,7 +42,7 @@ type Config struct {
 	Name string `json:"name,omitempty"`
 
 	// Version is the version of the tool.
-	Version string `json:"govulncheck_version,omitempty"`
+	Version string `json:"version,omitempty"`
 
 	// DataSource is the data source used by the tool, for example,
 	// vuln.go.dev.
