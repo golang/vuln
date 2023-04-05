@@ -79,11 +79,12 @@ func TestTmplResultFuncs(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			if got := affectedCount(test.input); got != test.affectedCount {
-				t.Errorf("affectedCount = %d; want = %d", got, test.affectedCount)
+			affected, unaffected := splitVulns(test.input)
+			if len(affected) != test.affectedCount {
+				t.Errorf("affectedCount = %d; want = %d", len(affected), test.affectedCount)
 			}
-			if got := unaffectedCount(test.input); got != test.unaffectedCount {
-				t.Errorf("unaffectedCount = %d; want = %d", got, test.unaffectedCount)
+			if len(unaffected) != test.unaffectedCount {
+				t.Errorf("unaffectedCount = %d; want = %d", len(unaffected), test.unaffectedCount)
 			}
 			if got := affectedModules(test.input); got != test.affectedModules {
 				t.Errorf("affectedModules = %d; want = %d", got, test.affectedModules)

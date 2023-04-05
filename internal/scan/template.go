@@ -26,11 +26,10 @@ var (
 // tmplResult is a structure containing summarized govulncheck.Result, passed
 // to outputTemplate.
 type tmplResult struct {
-	AffectedCount   int
-	UnaffectedCount int
+	Affected        []tmplVulnInfo
+	Unaffected      []tmplVulnInfo
 	AffectedModules int
 	StdlibAffected  bool
-	Vulns           []tmplVulnInfo
 }
 
 // createTmplResult transforms Result r into a
@@ -38,34 +37,25 @@ type tmplResult struct {
 func createTmplResult(vulns []*govulncheck.Vuln, verbose, source bool) tmplResult {
 	// unaffected are (imported) OSVs, none of which vulnerabilities are called.
 	var r tmplResult
+	var vInfos []tmplVulnInfo
 	for _, v := range vulns {
-		r.Vulns = append(r.Vulns, createTmplVulnInfo(v, verbose, source))
+		vInfos = append(vInfos, createTmplVulnInfo(v, verbose, source))
 	}
-	r.AffectedCount = affectedCount(r.Vulns)
-	r.UnaffectedCount = unaffectedCount(r.Vulns)
-	r.AffectedModules = affectedModules(r.Vulns)
-	r.StdlibAffected = stdlibAffected(r.Vulns)
+	r.Affected, r.Unaffected = splitVulns(vInfos)
+	r.AffectedModules = affectedModules(vInfos)
+	r.StdlibAffected = stdlibAffected(vInfos)
 	return r
 }
 
-func affectedCount(vulns []tmplVulnInfo) int {
-	count := 0
+func splitVulns(vulns []tmplVulnInfo) (affected, unaffected []tmplVulnInfo) {
 	for _, a := range vulns {
 		if a.Affected {
-			count++
+			affected = append(affected, a)
+		} else {
+			unaffected = append(unaffected, a)
 		}
 	}
-	return count
-}
-
-func unaffectedCount(vulns []tmplVulnInfo) int {
-	count := 0
-	for _, a := range vulns {
-		if !a.Affected {
-			count++
-		}
-	}
-	return count
+	return affected, unaffected
 }
 
 // AffectedModules returns the number of unique modules
