@@ -7,6 +7,7 @@ package scan
 import (
 	"fmt"
 	"io"
+	"strings"
 	"text/template"
 
 	"golang.org/x/vuln/internal/govulncheck"
@@ -43,6 +44,9 @@ func Flush(h govulncheck.Handler) error {
 func (h *textHandler) Flush() error {
 	lineWidth := 80 - labelWidth
 	funcMap := template.FuncMap{
+		"commaseparate": func(s []string) string {
+			return strings.Join(s, ", ")
+		},
 		// used in template for counting vulnerabilities
 		"inc": func(i int) int {
 			return i + 1
@@ -51,6 +55,7 @@ func (h *textHandler) Flush() error {
 		"indent": func(n int, s string) string {
 			return indent(s, n)
 		},
+		"pluralize": pluralize,
 		"wrap": func(s string) string {
 			return wrap(s, lineWidth)
 		},
@@ -90,4 +95,14 @@ func (h *textHandler) Progress(progress *govulncheck.Progress) error {
 func (h *textHandler) Vulnerability(vuln *govulncheck.Vuln) error {
 	h.vulns = append(h.vulns, vuln)
 	return nil
+}
+
+func pluralize(i int, s string) string {
+	if i == 1 {
+		return s
+	}
+	if string(s[len(s)-1]) == "y" {
+		return s[0:len(s)-1] + "ies"
+	}
+	return s + "s"
 }
