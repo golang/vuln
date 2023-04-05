@@ -14,8 +14,8 @@ import (
 
 // NewtextHandler returns a handler that writes govulncheck output as text.
 func NewTextHandler(w io.Writer) govulncheck.Handler {
-	o := &textHandler{w: w}
-	return o
+	h := &textHandler{w: w}
+	return h
 }
 
 type textHandler struct {
@@ -40,7 +40,7 @@ func Flush(h govulncheck.Handler) error {
 	return nil
 }
 
-func (o *textHandler) Flush() error {
+func (h *textHandler) Flush() error {
 	lineWidth := 80 - labelWidth
 	funcMap := template.FuncMap{
 		// used in template for counting vulnerabilities
@@ -56,38 +56,38 @@ func (o *textHandler) Flush() error {
 		},
 	}
 
-	source := o.config.Analysis == govulncheck.AnalysisSource
-	verbose := o.config.Mode == govulncheck.ModeVerbose
-	tmplRes := createTmplResult(o.vulns, verbose, source)
-	o.vulns = nil
+	source := h.config.Analysis == govulncheck.AnalysisSource
+	verbose := h.config.Mode == govulncheck.ModeVerbose
+	tmplRes := createTmplResult(h.vulns, verbose, source)
+	h.vulns = nil
 	tmpl, err := template.New("govulncheck").Funcs(funcMap).Parse(outputTemplate)
 	if err != nil {
 		return err
 	}
-	return tmpl.Execute(o.w, tmplRes)
-}
-
-// Vulnerability gathers vulnerabilities to be written.
-func (o *textHandler) Vulnerability(vuln *govulncheck.Vuln) error {
-	o.vulns = append(o.vulns, vuln)
-	return nil
+	return tmpl.Execute(h.w, tmplRes)
 }
 
 // Config writes text output formatted according to govulncheck-intro.tmpl.
-func (o *textHandler) Config(config *govulncheck.Config) error {
+func (h *textHandler) Config(config *govulncheck.Config) error {
 	p := *config
-	o.config = &p
+	h.config = &p
 	// Print config to the user.
 	tmpl, err := template.New("govulncheck-intro").Parse(introTemplate)
 	if err != nil {
 		return err
 	}
-	return tmpl.Execute(o.w, config)
+	return tmpl.Execute(h.w, config)
 }
 
 // Progress writes progress updates during govulncheck execution..
-func (o *textHandler) Progress(progress *govulncheck.Progress) error {
-	fmt.Fprintln(o.w)
-	fmt.Fprintln(o.w, progress.Message)
+func (h *textHandler) Progress(progress *govulncheck.Progress) error {
+	fmt.Fprintln(h.w)
+	fmt.Fprintln(h.w, progress.Message)
+	return nil
+}
+
+// Vulnerability gathers vulnerabilities to be written.
+func (h *textHandler) Vulnerability(vuln *govulncheck.Vuln) error {
+	h.vulns = append(h.vulns, vuln)
 	return nil
 }

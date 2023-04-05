@@ -22,16 +22,16 @@ func NewJSONHandler(w io.Writer) Handler {
 }
 
 // Config does not do anything in JSON mode.
-func (o *jsonHandler) Config(config *Config) error {
-	return o.enc.Encode(Message{Config: config})
+func (h *jsonHandler) Config(config *Config) error {
+	return h.enc.Encode(Message{Config: config})
 }
 
 // Progress does not do anything in JSON mode.
-func (o *jsonHandler) Progress(progress *Progress) error {
-	return o.enc.Encode(Message{Progress: progress})
+func (h *jsonHandler) Progress(progress *Progress) error {
+	return h.enc.Encode(Message{Progress: progress})
 }
 
 // Vulnerability gathers vulnerabilities to be written.
-func (o *jsonHandler) Vulnerability(vuln *Vuln) error {
-	return o.enc.Encode(Message{Vulnerability: vuln})
+func (h *jsonHandler) Vulnerability(vuln *Vuln) error {
+	return h.enc.Encode(Message{Vulnerability: vuln})
 }

@@ -30,25 +30,25 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 	}
 
 	config := newConfig(ctx, cfg)
-	var output govulncheck.Handler
+	var handler govulncheck.Handler
 	switch {
 	case cfg.json:
-		output = govulncheck.NewJSONHandler(w)
+		handler = govulncheck.NewJSONHandler(w)
 	default:
-		output = NewTextHandler(w)
+		handler = NewTextHandler(w)
 	}
 
 	// Write the introductory message to the user.
-	if err := output.Config(config); err != nil {
+	if err := handler.Config(config); err != nil {
 		return err
 	}
 
 	var vulns []*govulncheck.Vuln
 	switch cfg.analysis {
 	case govulncheck.AnalysisSource:
-		vulns, err = runSource(ctx, output, cfg, dir)
+		vulns, err = runSource(ctx, handler, cfg, dir)
 	case govulncheck.AnalysisBinary:
-		vulns, err = runBinary(ctx, output, cfg)
+		vulns, err = runBinary(ctx, handler, cfg)
 	}
 	if err != nil {
 		return err
@@ -56,11 +56,11 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 
 	// For each vulnerability, queue it to be written to the output.
 	for _, v := range vulns {
-		if err := output.Vulnerability(v); err != nil {
+		if err := handler.Vulnerability(v); err != nil {
 			return err
 		}
 	}
-	if err := Flush(output); err != nil {
+	if err := Flush(handler); err != nil {
 		return err
 	}
 	if containsAffectedVulnerabilities(vulns) {

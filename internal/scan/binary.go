@@ -16,7 +16,7 @@ import (
 )
 
 // runBinary detects presence of vulnerable symbols in an executable.
-func runBinary(ctx context.Context, output govulncheck.Handler, cfg *config) ([]*govulncheck.Vuln, error) {
+func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config) ([]*govulncheck.Vuln, error) {
 	var exe *os.File
 	exe, err := os.Open(cfg.patterns[0])
 	if err != nil {
@@ -25,7 +25,7 @@ func runBinary(ctx context.Context, output govulncheck.Handler, cfg *config) ([]
 	defer exe.Close()
 
 	p := &govulncheck.Progress{Message: binaryProgressMessage}
-	if err := output.Progress(p); err != nil {
+	if err := handler.Progress(p); err != nil {
 		return nil, err
 	}
 	vr, err := binary(ctx, exe, &cfg.Config)

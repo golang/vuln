@@ -41,11 +41,11 @@ func TestPrinting(t *testing.T) {
 	}
 }
 
-func testRunHandler(t *testing.T, rawJSON []byte, output govulncheck.Handler) {
-	if err := govulncheck.HandleJSON(bytes.NewReader(rawJSON), output); err != nil {
+func testRunHandler(t *testing.T, rawJSON []byte, handler govulncheck.Handler) {
+	if err := govulncheck.HandleJSON(bytes.NewReader(rawJSON), handler); err != nil {
 		t.Fatal(err)
 	}
-	if err := scan.Flush(output); err != nil {
+	if err := scan.Flush(handler); err != nil {
 		t.Fatal(err)
 	}
 }
