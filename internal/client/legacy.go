@@ -13,19 +13,46 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/mod/module"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/web"
 )
 
+func NewLegacyClient(source string, opts Options) (_ Client, err error) {
+	source = strings.TrimRight(source, "/")
+	uri, err := url.Parse(source)
+	if err != nil {
+		return nil, err
+	}
+	switch uri.Scheme {
+	case "http", "https":
+		return newHTTPClient(uri, opts), nil
+	case "file":
+		return newFileClient(uri)
+	default:
+		return nil, fmt.Errorf("source %q has unsupported scheme", uri)
+	}
+}
+
+// Pseudo-module paths used for parts of the Go system.
+// These are technically not valid module paths, so we
+// mustn't pass them to module.EscapePath.
+// Keep in sync with vulndb/internal/database/generate.go.
+var specialCaseModulePaths = map[string]bool{
+	internal.GoStdModulePath: true,
+	internal.GoCmdModulePath: true,
+}
+
 // dbIndex contains a mapping of vulnerable packages to the last time a new
 // vulnerability was added to the database.
 type dbIndex map[string]time.Time
 
-type httpSource struct {
+type httpClient struct {
 	c   *http.Client
 	url string // the base URI of the source (without trailing "/"). e.g. https://vuln.golang.org
 
@@ -37,8 +64,8 @@ type httpSource struct {
 	httpCalls  int
 }
 
-func newHTTPClient(uri *url.URL, opts Options) (_ *httpSource) {
-	hs := &httpSource{url: uri.String()}
+func newHTTPClient(uri *url.URL, opts Options) (_ *httpClient) {
+	hs := &httpClient{url: uri.String()}
 	if opts.HTTPClient != nil {
 		hs.c = opts.HTTPClient
 	} else {
@@ -47,7 +74,7 @@ func newHTTPClient(uri *url.URL, opts Options) (_ *httpSource) {
 	return hs
 }
 
-func (hs *httpSource) index(ctx context.Context) (_ dbIndex, err error) {
+func (hs *httpClient) index(ctx context.Context) (_ dbIndex, err error) {
 	hs.indexCalls++ // for testing privacy properties
 	defer derrors.Wrap(&err, "Index()")
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/index.json", hs.url), nil)
@@ -73,7 +100,7 @@ func (hs *httpSource) index(ctx context.Context) (_ dbIndex, err error) {
 	return index, nil
 }
 
-func (hs *httpSource) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
+func (hs *httpClient) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
 	defer derrors.Wrap(&err, "httpSource.ByModule(%q)", modulePath)
 	index, err := hs.index(ctx)
 	if err != nil {
@@ -106,7 +133,7 @@ func escapeModulePath(path string) (string, error) {
 	return module.EscapePath(path)
 }
 
-func httpReadJSON[T any](ctx context.Context, hs *httpSource, relativePath string) (T, error) {
+func httpReadJSON[T any](ctx context.Context, hs *httpClient, relativePath string) (T, error) {
 	var zero T
 	content, err := hs.readBody(ctx, fmt.Sprintf("%s/%s", hs.url, relativePath))
 	if err != nil {
@@ -126,7 +153,7 @@ func httpReadJSON[T any](ctx context.Context, hs *httpSource, relativePath strin
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified.
 var lastModifiedFormat = "Mon, 2 Jan 2006 15:04:05 GMT"
 
-func (hs *httpSource) LastModifiedTime(ctx context.Context) (_ time.Time, err error) {
+func (hs *httpClient) LastModifiedTime(ctx context.Context) (_ time.Time, err error) {
 	defer derrors.Wrap(&err, "LastModifiedTime()")
 
 	// Assume that if anything changes, the index does.
@@ -146,7 +173,7 @@ func (hs *httpSource) LastModifiedTime(ctx context.Context) (_ time.Time, err er
 	return time.Parse(lastModifiedFormat, h)
 }
 
-func (hs *httpSource) readBody(ctx context.Context, url string) ([]byte, error) {
+func (hs *httpClient) readBody(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -170,15 +197,15 @@ type Options struct {
 	HTTPClient *http.Client
 }
 
-type localSource struct {
+type localClient struct {
 	fs fs.FS
 }
 
-func newFSClient(fs fs.FS) (*localSource, error) {
-	return &localSource{fs: fs}, nil
+func newFSClient(fs fs.FS) (*localClient, error) {
+	return &localClient{fs: fs}, nil
 }
 
-func newFileClient(uri *url.URL) (_ *localSource, err error) {
+func newFileClient(uri *url.URL) (_ *localClient, err error) {
 	dir, err := web.URLToFilePath(uri)
 	if err != nil {
 		return nil, err
@@ -193,7 +220,7 @@ func newFileClient(uri *url.URL) (_ *localSource, err error) {
 	return newFSClient(os.DirFS(dir))
 }
 
-func (ls *localSource) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
+func (ls *localClient) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
 	defer derrors.Wrap(&err, "localSource.ByModule(%q)", modulePath)
 
 	index, err := localReadJSON[dbIndex](ls, "index.json")
@@ -220,7 +247,7 @@ func (ls *localSource) ByModule(ctx context.Context, modulePath string) (_ []*os
 	return e, nil
 }
 
-func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error) {
+func (ls *localClient) LastModifiedTime(context.Context) (_ time.Time, err error) {
 	defer derrors.Wrap(&err, "LastModifiedTime()")
 
 	// Assume that if anything changes, the index does.
@@ -231,7 +258,7 @@ func (ls *localSource) LastModifiedTime(context.Context) (_ time.Time, err error
 	return info.ModTime(), nil
 }
 
-func localReadJSON[T any](ls *localSource, relativePath string) (T, error) {
+func localReadJSON[T any](ls *localClient, relativePath string) (T, error) {
 	var zero T
 	content, err := fs.ReadFile(ls.fs, relativePath)
 	if err != nil {

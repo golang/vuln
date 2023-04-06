@@ -68,7 +68,7 @@ func TestByModule(t *testing.T) {
 		{name: "lower-file", source: localURL, module: modulePathLowercase, detailPrefix: detailStartLowercase, wantVulns: 4},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient(test.source, Options{})
+			client, err := NewLegacyClient(test.source, Options{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -118,11 +118,11 @@ func TestMustUseIndex(t *testing.T) {
 
 	// List of modules to query, some are repeated to exercise cache hits.
 	modulePaths := []string{"github.com/BeeGo/beego", "github.com/tidwall/gjson", "net/http", "abc.xyz", "github.com/BeeGo/beego"}
-	clt, err := NewClient(srv.URL, Options{})
+	clt, err := NewLegacyClient(srv.URL, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	hs := clt.(*httpSource)
+	hs := clt.(*httpClient)
 	for _, modulePath := range modulePaths {
 		indexCalls := hs.indexCalls
 		httpCalls := hs.httpCalls
@@ -163,7 +163,7 @@ func TestSpecialPaths(t *testing.T) {
 		{"http", srv.URL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient(test.source, Options{})
+			client, err := NewLegacyClient(test.source, Options{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -194,7 +194,7 @@ func TestCorrectFetchesNoCache(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	hs := &httpSource{url: ts.URL, c: new(http.Client)}
+	hs := &httpClient{url: ts.URL, c: new(http.Client)}
 	for _, module := range []string{"m.com/a", "m.com/b", "m.com/c"} {
 		if _, err := hs.ByModule(context.Background(), module); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -228,7 +228,7 @@ func TestLastModifiedTime(t *testing.T) {
 		{name: "file", source: localURL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewClient(test.source, Options{})
+			client, err := NewLegacyClient(test.source, Options{})
 			if err != nil {
 				t.Fatal(err)
 			}

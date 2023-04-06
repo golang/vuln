@@ -30,12 +30,8 @@ package client
 
 import (
 	"context"
-	"fmt"
-	"net/url"
-	"strings"
 	"time"
 
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/osv"
 )
 
@@ -49,29 +45,4 @@ type Client interface {
 	// It can be used by tools that periodically check for vulnerabilities
 	// to avoid repeating work.
 	LastModifiedTime(context.Context) (time.Time, error)
-}
-
-// Pseudo-module paths used for parts of the Go system.
-// These are technically not valid module paths, so we
-// mustn't pass them to module.EscapePath.
-// Keep in sync with vulndb/internal/database/generate.go.
-var specialCaseModulePaths = map[string]bool{
-	internal.GoStdModulePath: true,
-	internal.GoCmdModulePath: true,
-}
-
-func NewClient(source string, opts Options) (_ Client, err error) {
-	source = strings.TrimRight(source, "/")
-	uri, err := url.Parse(source)
-	if err != nil {
-		return nil, err
-	}
-	switch uri.Scheme {
-	case "http", "https":
-		return newHTTPClient(uri, opts), nil
-	case "file":
-		return newFileClient(uri)
-	default:
-		return nil, fmt.Errorf("source %q has unsupported scheme", uri)
-	}
 }
