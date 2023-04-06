@@ -54,13 +54,6 @@ type Config struct {
 	// GoVersion is the version of Go used for analyzing standard library
 	// vulnerabilities.
 	GoVersion string `json:"go_version,omitempty"`
-
-	// Analysis is the analysis type.
-	Analysis AnalysisType `json:"analysis,omitempty"`
-
-	// Mode controls the information that is printed to the user, either
-	// compact or verbose.
-	Mode Mode `json:"callstack_mode,omitempty"` // TODO: remove field and verbose mode
 }
 
 type Progress struct {

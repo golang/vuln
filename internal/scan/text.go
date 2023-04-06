@@ -14,15 +14,20 @@ import (
 )
 
 // NewtextHandler returns a handler that writes govulncheck output as text.
-func NewTextHandler(w io.Writer) govulncheck.Handler {
-	h := &textHandler{w: w}
+func NewTextHandler(w io.Writer, source, verbose bool) govulncheck.Handler {
+	h := &textHandler{
+		w:       w,
+		source:  source,
+		verbose: verbose,
+	}
 	return h
 }
 
 type textHandler struct {
-	w      io.Writer
-	vulns  []*govulncheck.Vuln
-	config *govulncheck.Config
+	w       io.Writer
+	vulns   []*govulncheck.Vuln
+	source  bool
+	verbose bool
 }
 
 const (
@@ -61,9 +66,7 @@ func (h *textHandler) Flush() error {
 		},
 	}
 
-	source := h.config.Analysis == govulncheck.AnalysisSource
-	verbose := h.config.Mode == govulncheck.ModeVerbose
-	tmplRes := createTmplResult(h.vulns, verbose, source)
+	tmplRes := createTmplResult(h.vulns, h.verbose, h.source)
 	h.vulns = nil
 	tmpl, err := template.New("govulncheck").Funcs(funcMap).Parse(outputTemplate)
 	if err != nil {
@@ -74,8 +77,6 @@ func (h *textHandler) Flush() error {
 
 // Config writes text output formatted according to govulncheck-intro.tmpl.
 func (h *textHandler) Config(config *govulncheck.Config) error {
-	p := *config
-	h.config = &p
 	// Print config to the user.
 	tmpl, err := template.New("govulncheck-intro").Parse(introTemplate)
 	if err != nil {

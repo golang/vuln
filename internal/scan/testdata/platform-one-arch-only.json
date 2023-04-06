@@ -1,8 +1,5 @@
 {
-  "config": {
-    "analysis": "Source",
-    "callstack_mode": "Compact"
-  }
+  "config": {}
 }
 {
   "vulnerability": {
