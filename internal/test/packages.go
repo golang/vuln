@@ -6,6 +6,7 @@ package test
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -35,6 +36,9 @@ func LoadPackages(e *packagestest.Exported, patterns ...string) ([]*packages.Pac
 }
 
 func VerifyImports(t *testing.T, allowed ...string) {
+	if _, err := exec.LookPath("go"); err != nil {
+		t.Skipf("skipping: %v", err)
+	}
 	cfg := &packages.Config{Mode: packages.NeedImports | packages.NeedDeps}
 	pkgs, err := packages.Load(cfg, ".")
 	if err != nil {
