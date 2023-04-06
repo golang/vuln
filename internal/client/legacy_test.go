@@ -7,7 +7,6 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -17,35 +16,20 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"golang.org/x/vuln/internal/web"
 )
 
-func newTestServer() *httptest.Server {
-	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir("testdata/vulndb")))
-	return httptest.NewServer(mux)
-}
+var (
+	testLegacyVulndb   = "testdata/vulndb"
+	testLocalVulndbURL = localURL(testLegacyVulndb)
+)
 
-var localURL = func() string {
-	absDir, err := filepath.Abs("testdata/vulndb")
-	if err != nil {
-		panic(fmt.Sprintf("failed to read testdata/vulndb: %v", err))
-	}
-	u, err := web.URLFromFilePath(absDir)
-	if err != nil {
-		panic(fmt.Sprintf("failed to read testdata/vulndb: %v", err))
-	}
-	return u.String()
-}()
-
-func TestByModule(t *testing.T) {
+func TestByModuleLegacy(t *testing.T) {
 	if runtime.GOOS == "js" {
 		t.Skip("skipping test: no network on js")
 	}
 	ctx := context.Background()
 	// Create a local http database.
-	srv := newTestServer()
+	srv := newTestServer(testLegacyVulndb)
 	defer srv.Close()
 
 	const (
@@ -63,9 +47,9 @@ func TestByModule(t *testing.T) {
 		wantVulns    int
 	}{
 		{name: "http", source: srv.URL, module: modulePath, detailPrefix: detailStart, wantVulns: 3},
-		{name: "file", source: localURL, module: modulePath, detailPrefix: detailStart, wantVulns: 3},
+		{name: "file", source: testLocalVulndbURL, module: modulePath, detailPrefix: detailStart, wantVulns: 3},
 		{name: "lower-http", source: srv.URL, module: modulePathLowercase, detailPrefix: detailStartLowercase, wantVulns: 4},
-		{name: "lower-file", source: localURL, module: modulePathLowercase, detailPrefix: detailStartLowercase, wantVulns: 4},
+		{name: "lower-file", source: testLocalVulndbURL, module: modulePathLowercase, detailPrefix: detailStartLowercase, wantVulns: 4},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, err := NewLegacyClient(test.source, nil)
@@ -113,7 +97,7 @@ func TestMustUseIndex(t *testing.T) {
 	}
 	ctx := context.Background()
 	// Create a local http database.
-	srv := newTestServer()
+	srv := newTestServer(testLegacyVulndb)
 	defer srv.Close()
 
 	// List of modules to query, some are repeated to exercise cache hits.
@@ -152,14 +136,14 @@ func TestSpecialPaths(t *testing.T) {
 		t.Skip("skipping test: no network on js")
 	}
 	ctx := context.Background()
-	srv := newTestServer()
+	srv := newTestServer(testLegacyVulndb)
 	defer srv.Close()
 
 	for _, test := range []struct {
 		name   string
 		source string
 	}{
-		{"local", localURL},
+		{"local", testLocalVulndbURL},
 		{"http", srv.URL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -207,12 +191,12 @@ func TestCorrectFetchesNoCache(t *testing.T) {
 	}
 }
 
-func TestLastModifiedTime(t *testing.T) {
+func TestLastModifiedTimeLegacy(t *testing.T) {
 	if runtime.GOOS == "js" {
 		t.Skip("skipping test: no network on js")
 	}
 
-	srv := newTestServer()
+	srv := newTestServer(testLegacyVulndb)
 	defer srv.Close()
 
 	info, err := os.Stat(filepath.Join("testdata", "vulndb", "index.json"))
@@ -225,7 +209,7 @@ func TestLastModifiedTime(t *testing.T) {
 		source string
 	}{
 		{name: "http", source: srv.URL},
-		{name: "file", source: localURL},
+		{name: "file", source: testLocalVulndbURL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, err := NewLegacyClient(test.source, nil)
