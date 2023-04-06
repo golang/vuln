@@ -21,7 +21,6 @@ type config struct {
 	db       string
 	json     bool
 	dir      string
-	verbose  bool
 	tags     []string
 	test     bool
 }
@@ -34,7 +33,6 @@ func (c *Cmd) parseFlags() (*config, error) {
 	)
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
 	flags.BoolVar(&cfg.json, "json", false, "output JSON")
-	flags.BoolVar(&cfg.verbose, "v", false, "print a full call stack for each vulnerability")
 	flags.BoolVar(&cfg.test, "test", false, "analyze test files. Only valid for source code.")
 	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database URL")
 	flags.StringVar(&mode, "mode", "", "source or binary modes are supported, default is source")

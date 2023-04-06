@@ -82,10 +82,6 @@ func newConfig(ctx context.Context, cfg *config) *govulncheck.Config {
 	config := govulncheck.Config{
 		DataSource: cfg.db,
 		Analysis:   cfg.analysis,
-		Mode:       govulncheck.ModeCompact,
-	}
-	if cfg.verbose {
-		config.Mode = govulncheck.ModeVerbose
 	}
 	if cfg.analysis == govulncheck.AnalysisSource {
 		// The Go version is only relevant for source analysis, so omit it for

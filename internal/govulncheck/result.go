@@ -12,15 +12,6 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-// Mode indicates the display mode that the user specified for running
-// govulncheck.
-type Mode string
-
-const (
-	ModeCompact Mode = "Compact"
-	ModeVerbose Mode = "Verbose"
-)
-
 // AnalysisType indicates the type of analysis performed by govulncheck.
 type AnalysisType string
 
@@ -57,10 +48,6 @@ type Config struct {
 
 	// Analysis is the analysis type.
 	Analysis AnalysisType `json:"analysis,omitempty"`
-
-	// Mode controls the information that is printed to the user, either
-	// compact or verbose.
-	Mode Mode `json:"callstack_mode,omitempty"` // TODO: remove field and verbose mode
 }
 
 type Progress struct {

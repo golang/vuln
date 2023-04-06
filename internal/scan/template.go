@@ -6,7 +6,6 @@ package scan
 
 import (
 	_ "embed"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -34,12 +33,12 @@ type tmplResult struct {
 
 // createTmplResult transforms Result r into a
 // template structure for printing.
-func createTmplResult(vulns []*govulncheck.Vuln, verbose, source bool) tmplResult {
+func createTmplResult(vulns []*govulncheck.Vuln, source bool) tmplResult {
 	// unaffected are (imported) OSVs, none of which vulnerabilities are called.
 	var r tmplResult
 	var vInfos []tmplVulnInfo
 	for _, v := range vulns {
-		vInfos = append(vInfos, createTmplVulnInfo(v, verbose, source))
+		vInfos = append(vInfos, createTmplVulnInfo(v, source))
 	}
 	r.Affected, r.Unaffected = splitVulns(vInfos)
 	r.AffectedModules = affectedModules(vInfos)
@@ -103,7 +102,7 @@ type tmplVulnInfo struct {
 // createTmplVulnInfo creates a template vuln info for
 // a vulnerability that is called by source code or
 // present in the binary.
-func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool) tmplVulnInfo {
+func createTmplVulnInfo(v *govulncheck.Vuln, source bool) tmplVulnInfo {
 	vInfo := tmplVulnInfo{
 		ID:       v.OSV.ID,
 		Details:  v.OSV.Details,
@@ -111,14 +110,10 @@ func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool) tmplVulnInfo 
 	}
 
 	// stacks returns call stack info of p as a
-	// string depending on verbose and source mode.
+	// string depending on source mode.
 	stacks := func(p *govulncheck.Package) string {
 		if !source {
 			return ""
-		}
-
-		if verbose {
-			return verboseCallStacks(p.CallStacks)
 		}
 		return defaultCallStacks(p.CallStacks)
 	}
@@ -204,23 +199,6 @@ func defaultCallStacks(css []govulncheck.CallStack) string {
 	for _, s := range summaries {
 		b.WriteString(s)
 		b.WriteString("\n")
-	}
-	return b.String()
-}
-
-func verboseCallStacks(css []govulncheck.CallStack) string {
-	// Display one full call stack for each vuln.
-	i := 1
-	var b strings.Builder
-	for _, cs := range css {
-		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, cs.Symbol))
-		for _, e := range cs.Frames {
-			b.WriteString(fmt.Sprintf("  %s\n", FuncName(e)))
-			if pos := AbsRelShorter(Pos(e)); pos != "" {
-				b.WriteString(fmt.Sprintf("      %s\n", pos))
-			}
-		}
-		i++
 	}
 	return b.String()
 }

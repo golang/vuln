@@ -62,8 +62,7 @@ func (h *textHandler) Flush() error {
 	}
 
 	source := h.config.Analysis == govulncheck.AnalysisSource
-	verbose := h.config.Mode == govulncheck.ModeVerbose
-	tmplRes := createTmplResult(h.vulns, verbose, source)
+	tmplRes := createTmplResult(h.vulns, source)
 	h.vulns = nil
 	tmpl, err := template.New("govulncheck").Funcs(funcMap).Parse(outputTemplate)
 	if err != nil {

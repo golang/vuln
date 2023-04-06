@@ -1,7 +1,6 @@
 {
   "config": {
-    "analysis": "Binary",
-    "callstack_mode": "Compact"
+    "analysis": "Binary"
   }
 }
 {

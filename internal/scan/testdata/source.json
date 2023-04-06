@@ -1,7 +1,6 @@
 {
   "config": {
-    "analysis": "Source",
-    "callstack_mode": "Compact"
+    "analysis": "Source"
   }
 }
 {
