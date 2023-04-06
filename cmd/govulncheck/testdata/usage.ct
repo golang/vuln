@@ -15,6 +15,7 @@ usage:
     	comma-separated list of build tags
   -test
     	analyze test files. Only valid for source code.
+  -v	print a full call stack for each vulnerability
 
 For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 
@@ -37,5 +38,6 @@ usage:
     	comma-separated list of build tags
   -test
     	analyze test files. Only valid for source code.
+  -v	print a full call stack for each vulnerability
 
 For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
