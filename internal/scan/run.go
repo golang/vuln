@@ -27,7 +27,7 @@ func doGovulncheck(ctx context.Context, w io.Writer, args []string) error {
 		return err
 	}
 
-	cfg.Client, err = client.NewLegacyClient(cfg.db, nil)
+	cfg.Client, err = client.NewClient(cfg.db, nil)
 	if err != nil {
 		return err
 	}

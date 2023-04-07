@@ -10,6 +10,9 @@ source devtools/lib.sh || { echo "Are you at repo root?"; exit 1; }
 
 origin="https://vuln.go.dev"
 
+go install golang.org/x/vulndb/cmd/indexdb@latest
+
+# Copy files for unit tests.
 copyFiles=(
   "ID/GO-2021-0159.json"
   "ID/GO-2022-0229.json"
@@ -24,13 +27,30 @@ copyFiles=(
   "ID/GO-2022-0273.json"
 )
 
-go install golang.org/x/vulndb/cmd/indexdb@latest
-
-OUT_DIR=$(pwd)/internal/client/testdata/vulndb-v1
+UNIT_OUT_DIR=$(pwd)/internal/client/testdata/vulndb-v1
 
 for f in ${copyFiles[@]}; do
-  mkdir -p "$OUT_DIR/$(dirname $f)" && curl -L $origin/$f --output $OUT_DIR/$f
+  mkdir -p "$UNIT_OUT_DIR/$(dirname $f)" && curl -L $origin/$f --output $UNIT_OUT_DIR/$f
 done
 
-vulns="$OUT_DIR/ID"
-indexdb -out $OUT_DIR -vulns $vulns
+unit_vulns="$UNIT_OUT_DIR/ID"
+indexdb -out $UNIT_OUT_DIR -vulns $unit_vulns
+
+# Copy files for integration tests.
+copyFiles=(
+  "ID/GO-2022-0969.json"
+  "ID/GO-2020-0015.json"
+  "ID/GO-2021-0113.json"
+  "ID/GO-2021-0054.json"
+  "ID/GO-2021-0059.json"
+  "ID/GO-2021-0265.json"
+)
+
+INTEG_OUT_DIR=$(pwd)/cmd/govulncheck/testdata/vulndb-v1
+
+for f in ${copyFiles[@]}; do
+  mkdir -p "$INTEG_OUT_DIR/$(dirname $f)" && curl -L $origin/$f --output $INTEG_OUT_DIR/$f
+done
+
+integ_vulns="$INTEG_OUT_DIR/ID"
+indexdb -out $INTEG_OUT_DIR -vulns $integ_vulns

@@ -48,7 +48,7 @@ func TestCommand(t *testing.T) {
 
 	ts.Commands["govulncheck"] = func(args []string, inputFile string) ([]byte, error) {
 		// We set GOVERSION to always get the same results regardless of the underlying Go build system.
-		vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb"))
+		vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb-v1"))
 		if err != nil {
 			return nil, err
 		}
