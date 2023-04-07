@@ -23,8 +23,9 @@ import (
 // returns an error.
 func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 	dir := filepath.FromSlash(cfg.dir)
+
 	var err error
-	cfg.Client, err = client.NewLegacyClient(cfg.db, client.Options{})
+	cfg.Client, err = client.NewLegacyClient(cfg.db, nil)
 	if err != nil {
 		return err
 	}

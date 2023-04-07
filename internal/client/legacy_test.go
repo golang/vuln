@@ -68,7 +68,7 @@ func TestByModule(t *testing.T) {
 		{name: "lower-file", source: localURL, module: modulePathLowercase, detailPrefix: detailStartLowercase, wantVulns: 4},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewLegacyClient(test.source, Options{})
+			client, err := NewLegacyClient(test.source, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -118,7 +118,7 @@ func TestMustUseIndex(t *testing.T) {
 
 	// List of modules to query, some are repeated to exercise cache hits.
 	modulePaths := []string{"github.com/BeeGo/beego", "github.com/tidwall/gjson", "net/http", "abc.xyz", "github.com/BeeGo/beego"}
-	clt, err := NewLegacyClient(srv.URL, Options{})
+	clt, err := NewLegacyClient(srv.URL, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestSpecialPaths(t *testing.T) {
 		{"http", srv.URL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewLegacyClient(test.source, Options{})
+			client, err := NewLegacyClient(test.source, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -228,7 +228,7 @@ func TestLastModifiedTime(t *testing.T) {
 		{name: "file", source: localURL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, err := NewLegacyClient(test.source, Options{})
+			client, err := NewLegacyClient(test.source, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

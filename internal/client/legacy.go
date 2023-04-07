@@ -23,7 +23,7 @@ import (
 	"golang.org/x/vuln/internal/web"
 )
 
-func NewLegacyClient(source string, opts Options) (_ Client, err error) {
+func NewLegacyClient(source string, opts *Options) (_ Client, err error) {
 	source = strings.TrimRight(source, "/")
 	uri, err := url.Parse(source)
 	if err != nil {
@@ -64,9 +64,9 @@ type httpClient struct {
 	httpCalls  int
 }
 
-func newHTTPClient(uri *url.URL, opts Options) (_ *httpClient) {
+func newHTTPClient(uri *url.URL, opts *Options) (_ *httpClient) {
 	hs := &httpClient{url: uri.String()}
-	if opts.HTTPClient != nil {
+	if opts != nil && opts.HTTPClient != nil {
 		hs.c = opts.HTTPClient
 	} else {
 		hs.c = new(http.Client)
