@@ -21,9 +21,9 @@ import (
 )
 
 var (
-	testVulndb      = filepath.Join("testdata", "vulndb-v1")
-	testLocalVulndb = localURL(testVulndb)
-	testIDs         = []string{
+	testVulndb        = filepath.Join("testdata", "vulndb-v1")
+	testVulndbFileURL = localURL(testVulndb)
+	testIDs           = []string{
 		"GO-2021-0159",
 		"GO-2022-0229",
 		"GO-2022-0463",
@@ -73,6 +73,76 @@ func localURL(dir string) string {
 		panic(fmt.Sprintf("failed to read %s: %v", dir, err))
 	}
 	return u.String()
+}
+
+func TestNewClient(t *testing.T) {
+	t.Run("vuln.go.dev", func(t *testing.T) {
+		src := "https://vuln.go.dev"
+		c, err := NewClient(src, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := c.(*client); !ok {
+			t.Errorf("NewClient(%s) = %#v, want type *client", src, c)
+		}
+	})
+
+	t.Run("http/v1", func(t *testing.T) {
+		srv := newTestServer(testVulndb)
+		t.Cleanup(srv.Close)
+
+		c, err := NewClient(srv.URL, &Options{HTTPClient: srv.Client()})
+		if err != nil {
+			t.Fatal(err)
+		}
+		cli, ok := c.(*client)
+		if !ok {
+			t.Errorf("NewClient(%s) = %#v, want type *client", srv.URL, c)
+		}
+		if _, ok := cli.source.(*httpSource); !ok {
+			t.Errorf("NewClient(%s).source = %#v, want type *httpSource", srv.URL, cli.source)
+		}
+	})
+
+	t.Run("http/legacy", func(t *testing.T) {
+		srv := newTestServer(testLegacyVulndb)
+		t.Cleanup(srv.Close)
+
+		c, err := NewClient(srv.URL, &Options{HTTPClient: srv.Client()})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := c.(*httpClient); !ok {
+			t.Errorf("NewClient(%s) = %#v, want type *client", srv.URL, c)
+		}
+	})
+
+	t.Run("local/v1", func(t *testing.T) {
+		src := testVulndbFileURL
+		c, err := NewClient(src, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cli, ok := c.(*client)
+		if !ok {
+			t.Errorf("NewClient(%s) = %#v, want type *client", src, c)
+		}
+		if _, ok := cli.source.(*localSource); !ok {
+			t.Errorf("NewClient(%s).source = %#v, want type *localSource", src, cli.source)
+		}
+	})
+
+	t.Run("local/legacy", func(t *testing.T) {
+		src := testLegacyVulndbFileURL
+		c, err := NewClient(src, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := c.(*localClient); !ok {
+			t.Errorf("NewClient(%s) = %#v, want type *localClient", src, c)
+		}
+	})
+
 }
 
 func TestLastModifiedTime(t *testing.T) {
@@ -143,7 +213,9 @@ func TestByModule(t *testing.T) {
 func testAllClientTypes(t *testing.T, test func(t *testing.T, c Client)) {
 	t.Run("http", func(t *testing.T) {
 		srv := newTestServer(testVulndb)
-		hc, err := NewClient(srv.URL, &Options{HTTPClient: srv.Client()})
+		t.Cleanup(srv.Close)
+
+		hc, err := NewV1Client(srv.URL, &Options{HTTPClient: srv.Client()})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -152,7 +224,7 @@ func testAllClientTypes(t *testing.T, test func(t *testing.T, c Client)) {
 	})
 
 	t.Run("local", func(t *testing.T) {
-		fc, err := NewClient(testLocalVulndb, nil)
+		fc, err := NewV1Client(testVulndbFileURL, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -52,7 +52,7 @@ func testAllSourceTypes(t *testing.T, test func(t *testing.T, s source)) {
 	})
 
 	t.Run("local", func(t *testing.T) {
-		uri, err := url.Parse(testLocalVulndb)
+		uri, err := url.Parse(testVulndbFileURL)
 		if err != nil {
 			t.Fatal(err)
 		}

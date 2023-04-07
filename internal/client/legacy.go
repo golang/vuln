@@ -31,9 +31,9 @@ func NewLegacyClient(source string, opts *Options) (_ Client, err error) {
 	}
 	switch uri.Scheme {
 	case "http", "https":
-		return newHTTPClient(uri, opts), nil
+		return newLegacyHTTPClient(uri, opts), nil
 	case "file":
-		return newFileClient(uri)
+		return newLegacyLocalClient(uri)
 	default:
 		return nil, fmt.Errorf("source %q has unsupported scheme", uri)
 	}
@@ -64,7 +64,7 @@ type httpClient struct {
 	httpCalls  int
 }
 
-func newHTTPClient(uri *url.URL, opts *Options) (_ *httpClient) {
+func newLegacyHTTPClient(uri *url.URL, opts *Options) (_ *httpClient) {
 	hs := &httpClient{url: uri.String()}
 	if opts != nil && opts.HTTPClient != nil {
 		hs.c = opts.HTTPClient
@@ -205,7 +205,7 @@ func newFSClient(fs fs.FS) (*localClient, error) {
 	return &localClient{fs: fs}, nil
 }
 
-func newFileClient(uri *url.URL) (_ *localClient, err error) {
+func newLegacyLocalClient(uri *url.URL) (_ *localClient, err error) {
 	dir, err := web.URLToFilePath(uri)
 	if err != nil {
 		return nil, err

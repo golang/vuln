@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	testLegacyVulndb   = "testdata/vulndb"
-	testLocalVulndbURL = localURL(testLegacyVulndb)
+	testLegacyVulndb        = "testdata/vulndb"
+	testLegacyVulndbFileURL = localURL(testLegacyVulndb)
 )
 
 func TestByModuleLegacy(t *testing.T) {
@@ -47,9 +47,9 @@ func TestByModuleLegacy(t *testing.T) {
 		wantVulns    int
 	}{
 		{name: "http", source: srv.URL, module: modulePath, detailPrefix: detailStart, wantVulns: 3},
-		{name: "file", source: testLocalVulndbURL, module: modulePath, detailPrefix: detailStart, wantVulns: 3},
+		{name: "file", source: testLegacyVulndbFileURL, module: modulePath, detailPrefix: detailStart, wantVulns: 3},
 		{name: "lower-http", source: srv.URL, module: modulePathLowercase, detailPrefix: detailStartLowercase, wantVulns: 4},
-		{name: "lower-file", source: testLocalVulndbURL, module: modulePathLowercase, detailPrefix: detailStartLowercase, wantVulns: 4},
+		{name: "lower-file", source: testLegacyVulndbFileURL, module: modulePathLowercase, detailPrefix: detailStartLowercase, wantVulns: 4},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, err := NewLegacyClient(test.source, nil)
@@ -143,7 +143,7 @@ func TestSpecialPaths(t *testing.T) {
 		name   string
 		source string
 	}{
-		{"local", testLocalVulndbURL},
+		{"local", testLegacyVulndbFileURL},
 		{"http", srv.URL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -209,7 +209,7 @@ func TestLastModifiedTimeLegacy(t *testing.T) {
 		source string
 	}{
 		{name: "http", source: srv.URL},
-		{name: "file", source: testLocalVulndbURL},
+		{name: "file", source: testLegacyVulndbFileURL},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, err := NewLegacyClient(test.source, nil)
