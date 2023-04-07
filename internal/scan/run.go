@@ -36,7 +36,7 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 	case cfg.json:
 		handler = govulncheck.NewJSONHandler(w)
 	default:
-		handler = NewTextHandler(w, cfg.analysis == govulncheck.AnalysisSource, cfg.verbose)
+		handler = NewTextHandler(w, cfg.mode == modeSource, cfg.verbose)
 	}
 
 	// Write the introductory message to the user.
@@ -45,10 +45,10 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 	}
 
 	var vulns []*govulncheck.Vuln
-	switch cfg.analysis {
-	case govulncheck.AnalysisSource:
+	switch cfg.mode {
+	case modeSource:
 		vulns, err = runSource(ctx, handler, cfg, dir)
-	case govulncheck.AnalysisBinary:
+	case modeBinary:
 		vulns, err = runBinary(ctx, handler, cfg)
 	}
 	if err != nil {
@@ -81,7 +81,7 @@ func containsAffectedVulnerabilities(vulns []*govulncheck.Vuln) bool {
 
 func newConfig(ctx context.Context, cfg *config) *govulncheck.Config {
 	config := govulncheck.Config{DataSource: cfg.db}
-	if cfg.analysis == govulncheck.AnalysisSource {
+	if cfg.mode == modeSource {
 		// The Go version is only relevant for source analysis, so omit it for
 		// binary mode.
 		if v, err := internal.GoEnv("GOVERSION"); err == nil {

@@ -10,20 +10,29 @@ import (
 	"os"
 
 	"golang.org/x/tools/go/buildutil"
-	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
 type config struct {
 	vulncheck.Config
 	patterns []string
-	analysis govulncheck.AnalysisType
+	mode     string
 	db       string
 	json     bool
 	dir      string
 	verbose  bool
 	tags     []string
 	test     bool
+}
+
+const (
+	modeSource = "source"
+	modeBinary = "binary"
+)
+
+var supportedModes = map[string]bool{
+	modeSource: true,
+	modeBinary: true,
 }
 
 func (c *Cmd) parseFlags() (*config, error) {
@@ -35,14 +44,17 @@ func (c *Cmd) parseFlags() (*config, error) {
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
 	flags.BoolVar(&cfg.json, "json", false, "output JSON")
 	flags.BoolVar(&cfg.verbose, "v", false, "print a full call stack for each vulnerability")
-	flags.BoolVar(&cfg.test, "test", false, "analyze test files. Only valid for source code.")
+	flags.BoolVar(&cfg.test, "test", false, "analyze test files (only valid for source mode)")
 	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database URL")
-	flags.StringVar(&mode, "mode", "", "source or binary modes are supported, default is source")
+	flags.StringVar(&mode, "mode", modeSource, "supports source or binary")
 	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
 	flags.Usage = func() {
-		fmt.Fprint(flags.Output(), `usage:
-	govulncheck [flags] package...
-	govulncheck -mode=binary [flags] binary
+		fmt.Fprint(flags.Output(), `Govulncheck is a tool for finding known vulnerabilities.
+
+Usage:
+
+	govulncheck [flags] [patterns]
+	govulncheck -mode=binary [flags] [binary]
 
 `)
 		flags.PrintDefaults()
@@ -57,15 +69,12 @@ func (c *Cmd) parseFlags() (*config, error) {
 		flags.Usage()
 		return nil, ErrMissingArgPatterns
 	}
-	switch mode {
-	case "binary":
-		cfg.analysis = govulncheck.AnalysisBinary
-	case "":
-		cfg.analysis = govulncheck.AnalysisSource
-	default:
+	if _, ok := supportedModes[mode]; !ok {
 		return nil, ErrInvalidArg
 	}
-	if cfg.analysis == govulncheck.AnalysisBinary {
+	cfg.mode = mode
+
+	if cfg.mode == modeBinary {
 		if len(cfg.patterns) != 1 {
 			return nil, ErrInvalidArg
 		}

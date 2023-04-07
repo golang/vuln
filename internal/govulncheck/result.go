@@ -12,23 +12,6 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-// Mode indicates the display mode that the user specified for running
-// govulncheck.
-type Mode string
-
-const (
-	ModeCompact Mode = "Compact"
-	ModeVerbose Mode = "Verbose"
-)
-
-// AnalysisType indicates the type of analysis performed by govulncheck.
-type AnalysisType string
-
-const (
-	AnalysisSource AnalysisType = "Source"
-	AnalysisBinary AnalysisType = "Binary"
-)
-
 // Message is an entry in the output stream. It will always have exactly one
 // field filled in.
 type Message struct {

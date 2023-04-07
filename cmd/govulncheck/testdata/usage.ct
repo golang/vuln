@@ -1,7 +1,10 @@
 $ govulncheck -h
-usage:
-	govulncheck [flags] package...
-	govulncheck -mode=binary [flags] binary
+Govulncheck is a tool for finding known vulnerabilities.
+
+Usage:
+
+	govulncheck [flags] [patterns]
+	govulncheck -mode=binary [flags] [binary]
 
   -db string
     	vulnerability database URL (default "https://vuln.go.dev")
@@ -10,11 +13,11 @@ usage:
   -json
     	output JSON
   -mode string
-    	source or binary modes are supported, default is source
+    	supports source or binary (default "source")
   -tags list
     	comma-separated list of build tags
   -test
-    	analyze test files. Only valid for source code.
+    	analyze test files (only valid for source mode)
   -v	print a full call stack for each vulnerability
 
 For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
@@ -22,9 +25,12 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 
 # Same output as -h, but failure.
 $ govulncheck --> FAIL 1
-usage:
-	govulncheck [flags] package...
-	govulncheck -mode=binary [flags] binary
+Govulncheck is a tool for finding known vulnerabilities.
+
+Usage:
+
+	govulncheck [flags] [patterns]
+	govulncheck -mode=binary [flags] [binary]
 
   -db string
     	vulnerability database URL (default "https://vuln.go.dev")
@@ -33,11 +39,11 @@ usage:
   -json
     	output JSON
   -mode string
-    	source or binary modes are supported, default is source
+    	supports source or binary (default "source")
   -tags list
     	comma-separated list of build tags
   -test
-    	analyze test files. Only valid for source code.
+    	analyze test files (only valid for source mode)
   -v	print a full call stack for each vulnerability
 
 For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
