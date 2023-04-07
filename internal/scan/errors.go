@@ -7,16 +7,23 @@ package scan
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
 )
 
 var (
-	ErrMissingArgPatterns   = errors.New("missing any pattern args")
-	ErrInvalidArg           = errors.New("invalid arg")
+	// ErrVulnerabilitiesFound indicates that vulnerabilities were detected
+	// when running govulncheck. This returns exit status 3 when running
+	// without the -json flag.
 	ErrVulnerabilitiesFound = errors.New("vulnerabilities found")
+
+	// ErrNoPatterns indicates that no patterns were passed in when running
+	// govulncheck.
+	//
+	// In this case, we assume that the user does not know how to run
+	// govulncheck, and print the usage message with exit status 1.
+	ErrNoPatterns = errors.New("no patterns provided")
 )
 
 //lint:file-ignore ST1005 Ignore staticcheck message about error formatting
@@ -27,7 +34,7 @@ var (
 used to build govulncheck and the Go version on PATH. Consider rebuilding
 govulncheck with the current Go version.`)
 
-	// errNoGoSum indicates that a go.mod file was not found in this module.
+	// errNoGoMod indicates that a go.mod file was not found in this module.
 	errNoGoMod = errors.New(`no go.mod file
 
 govulncheck only works Go with modules. Try navigating to your module directory.
@@ -48,20 +55,6 @@ func (e *packageError) Error() string {
 		fmt.Fprintln(&b, e)
 	}
 	return b.String()
-}
-
-// fileExists checks if file path exists. Returns true
-// if the file exists or it cannot prove that it does
-// not exist. Otherwise, returns false.
-func fileExists(path string) bool {
-	if _, err := os.Stat(path); err == nil {
-		return true
-	} else if errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-	// Conservatively return true if os.Stat fails
-	// for some other reason.
-	return true
 }
 
 // isGoVersionMismatchError checks if err is due to mismatch between

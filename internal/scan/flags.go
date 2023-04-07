@@ -5,9 +5,11 @@
 package scan
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/vuln/internal/vulncheck"
@@ -30,24 +32,16 @@ const (
 	modeBinary = "binary"
 )
 
-var supportedModes = map[string]bool{
-	modeSource: true,
-	modeBinary: true,
-}
-
 func parseFlags(args []string) (*config, error) {
 	cfg := &config{}
-	var (
-		tagsFlag buildutil.TagsFlag
-		mode     string
-	)
+	var tagsFlag buildutil.TagsFlag
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
 	flags.BoolVar(&cfg.json, "json", false, "output JSON")
 	flags.BoolVar(&cfg.verbose, "v", false, "print a full call stack for each vulnerability")
 	flags.BoolVar(&cfg.test, "test", false, "analyze test files (only valid for source mode)")
 	flags.StringVar(&cfg.dir, "C", "", "change to dir before running govulncheck")
 	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database URL")
-	flags.StringVar(&mode, "mode", modeSource, "supports source or binary")
+	flags.StringVar(&cfg.mode, "mode", modeSource, "supports source or binary")
 	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
 	flags.Usage = func() {
 		fmt.Fprint(flags.Output(), `Govulncheck is a tool for finding known vulnerabilities.
@@ -67,23 +61,45 @@ Usage:
 	cfg.patterns = flags.Args()
 	if len(cfg.patterns) == 0 {
 		flags.Usage()
-		return nil, ErrMissingArgPatterns
-	}
-	if _, ok := supportedModes[mode]; !ok {
-		return nil, ErrInvalidArg
-	}
-	cfg.mode = mode
-
-	if cfg.mode == modeBinary {
-		if len(cfg.patterns) != 1 {
-			return nil, ErrInvalidArg
-		}
-		if !isFile(cfg.patterns[0]) {
-			return nil, fmt.Errorf("%q is not a file", cfg.patterns[0])
-		}
+		return nil, ErrNoPatterns
 	}
 	cfg.tags = tagsFlag
+	if err := validateConfig(cfg); err != nil {
+		return nil, fmt.Errorf("govulncheck: %w", err)
+	}
 	return cfg, nil
+}
+
+var supportedModes = map[string]bool{
+	modeSource: true,
+	modeBinary: true,
+}
+
+func validateConfig(cfg *config) error {
+	if _, ok := supportedModes[cfg.mode]; !ok {
+		return fmt.Errorf("%q is not a valid mode", cfg.mode)
+	}
+
+	switch cfg.mode {
+	case modeSource:
+		if !fileExists(filepath.Join(cfg.dir, "go.mod")) {
+			return errNoGoMod
+		}
+	case modeBinary:
+		if cfg.test {
+			return fmt.Errorf("the -test flag is not supported in binary mode")
+		}
+		if len(cfg.tags) > 0 {
+			return fmt.Errorf("the -tags flag is not supported in binary mode")
+		}
+		if len(cfg.patterns) != 1 {
+			return fmt.Errorf("only 1 binary can be analyzed at a time")
+		}
+		if !isFile(cfg.patterns[0]) {
+			return fmt.Errorf("%q is not a file", cfg.patterns[0])
+		}
+	}
+	return nil
 }
 
 func isFile(path string) bool {
@@ -92,4 +108,18 @@ func isFile(path string) bool {
 		return false
 	}
 	return !s.IsDir()
+}
+
+// fileExists checks if file path exists. Returns true
+// if the file exists or it cannot prove that it does
+// not exist. Otherwise, returns false.
+func fileExists(path string) bool {
+	if _, err := os.Stat(path); err == nil {
+		return true
+	} else if errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	// Conservatively return true if os.Stat fails
+	// for some other reason.
+	return true
 }

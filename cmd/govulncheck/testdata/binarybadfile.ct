@@ -1,0 +1,4 @@
+# Test of passing a non-file to -mode=binary
+
+$ govulncheck -mode=binary notafile --> FAIL 1
+govulncheck: "notafile" is not a file

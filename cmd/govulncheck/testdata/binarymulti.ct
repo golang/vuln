@@ -1,0 +1,4 @@
+# Test of trying to analyze multiple binaries
+
+$ govulncheck -mode=binary ${vuln_binary} ${vuln_binary} --> FAIL 1
+govulncheck: only 1 binary can be analyzed at a time

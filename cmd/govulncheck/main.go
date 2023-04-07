@@ -20,10 +20,12 @@ func main() {
 		switch err {
 		case flag.ErrHelp:
 			os.Exit(0)
-		case scan.ErrMissingArgPatterns:
-			os.Exit(1)
 		case scan.ErrVulnerabilitiesFound:
 			os.Exit(3)
+		case scan.ErrNoPatterns:
+			// flag.Usage is printed in the case of this error, so do not print
+			// the actual error message.
+			os.Exit(1)
 		default:
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
