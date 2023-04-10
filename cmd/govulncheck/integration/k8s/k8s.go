@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"log"
 	"os"
@@ -29,17 +30,20 @@ func main() {
 		log.Fatal("Failed to read:", out)
 	}
 
-	var vulns []*govulncheck.Vuln
-	if err := json.Unmarshal(outJson, &vulns); err != nil {
-		log.Fatalf("Failed to load json: %v", err)
-	}
-
 	calledVulnPkgs := make(map[string]bool)
-	for _, v := range vulns {
-		for _, m := range v.Modules {
-			for _, p := range m.Packages {
-				if len(p.CallStacks) > 0 {
-					calledVulnPkgs[p.Path] = true
+	dec := json.NewDecoder(bytes.NewReader(outJson))
+	for dec.More() {
+		msg := govulncheck.Message{}
+		// decode the next message in the stream
+		if err := dec.Decode(&msg); err != nil {
+			log.Fatalf("Failed to load json: %v", err)
+		}
+		if msg.Vulnerability != nil {
+			for _, m := range msg.Vulnerability.Modules {
+				for _, p := range m.Packages {
+					if len(p.CallStacks) > 0 {
+						calledVulnPkgs[p.Path] = true
+					}
 				}
 			}
 		}

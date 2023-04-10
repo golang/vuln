@@ -53,7 +53,7 @@ go1.18 download
 # Use scanner at specific commit and tag version for reproducibility.
 git checkout 29b8761da747
 go1.18 build -trimpath -ldflags="-X github.com/stackrox/scanner/pkg/version.Version=2.26-29-g29b8761da7-dirty" -o image/scanner/bin/scanner ./cmd/clair
-govulncheck --json ./image/scanner/bin/scanner &> scan.txt
+govulncheck -mode=binary --json ./image/scanner/bin/scanner &> scan.txt
 stackrox-scanner scan.txt
 update_status $? "stackrox-scanner(binary)"
 popd || exit
