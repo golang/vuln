@@ -98,9 +98,5 @@ func (c *Cmd) scan() error {
 	if err := c.ctx.Err(); err != nil {
 		return err
 	}
-	cfg, err := c.parseFlags()
-	if err != nil {
-		return err
-	}
-	return doGovulncheck(c.ctx, cfg, c.Stdout)
+	return doGovulncheck(c.ctx, c.Stdout, c.Args[1:])
 }

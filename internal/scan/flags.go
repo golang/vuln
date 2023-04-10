@@ -35,7 +35,7 @@ var supportedModes = map[string]bool{
 	modeBinary: true,
 }
 
-func (c *Cmd) parseFlags() (*config, error) {
+func parseFlags(args []string) (*config, error) {
 	cfg := &config{}
 	var (
 		tagsFlag buildutil.TagsFlag
@@ -61,7 +61,7 @@ Usage:
 		fmt.Fprintf(flags.Output(), "\n%s\n", detailsMessage)
 	}
 	addTestFlags(flags, cfg)
-	if err := flags.Parse(c.Args[1:]); err != nil {
+	if err := flags.Parse(args); err != nil {
 		return nil, err
 	}
 	cfg.patterns = flags.Args()

@@ -21,10 +21,12 @@ import (
 // doGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
-	dir := filepath.FromSlash(cfg.dir)
+func doGovulncheck(ctx context.Context, w io.Writer, args []string) error {
+	cfg, err := parseFlags(args)
+	if err != nil {
+		return err
+	}
 
-	var err error
 	cfg.Client, err = client.NewLegacyClient(cfg.db, nil)
 	if err != nil {
 		return err
@@ -47,6 +49,7 @@ func doGovulncheck(ctx context.Context, cfg *config, w io.Writer) error {
 	var vulns []*govulncheck.Vuln
 	switch cfg.mode {
 	case modeSource:
+		dir := filepath.FromSlash(cfg.dir)
 		vulns, err = runSource(ctx, handler, cfg, dir)
 	case modeBinary:
 		vulns, err = runBinary(ctx, handler, cfg)
