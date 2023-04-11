@@ -6,10 +6,10 @@ Usage:
 	govulncheck [flags] [patterns]
 	govulncheck -mode=binary [flags] [binary]
 
+  -C string
+    	change to dir before running govulncheck
   -db string
     	vulnerability database URL (default "https://vuln.go.dev")
-  -dir string
-    	directory to use for loading source files
   -json
     	output JSON
   -mode string
@@ -32,10 +32,10 @@ Usage:
 	govulncheck [flags] [patterns]
 	govulncheck -mode=binary [flags] [binary]
 
+  -C string
+    	change to dir before running govulncheck
   -db string
     	vulnerability database URL (default "https://vuln.go.dev")
-  -dir string
-    	directory to use for loading source files
   -json
     	output JSON
   -mode string
