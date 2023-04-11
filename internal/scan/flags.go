@@ -27,8 +27,9 @@ type config struct {
 }
 
 const (
-	modeSource = "source"
-	modeBinary = "binary"
+	modeBinary  = "binary"
+	modeSource  = "source"
+	modeConvert = "convert" // only intended for use by gopls
 )
 
 func parseFlags(args []string) (*config, error) {
@@ -58,7 +59,7 @@ Usage:
 		return nil, err
 	}
 	cfg.patterns = flags.Args()
-	if len(cfg.patterns) == 0 {
+	if cfg.mode != modeConvert && len(cfg.patterns) == 0 {
 		flags.Usage()
 		return nil, ErrNoPatterns
 	}
@@ -70,8 +71,9 @@ Usage:
 }
 
 var supportedModes = map[string]bool{
-	modeSource: true,
-	modeBinary: true,
+	modeSource:  true,
+	modeBinary:  true,
+	modeConvert: true,
 }
 
 func validateConfig(cfg *config) error {
@@ -98,6 +100,19 @@ func validateConfig(cfg *config) error {
 		}
 		if !isFile(cfg.patterns[0]) {
 			return fmt.Errorf("%q is not a file", cfg.patterns[0])
+		}
+	case modeConvert:
+		if len(cfg.patterns) != 0 {
+			return fmt.Errorf("patterns are not accepted in convert mode")
+		}
+		if cfg.dir != "" {
+			return fmt.Errorf("the -C flag is not supported in convert mode")
+		}
+		if cfg.test {
+			return fmt.Errorf("the -test flag is not supported in convert mode")
+		}
+		if len(cfg.tags) > 0 {
+			return fmt.Errorf("the -tags flag is not supported in convert mode")
 		}
 	}
 	if cfg.json && cfg.verbose {

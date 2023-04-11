@@ -21,10 +21,13 @@ import (
 // doGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func doGovulncheck(ctx context.Context, w io.Writer, args []string) error {
+func doGovulncheck(ctx context.Context, r io.Reader, w io.Writer, args []string) error {
 	cfg, err := parseFlags(args)
 	if err != nil {
 		return err
+	}
+	if cfg.mode == modeConvert {
+		return convertJSONToText(ctx, cfg, r, w)
 	}
 
 	cfg.Client, err = client.NewClient(cfg.db, nil)
@@ -133,4 +136,17 @@ func scannerVersion(bi *debug.BuildInfo) string {
 		}
 	}
 	return buf.String()
+}
+
+// convertJSONToText converts r, which is expected to be the JSON output of govulncheck,
+// into the text output, and writes the output to w.
+func convertJSONToText(ctx context.Context, cfg *config, r io.Reader, w io.Writer) error {
+	// TODO: instead of hardcoding source=true, determine source based on the
+	// config decoded from the JSON output.
+	h := NewTextHandler(w, true, cfg.verbose)
+	if err := govulncheck.HandleJSON(r, h); err != nil {
+		return err
+	}
+	Flush(h)
+	return nil
 }

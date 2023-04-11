@@ -14,6 +14,10 @@ import (
 // Cmd represents an external govulncheck command being prepared or run,
 // similar to exec.Cmd.
 type Cmd struct {
+	// Stdin specifies the standard input. If provided, it is expected to be
+	// the output of govulncheck -json.
+	Stdin io.Reader
+
 	// Stdout specifies the standard output. If nil, Run connects os.Stdout.
 	Stdout io.Writer
 
@@ -48,6 +52,9 @@ func (c *Cmd) Run() error {
 func (c *Cmd) Start() error {
 	if c.done != nil {
 		return errors.New("vuln: already started")
+	}
+	if c.Stdin == nil {
+		c.Stdin = os.Stdin
 	}
 	if c.Stdout == nil {
 		c.Stdout = os.Stdout
@@ -91,5 +98,5 @@ func (c *Cmd) scan() error {
 	if err := c.ctx.Err(); err != nil {
 		return err
 	}
-	return doGovulncheck(c.ctx, c.Stdout, c.args)
+	return doGovulncheck(c.ctx, c.Stdin, c.Stdout, c.args)
 }
