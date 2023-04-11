@@ -15,7 +15,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	err := scan.Command(ctx, os.Args[0], os.Args[1:]...).Run()
+	err := scan.Command(ctx, os.Args[1:]...).Run()
 	if err != nil {
 		switch err {
 		case flag.ErrHelp:

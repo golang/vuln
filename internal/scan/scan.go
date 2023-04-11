@@ -14,17 +14,12 @@ import (
 // Cmd represents an external govulncheck command being prepared or run,
 // similar to exec.Cmd.
 type Cmd struct {
-	// Args holds command line arguments, including the command as Args[0].
-	// If the Args field is empty or nil, Run uses {Path}.
-	//
-	// In typical use, both Path and Args are set by calling Command.
-	Args []string
-
 	// Stdout specifies the standard output and error.
 	// If nil, Run connects os.Stdout.
 	Stdout io.WriteCloser
 
 	ctx  context.Context
+	args []string
 	done chan struct{}
 	err  error
 }
@@ -46,10 +41,10 @@ type Cmd struct {
 //
 // It is designed to be very easy to switch to running an external command
 // instead.
-func Command(ctx context.Context, name string, arg ...string) *Cmd {
+func Command(ctx context.Context, arg ...string) *Cmd {
 	return &Cmd{
-		Args: append([]string{name}, arg...),
 		ctx:  ctx,
+		args: arg,
 	}
 }
 
@@ -98,5 +93,5 @@ func (c *Cmd) scan() error {
 	if err := c.ctx.Err(); err != nil {
 		return err
 	}
-	return doGovulncheck(c.ctx, c.Stdout, c.Args[1:])
+	return doGovulncheck(c.ctx, c.Stdout, c.args)
 }
