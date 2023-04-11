@@ -5,13 +5,10 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
 	"os"
 
-	"github.com/google/go-cmp/cmp"
-	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/cmd/govulncheck/integration/internal/integration"
 )
 
 const usage = `test helper for examining the output of running govulncheck on k8s@v1.15.11.
@@ -24,30 +21,6 @@ func main() {
 		log.Fatal("Incorrect number of expected command line arguments", usage)
 	}
 	out := os.Args[1]
-
-	outJson, err := os.ReadFile(out)
-	if err != nil {
-		log.Fatal("Failed to read:", out)
-	}
-
-	calledVulnPkgs := make(map[string]bool)
-	dec := json.NewDecoder(bytes.NewReader(outJson))
-	for dec.More() {
-		msg := govulncheck.Message{}
-		// decode the next message in the stream
-		if err := dec.Decode(&msg); err != nil {
-			log.Fatalf("Failed to load json: %v", err)
-		}
-		if msg.Vulnerability != nil {
-			for _, m := range msg.Vulnerability.Modules {
-				for _, p := range m.Packages {
-					if len(p.CallStacks) > 0 {
-						calledVulnPkgs[p.Path] = true
-					}
-				}
-			}
-		}
-	}
 
 	want := map[string]bool{
 		"crypto/tls":     true,
@@ -66,8 +39,7 @@ func main() {
 		"golang.org/x/net/http2/hpack":                            true,
 		"golang.org/x/text/encoding/unicode":                      true,
 	}
-
-	if diff := cmp.Diff(want, calledVulnPkgs); diff != "" {
-		log.Fatalf("reachable vulnerable packages mismatch (-want, +got):\n%s", diff)
+	if err := integration.CompareVulns(out, want); err != nil {
+		log.Fatal(err)
 	}
 }
