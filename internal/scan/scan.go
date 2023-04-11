@@ -14,14 +14,14 @@ import (
 // Cmd represents an external govulncheck command being prepared or run,
 // similar to exec.Cmd.
 type Cmd struct {
-	// Stdout specifies the standard output and error.
-	// If nil, Run connects os.Stdout.
-	Stdout io.WriteCloser
+	// Stdout specifies the standard output. If nil, Run connects os.Stdout.
+	Stdout io.Writer
 
-	ctx  context.Context
-	args []string
-	done chan struct{}
-	err  error
+	ctx     context.Context
+	args    []string
+	closers []io.Closer
+	done    chan struct{}
+	err     error
 }
 
 // Command is the equivalent of exec.Command
@@ -69,15 +69,28 @@ func (c *Cmd) Start() error {
 	}
 	c.done = make(chan struct{})
 	go func() {
-		defer close(c.done)
 		defer func() {
-			if c.Stdout != os.Stdout {
-				c.Stdout.Close()
+			for _, cl := range c.closers {
+				cl.Close()
 			}
+			c.closers = nil
+			close(c.done)
 		}()
 		c.err = c.scan()
 	}()
 	return nil
+}
+
+// StdoutPipe returns a pipe that will be connected to the command's
+// standard output when the command starts.
+func (c *Cmd) StdoutPipe() io.ReadCloser {
+	if c.Stdout != nil {
+		panic("Stdout already set")
+	}
+	pr, pw := io.Pipe()
+	c.Stdout = pw
+	c.closers = append(c.closers, pw)
+	return pr
 }
 
 // Wait waits for the command to exit. The command must have been started by
