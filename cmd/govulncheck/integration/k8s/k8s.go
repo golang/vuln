@@ -35,7 +35,7 @@ func main() {
 		"golang.org/x/net/http2/hpack":                            true,
 		"golang.org/x/text/encoding/unicode":                      true,
 	}
-	if err := integration.CompareVulns(out, want); err != nil {
+	if err := integration.CompareNonStdVulns(out, want); err != nil {
 		log.Fatal(err)
 	}
 }

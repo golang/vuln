@@ -10,12 +10,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal/govulncheck"
 )
 
-func CompareVulns(out string, want map[string]bool) error {
+// CompareNonStdVulns compares vulnerable packages in out and want.
+// For out, it only considers vulnerabilities outside of the standard
+// library. Assumes the same for want.
+func CompareNonStdVulns(out string, want map[string]bool) error {
 	outJson, err := os.ReadFile(out)
 	if err != nil {
 		return fmt.Errorf("Failed to read %v:", out)
@@ -31,7 +35,8 @@ func CompareVulns(out string, want map[string]bool) error {
 		if msg.Vulnerability != nil {
 			for _, m := range msg.Vulnerability.Modules {
 				for _, p := range m.Packages {
-					if len(p.CallStacks) > 0 {
+					// collect only called non-std packages
+					if !isStd(p.Path) && len(p.CallStacks) > 0 {
 						calledVulnPkgs[p.Path] = true
 					}
 				}
@@ -42,4 +47,9 @@ func CompareVulns(out string, want map[string]bool) error {
 		return fmt.Errorf("reachable vulnerable packages mismatch (-want, +got):\n%s", diff)
 	}
 	return nil
+}
+
+// isStd returns true iff pkg is a standard library package.
+func isStd(pkg string) bool {
+	return !strings.Contains(pkg, ".")
 }

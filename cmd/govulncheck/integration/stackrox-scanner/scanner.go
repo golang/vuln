@@ -27,7 +27,7 @@ func main() {
 		"golang.org/x/net/http2/hpack": true,
 	}
 
-	if err := integration.CompareVulns(out, want); err != nil {
+	if err := integration.CompareNonStdVulns(out, want); err != nil {
 		log.Fatal(err)
 	}
 }
