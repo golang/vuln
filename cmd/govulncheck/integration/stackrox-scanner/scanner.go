@@ -35,6 +35,8 @@ func main() {
 		"mime/multipart":               true,
 		"golang.org/x/net/http2":       true,
 		"golang.org/x/net/http2/hpack": true,
+		"html/template":                true,
+		"net/textproto":                true,
 	}
 
 	if err := integration.CompareVulns(out, want); err != nil {
