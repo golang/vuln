@@ -23,20 +23,8 @@ func main() {
 	}
 	out := os.Args[1]
 	want := map[string]bool{
-		"net/http":                     true,
-		"path/filepath":                true,
-		"regexp/syntax":                true,
-		"archive/tar":                  true,
-		"compress/gzip":                true,
-		"crypto/elliptic":              true,
-		"crypto/tls":                   true,
-		"encoding/pem":                 true,
-		"encoding/xml":                 true,
-		"mime/multipart":               true,
 		"golang.org/x/net/http2":       true,
 		"golang.org/x/net/http2/hpack": true,
-		"html/template":                true,
-		"net/textproto":                true,
 	}
 
 	if err := integration.CompareVulns(out, want); err != nil {

@@ -23,10 +23,6 @@ func main() {
 	out := os.Args[1]
 
 	want := map[string]bool{
-		"crypto/tls":     true,
-		"net/http":       true,
-		"path/filepath":  true,
-		"mime/multipart": true,
 		"github.com/containernetworking/cni/pkg/invoke":           true,
 		"github.com/evanphx/json-patch":                           true,
 		"github.com/opencontainers/selinux/go-selinux":            true,
@@ -38,8 +34,6 @@ func main() {
 		"golang.org/x/net/http2":                                  true,
 		"golang.org/x/net/http2/hpack":                            true,
 		"golang.org/x/text/encoding/unicode":                      true,
-		"html/template":                                           true,
-		"net/textproto":                                           true,
 	}
 	if err := integration.CompareVulns(out, want); err != nil {
 		log.Fatal(err)
