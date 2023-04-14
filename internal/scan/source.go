@@ -140,10 +140,10 @@ func stackFramesfromEntries(vcs vulncheck.CallStack) []*govulncheck.StackFrame {
 			Package:  e.Function.PkgPath,
 			Receiver: e.Function.RecvType,
 		}
-		if e.Call == nil || e.Call.Pos == nil {
-			fr.Position = token.Position{}
+		if e.Call == nil {
+			fr.Position = nil
 		} else {
-			fr.Position = *e.Call.Pos
+			fr.Position = govulncheck.FromTokenPosition(e.Call.Pos)
 		}
 		frames = append(frames, fr)
 	}

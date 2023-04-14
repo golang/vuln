@@ -141,5 +141,38 @@ type StackFrame struct {
 	// Position describes an arbitrary source position
 	// including the file, line, and column location.
 	// A Position is valid if the line number is > 0.
-	Position token.Position `json:"position,omitempty"`
+	Position *Position `json:"position,omitempty"`
+}
+
+// Position is a copy of token.Position used to marshal/unmarshal
+// JSON correctly.
+type Position struct {
+	Filename string `json:"filename,omitempty"` // filename, if any
+	Offset   int    `json:"offset"`             // offset, starting at 0
+	Line     int    `json:"line"`               // line number, starting at 1
+	Column   int    `json:"column"`             // column number, starting at 1 (byte count)
+}
+
+func (p *Position) ToTokenPosition() *token.Position {
+	if p == nil {
+		return nil
+	}
+	return &token.Position{
+		Filename: p.Filename,
+		Offset:   p.Offset,
+		Line:     p.Line,
+		Column:   p.Column,
+	}
+}
+
+func FromTokenPosition(p *token.Position) *Position {
+	if p == nil {
+		return nil
+	}
+	return &Position{
+		Filename: p.Filename,
+		Offset:   p.Offset,
+		Line:     p.Line,
+		Column:   p.Column,
+	}
 }

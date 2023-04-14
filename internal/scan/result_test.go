@@ -5,7 +5,6 @@
 package scan
 
 import (
-	"go/token"
 	"testing"
 
 	"golang.org/x/vuln/internal/govulncheck"
@@ -21,7 +20,7 @@ func TestStackFrame(t *testing.T) {
 			&govulncheck.StackFrame{
 				Package:  "golang.org/x/vuln/internal/vulncheck",
 				Function: "Foo",
-				Position: token.Position{Filename: "some/path/file.go", Line: 12},
+				Position: &govulncheck.Position{Filename: "some/path/file.go", Line: 12},
 			},
 			"golang.org/x/vuln/internal/vulncheck.Foo",
 			"some/path/file.go:12",

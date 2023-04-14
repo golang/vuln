@@ -181,21 +181,15 @@ $ govulncheck -C ${moddir}/vuln -json .
                     "package": "golang.org/vuln",
                     "function": "main",
                     "position": {
-                      "Filename": ".../vuln.go",
-                      "Offset": 159,
-                      "Line": 13,
-                      "Column": 16
+                      "filename": ".../vuln.go",
+                      "offset": 159,
+                      "line": 13,
+                      "column": 16
                     }
                   },
                   {
                     "package": "golang.org/x/text/language",
-                    "function": "Parse",
-                    "position": {
-                      "Filename": "",
-                      "Offset": 0,
-                      "Line": 0,
-                      "Column": 0
-                    }
+                    "function": "Parse"
                   }
                 ]
               }

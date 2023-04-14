@@ -48,8 +48,9 @@ func FuncName(frame *govulncheck.StackFrame) string {
 // Pos returns the position of the call in sf as string.
 // If position is not available, return "".
 func Pos(sf *govulncheck.StackFrame) string {
-	if sf.Position.IsValid() {
-		return sf.Position.String()
+	p := sf.Position.ToTokenPosition()
+	if p != nil && p.IsValid() {
+		return p.String()
 	}
 	return ""
 }
