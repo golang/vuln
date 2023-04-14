@@ -104,12 +104,13 @@ func TestCommand(t *testing.T) {
 }
 
 var (
-	goFileRegexp       = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
-	heapGoRegexp       = regexp.MustCompile(`heap\.go:(\d+)`)
-	progressRegexp     = regexp.MustCompile(`Scanning your code and (\d+) packages across (\d+)`)
-	govulncheckRegexp  = regexp.MustCompile(`govulncheck@v(.*) with`)
-	vulndbRegexp       = regexp.MustCompile(`file:///(.*)/testdata/vulndb`)
-	lastModifiedRegexp = regexp.MustCompile(`modified (.*)\)`)
+	goFileRegexp          = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
+	heapGoRegexp          = regexp.MustCompile(`heap\.go:(\d+)`)
+	progressRegexp        = regexp.MustCompile(`Scanning your code and (\d+) packages across (\d+)`)
+	govulncheckRegexp     = regexp.MustCompile(`govulncheck@v(.*) with`)
+	govulncheckJSONRegexp = regexp.MustCompile(`"govulncheck@v(.*)",`)
+	vulndbRegexp          = regexp.MustCompile(`file:///(.*)/testdata/vulndb`)
+	lastModifiedRegexp    = regexp.MustCompile(`modified (.*)\)`)
 )
 
 // filterGoFilePaths modifies paths to Go files by replacing their directory with "...".
@@ -135,6 +136,7 @@ func filterProgressNumbers(data []byte) []byte {
 
 func filterEnvironmentData(data []byte) []byte {
 	g := govulncheckRegexp.ReplaceAll(data, []byte("govulncheck@v0.0.0-00000000000-20000101010101 with"))
-	v := vulndbRegexp.ReplaceAll(g, []byte("testdata/vulndb"))
+	j := govulncheckJSONRegexp.ReplaceAll(g, []byte("govulncheck@v0.0.0-00000000000-20000101010101"))
+	v := vulndbRegexp.ReplaceAll(j, []byte("testdata/vulndb"))
 	return lastModifiedRegexp.ReplaceAll(v, []byte("modified 01 Jan 21 00:00 UTC)"))
 }

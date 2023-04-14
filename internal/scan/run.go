@@ -67,7 +67,7 @@ func doGovulncheck(ctx context.Context, w io.Writer, args []string) error {
 	if err := Flush(handler); err != nil {
 		return err
 	}
-	if containsAffectedVulnerabilities(vulns) {
+	if containsAffectedVulnerabilities(vulns) && !cfg.json {
 		return ErrVulnerabilitiesFound
 	}
 	return nil
