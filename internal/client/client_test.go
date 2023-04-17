@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,9 +22,11 @@ import (
 )
 
 var (
-	testVulndb        = filepath.Join("testdata", "vulndb-v1")
-	testVulndbFileURL = localURL(testVulndb)
-	testIDs           = []string{
+	testLegacyVulndb        = filepath.Join("testdata", "vulndb-legacy")
+	testLegacyVulndbFileURL = localURL(testLegacyVulndb)
+	testVulndb              = filepath.Join("testdata", "vulndb-v1")
+	testVulndbFileURL       = localURL(testVulndb)
+	testIDs                 = []string{
 		"GO-2021-0159",
 		"GO-2022-0229",
 		"GO-2022-0463",
@@ -108,12 +111,10 @@ func TestNewClient(t *testing.T) {
 		srv := newTestServer(testLegacyVulndb)
 		t.Cleanup(srv.Close)
 
-		c, err := NewClient(srv.URL, &Options{HTTPClient: srv.Client()})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, ok := c.(*httpClient); !ok {
-			t.Errorf("NewClient(%s) = %#v, want type *client", srv.URL, c)
+		_, err := NewClient(srv.URL, &Options{HTTPClient: srv.Client()})
+		wantErr := "no longer supported"
+		if err == nil || !strings.Contains(err.Error(), wantErr) {
+			t.Errorf("NewClient() = %s, want error containing %q", err, wantErr)
 		}
 	})
 
@@ -134,12 +135,10 @@ func TestNewClient(t *testing.T) {
 
 	t.Run("local/legacy", func(t *testing.T) {
 		src := testLegacyVulndbFileURL
-		c, err := NewClient(src, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, ok := c.(*localClient); !ok {
-			t.Errorf("NewClient(%s) = %#v, want type *localClient", src, c)
+		_, err := NewClient(src, nil)
+		wantErr := "no longer supported"
+		if err == nil || !strings.Contains(err.Error(), wantErr) {
+			t.Errorf("NewClient() = %s, want error containing %q", err, wantErr)
 		}
 	})
 
@@ -215,7 +214,7 @@ func testAllClientTypes(t *testing.T, test func(t *testing.T, c Client)) {
 		srv := newTestServer(testVulndb)
 		t.Cleanup(srv.Close)
 
-		hc, err := NewV1Client(srv.URL, &Options{HTTPClient: srv.Client()})
+		hc, err := NewClient(srv.URL, &Options{HTTPClient: srv.Client()})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -224,7 +223,7 @@ func testAllClientTypes(t *testing.T, test func(t *testing.T, c Client)) {
 	})
 
 	t.Run("local", func(t *testing.T) {
-		fc, err := NewV1Client(testVulndbFileURL, nil)
+		fc, err := NewClient(testVulndbFileURL, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

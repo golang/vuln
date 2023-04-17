@@ -39,12 +39,15 @@ type Client interface {
 	LastModifiedTime(context.Context) (time.Time, error)
 }
 
+type Options struct {
+	HTTPClient *http.Client
+}
+
 // NewClient returns a client that reads the vulnerability database
 // in source (an "http" or "file" prefixed URL).
 //
-// It currently supports database sources in both the v1 and legacy
-// formats, preferring the v1 format if both are implemented.
-// Support for the legacy database format will be removed soon.
+// It supports databases following the API described
+// in https://go.dev/security/vuln/database#api.
 func NewClient(source string, opts *Options) (_ Client, err error) {
 	source = strings.TrimRight(source, "/")
 	uri, err := url.Parse(source)
@@ -53,7 +56,7 @@ func NewClient(source string, opts *Options) (_ Client, err error) {
 	}
 	switch uri.Scheme {
 	case "http", "https":
-		return newHTTPClient(uri, opts), nil
+		return newHTTPClient(uri, opts)
 	case "file":
 		return newLocalClient(uri)
 	default:
@@ -61,26 +64,28 @@ func NewClient(source string, opts *Options) (_ Client, err error) {
 	}
 }
 
-func newHTTPClient(uri *url.URL, opts *Options) Client {
+var errLegacyUnsupported = fmt.Errorf("the legacy vulndb schema is no longer supported; see https://go.dev/security/vuln/database#api for the new schema")
+
+func newHTTPClient(uri *url.URL, opts *Options) (Client, error) {
 	// v1 returns true if the given source likely follows the V1 schema.
 	// This is always true if the source is "https://vuln.go.dev".
-	// Otherwise, this is determined by checking if the "index/db.json"
+	// Otherwise, this is determined by checking if the "index/db.json.gz"
 	// endpoint is present.
 	v1 := func() bool {
 		source := uri.String()
 		if source == "https://vuln.go.dev" {
 			return true
 		}
-		r, err := http.Head(source + "/index/db.json")
+		r, err := http.Head(source + "/index/db.json.gz")
 		if err != nil || r.StatusCode != http.StatusOK {
 			return false
 		}
 		return true
 	}
-	if v1() {
-		return newHTTPClientV1(uri, opts)
+	if !v1() {
+		return nil, errLegacyUnsupported
 	}
-	return newLegacyHTTPClient(uri, opts)
+	return &client{source: newHTTPSource(uri.String(), opts)}, nil
 }
 
 func newLocalClient(uri *url.URL) (Client, error) {
@@ -95,26 +100,14 @@ func newLocalClient(uri *url.URL) (Client, error) {
 		_, err = os.Stat(filepath.Join(dir, dbEndpoint+".json"))
 		return err == nil
 	}
-	if v1() {
-		return newLocalClientV1(uri)
+	if !v1() {
+		return nil, errLegacyUnsupported
 	}
-	return newLegacyLocalClient(uri)
-}
-
-func NewV1Client(source string, opts *Options) (_ Client, err error) {
-	source = strings.TrimRight(source, "/")
-	uri, err := url.Parse(source)
+	fs, err := newLocalSource(uri)
 	if err != nil {
 		return nil, err
 	}
-	switch uri.Scheme {
-	case "http", "https":
-		return newHTTPClientV1(uri, opts), nil
-	case "file":
-		return newLocalClientV1(uri)
-	default:
-		return nil, fmt.Errorf("source %q has unsupported scheme", uri)
-	}
+	return &client{source: fs}, nil
 }
 
 func NewInMemoryClient(entries []*osv.Entry) (Client, error) {
@@ -128,18 +121,6 @@ func NewInMemoryClient(entries []*osv.Entry) (Client, error) {
 // A client for reading v1 vulnerability databases.
 type client struct {
 	source
-}
-
-func newHTTPClientV1(uri *url.URL, opts *Options) *client {
-	return &client{source: newHTTPSource(uri.String(), opts)}
-}
-
-func newLocalClientV1(uri *url.URL) (*client, error) {
-	fs, err := newLocalSource(uri)
-	if err != nil {
-		return nil, err
-	}
-	return &client{source: fs}, nil
 }
 
 func (c *client) LastModifiedTime(ctx context.Context) (_ time.Time, err error) {
