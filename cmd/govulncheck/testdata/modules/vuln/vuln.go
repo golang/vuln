@@ -11,6 +11,6 @@ import (
 func main() {
 	fmt.Println("hello")
 	language.Parse("")
-	gjson.Valid("{hello: world}")
+	gjson.Result{}.Get("")
 	_, _ = pem.Decode([]byte("test"))
 }

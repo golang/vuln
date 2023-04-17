@@ -88,11 +88,34 @@ $ govulncheck -C ${moddir}/vuln -json .
     "modules": [
       {
         "path": "github.com/tidwall/gjson",
-        "found_version": "v1.9.2",
+        "found_version": "v1.6.5",
         "fixed_version": "v1.9.3",
         "packages": [
           {
-            "path": "github.com/tidwall/gjson"
+            "path": "github.com/tidwall/gjson",
+            "callstacks": [
+              {
+                "symbol": "Result.Get",
+                "summary": ".../vuln.go:14:20: golang.org/vuln.main calls github.com/tidwall/gjson.Result.Get",
+                "frames": [
+                  {
+                    "package": "golang.org/vuln",
+                    "function": "main",
+                    "position": {
+                      "filename": ".../vuln.go",
+                      "offset": 183,
+                      "line": 14,
+                      "column": 20
+                    }
+                  },
+                  {
+                    "package": "github.com/tidwall/gjson",
+                    "function": "Get",
+                    "receiver": "github.com/tidwall/gjson.Result"
+                  }
+                ]
+              }
+            ]
           }
         ]
       }
@@ -194,6 +217,83 @@ $ govulncheck -C ${moddir}/vuln -json .
                 ]
               }
             ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "vulnerability": {
+    "osv": {
+      "schema_version": "1.3.1",
+      "id": "GO-2021-0054",
+      "modified": "2023-04-03T15:57:51Z",
+      "published": "2021-04-14T20:04:52Z",
+      "aliases": [
+        "CVE-2020-36067",
+        "GHSA-p64j-r5f4-pwwx"
+      ],
+      "details": "Due to improper bounds checking, maliciously crafted JSON objects can cause an out-of-bounds panic. If parsing user input, this may be used as a denial of service vector.",
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/tidwall/gjson",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.6.6"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "github.com/tidwall/gjson",
+                "symbols": [
+                  "Result.ForEach",
+                  "unwrap"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "references": [
+        {
+          "type": "FIX",
+          "url": "https://github.com/tidwall/gjson/commit/bf4efcb3c18d1825b2988603dea5909140a5302b"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/tidwall/gjson/issues/196"
+        }
+      ],
+      "credits": [
+        {
+          "name": "@toptotu"
+        }
+      ],
+      "database_specific": {
+        "url": "https://pkg.go.dev/vuln/GO-2021-0054"
+      }
+    },
+    "modules": [
+      {
+        "path": "github.com/tidwall/gjson",
+        "found_version": "v1.6.5",
+        "fixed_version": "v1.6.6",
+        "packages": [
+          {
+            "path": "github.com/tidwall/gjson"
           }
         ]
       }
