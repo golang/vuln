@@ -27,7 +27,12 @@ func Test(t *testing.T) {
 		t.Skipf("skipping: %v", err)
 	}
 
-	cmd := exec.Command(bash, "./checks.bash", "trybots")
+	var cmd *exec.Cmd
+	if os.Getenv("GO_BUILDER_NAME") != "" {
+		cmd = exec.Command(bash, "./checks.bash", "trybots")
+	} else {
+		cmd = exec.Command(bash, "./checks.bash")
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
