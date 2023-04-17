@@ -18,6 +18,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"testing"
 
 	"github.com/google/go-cmdtest"
@@ -32,11 +33,6 @@ func TestCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts, err := cmdtest.Read("testdata")
-	if err != nil {
-		t.Fatal(err)
-	}
-	ts.DisableLogging = false
 	// Define a command that runs govulncheck with our local DB. We can't use
 	// cmdtest.Program for this because it doesn't let us set the environment,
 	// and that is the only way to tell govulncheck about an alternative vuln
@@ -45,30 +41,13 @@ func TestCommand(t *testing.T) {
 	// Use Cleanup instead of defer, because when subtests are parallel, defer
 	// runs too early.
 	t.Cleanup(cleanup)
-
-	ts.Commands["govulncheck"] = func(args []string, inputFile string) ([]byte, error) {
-		// We set GOVERSION to always get the same results regardless of the underlying Go build system.
-		vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb-v1"))
-		if err != nil {
-			return nil, err
-		}
-		govulndbURI, err := web.URLFromFilePath(vulndbDir)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create GOVULNDB env var: %v", err)
-		}
-
-		newargs := append([]string{"-db", govulndbURI.String()}, args...)
-		cmd := exec.Command(binary, newargs...)
-		if inputFile != "" {
-			return nil, errors.New("input redirection makes no sense")
-		}
-		cmd.Env = append(os.Environ(), "TEST_GOVERSION=go1.18")
-		out, err := cmd.CombinedOutput()
-		out = filterGoFilePaths(out)
-		out = filterProgressNumbers(out)
-		out = filterEnvironmentData(out)
-		out = filterHeapGo(out)
-		return out, err
+	vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb-v1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts, err := testSuite("testdata", binary, vulndbDir)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// Build test module binaries.
@@ -83,13 +62,12 @@ func TestCommand(t *testing.T) {
 		if filepath.Base(md) == "nogomod" {
 			continue
 		}
-
-		strip := false
-		// We want the strip module to produce a stripped binary.
+		// Also skip stripped binary. That is tested separately
+		// in TestCommandStrip.
 		if filepath.Base(md) == "strip" {
-			strip = true
+			continue
 		}
-		binary, cleanup := test.GoBuild(t, md, "", strip)
+		binary, cleanup := test.GoBuild(t, md, "", false)
 		t.Cleanup(cleanup)
 		// Set an environment variable to the path to the binary, so tests
 		// can refer to it.
@@ -101,6 +79,76 @@ func TestCommand(t *testing.T) {
 	} else {
 		ts.RunParallel(t, false)
 	}
+}
+
+func TestCommandStrip(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		// TODO: investigate why.
+		t.Skip("binaries are not fully stripped on darwin")
+	}
+	testDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	binary, cleanup := test.GoBuild(t, ".", "testmode", false) // build govulncheck
+	t.Cleanup(cleanup)
+	vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb-v1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts, err := testSuite("testdata/strip", binary, vulndbDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Build strip test module binary.
+	moduleDir, err := filepath.Abs("testdata/modules/strip")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	os.Setenv("moddir", filepath.Join(testDir, "testdata", "modules", "strip"))
+	strip, stripCleanup := test.GoBuild(t, moduleDir, "", true)
+	t.Cleanup(stripCleanup)
+	varName := filepath.Base(moduleDir) + "_binary"
+	os.Setenv(varName, strip)
+	if *update {
+		ts.Run(t, true)
+	} else {
+		ts.RunParallel(t, false)
+	}
+}
+
+// testSuite creates a cmdtest suite from dir. It also defines
+// a govulncheck command on the suite that runs govulncheck
+// against vulnerability database available at vulndbDir.
+func testSuite(dir, govulncheck, vulndbDir string) (*cmdtest.TestSuite, error) {
+	ts, err := cmdtest.Read(dir)
+	if err != nil {
+		return nil, err
+	}
+	ts.DisableLogging = false
+	ts.Commands["govulncheck"] = func(args []string, inputFile string) ([]byte, error) {
+		govulndbURI, err := web.URLFromFilePath(vulndbDir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create GOVULNDB env var: %v", err)
+		}
+
+		newargs := append([]string{"-db", govulndbURI.String()}, args...)
+		cmd := exec.Command(govulncheck, newargs...)
+		if inputFile != "" {
+			return nil, errors.New("input redirection makes no sense")
+		}
+		// We set GOVERSION to always get the same results regardless of the underlying Go build system.
+		cmd.Env = append(os.Environ(), "TEST_GOVERSION=go1.18")
+		out, err := cmd.CombinedOutput()
+		out = filterGoFilePaths(out)
+		out = filterProgressNumbers(out)
+		out = filterEnvironmentData(out)
+		out = filterHeapGo(out)
+		return out, err
+	}
+	return ts, nil
 }
 
 var (
