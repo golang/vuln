@@ -210,6 +210,12 @@ func (fn *FuncNode) String() string {
 	return fmt.Sprintf("%s.%s", fn.RecvType, fn.Name)
 }
 
+// Receiver returns the FuncNode's receiver, with package path removed.
+// Pointers are preserved if present.
+func (fn *FuncNode) Receiver() string {
+	return strings.Replace(fn.RecvType, fmt.Sprintf("%s.", fn.PkgPath), "", 1)
+}
+
 // A CallSite describes a function call.
 type CallSite struct {
 	// Parent is ID of the enclosing function where the call is made.

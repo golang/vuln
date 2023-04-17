@@ -475,3 +475,53 @@ func TestConvert(t *testing.T) {
 		t.Errorf("want %v;got %v", wantMods, got)
 	}
 }
+
+func TestReceiver(t *testing.T) {
+	tcs := []struct {
+		name string
+		fn   *FuncNode
+		want string
+	}{
+		{
+			name: "empty",
+			fn: &FuncNode{
+				RecvType: "",
+				PkgPath:  "example.com/a/pkg",
+			},
+			want: "",
+		},
+		{
+			name: "pointer",
+			fn: &FuncNode{
+				RecvType: "*example.com/a/pkg.Atype",
+				PkgPath:  "example.com/a/pkg",
+			},
+			want: "*Atype",
+		},
+		{
+			name: "not pointer",
+			fn: &FuncNode{
+				RecvType: "example.com/a/pkg.Atype",
+				PkgPath:  "example.com/a/pkg",
+			},
+			want: "Atype",
+		},
+		{
+			name: "no prefix",
+			fn: &FuncNode{
+				RecvType: "Atype",
+				PkgPath:  "example.com/a/pkg",
+			},
+			want: "Atype",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.fn.Receiver()
+			if got != tc.want {
+				t.Errorf("*FuncNode.Receiver() = %s, want %s", got, tc.want)
+			}
+		})
+	}
+}

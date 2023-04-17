@@ -6,7 +6,6 @@
 package scan
 
 import (
-	"fmt"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -35,14 +34,13 @@ func IsCalled(v *govulncheck.Vuln) bool {
 // FuncName returns the full qualified function name from a stack frame,
 // adjusted to remove pointer annotations.
 func FuncName(frame *govulncheck.StackFrame) string {
-	switch {
-	case frame.Receiver != "":
-		return fmt.Sprintf("%s.%s", strings.TrimPrefix(frame.Receiver, "*"), frame.Function)
-	case frame.Package != "":
-		return fmt.Sprintf("%s.%s", frame.Package, frame.Function)
-	default:
-		return frame.Function
+	var strs []string
+	for _, str := range []string{frame.Package, strings.TrimPrefix(frame.Receiver, "*"), frame.Function} {
+		if str != "" {
+			strs = append(strs, str)
+		}
 	}
+	return strings.Join(strs, ".")
 }
 
 // Pos returns the position of the call in sf as string.

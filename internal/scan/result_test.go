@@ -28,7 +28,7 @@ func TestStackFrame(t *testing.T) {
 		{
 			&govulncheck.StackFrame{
 				Package:  "golang.org/x/vuln/internal/vulncheck",
-				Receiver: "golang.org/x/vuln/internal/vulncheck.Bar",
+				Receiver: "Bar",
 				Function: "Foo",
 			},
 			"golang.org/x/vuln/internal/vulncheck.Bar.Foo",
@@ -103,7 +103,7 @@ func TestFuncName(t *testing.T) {
 		{
 			"package, function and receiver",
 			&govulncheck.StackFrame{Package: "net/http", Receiver: "*ServeMux", Function: "Handle"},
-			"ServeMux.Handle",
+			"net/http.ServeMux.Handle",
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {

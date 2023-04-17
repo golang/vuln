@@ -111,7 +111,7 @@ $ govulncheck -C ${moddir}/vuln -json .
                   {
                     "package": "github.com/tidwall/gjson",
                     "function": "Get",
-                    "receiver": "github.com/tidwall/gjson.Result"
+                    "receiver": "Result"
                   }
                 ]
               }
