@@ -29,12 +29,12 @@ copyFiles=(
 
 UNIT_OUT_DIR=$(pwd)/internal/client/testdata/vulndb-v1
 
-for f in ${copyFiles[@]}; do
-  mkdir -p "$UNIT_OUT_DIR/$(dirname $f)" && curl -L $origin/$f --output $UNIT_OUT_DIR/$f
+for f in "${copyFiles[@]}"; do
+  mkdir -p "$UNIT_OUT_DIR/$(dirname "$f")" && curl -L $origin/"$f" --output "$UNIT_OUT_DIR"/"$f"
 done
 
 unit_vulns="$UNIT_OUT_DIR/ID"
-indexdb -out $UNIT_OUT_DIR -vulns $unit_vulns
+indexdb -out "$UNIT_OUT_DIR" -vulns "$unit_vulns"
 
 # Copy files for integration tests.
 copyFiles=(
@@ -48,9 +48,9 @@ copyFiles=(
 
 INTEG_OUT_DIR=$(pwd)/cmd/govulncheck/testdata/vulndb-v1
 
-for f in ${copyFiles[@]}; do
-  mkdir -p "$INTEG_OUT_DIR/$(dirname $f)" && curl -L $origin/$f --output $INTEG_OUT_DIR/$f
+for f in "${copyFiles[@]}"; do
+  mkdir -p "$INTEG_OUT_DIR"/"$(dirname "$f")" && curl -L "$origin"/"$f" --output "$INTEG_OUT_DIR"/"$f"
 done
 
 integ_vulns="$INTEG_OUT_DIR/ID"
-indexdb -out $INTEG_OUT_DIR -vulns $integ_vulns
+indexdb -out "$INTEG_OUT_DIR" -vulns "$integ_vulns"

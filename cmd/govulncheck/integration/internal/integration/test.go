@@ -22,7 +22,7 @@ import (
 func CompareNonStdVulns(out string, want map[string]bool) error {
 	outJson, err := os.ReadFile(out)
 	if err != nil {
-		return fmt.Errorf("Failed to read %v:", out)
+		return fmt.Errorf("failed to read: %v", out)
 	}
 	calledVulnPkgs := make(map[string]bool)
 	dec := json.NewDecoder(bytes.NewReader(outJson))
@@ -30,7 +30,7 @@ func CompareNonStdVulns(out string, want map[string]bool) error {
 		msg := govulncheck.Message{}
 		// decode the next message in the stream
 		if err := dec.Decode(&msg); err != nil {
-			log.Fatalf("Failed to load json: %v", err)
+			log.Fatalf("failed to load json: %v", err)
 		}
 		if msg.Vulnerability != nil {
 			for _, m := range msg.Vulnerability.Modules {
