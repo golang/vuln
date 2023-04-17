@@ -36,15 +36,34 @@ type tmplResult struct {
 // template structure for printing.
 func createTmplResult(vulns []*govulncheck.Vuln, verbose, source bool) tmplResult {
 	// unaffected are (imported) OSVs, none of which vulnerabilities are called.
-	var r tmplResult
-	var vInfos []tmplVulnInfo
+	var (
+		r      tmplResult
+		vInfos []tmplVulnInfo
+	)
+	topPkgs := topPackages(vulns)
 	for _, v := range vulns {
-		vInfos = append(vInfos, createTmplVulnInfo(v, verbose, source))
+		vInfos = append(vInfos, createTmplVulnInfo(v, verbose, source, topPkgs))
 	}
 	r.Affected, r.Unaffected = splitVulns(vInfos)
 	r.AffectedModules = affectedModules(vInfos)
 	r.StdlibAffected = stdlibAffected(vInfos)
 	return r
+}
+
+func topPackages(vulns []*govulncheck.Vuln) map[string]bool {
+	topPkgs := map[string]bool{}
+	for _, v := range vulns {
+		for _, m := range v.Modules {
+			for _, p := range m.Packages {
+				for _, c := range p.CallStacks {
+					if len(c.Frames) > 0 {
+						topPkgs[c.Frames[0].Package] = true
+					}
+				}
+			}
+		}
+	}
+	return topPkgs
 }
 
 func splitVulns(vulns []tmplVulnInfo) (affected, unaffected []tmplVulnInfo) {
@@ -103,7 +122,7 @@ type tmplVulnInfo struct {
 // createTmplVulnInfo creates a template vuln info for
 // a vulnerability that is called by source code or
 // present in the binary.
-func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool) tmplVulnInfo {
+func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool, topPkgs map[string]bool) tmplVulnInfo {
 	vInfo := tmplVulnInfo{
 		ID:       v.OSV.ID,
 		Details:  v.OSV.Details,
@@ -120,7 +139,7 @@ func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool) tmplVulnInfo 
 		if verbose {
 			return verboseCallStacks(p.CallStacks)
 		}
-		return defaultCallStacks(p.CallStacks)
+		return defaultCallStacks(p.CallStacks, topPkgs)
 	}
 
 	for _, m := range v.Modules {
@@ -188,10 +207,11 @@ func createTmplModule(m *govulncheck.Module, path string, osv *osv.Entry) tmplMo
 	}
 }
 
-func defaultCallStacks(css []govulncheck.CallStack) string {
+func defaultCallStacks(css []govulncheck.CallStack, topPkgs map[string]bool) string {
 	var summaries []string
 	for _, cs := range css {
-		summaries = append(summaries, cs.Summary)
+		s := summarizeCallStack(cs, topPkgs)
+		summaries = append(summaries, s)
 	}
 
 	// Sort call stack summaries and get rid of duplicates.

@@ -36,12 +36,28 @@
             "path": "",
             "callstacks": [
               {
-                "symbol": "",
-                "summary": "main calls vmod.Vuln"
+                "symbol": "Vuln",
+                "frames": [
+                  {
+                    "function": "main"
+                  },
+                  {
+                    "package": "vmod",
+                    "function": "Vuln"
+                  }
+                ]
               },
               {
-                "symbol": "",
-                "summary": "main calls vmod.VulnFoo"
+                "symbol": "VulnFoo",
+                "frames": [
+                  {
+                    "function": "main"
+                  },
+                  {
+                    "package": "vmod",
+                    "function": "VulnFoo"
+                  }
+                ]
               }
             ]
           }
@@ -56,17 +72,33 @@
             "path": "golang.org/vmod1",
             "callstacks": [
               {
-                "symbol": "",
-                "summary": "Foo calls vmod1.Vuln"
+                "symbol": "Vuln",
+                "frames": [
+                  {
+                    "function": "Foo"
+                  },
+                  {
+                    "package": "vmod1",
+                    "function": "Vuln"
+                  }
+                ]
               }
             ]
           },
           {
-            "path": "",
+            "path": "golang.org/vmod1",
             "callstacks": [
               {
-                "symbol": "",
-                "summary": "Bar calls vmod1.VulnFoo"
+                "symbol": "VulnFoo",
+                "frames": [
+                  {
+                    "function": "Bar"
+                  },
+                  {
+                    "package": "vmod1",
+                    "function": "VulnFoo"
+                  }
+                ]
               }
             ]
           }

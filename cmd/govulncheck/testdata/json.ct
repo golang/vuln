@@ -96,7 +96,6 @@ $ govulncheck -C ${moddir}/vuln -json .
             "callstacks": [
               {
                 "symbol": "Result.Get",
-                "summary": ".../vuln.go:14:20: golang.org/vuln.main calls github.com/tidwall/gjson.Result.Get",
                 "frames": [
                   {
                     "package": "golang.org/vuln",
@@ -198,7 +197,6 @@ $ govulncheck -C ${moddir}/vuln -json .
             "callstacks": [
               {
                 "symbol": "Parse",
-                "summary": ".../vuln.go:13:16: golang.org/vuln.main calls golang.org/x/text/language.Parse",
                 "frames": [
                   {
                     "package": "golang.org/vuln",

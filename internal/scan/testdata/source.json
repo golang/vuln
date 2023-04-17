@@ -36,8 +36,16 @@
             "path": "",
             "callstacks": [
               {
-                "symbol": "",
-                "summary": "main calls vmod.Vuln"
+                "symbol": "Vuln",
+                "frames": [
+                  {
+                    "function": "main"
+                  },
+                  {
+                    "package": "vmod",
+                    "function": "Vuln"
+                  }
+                ]
               }
             ]
           }

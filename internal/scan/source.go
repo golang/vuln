@@ -78,10 +78,6 @@ func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
 }
 
 func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) []*govulncheck.Vuln {
-	topPkgs := map[string]bool{}
-	for _, p := range pkgs {
-		topPkgs[p.PkgPath] = true
-	}
 	modVersions := moduleVersionMap(vr.Modules)
 	callStacks := vulncheck.CallStacks(vr)
 
@@ -122,7 +118,6 @@ func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) []*govu
 					Frames: stackFramesfromEntries(vcs),
 					Symbol: vv.Symbol,
 				}
-				cs.Summary = summarizeCallStack(cs, topPkgs)
 				p.CallStacks = []govulncheck.CallStack{cs}
 			}
 		}

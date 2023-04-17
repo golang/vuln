@@ -88,7 +88,6 @@ $ govulncheck -json -C ${moddir}/multientry .
             "callstacks": [
               {
                 "symbol": "MustParse",
-                "summary": ".../main.go:99:20: golang.org/multientry.foobar calls golang.org/x/text/language.MustParse",
                 "frames": [
                   {
                     "package": "golang.org/multientry",
@@ -128,7 +127,6 @@ $ govulncheck -json -C ${moddir}/multientry .
               },
               {
                 "symbol": "Parse",
-                "summary": ".../main.go:44:23: golang.org/multientry.C calls golang.org/x/text/language.Parse",
                 "frames": [
                   {
                     "package": "golang.org/multientry",

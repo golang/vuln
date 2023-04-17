@@ -109,12 +109,6 @@ type CallStack struct {
 	// This follows the naming convention in the OSV report.
 	Symbol string `json:"symbol"`
 
-	// Summary is a one-line description of the callstack, used by the
-	// default govulncheck mode.
-	//
-	// Example: module3.main calls github.com/shiyanhui/dht.DHT.Run
-	Summary string `json:"summary,omitempty"`
-
 	// Frames contains an entry for each stack in the call stack.
 	//
 	// Frames are sorted starting from the entry point to the
