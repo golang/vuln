@@ -209,7 +209,7 @@ func TestByModule(t *testing.T) {
 	}
 }
 
-// Runs a given test for all client types.
+// testAllClientTypes runs a given test for all client types.
 func testAllClientTypes(t *testing.T, test func(t *testing.T, c Client)) {
 	t.Run("http", func(t *testing.T) {
 		srv := newTestServer(testVulndb)

@@ -43,7 +43,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
-// Runs a given test for all source types.
+// testAllSourceTypes runs a given test for all source types.
 func testAllSourceTypes(t *testing.T, test func(t *testing.T, s source)) {
 	t.Run("http", func(t *testing.T) {
 		srv := newTestServer(testVulndb)

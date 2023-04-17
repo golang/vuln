@@ -99,7 +99,7 @@ func (ls *localSource) get(ctx context.Context, endpoint string) (_ []byte, err 
 	return fs.ReadFile(ls.fs, endpoint+".json")
 }
 
-// Create a new in-memory source.
+// newInMemorySource creates a new in-memory source.
 // Adapted from x/vulndb/internal/database.go.
 func newInMemorySource(entries []*osv.Entry) (*inMemorySource, error) {
 	data := make(map[string][]byte)

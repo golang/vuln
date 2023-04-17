@@ -158,7 +158,7 @@ func (c *client) LastModifiedTime(ctx context.Context) (_ time.Time, err error) 
 	return dbMeta.Modified, nil
 }
 
-// ByPackage returns the OSV entries matching the package request.
+// ByModule returns the OSV entries matching the module request.
 func (c *client) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
 	derrors.Wrap(&err, "ByModule(%v)", modulePath)
 
