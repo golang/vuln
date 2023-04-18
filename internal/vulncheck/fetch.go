@@ -11,7 +11,7 @@ import (
 )
 
 // FetchVulnerabilities fetches vulnerabilities that affect the supplied modules.
-func FetchVulnerabilities(ctx context.Context, client client.Client, modules []*Module) ([]*ModVulns, error) {
+func FetchVulnerabilities(ctx context.Context, client *client.Client, modules []*Module) ([]*ModVulns, error) {
 	var mv []*ModVulns
 	for _, mod := range modules {
 		modPath := mod.Path

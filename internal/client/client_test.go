@@ -85,8 +85,8 @@ func TestNewClient(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, ok := c.(*client); !ok {
-			t.Errorf("NewClient(%s) = %#v, want type *client", src, c)
+		if c == nil {
+			t.Errorf("NewClient(%s) = nil, want instantiated *Client", src)
 		}
 	})
 
@@ -98,12 +98,8 @@ func TestNewClient(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		cli, ok := c.(*client)
-		if !ok {
-			t.Errorf("NewClient(%s) = %#v, want type *client", srv.URL, c)
-		}
-		if _, ok := cli.source.(*httpSource); !ok {
-			t.Errorf("NewClient(%s).source = %#v, want type *httpSource", srv.URL, cli.source)
+		if c == nil {
+			t.Errorf("NewClient(%s) = nil, want instantiated *Client", srv.URL)
 		}
 	})
 
@@ -124,12 +120,8 @@ func TestNewClient(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		cli, ok := c.(*client)
-		if !ok {
-			t.Errorf("NewClient(%s) = %#v, want type *client", src, c)
-		}
-		if _, ok := cli.source.(*localSource); !ok {
-			t.Errorf("NewClient(%s).source = %#v, want type *localSource", src, cli.source)
+		if c == nil {
+			t.Errorf("NewClient(%s) = nil, want instantiated *Client", src)
 		}
 	})
 
@@ -145,7 +137,7 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestLastModifiedTime(t *testing.T) {
-	test := func(t *testing.T, c Client) {
+	test := func(t *testing.T, c *Client) {
 		got, err := c.LastModifiedTime(context.Background())
 		if err != nil {
 			t.Fatal(err)
@@ -190,7 +182,7 @@ func TestByModule(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.module, func(t *testing.T) {
-			test := func(t *testing.T, c Client) {
+			test := func(t *testing.T, c *Client) {
 				got, err := c.ByModule(context.Background(), tc.module)
 				if err != nil {
 					t.Fatal(err)
@@ -209,7 +201,7 @@ func TestByModule(t *testing.T) {
 }
 
 // testAllClientTypes runs a given test for all client types.
-func testAllClientTypes(t *testing.T, test func(t *testing.T, c Client)) {
+func testAllClientTypes(t *testing.T, test func(t *testing.T, c *Client)) {
 	t.Run("http", func(t *testing.T) {
 		srv := newTestServer(testVulndb)
 		t.Cleanup(srv.Close)

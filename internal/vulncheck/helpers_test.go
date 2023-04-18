@@ -14,12 +14,13 @@ import (
 	"golang.org/x/vuln/internal/semver"
 )
 
-// testClient contains the following test vulnerabilities
+// newTestClient returns a client that reads
+// a database with the following vulnerable symbols:
 //
 //	golang.org/amod/avuln.{VulnData.Vuln1, vulnData.Vuln2}
 //	golang.org/bmod/bvuln.Vuln
 //	archive/zip.OpenReader
-func newTestClient() (client.Client, error) {
+func newTestClient() (*client.Client, error) {
 	return client.NewInMemoryClient(
 		[]*osv.Entry{
 			{

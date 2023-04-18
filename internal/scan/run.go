@@ -85,7 +85,7 @@ func containsAffectedVulnerabilities(vulns []*govulncheck.Vuln) bool {
 	return false
 }
 
-func prepareConfig(ctx context.Context, cfg *config, client client.Client) {
+func prepareConfig(ctx context.Context, cfg *config, client *client.Client) {
 	cfg.DataSource = cfg.db
 	if cfg.mode == modeSource {
 		// The Go version is only relevant for source analysis, so omit it for

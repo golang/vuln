@@ -27,16 +27,9 @@ import (
 	"golang.org/x/vuln/internal/web"
 )
 
-// Client interface for fetching vulnerabilities based on module path or ID.
-type Client interface {
-	// ByModule returns the entries that affect the given module path.
-	// It returns (nil, nil) if there are none.
-	ByModule(context.Context, string) ([]*osv.Entry, error)
-
-	// LastModifiedTime returns the time that the database was last modified.
-	// It can be used by tools that periodically check for vulnerabilities
-	// to avoid repeating work.
-	LastModifiedTime(context.Context) (time.Time, error)
+// A Client for reading vulnerability databases.
+type Client struct {
+	source
 }
 
 type Options struct {
@@ -48,7 +41,7 @@ type Options struct {
 //
 // It supports databases following the API described
 // in https://go.dev/security/vuln/database#api.
-func NewClient(source string, opts *Options) (_ Client, err error) {
+func NewClient(source string, opts *Options) (_ *Client, err error) {
 	source = strings.TrimRight(source, "/")
 	uri, err := url.Parse(source)
 	if err != nil {
@@ -66,7 +59,7 @@ func NewClient(source string, opts *Options) (_ Client, err error) {
 
 var errLegacyUnsupported = fmt.Errorf("the legacy vulndb schema is no longer supported; see https://go.dev/security/vuln/database#api for the new schema")
 
-func newHTTPClient(uri *url.URL, opts *Options) (Client, error) {
+func newHTTPClient(uri *url.URL, opts *Options) (*Client, error) {
 	// v1 returns true if the given source likely follows the V1 schema.
 	// This is always true if the source is "https://vuln.go.dev".
 	// Otherwise, this is determined by checking if the "index/db.json.gz"
@@ -85,10 +78,10 @@ func newHTTPClient(uri *url.URL, opts *Options) (Client, error) {
 	if !v1() {
 		return nil, errLegacyUnsupported
 	}
-	return &client{source: newHTTPSource(uri.String(), opts)}, nil
+	return &Client{source: newHTTPSource(uri.String(), opts)}, nil
 }
 
-func newLocalClient(uri *url.URL) (Client, error) {
+func newLocalClient(uri *url.URL) (*Client, error) {
 	// v1 returns true if the given source likely follows the
 	// v1 schema. This is determined by checking if the "index/db.json"
 	// endpoint is present.
@@ -107,23 +100,18 @@ func newLocalClient(uri *url.URL) (Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &client{source: fs}, nil
+	return &Client{source: fs}, nil
 }
 
-func NewInMemoryClient(entries []*osv.Entry) (Client, error) {
+func NewInMemoryClient(entries []*osv.Entry) (*Client, error) {
 	s, err := newInMemorySource(entries)
 	if err != nil {
 		return nil, err
 	}
-	return &client{source: s}, nil
+	return &Client{source: s}, nil
 }
 
-// A client for reading v1 vulnerability databases.
-type client struct {
-	source
-}
-
-func (c *client) LastModifiedTime(ctx context.Context) (_ time.Time, err error) {
+func (c *Client) LastModifiedTime(ctx context.Context) (_ time.Time, err error) {
 	derrors.Wrap(&err, "LastModifiedTime()")
 
 	b, err := c.source.get(ctx, dbEndpoint)
@@ -139,8 +127,9 @@ func (c *client) LastModifiedTime(ctx context.Context) (_ time.Time, err error) 
 	return dbMeta.Modified, nil
 }
 
-// ByModule returns the OSV entries matching the module request.
-func (c *client) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
+// ByModule returns the OSV entries with the given modulePath,
+// or (nil, nil) if there are none.
+func (c *Client) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
 	derrors.Wrap(&err, "ByModule(%v)", modulePath)
 
 	b, err := c.source.get(ctx, modulesEndpoint)
@@ -204,7 +193,7 @@ func (c *client) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entr
 
 // byID returns the OSV entry with the given ID,
 // or an error if it does not exist / cannot be unmarshaled.
-func (c *client) byID(ctx context.Context, id string) (_ *osv.Entry, err error) {
+func (c *Client) byID(ctx context.Context, id string) (_ *osv.Entry, err error) {
 	derrors.Wrap(&err, "byID(%s)", id)
 
 	b, err := c.source.get(ctx, entryEndpoint(id))
