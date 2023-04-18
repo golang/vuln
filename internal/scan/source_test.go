@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/test"
@@ -130,27 +131,25 @@ func stringToCallStack(s string) govulncheck.CallStack {
 // TestInits checks for correct positions of init functions
 // and their respective calls (see #51575).
 func TestInits(t *testing.T) {
-	testClient := &test.MockClient{
-		Ret: map[string][]*osv.Entry{
-			"golang.org/amod": []*osv.Entry{
-				{
-					ID: "A", Affected: []osv.Affected{{Module: osv.Module{Path: "golang.org/amod"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver}},
-						EcosystemSpecific: osv.EcosystemSpecific{Packages: []osv.Package{{
-							Path: "golang.org/amod/avuln", Symbols: []string{"A"}},
-						}},
+	testClient, err := client.NewInMemoryClient(
+		[]*osv.Entry{
+			{
+				ID: "A", Affected: []osv.Affected{{Module: osv.Module{Path: "golang.org/amod"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver}},
+					EcosystemSpecific: osv.EcosystemSpecific{Packages: []osv.Package{{
+						Path: "golang.org/amod/avuln", Symbols: []string{"A"}},
 					}},
-				},
+				}},
 			},
-			"golang.org/cmod": []*osv.Entry{
-				{
-					ID: "C", Affected: []osv.Affected{{Module: osv.Module{Path: "golang.org/cmod"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver}},
-						EcosystemSpecific: osv.EcosystemSpecific{Packages: []osv.Package{{
-							Path: "golang.org/cmod/cvuln", Symbols: []string{"C"}},
-						}},
+			{
+				ID: "C", Affected: []osv.Affected{{Module: osv.Module{Path: "golang.org/cmod"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver}},
+					EcosystemSpecific: osv.EcosystemSpecific{Packages: []osv.Package{{
+						Path: "golang.org/cmod/cvuln", Symbols: []string{"C"}},
 					}},
-				},
+				}},
 			},
-		},
+		})
+	if err != nil {
+		t.Fatal(err)
 	}
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{

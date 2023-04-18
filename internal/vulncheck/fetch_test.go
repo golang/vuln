@@ -10,19 +10,21 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/osv"
-	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
 func TestFetchVulnerabilities(t *testing.T) {
-	mc := &test.MockClient{
-		Ret: map[string][]*osv.Entry{
-			"example.mod/a": {{ID: "a", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/a"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}}},
-			"example.mod/b": {{ID: "b", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/b"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}}},
-			"example.mod/d": {{ID: "c", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/d"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}}},
-			"example.mod/e": {{ID: "e", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/e"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.2.0"}}}}}}}},
-		},
+	mc, err := client.NewInMemoryClient(
+		[]*osv.Entry{
+			{ID: "a", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/a"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
+			{ID: "b", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/b"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}},
+			{ID: "c", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/d"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
+			{ID: "e", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/e"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.2.0"}}}}}}},
+		})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	got, err := vulncheck.FetchVulnerabilities(context.Background(), mc, []*vulncheck.Module{

@@ -9,9 +9,9 @@ import (
 	"runtime"
 	"sort"
 
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/semver"
-	"golang.org/x/vuln/internal/test"
 )
 
 // testClient contains the following test vulnerabilities
@@ -19,9 +19,9 @@ import (
 //	golang.org/amod/avuln.{VulnData.Vuln1, vulnData.Vuln2}
 //	golang.org/bmod/bvuln.Vuln
 //	archive/zip.OpenReader
-var testClient = &test.MockClient{
-	Ret: map[string][]*osv.Entry{
-		"golang.org/amod": []*osv.Entry{
+func newTestClient() (client.Client, error) {
+	return client.NewInMemoryClient(
+		[]*osv.Entry{
 			{
 				ID: "VA",
 				Affected: []osv.Affected{{
@@ -33,8 +33,6 @@ var testClient = &test.MockClient{
 					}},
 				}},
 			},
-		},
-		"golang.org/bmod": []*osv.Entry{
 			{
 				ID: "VB",
 				Affected: []osv.Affected{{
@@ -48,8 +46,6 @@ var testClient = &test.MockClient{
 					},
 				}},
 			},
-		},
-		"stdlib": []*osv.Entry{
 			{
 				ID: "STD",
 				Affected: []osv.Affected{{
@@ -64,9 +60,7 @@ var testClient = &test.MockClient{
 						}},
 					},
 				}},
-			},
-		},
-	},
+			}})
 }
 
 func vulnsToString(vulns []*osv.Entry) string {

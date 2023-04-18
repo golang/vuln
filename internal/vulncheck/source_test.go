@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/test"
 )
@@ -120,8 +121,13 @@ func TestImports(t *testing.T) {
 		t.Fatal("failed to load x and y test packages")
 	}
 
+	c, err := newTestClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cfg := &Config{
-		Client:          testClient,
+		Client:          c,
 		ImportsOnly:     true,
 		SourceGoVersion: "go1.18",
 	}
@@ -262,8 +268,13 @@ func TestRequires(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 
+	c, err := newTestClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cfg := &Config{
-		Client:      testClient,
+		Client:      c,
 		ImportsOnly: true,
 	}
 	result, err := Source(context.Background(), Convert(pkgs), cfg)
@@ -499,8 +510,13 @@ func TestCalls(t *testing.T) {
 		t.Fatal("failed to load x and y test packages")
 	}
 
+	c, err := newTestClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cfg := &Config{
-		Client: testClient,
+		Client: c,
 	}
 	result, err := Source(context.Background(), Convert(pkgs), cfg)
 	if err != nil {
@@ -567,26 +583,26 @@ func TestFiltering(t *testing.T) {
 	})
 	defer e.Cleanup()
 
-	client := &test.MockClient{
-		Ret: map[string][]*osv.Entry{
-			"golang.org/vmod": []*osv.Entry{
-				{
-					ID: "V",
-					Affected: []osv.Affected{{
-						Module: osv.Module{Path: "golang.org/vmod"},
-						Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
-						EcosystemSpecific: osv.EcosystemSpecific{
-							Packages: []osv.Package{{
-								Path:    "golang.org/vmod/vuln",
-								Symbols: []string{"V"},
-								GOOS:    []string{"linux"},
-								GOARCH:  []string{"amd64"},
-							}},
-						},
-					}},
-				},
+	client, err := client.NewInMemoryClient(
+		[]*osv.Entry{
+			{
+				ID: "V",
+				Affected: []osv.Affected{{
+					Module: osv.Module{Path: "golang.org/vmod"},
+					Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Packages: []osv.Package{{
+							Path:    "golang.org/vmod/vuln",
+							Symbols: []string{"V"},
+							GOOS:    []string{"linux"},
+							GOARCH:  []string{"amd64"},
+						}},
+					},
+				}},
 			},
-		},
+		})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// Load x as entry package.
@@ -660,24 +676,25 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	})
 	defer e.Cleanup()
 
-	client := &test.MockClient{
-		Ret: map[string][]*osv.Entry{
-			"golang.org/vmod": []*osv.Entry{
-				{
-					ID: "V",
-					Affected: []osv.Affected{{
-						Module: osv.Module{Path: "golang.org/vmod"},
-						Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
-						EcosystemSpecific: osv.EcosystemSpecific{
-							Packages: []osv.Package{{
-								Path:    "golang.org/vmod/vuln",
-								Symbols: []string{},
-							}},
-						},
-					}},
-				},
+	client, err := client.NewInMemoryClient(
+		[]*osv.Entry{
+			{
+				ID: "V",
+				Affected: []osv.Affected{{
+					Module: osv.Module{Path: "golang.org/vmod"},
+					Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
+					EcosystemSpecific: osv.EcosystemSpecific{
+						Packages: []osv.Package{{
+							Path:    "golang.org/vmod/vuln",
+							Symbols: []string{},
+						}},
+					},
+				}},
 			},
 		},
+	)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// Load x as entry package.
@@ -755,8 +772,13 @@ func TestNoSyntheticNodes(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 
+	c, err := newTestClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cfg := &Config{
-		Client: testClient,
+		Client: c,
 	}
 	result, err := Source(context.Background(), Convert(pkgs), cfg)
 	if err != nil {
@@ -836,8 +858,13 @@ func TestRecursion(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 
+	c, err := newTestClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cfg := &Config{
-		Client: testClient,
+		Client: c,
 	}
 	result, err := Source(context.Background(), Convert(pkgs), cfg)
 	if err != nil {
@@ -892,8 +919,13 @@ func TestIssue57174(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 
+	c, err := newTestClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cfg := &Config{
-		Client: testClient,
+		Client: c,
 	}
 	_, err = Source(context.Background(), Convert(pkgs), cfg)
 	if err != nil {

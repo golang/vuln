@@ -113,9 +113,14 @@ func TestBinary(t *testing.T) {
 	}
 	defer bin.Close()
 
+	c, err := newTestClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Test imports only mode
 	cfg := &Config{
-		Client:      testClient,
+		Client:      c,
 		ImportsOnly: true,
 	}
 	res, err := Binary(context.Background(), bin, cfg)
@@ -146,7 +151,7 @@ func TestBinary(t *testing.T) {
 	}
 
 	// Test the symbols (non-import mode)
-	cfg = &Config{Client: testClient}
+	cfg = &Config{Client: c}
 	res, err = Binary(context.Background(), bin, cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -254,7 +259,12 @@ func Vuln() {
 			}
 			defer bin.Close()
 
-			cfg := &Config{Client: testClient}
+			c, err := newTestClient()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			cfg := &Config{Client: c}
 			res, err := Binary(context.Background(), bin, cfg)
 			if err != nil {
 				t.Fatal(err)
