@@ -94,31 +94,16 @@ $ govulncheck -json -mode=binary ${vuln_binary}
             "path": "github.com/tidwall/gjson",
             "callstacks": [
               {
-                "symbol": "parseObject"
-              },
-              {
-                "symbol": "queryMatches"
-              },
-              {
-                "symbol": "Result.Get"
-              },
-              {
-                "symbol": "Result.Get"
-              },
-              {
-                "symbol": "Result.Get"
-              },
-              {
                 "symbol": "Get"
               },
               {
                 "symbol": "Result.Get"
               },
               {
-                "symbol": "Result.Get"
+                "symbol": "parseObject"
               },
               {
-                "symbol": "Result.Get"
+                "symbol": "queryMatches"
               }
             ]
           }
@@ -285,12 +270,6 @@ $ govulncheck -json -mode=binary ${vuln_binary}
             "callstacks": [
               {
                 "symbol": "Result.ForEach"
-              },
-              {
-                "symbol": "unwrap"
-              },
-              {
-                "symbol": "unwrap"
               },
               {
                 "symbol": "unwrap"

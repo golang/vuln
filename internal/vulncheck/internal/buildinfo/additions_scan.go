@@ -17,6 +17,7 @@ import (
 	"io"
 	"net/url"
 	"runtime/debug"
+	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -85,7 +86,11 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 		return nil, nil, nil, err
 	}
 
-	packageSymbols := map[string][]string{}
+	type pkgSymbol struct {
+		pkg string
+		sym string
+	}
+	pkgSyms := make(map[pkgSymbol]bool)
 	for _, f := range tab.Funcs {
 		if f.Func == nil {
 			continue
@@ -94,7 +99,7 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		packageSymbols[pkgName] = append(packageSymbols[pkgName], symName)
+		pkgSyms[pkgSymbol{pkgName, symName}] = true
 
 		// Collect symbols that were inlined in f.
 		it, err := lineTab.InlineTree(&f, value, base, r)
@@ -106,8 +111,17 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 			if err != nil {
 				return nil, nil, nil, err
 			}
-			packageSymbols[pkgName] = append(packageSymbols[pkgName], symName)
+			pkgSyms[pkgSymbol{pkgName, symName}] = true
 		}
+	}
+
+	packageSymbols := make(map[string][]string)
+	for p := range pkgSyms {
+		packageSymbols[p.pkg] = append(packageSymbols[p.pkg], p.sym)
+	}
+	// Sort symbols per pkg for deterministic results.
+	for _, syms := range packageSymbols {
+		sort.Strings(syms)
 	}
 
 	return debugModulesToPackagesModules(bi.Deps), packageSymbols, bi, nil

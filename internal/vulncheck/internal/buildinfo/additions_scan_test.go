@@ -45,7 +45,7 @@ func TestExtractPackagesAndSymbols(t *testing.T) {
 					t.Fatal(err)
 				}
 				got := syms["main"]
-				want := []string{"main", "f", "g"}
+				want := []string{"f", "g", "main"}
 				if !cmp.Equal(got, want) {
 					t.Errorf("\ngot  %q\nwant %q", got, want)
 				}

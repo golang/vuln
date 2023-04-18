@@ -6,6 +6,7 @@ func main() {
 
 func f() {
 	g()
+	g()
 }
 
 func g() {
