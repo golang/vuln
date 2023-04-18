@@ -90,6 +90,9 @@ func validateConfig(cfg *config) error {
 		if len(cfg.tags) > 0 {
 			return fmt.Errorf("the -tags flag is not supported in binary mode")
 		}
+		if cfg.verbose {
+			return fmt.Errorf("the -v flag is not supported in binary mode")
+		}
 		if len(cfg.patterns) != 1 {
 			return fmt.Errorf("only 1 binary can be analyzed at a time")
 		}
@@ -97,7 +100,9 @@ func validateConfig(cfg *config) error {
 			return fmt.Errorf("%q is not a file", cfg.patterns[0])
 		}
 	}
-
+	if cfg.json && cfg.verbose {
+		return fmt.Errorf("the -v flag is not supported for JSON output")
+	}
 	return nil
 }
 
