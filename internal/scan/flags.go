@@ -36,7 +36,7 @@ func parseFlags(args []string) (*config, error) {
 	var tagsFlag buildutil.TagsFlag
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
 	flags.BoolVar(&cfg.json, "json", false, "output JSON")
-	flags.BoolVar(&cfg.verbose, "v", false, "print a full call stack for each vulnerability")
+	flags.BoolVar(&cfg.verbose, "v", false, "print additional information")
 	flags.BoolVar(&cfg.test, "test", false, "analyze test files (only valid for source mode)")
 	flags.StringVar(&cfg.dir, "C", "", "change to dir before running govulncheck")
 	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database URL")

@@ -24,23 +24,8 @@ type Cmd struct {
 	err     error
 }
 
-// Command is the equivalent of exec.Command
-//
 // Command returns the Cmd struct to execute govulncheck with the given
-// arguments. It does not invoke an external command when started; the
-// vulnerability scan happens in process.
-//
-// It sets only the Path and Args in the returned structure.
-//
-// The returned Cmd's Args field is constructed from the command name (which is
-// always unused, but present to model the exec.Command API), followed
-// by the elements of arg, so arg should not include the command name itself.
-//
-// For example, Command("echo", "hello"). Args[0] is always name, not the
-// possibly resolved Path.
-//
-// It is designed to be very easy to switch to running an external command
-// instead.
+// arguments.
 func Command(ctx context.Context, arg ...string) *Cmd {
 	return &Cmd{
 		ctx:  ctx,

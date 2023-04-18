@@ -10,9 +10,9 @@ only those that could affect the application.
 By default, govulncheck makes requests to the Go vulnerability database at
 https://vuln.go.dev. Requests to the vulnerability database contain only module
 paths, not code or other properties of your program. See
-https://vuln.go.dev/privacy.html for more. Set the GOVULNDB environment
-variable to specify a different database, which must implement the
-specification at https://go.dev/security/vuln/database.
+https://vuln.go.dev/privacy.html for more. Use the -db flag to specify a
+different database, which must implement the specification at
+https://go.dev/security/vuln/database.
 
 Govulncheck looks for vulnerabilities in Go programs using a specific build
 configuration. For analyzing source code, that configuration is the Go version
@@ -37,15 +37,14 @@ For example, it might say
 
 	main.go:[line]:[column]: mypackage.main calls golang.org/x/text/language.Parse
 
-For a more detailed call path that resembles Go panic stack traces, use the -v flag.
-
 To control which files are processed, use the -tags flag to provide a
 comma-separated list of build tags, and the -test flag to indicate that test
 files should be included.
 
-To run govulncheck on a compiled binary, pass it the path to the binary file:
+To run govulncheck on a compiled binary, pass it the path to the binary file
+with the -mode=binary flag:
 
-	$ govulncheck $HOME/go/bin/my-go-program
+	$ govulncheck -mode=binary $HOME/go/bin/my-go-program
 
 Govulncheck uses the binary's symbol information to find mentions of vulnerable
 functions. Its output omits call stacks, which require source code analysis.
@@ -58,17 +57,28 @@ is provided, regardless of the number of detected vulnerabilities.
 
 A few flags control govulncheck's behavior.
 
-The -v flag causes govulncheck to output more information about call stacks
-when run on source. It has no effect when run on a binary.
+The -C flag causes govulncheck to change its working directory to the provided
+directory before running. Any patterns or files named on the command line are
+interpreted after changing directories.
+
+The -db flag causes govulncheck to read from the specified database, which must
+implement the specification at https://go.dev/security/vuln/database. By
+default, govulncheck fetches vulnerability data from https://vuln.go.dev.
 
 The -json flag causes govulncheck to print its output as a JSON object
 corresponding to the type [golang.org/x/vuln/internal/govulncheck.Result]. The
 exit code of govulncheck is 0 when this flag is provided.
 
+The -mode flag causes govulncheck to run source or binary analysis. By default,
+govulnchecks runs source analysis.
+
 The -tags flag accepts a comma-separated list of build tags to control which
 files should be included in loaded packages for source analysis.
 
 The -test flag causes govulncheck to include test files in the source analysis.
+
+The -v flag causes govulncheck to output more information when run on source.
+It has no effect when run on a binary.
 
 # Limitations
 
