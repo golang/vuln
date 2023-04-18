@@ -78,8 +78,12 @@ func validateConfig(cfg *config) error {
 	if _, ok := supportedModes[cfg.mode]; !ok {
 		return fmt.Errorf("%q is not a valid mode", cfg.mode)
 	}
-
-	if cfg.mode == modeBinary {
+	switch cfg.mode {
+	case modeSource:
+		if len(cfg.patterns) == 1 && isFile(cfg.patterns[0]) {
+			return fmt.Errorf("%q is a file.\n\n%v", cfg.patterns[0], errNoBinaryFlag)
+		}
+	case modeBinary:
 		if cfg.test {
 			return fmt.Errorf("the -test flag is not supported in binary mode")
 		}
@@ -93,6 +97,7 @@ func validateConfig(cfg *config) error {
 			return fmt.Errorf("%q is not a file", cfg.patterns[0])
 		}
 	}
+
 	return nil
 }
 

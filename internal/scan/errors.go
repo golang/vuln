@@ -41,6 +41,14 @@ govulncheck only works with Go modules. Try navigating to your module directory.
 Otherwise, run go mod init to make your project a module.
 
 See https://go.dev/doc/modules/managing-dependencies for more information.`)
+
+	// errNoBinaryFlag indicates that govulncheck was run on a file, without
+	// the -mode=binary flag.
+	errNoBinaryFlag = errors.New(`By default, govulncheck runs source analysis on Go modules.
+
+Did you mean to run govulncheck with -mode=binary?
+
+For details, run govulncheck -h.`)
 )
 
 // packageError contains errors from loading a set of packages.

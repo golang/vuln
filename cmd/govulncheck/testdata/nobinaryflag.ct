@@ -1,0 +1,8 @@
+$ govulncheck ${vuln_binary} --> FAIL 1
+govulncheck: myfile is a file.
+
+By default, govulncheck runs source analysis on Go modules.
+
+Did you mean to run govulncheck with -mode=binary?
+
+For details, run govulncheck -h.
