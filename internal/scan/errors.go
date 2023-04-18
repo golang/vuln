@@ -37,7 +37,7 @@ govulncheck with the current Go version.`)
 	// errNoGoMod indicates that a go.mod file was not found in this module.
 	errNoGoMod = errors.New(`no go.mod file
 
-govulncheck only works Go with modules. Try navigating to your module directory.
+govulncheck only works with Go modules. Try navigating to your module directory.
 Otherwise, run go mod init to make your project a module.
 
 See https://go.dev/doc/modules/managing-dependencies for more information.`)
