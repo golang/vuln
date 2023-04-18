@@ -50,7 +50,6 @@ func TestCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Build test module binaries.
 	moduleDirs, err := filepath.Glob("testdata/modules/*")
 	if err != nil {
 		t.Fatal(err)
@@ -67,6 +66,8 @@ func TestCommand(t *testing.T) {
 		if filepath.Base(md) == "strip" {
 			continue
 		}
+
+		// Build test module binary.
 		binary, cleanup := test.GoBuild(t, md, "", false)
 		t.Cleanup(cleanup)
 		// Set an environment variable to the path to the binary, so tests
