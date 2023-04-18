@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -26,6 +27,10 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, di
 	var pkgs []*vulncheck.Package
 	pkgs, err := loadPackages(cfg, dir)
 	if err != nil {
+		// Try to provide a meaningful and actionable error message.
+		if !fileExists(filepath.Join(dir, "go.mod")) {
+			return nil, fmt.Errorf("govulncheck: %v", errNoGoMod)
+		}
 		if isGoVersionMismatchError(err) {
 			return nil, fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
 		}

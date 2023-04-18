@@ -9,7 +9,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/vuln/internal/vulncheck"
@@ -80,12 +79,7 @@ func validateConfig(cfg *config) error {
 		return fmt.Errorf("%q is not a valid mode", cfg.mode)
 	}
 
-	switch cfg.mode {
-	case modeSource:
-		if !fileExists(filepath.Join(cfg.dir, "go.mod")) {
-			return errNoGoMod
-		}
-	case modeBinary:
+	if cfg.mode == modeBinary {
 		if cfg.test {
 			return fmt.Errorf("the -test flag is not supported in binary mode")
 		}
