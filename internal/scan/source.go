@@ -43,7 +43,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, di
 	if err != nil {
 		return nil, err
 	}
-	return createSourceResult(vr, pkgs), nil
+	return createSourceResult(vr), nil
 }
 
 // loadPackages loads the packages matching patterns at dir using build tags
@@ -77,7 +77,7 @@ func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
 	return vpkgs, err
 }
 
-func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) []*govulncheck.Vuln {
+func createSourceResult(vr *vulncheck.Result) []*govulncheck.Vuln {
 	modVersions := moduleVersionMap(vr.Modules)
 	callStacks := vulncheck.CallStacks(vr)
 
