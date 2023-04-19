@@ -192,10 +192,7 @@ func (x *peExe) PCLNTab() ([]byte, uint64) {
 
 // SymbolInfo is derived from cmd/internal/objfile/macho.go:symbols.
 func (x *machoExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
-	sym, err := x.lookupSymbol(name)
-	if err != nil {
-		return 0, 0, nil, err
-	}
+	sym := x.lookupSymbol(name)
 	if sym == nil {
 		return 0, 0, nil, fmt.Errorf("no symbol %q", name)
 	}
@@ -206,22 +203,15 @@ func (x *machoExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) 
 	return sym.Value, seg.Addr, seg.ReaderAt, nil
 }
 
-func (x *machoExe) lookupSymbol(name string) (*macho.Symbol, error) {
+func (x *machoExe) lookupSymbol(name string) *macho.Symbol {
 	x.symbolsOnce.Do(func() {
 		x.symbols = make(map[string]*macho.Symbol, len(x.f.Symtab.Syms))
-		if len(x.f.Symtab.Syms) == 0 {
-			x.symbolsErr = ErrNoSymbols
-			return
-		}
 		for _, s := range x.f.Symtab.Syms {
 			s := s // make a copy to prevent aliasing
 			x.symbols[s.Name] = &s
 		}
 	})
-	if x.symbolsErr != nil {
-		return nil, x.symbolsErr
-	}
-	return x.symbols[name], nil
+	return x.symbols[name]
 }
 
 func (x *machoExe) segmentContaining(addr uint64) *macho.Segment {

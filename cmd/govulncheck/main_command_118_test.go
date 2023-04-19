@@ -138,7 +138,8 @@ func TestCommand(t *testing.T) {
 	}
 	runTestSuite(t, filepath.Join(testDir, "testdata"), govulndbURI.String(), *update)
 	if runtime.GOOS != "darwin" {
-		// TODO(https://go.dev/issue/59732): investigate why
+		// TODO(https://go.dev/issue/61051): binaries are not currently stripped on darwin.
+		// This is expected to change in Go 1.22.
 		runTestSuite(t, filepath.Join(testDir, "testdata/strip"), govulndbURI.String(), *update)
 	}
 }

@@ -98,8 +98,8 @@ Govulncheck has these limitations:
     version. For example, a standard library vulnerability that only applies for
     Go 1.18 will not be reported if the current Go version is 1.19. See
     https://go.dev/issue/54841 for updates to this limitation.
-  - For stripped binaries, govulncheck reports vulnerabilities for all modules
-    on which the binary depends due to the lack of symbol information.
+  - For binaries where the symbol information cannot be extracted, govulncheck
+    reports vulnerabilities for all modules on which the binary depends.
 
 # Feedback
 
