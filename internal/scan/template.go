@@ -233,7 +233,12 @@ func verboseCallStacks(css []govulncheck.CallStack) string {
 	i := 1
 	var b strings.Builder
 	for _, cs := range css {
-		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, cs.Symbol))
+		vf := cs.Frames[len(cs.Frames)-1]
+		symbol := vf.Function
+		if vf.Receiver != "" {
+			symbol = fmt.Sprintf("%s.%s", vf.Receiver, vf.Function)
+		}
+		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, symbol))
 		for _, e := range cs.Frames {
 			b.WriteString(fmt.Sprintf("  %s\n", FuncName(e)))
 			if pos := AbsRelShorter(Pos(e)); pos != "" {

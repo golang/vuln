@@ -36,7 +36,6 @@
             "path": "",
             "callstacks": [
               {
-                "symbol": "Vuln",
                 "frames": [
                   {
                     "function": "main"

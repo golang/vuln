@@ -45,8 +45,20 @@ func createBinaryResult(vr *vulncheck.Result) []*govulncheck.Vuln {
 	var vulns []*govulncheck.Vuln
 	for _, vv := range uniqueVulns(vr.Vulns) {
 		p := &govulncheck.Package{Path: vv.PkgPath}
-		// in binary mode, call stacks contain just the symbol data
-		p.CallStacks = []govulncheck.CallStack{{Symbol: vv.Symbol}}
+		// in binary mode, there is 1 call stack containing the vulnerable
+		// symbol.
+		f := &govulncheck.StackFrame{
+			Function: vv.Symbol,
+			Package:  vv.PkgPath,
+		}
+		parts := strings.Split(vv.Symbol, ".")
+		if len(parts) != 1 {
+			f.Function = parts[0]
+			f.Receiver = parts[1]
+		}
+		p.CallStacks = []govulncheck.CallStack{
+			{Frames: []*govulncheck.StackFrame{f}},
+		}
 		m := &govulncheck.Module{
 			Path:         vv.ModPath,
 			FoundVersion: foundVersion(vv.ModPath, modVersions),

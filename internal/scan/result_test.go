@@ -59,7 +59,7 @@ func TestVuln(t *testing.T) {
 				Packages: []*govulncheck.Package{p},
 			})
 			if symbol := sym[1]; symbol != "" {
-				cs := govulncheck.CallStack{Symbol: symbol}
+				cs := govulncheck.CallStack{Frames: []*govulncheck.StackFrame{{Function: symbol}}}
 				p.CallStacks = []govulncheck.CallStack{cs}
 			}
 		}

@@ -36,7 +36,6 @@
             "path": "",
             "callstacks": [
               {
-                "symbol": "Vuln",
                 "frames": [
                   {
                     "function": "main"
@@ -48,7 +47,6 @@
                 ]
               },
               {
-                "symbol": "VulnFoo",
                 "frames": [
                   {
                     "function": "main"
@@ -72,7 +70,6 @@
             "path": "golang.org/vmod1",
             "callstacks": [
               {
-                "symbol": "Vuln",
                 "frames": [
                   {
                     "function": "Foo"
@@ -89,7 +86,6 @@
             "path": "golang.org/vmod1",
             "callstacks": [
               {
-                "symbol": "VulnFoo",
                 "frames": [
                   {
                     "function": "Bar"

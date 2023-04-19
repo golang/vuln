@@ -95,7 +95,6 @@ $ govulncheck -C ${moddir}/vuln -json .
             "path": "github.com/tidwall/gjson",
             "callstacks": [
               {
-                "symbol": "Result.Get",
                 "frames": [
                   {
                     "package": "golang.org/vuln",
@@ -196,7 +195,6 @@ $ govulncheck -C ${moddir}/vuln -json .
             "path": "golang.org/x/text/language",
             "callstacks": [
               {
-                "symbol": "Parse",
                 "frames": [
                   {
                     "package": "golang.org/vuln",

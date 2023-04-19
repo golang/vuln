@@ -103,12 +103,6 @@ type Package struct {
 // CallStacks contains a representative call stack for a vulnerable
 // symbol.
 type CallStack struct {
-	// Symbol is the name of the detected vulnerable function
-	// or method.
-	//
-	// This follows the naming convention in the OSV report.
-	Symbol string `json:"symbol"`
-
 	// Frames contains an entry for each stack in the call stack.
 	//
 	// Frames are sorted starting from the entry point to the

@@ -87,7 +87,6 @@ $ govulncheck -json -C ${moddir}/multientry .
             "path": "golang.org/x/text/language",
             "callstacks": [
               {
-                "symbol": "MustParse",
                 "frames": [
                   {
                     "package": "golang.org/multientry",
@@ -126,7 +125,6 @@ $ govulncheck -json -C ${moddir}/multientry .
                 ]
               },
               {
-                "symbol": "Parse",
                 "frames": [
                   {
                     "package": "golang.org/multientry",

@@ -116,7 +116,6 @@ func createSourceResult(vr *vulncheck.Result, pkgs []*vulncheck.Package) []*govu
 			if vcs != nil {
 				cs := govulncheck.CallStack{
 					Frames: stackFramesfromEntries(vcs),
-					Symbol: vv.Symbol,
 				}
 				p.CallStacks = []govulncheck.CallStack{cs}
 			}
