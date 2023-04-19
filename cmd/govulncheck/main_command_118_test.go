@@ -160,6 +160,7 @@ var (
 	govulncheckBinaryErrorRegexp = regexp.MustCompile(`govulncheck: (.*) is a file`)
 	govulncheckJSONRegexp        = regexp.MustCompile(`"govulncheck@v(.*)",`)
 	vulndbRegexp                 = regexp.MustCompile(`file:///(.*)/testdata/vulndb`)
+	gorootRegexp                 = regexp.MustCompile(`package (.*) is not in GOROOT (.*)`)
 	lastModifiedRegexp           = regexp.MustCompile(`modified (.*)\)`)
 )
 
@@ -189,5 +190,6 @@ func filterEnvironmentData(data []byte) []byte {
 	data = govulncheckJSONRegexp.ReplaceAll(data, []byte("govulncheck@v0.0.0-00000000000-20000101010101"))
 	data = govulncheckBinaryErrorRegexp.ReplaceAll(data, []byte("govulncheck: myfile is a file"))
 	data = vulndbRegexp.ReplaceAll(data, []byte("testdata/vulndb"))
+	data = gorootRegexp.ReplaceAll(data, []byte("package foo is not in GOROOT (/tmp/foo)"))
 	return lastModifiedRegexp.ReplaceAll(data, []byte("modified 01 Jan 21 00:00 UTC)"))
 }

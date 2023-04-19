@@ -58,10 +58,12 @@ type packageError struct {
 
 func (e *packageError) Error() string {
 	var b strings.Builder
-	fmt.Fprintln(&b, "Packages contain errors:")
+	fmt.Fprintln(&b, "\nThere are errors with the provided package patterns:")
+	fmt.Fprintln(&b, "")
 	for _, e := range e.Errors {
 		fmt.Fprintln(&b, e)
 	}
+	fmt.Fprintln(&b, "\nFor details on package patterns, see https://pkg.go.dev/cmd/go#hdr-Package_lists_and_patterns.")
 	return b.String()
 }
 

@@ -1,0 +1,11 @@
+$ govulncheck -C ${moddir}/vuln blah --> FAIL 1
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with
+vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
+
+There are errors with the provided package patterns:
+
+-: package foo is not in GOROOT (/tmp/foo)
+
+For details on package patterns, see https://pkg.go.dev/cmd/go#hdr-Package_lists_and_patterns.
