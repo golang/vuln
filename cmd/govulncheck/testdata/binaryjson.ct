@@ -98,12 +98,6 @@ $ govulncheck -json -mode=binary ${vuln_binary}
               },
               {
                 "symbol": "Result.Get"
-              },
-              {
-                "symbol": "parseObject"
-              },
-              {
-                "symbol": "queryMatches"
               }
             ]
           }
@@ -270,9 +264,6 @@ $ govulncheck -json -mode=binary ${vuln_binary}
             "callstacks": [
               {
                 "symbol": "Result.ForEach"
-              },
-              {
-                "symbol": "unwrap"
               }
             ]
           }

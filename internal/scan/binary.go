@@ -10,6 +10,8 @@ package scan
 import (
 	"context"
 	"os"
+	"strings"
+	"unicode"
 
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/vulncheck"
@@ -41,7 +43,7 @@ func createBinaryResult(vr *vulncheck.Result) []*govulncheck.Vuln {
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
 	// results later.
 	var vulns []*govulncheck.Vuln
-	for _, vv := range vr.Vulns {
+	for _, vv := range uniqueVulns(vr.Vulns) {
 		p := &govulncheck.Package{Path: vv.PkgPath}
 		// in binary mode, call stacks contain just the symbol data
 		p.CallStacks = []govulncheck.CallStack{{Symbol: vv.Symbol}}
@@ -59,4 +61,43 @@ func createBinaryResult(vr *vulncheck.Result) []*govulncheck.Vuln {
 	vulns = merge(vulns)
 	sortResult(vulns)
 	return vulns
+}
+
+// uniqueVulns does for binary mode what uniqueCallStack does for source mode.
+// It tries not to report redundant symbols. Since there are no call stacks in
+// binary mode, the following approximate approach is used. Do not report unexported
+// symbols for a <vulnID, pkg, module> triple if there are some exported symbols.
+// Otherwise, report all unexported symbols to avoid not reporting anything.
+func uniqueVulns(vulns []*vulncheck.Vuln) []*vulncheck.Vuln {
+	type key struct {
+		id  string
+		pkg string
+		mod string
+	}
+	hasExported := make(map[key]bool)
+	for _, v := range vulns {
+		if isExported(v.Symbol) {
+			k := key{id: v.OSV.ID, pkg: v.PkgPath, mod: v.ModPath}
+			hasExported[k] = true
+		}
+	}
+
+	var uniques []*vulncheck.Vuln
+	for _, v := range vulns {
+		k := key{id: v.OSV.ID, pkg: v.PkgPath, mod: v.ModPath}
+		if isExported(v.Symbol) || !hasExported[k] {
+			uniques = append(uniques, v)
+		}
+	}
+	return uniques
+}
+
+// isExported checks if the symbol is exported. Assumes that the
+// symbol is of the form "identifier" or "identifier1.identifier2".
+func isExported(symbol string) bool {
+	parts := strings.Split(symbol, ".")
+	if len(parts) == 1 {
+		return unicode.IsUpper(rune(symbol[0]))
+	}
+	return unicode.IsUpper(rune(parts[1][0]))
 }
