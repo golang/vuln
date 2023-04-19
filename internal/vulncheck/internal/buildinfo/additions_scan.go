@@ -54,7 +54,7 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 
 	funcSymName := gosym.FuncSymName(bi.GoVersion)
 	if funcSymName == "" {
-		return nil, nil, nil, fmt.Errorf("binary built using unsupported Go Version: %v", bi.GoVersion)
+		return nil, nil, nil, fmt.Errorf("binary built using unsupported Go version: %q", bi.GoVersion)
 	}
 
 	x, err := openExe(bin)

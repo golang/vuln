@@ -9,6 +9,7 @@ package scan
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"unicode"
@@ -32,7 +33,7 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config) ([
 	}
 	vr, err := binary(ctx, exe, &cfg.Config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("govulncheck: %v", err)
 	}
 	return createBinaryResult(vr), nil
 }
