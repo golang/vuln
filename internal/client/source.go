@@ -16,7 +16,6 @@ import (
 	"os"
 	"sort"
 
-	"golang.org/x/mod/semver"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/osv"
 	isem "golang.org/x/vuln/internal/semver"
@@ -182,17 +181,11 @@ func latestFixedVersion(ranges []osv.Range) string {
 		if r.Type == "SEMVER" {
 			for _, e := range r.Events {
 				fixed := e.Fixed
-				if fixed != "" && less(latestFixed, fixed) {
+				if fixed != "" && isem.Less(latestFixed, fixed) {
 					latestFixed = fixed
 				}
 			}
 		}
 	}
 	return latestFixed
-}
-
-// less returns whether v1 < v2, where v1 and v2 are
-// semver versions with either a "v", "go" or no prefix.
-func less(v1, v2 string) bool {
-	return semver.Compare(isem.CanonicalizeSemverPrefix(v1), isem.CanonicalizeSemverPrefix(v2)) < 0
 }

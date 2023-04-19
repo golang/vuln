@@ -2,17 +2,15 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package vulncheck
+package semver
 
 import (
 	"sort"
 
-	"golang.org/x/mod/semver"
 	"golang.org/x/vuln/internal/osv"
-	isem "golang.org/x/vuln/internal/semver"
 )
 
-func affectsSemver(a []osv.Range, v string) bool {
+func Affects(a []osv.Range, v string) bool {
 	if len(a) == 0 {
 		// No ranges implies all versions are affected
 		return true
@@ -54,7 +52,7 @@ func containsSemver(ar osv.Range, v string) bool {
 
 	// Strip and then add the semver prefix so we can support bare versions,
 	// versions prefixed with 'v', and versions prefixed with 'go'.
-	v = isem.CanonicalizeSemverPrefix(v)
+	v = canonicalizeSemverPrefix(v)
 
 	// Sort events by semver versions. Event for beginning
 	// of time, if present, always comes first.
@@ -79,15 +77,15 @@ func containsSemver(ar osv.Range, v string) bool {
 			v2 = e2.Fixed
 		}
 
-		return semver.Compare(isem.CanonicalizeSemverPrefix(v1), isem.CanonicalizeSemverPrefix(v2)) < 0
+		return Less(v1, v2)
 	})
 
 	var affected bool
 	for _, e := range ar.Events {
 		if !affected && e.Introduced != "" {
-			affected = e.Introduced == "0" || semver.Compare(v, isem.CanonicalizeSemverPrefix(e.Introduced)) >= 0
+			affected = e.Introduced == "0" || !Less(v, e.Introduced)
 		} else if affected && e.Fixed != "" {
-			affected = semver.Compare(v, isem.CanonicalizeSemverPrefix(e.Fixed)) < 0
+			affected = Less(v, e.Fixed)
 		}
 	}
 

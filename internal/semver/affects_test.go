@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package vulncheck
+package semver
 
 import (
 	"testing"
@@ -129,7 +129,7 @@ func TestAffectsSemver(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := affectsSemver(c.affects, c.version)
+		got := Affects(c.affects, c.version)
 		if c.want != got {
 			t.Errorf("%#v.AffectsSemver(%s): want %t, got %t", c.affects, c.version, c.want, got)
 		}

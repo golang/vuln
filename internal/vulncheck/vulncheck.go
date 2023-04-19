@@ -15,6 +15,7 @@ import (
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/osv"
+	"golang.org/x/vuln/internal/semver"
 )
 
 // Config is used for configuring vulncheck algorithms.
@@ -352,7 +353,7 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 					// and so we don't want to spam users with potential false alarms.
 					continue
 				}
-				if !affectsSemver(a.Ranges, modVersion) {
+				if !semver.Affects(a.Ranges, modVersion) {
 					continue
 				}
 				var filteredImports []osv.Package

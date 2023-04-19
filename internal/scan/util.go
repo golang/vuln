@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"golang.org/x/mod/semver"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
@@ -127,8 +126,7 @@ func latestFixed(as []osv.Affected) string {
 		for _, r := range a.Ranges {
 			if r.Type == osv.RangeTypeSemver {
 				for _, e := range r.Events {
-					if e.Fixed != "" && (v == "" ||
-						semver.Compare(isem.CanonicalizeSemverPrefix(e.Fixed), isem.CanonicalizeSemverPrefix(v)) > 0) {
+					if e.Fixed != "" && (v == "" || isem.Less(v, e.Fixed)) {
 						v = e.Fixed
 					}
 				}

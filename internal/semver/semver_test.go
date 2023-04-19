@@ -17,7 +17,7 @@ func TestCanonicalize(t *testing.T) {
 		{"1.2.3", "v1.2.3"},
 		{"go1.2.3", "v1.2.3"},
 	} {
-		got := CanonicalizeSemverPrefix(test.v)
+		got := canonicalizeSemverPrefix(test.v)
 		if got != test.want {
 			t.Errorf("want %s; got %s", test.want, got)
 		}
