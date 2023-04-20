@@ -32,7 +32,8 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 
 	cmods := convertModules(mods)
 	// set the stdlib version for detection of vulns in the standard library
-	// TODO(#53740): what if Go version is not in semver format?
+	// TODO(https://go.dev/issue/53740): what if Go version is not in semver
+	// format?
 	stdlibModule.Version = semver.GoTagToSemver(bi.GoVersion)
 	// Add "stdlib" module.
 	cmods = append(cmods, stdlibModule)

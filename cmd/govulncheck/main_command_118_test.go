@@ -84,7 +84,7 @@ func TestCommand(t *testing.T) {
 
 func TestCommandStrip(t *testing.T) {
 	if runtime.GOOS == "darwin" {
-		// TODO: investigate why.
+		// TODO(https://go.dev/issue/59732): investigate why
 		t.Skip("binaries are not fully stripped on darwin")
 	}
 	testDir, err := os.Getwd()

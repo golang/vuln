@@ -73,8 +73,9 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 
 	pclntab, textOffset := x.PCLNTab()
 	if pclntab == nil {
-		// TODO(roland): if we have build information, but not PCLN table, we should be able to
-		// fall back to much higher granularity vulnerability checking.
+		// TODO(https://go.dev/issue/59731): if we have build information, but
+		// not PCLN table, we should be able to fall back to much higher
+		// granularity vulnerability checking.
 		return nil, nil, nil, errors.New("unable to load the PCLN table")
 	}
 	lineTab := gosym.NewLineTable(pclntab, textOffset)

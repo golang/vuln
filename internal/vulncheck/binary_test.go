@@ -27,7 +27,6 @@ import (
 
 // TODO: we build binary programatically, so what if the underlying tool chain changes?
 func TestBinary(t *testing.T) {
-	// TODO(#52160): investigate why Binary does not process plan9 binaries
 	if !hasGoBuild() || runtime.GOOS == "plan9" {
 		t.Skip("fails on android and plan9")
 	}
@@ -232,7 +231,7 @@ func Vuln() {
 		gl   string
 		want []*Vuln
 	}{
-		{"const", nil}, // TODO(#58509): change expectations once issue is addressed
+		{"const", nil}, // TODO(https://go.dev/issue/58509): change expectations once issue is addressed
 		{"var", []*Vuln{{Symbol: "Vuln", PkgPath: "golang.org/bmod/bvuln", ModPath: "golang.org/bmod"}}},
 	} {
 		tc := tc

@@ -4,7 +4,7 @@
 
 // Code copied from
 // https://github.com/golang/go/blob/2ebe77a2fda1ee9ff6fd9a3e08933ad1ebaea039/src/cmd/go/internal/web/url.go
-// TODO(go.dev/issue/32456): if accepted, use the new API.
+// TODO(https://go.dev/issue/32456): if accepted, use the new API.
 
 package web
 

@@ -33,7 +33,6 @@ func HandleJSON(from io.Reader, to Handler) error {
 			return err
 		}
 		// dispatch the message
-		//TODO: should we verify only one field was set?
 		var err error
 		if msg.Config != nil {
 			err = to.Config(msg.Config)

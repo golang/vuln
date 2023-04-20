@@ -29,7 +29,7 @@ ensure_go_binary() {
 # projects.
 verify_header() {
   if [[ "$*" != "" ]]; then
-    # TODO: investigate how to fix error
+    # TODO(https://go.dev/issue/59733): investigate how to fix error
     # shellcheck disable=SC2048
     for FILE in $*
     do

@@ -33,7 +33,7 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 
 	// buildSSA builds a whole program that assumes all packages use the same FileSet.
 	// Check all packages in pkgs are using the same FileSet.
-	// TODO(hyangah): Alternative is to take FileSet out of Package and
+	// TODO(https://go.dev/issue/59729): take FileSet out of Package and
 	// let Source take a single FileSet. That will make the enforcement
 	// clearer from the API level.
 	var fset *token.FileSet
@@ -48,7 +48,7 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 	}
 
 	// set the stdlib version for detection of vulns in the standard library
-	// TODO(#53740): what if Go version is not in semver format?
+	// TODO(https://go.dev/issue/53740): what if Go version is not in semver format?
 	if cfg.SourceGoVersion != "" {
 		stdlibModule.Version = semver.GoTagToSemver(cfg.SourceGoVersion)
 	} else {

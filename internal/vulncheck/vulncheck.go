@@ -350,7 +350,6 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 				if modVersion == "" {
 					// Module version of "" means the module version is not available,
 					// and so we don't want to spam users with potential false alarms.
-					// TODO: issue warning for "" cases above?
 					continue
 				}
 				if !affectsSemver(a.Ranges, modVersion) {

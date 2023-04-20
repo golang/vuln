@@ -117,9 +117,8 @@ func scannerVersion(bi *debug.BuildInfo) string {
 		buf.WriteString(path.Base(bi.Path))
 		buf.WriteString("@")
 	}
-	// TODO: we manually change this after every
-	// minor revision? bi.Main.Version seems not
-	// to work (see #29228).
+	// TODO(https://go.dev/issue/29228): we manually change this after every
+	// minor revision? bi.Main.Version does not seem to work.
 	buf.WriteString("v0.0.0")
 	if revision != "" {
 		buf.WriteString("-")
