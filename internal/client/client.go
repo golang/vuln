@@ -24,6 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/osv"
+	isem "golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/internal/web"
 )
 
@@ -127,10 +128,27 @@ func (c *Client) LastModifiedTime(ctx context.Context) (_ time.Time, err error) 
 	return dbMeta.Modified, nil
 }
 
-// ByModule returns the OSV entries with the given modulePath,
+type ModuleRequest struct {
+	// The module path to filter on.
+	// This must be set (if empty, ByModule errors).
+	Path string
+	// (Optional) If set, only return vulnerabilities affected
+	// at this version.
+	Version string
+}
+
+// ByModule returns the OSV entries matching the ModuleRequest,
 // or (nil, nil) if there are none.
-func (c *Client) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entry, err error) {
-	derrors.Wrap(&err, "ByModule(%v)", modulePath)
+func (c *Client) ByModule(ctx context.Context, req ModuleRequest) (_ []*osv.Entry, err error) {
+	derrors.Wrap(&err, "ByModule(%v)", req)
+
+	if req.Path == "" {
+		return nil, fmt.Errorf("module path must be set")
+	}
+
+	if req.Version != "" && !isem.Valid(req.Version) {
+		return nil, fmt.Errorf("version %s is not valid semver", req.Version)
+	}
 
 	b, err := c.source.get(ctx, modulesEndpoint)
 	if err != nil {
@@ -149,9 +167,11 @@ func (c *Client) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entr
 		if err != nil {
 			return nil, err
 		}
-		if m.Path == modulePath {
+		if m.Path == req.Path {
 			for _, v := range m.Vulns {
-				ids = append(ids, v.ID)
+				if v.Fixed == "" || isem.Less(req.Version, v.Fixed) {
+					ids = append(ids, v.ID)
+				}
 			}
 			// We found the requested module, so skip the rest.
 			break
@@ -162,31 +182,58 @@ func (c *Client) ByModule(ctx context.Context, modulePath string) (_ []*osv.Entr
 		return nil, nil
 	}
 
-	// Fetch all the entries in parallel.
+	entries, err := c.byIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter by version.
+	if req.Version != "" {
+		affected := func(e *osv.Entry) bool {
+			for _, a := range e.Affected {
+				if a.Module.Path == req.Path && isem.Affects(a.Ranges, req.Version) {
+					return true
+				}
+			}
+			return false
+		}
+
+		var filtered []*osv.Entry
+		for _, entry := range entries {
+			if affected(entry) {
+				filtered = append(filtered, entry)
+			}
+		}
+		if len(filtered) == 0 {
+			return nil, nil
+		}
+	}
+
+	sort.SliceStable(entries, func(i, j int) bool {
+		return entries[i].ID < entries[j].ID
+	})
+
+	return entries, nil
+}
+
+func (c *Client) byIDs(ctx context.Context, ids []string) (_ []*osv.Entry, err error) {
+	entries := make([]*osv.Entry, len(ids))
 	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(10)
-	entries := make([]*osv.Entry, len(ids))
 	for i, id := range ids {
-		i := i
-		id := id
+		i, id := i, id
 		g.Go(func() error {
-			entry, err := c.byID(gctx, id)
+			e, err := c.byID(gctx, id)
 			if err != nil {
 				return err
 			}
-
-			entries[i] = entry
-
+			entries[i] = e
 			return nil
 		})
 	}
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
-
-	sort.SliceStable(entries, func(i, j int) bool {
-		return entries[i].ID < entries[j].ID
-	})
 
 	return entries, nil
 }

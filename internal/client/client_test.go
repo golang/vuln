@@ -155,33 +155,81 @@ func TestLastModifiedTime(t *testing.T) {
 
 func TestByModule(t *testing.T) {
 	tcs := []struct {
-		module  string
+		module  ModuleRequest
 		wantIDs []string
 	}{
 		{
-			module:  "github.com/beego/beego",
+			module: ModuleRequest{
+				Path: "github.com/beego/beego",
+			},
 			wantIDs: []string{"GO-2022-0463", "GO-2022-0569", "GO-2022-0572"},
 		},
 		{
-			module:  "stdlib",
+			module: ModuleRequest{
+				Path: "github.com/beego/beego",
+				// "GO-2022-0463" not affected at this version.
+				Version: "1.12.10",
+			},
+			wantIDs: []string{"GO-2022-0569", "GO-2022-0572"},
+		},
+		{
+			module: ModuleRequest{
+				Path: "stdlib",
+			},
 			wantIDs: []string{"GO-2021-0159", "GO-2021-0240", "GO-2021-0264", "GO-2022-0229", "GO-2022-0273"},
 		},
 		{
-			module:  "toolchain",
+			module: ModuleRequest{
+				Path:    "stdlib",
+				Version: "go1.17",
+			},
+			wantIDs: []string{"GO-2021-0264", "GO-2022-0273"},
+		},
+		{
+			module: ModuleRequest{
+				Path: "toolchain",
+			},
 			wantIDs: []string{"GO-2021-0068", "GO-2022-0475", "GO-2022-0476"},
 		},
 		{
-			module:  "golang.org/x/crypto",
+			module: ModuleRequest{
+				Path: "toolchain",
+				// All vulns affected at this version.
+				Version: "1.14.13",
+			},
+			wantIDs: []string{"GO-2021-0068", "GO-2022-0475", "GO-2022-0476"},
+		},
+		{
+			module: ModuleRequest{
+				Path: "golang.org/x/crypto",
+			},
 			wantIDs: []string{"GO-2022-0229"},
 		},
 		{
-			module:  "does.not/exist",
+			module: ModuleRequest{
+				Path: "golang.org/x/crypto",
+				// Vuln was fixed at exactly this version.
+				Version: "1.13.7",
+			},
+			wantIDs: nil,
+		},
+		{
+			module: ModuleRequest{
+				Path: "does.not/exist",
+			},
+			wantIDs: nil,
+		},
+		{
+			module: ModuleRequest{
+				Path:    "does.not/exist",
+				Version: "1.0.0",
+			},
 			wantIDs: nil,
 		},
 	}
 
 	for _, tc := range tcs {
-		t.Run(tc.module, func(t *testing.T) {
+		t.Run(tc.module.Path+"@"+tc.module.Version, func(t *testing.T) {
 			test := func(t *testing.T, c *Client) {
 				got, err := c.ByModule(context.Background(), tc.module)
 				if err != nil {

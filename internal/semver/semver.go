@@ -45,6 +45,12 @@ func Less(v1, v2 string) bool {
 	return semver.Compare(canonicalizeSemverPrefix(v1), canonicalizeSemverPrefix(v2)) < 0
 }
 
+// Valid returns whether v is valid semver, allowing
+// either a "v", "go" or no prefix.
+func Valid(v string) bool {
+	return semver.IsValid(canonicalizeSemverPrefix(v))
+}
+
 var (
 	// Regexp for matching go tags. The groups are:
 	// 1  the major.minor version

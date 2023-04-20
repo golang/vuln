@@ -11,14 +11,14 @@ import (
 )
 
 // FetchVulnerabilities fetches vulnerabilities that affect the supplied modules.
-func FetchVulnerabilities(ctx context.Context, client *client.Client, modules []*Module) ([]*ModVulns, error) {
+func FetchVulnerabilities(ctx context.Context, c *client.Client, modules []*Module) ([]*ModVulns, error) {
 	var mv []*ModVulns
 	for _, mod := range modules {
 		modPath := mod.Path
 		if mod.Replace != nil {
 			modPath = mod.Replace.Path
 		}
-		vulns, err := client.ByModule(ctx, modPath)
+		vulns, err := c.ByModule(ctx, client.ModuleRequest{Path: modPath})
 		if err != nil {
 			return nil, err
 		}
