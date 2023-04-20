@@ -137,9 +137,51 @@ type ModuleRequest struct {
 	Version string
 }
 
-// ByModule returns the OSV entries matching the ModuleRequest,
+type ModuleResponse struct {
+	Path    string
+	Version string
+	Entries []*osv.Entry
+}
+
+// ByModules returns a list of responses
+// containing the OSV entries corresponding to each request.
+//
+// The order of the requests is preserved, and each request has
+// a response even if there are no entries (in which case the Entries
+// field is nil).
+func (c *Client) ByModules(ctx context.Context, reqs []*ModuleRequest) (_ []*ModuleResponse, err error) {
+	derrors.Wrap(&err, "ByModules(%v)", reqs)
+	// TODO(https://go.dev/issue/59745): Optimize this so that we only
+	// access the modules index once. Right now we re-grab the modules
+	// index with every call to byModule.
+	resps := make([]*ModuleResponse, len(reqs))
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(10)
+	for i, req := range reqs {
+		i, req := i, req
+		g.Go(func() error {
+			entries, err := c.byModule(gctx, req)
+			if err != nil {
+				return err
+			}
+			resps[i] = &ModuleResponse{
+				Path:    req.Path,
+				Version: req.Version,
+				Entries: entries,
+			}
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return resps, nil
+}
+
+// byModule returns the OSV entries matching the ModuleRequest,
 // or (nil, nil) if there are none.
-func (c *Client) ByModule(ctx context.Context, req ModuleRequest) (_ []*osv.Entry, err error) {
+func (c *Client) byModule(ctx context.Context, req *ModuleRequest) (_ []*osv.Entry, err error) {
 	derrors.Wrap(&err, "ByModule(%v)", req)
 
 	if req.Path == "" {
