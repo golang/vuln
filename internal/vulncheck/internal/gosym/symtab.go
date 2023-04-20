@@ -327,7 +327,7 @@ func walksymtab(data []byte, fn func(sym) error) error {
 			s.gotype = uint64(order.Uint32(p[:4]))
 			p = p[4:]
 		}
-		fn(s)
+		_ = fn(s)
 	}
 	return nil
 }

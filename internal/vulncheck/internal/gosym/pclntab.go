@@ -204,7 +204,7 @@ func (t *LineTable) parsePclnTab() {
 	if !disableRecover {
 		defer func() {
 			// If we panic parsing, assume it's a Go 1.1 pclntab.
-			recover()
+			_ = recover()
 		}()
 	}
 
@@ -297,7 +297,7 @@ func (t *LineTable) go12Funcs() []Func {
 	// Assume it is malformed and return nil on error.
 	if !disableRecover {
 		defer func() {
-			recover()
+			_ = recover()
 		}()
 	}
 
@@ -689,7 +689,7 @@ func (t *LineTable) initFileMap() {
 func (t *LineTable) go12MapFiles(m map[string]*Obj, obj *Obj) {
 	if !disableRecover {
 		defer func() {
-			recover()
+			_ = recover()
 		}()
 	}
 

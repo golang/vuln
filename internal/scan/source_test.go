@@ -219,7 +219,7 @@ func TestInits(t *testing.T) {
 	updateInitPositions(cs, vpkgs)
 
 	want := map[string][][]string{
-		"A": [][]string{{
+		"A": {{
 			// Entry init's position is the package statement.
 			// It calls avuln.init at avuln import statement.
 			"N:golang.org/entry/x.init	F:x.go:2:4	C:x.go:5:5",
@@ -229,7 +229,7 @@ func TestInits(t *testing.T) {
 			"N:golang.org/amod/avuln.init#1	F:avuln.go:4:9	C:avuln.go:5:6",
 			"N:golang.org/amod/avuln.A	F:avuln.go:8:9	C:",
 		}},
-		"C": [][]string{{
+		"C": {{
 			"N:golang.org/entry/x.init	F:x.go:2:4	C:x.go:6:5",
 			"N:golang.org/bmod/b.init	F:b.go:2:4	C:b.go:4:11",
 			"N:golang.org/cmod/cvuln.init	F:cvuln.go:2:4	C:cvuln.go:4:17",

@@ -95,10 +95,10 @@ func TestCallStacks(t *testing.T) {
 	//     vuln1    vuln2
 	e1 := &FuncNode{ID: 1, Name: "entry1"}
 	e2 := &FuncNode{ID: 2, Name: "entry2"}
-	i1 := &FuncNode{ID: 3, Name: "interm1", PkgPath: "net/http", CallSites: []*CallSite{&CallSite{Parent: 1, Resolved: true}}}
-	i2 := &FuncNode{ID: 4, Name: "interm2", CallSites: []*CallSite{&CallSite{Parent: 2, Resolved: true}, &CallSite{Parent: 3, Resolved: true}}}
-	v1 := &FuncNode{ID: 5, Name: "vuln1", CallSites: []*CallSite{&CallSite{Parent: 3, Resolved: true}, &CallSite{Parent: 4, Resolved: false}}}
-	v2 := &FuncNode{ID: 6, Name: "vuln2", CallSites: []*CallSite{&CallSite{Parent: 4, Resolved: false}}}
+	i1 := &FuncNode{ID: 3, Name: "interm1", PkgPath: "net/http", CallSites: []*CallSite{{Parent: 1, Resolved: true}}}
+	i2 := &FuncNode{ID: 4, Name: "interm2", CallSites: []*CallSite{{Parent: 2, Resolved: true}, {Parent: 3, Resolved: true}}}
+	v1 := &FuncNode{ID: 5, Name: "vuln1", CallSites: []*CallSite{{Parent: 3, Resolved: true}, {Parent: 4, Resolved: false}}}
+	v2 := &FuncNode{ID: 6, Name: "vuln2", CallSites: []*CallSite{{Parent: 4, Resolved: false}}}
 
 	cg := &CallGraph{
 		Functions: map[int]*FuncNode{1: e1, 2: e2, 3: i1, 4: i2, 5: v1, 6: v2},
