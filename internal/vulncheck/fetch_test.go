@@ -6,7 +6,6 @@ package vulncheck_test
 
 import (
 	"context"
-	"log"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -16,13 +15,12 @@ import (
 )
 
 func TestFetchVulnerabilities(t *testing.T) {
-	mc, err := client.NewInMemoryClient(
-		[]*osv.Entry{
-			{ID: "a", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/a"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
-			{ID: "b", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/b"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}},
-			{ID: "c", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/d"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
-			{ID: "e", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/e"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.2.0"}}}}}}},
-		})
+	a := &osv.Entry{ID: "a", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/a"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}}
+	b := &osv.Entry{ID: "b", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/b"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}}
+	c := &osv.Entry{ID: "c", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/d"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}}
+	d := &osv.Entry{ID: "e", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/e"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.2.0"}}}}}}}
+
+	mc, err := client.NewInMemoryClient([]*osv.Entry{a, b, c, d})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,24 +38,18 @@ func TestFetchVulnerabilities(t *testing.T) {
 	want := []*vulncheck.ModVulns{
 		{
 			Module: &vulncheck.Module{Path: "example.mod/a", Version: "v1.0.0"},
-			Vulns: []*osv.Entry{
-				{ID: "a", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/a"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
-			},
+			Vulns:  []*osv.Entry{a},
 		},
 		{
 			Module: &vulncheck.Module{Path: "example.mod/b", Version: "v1.0.4"},
-			Vulns: []*osv.Entry{
-				{ID: "b", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/b"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "1.1.1"}}}}}}},
-			},
+			Vulns:  []*osv.Entry{b},
 		},
 		{
 			Module: &vulncheck.Module{Path: "example.mod/c", Replace: &vulncheck.Module{Path: "example.mod/d", Version: "v1.0.0"}, Version: "v2.0.0"},
-			Vulns: []*osv.Entry{
-				{ID: "c", Affected: []osv.Affected{{Module: osv.Module{Path: "example.mod/d"}, Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Fixed: "2.0.0"}}}}}}},
-			},
+			Vulns:  []*osv.Entry{c},
 		},
 	}
 	if diff := cmp.Diff(got, want); diff != "" {
-		log.Fatalf("mismatch (-want, +got):\n%s", diff)
+		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
