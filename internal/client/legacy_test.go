@@ -12,10 +12,11 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/vuln/internal/testenv"
 )
 
 var (
@@ -24,9 +25,8 @@ var (
 )
 
 func TestByModuleLegacy(t *testing.T) {
-	if runtime.GOOS == "js" {
-		t.Skip("skipping test: no network on js")
-	}
+	testenv.NeedsLocalhostNet(t)
+
 	ctx := context.Background()
 	// Create a local http database.
 	srv := newTestServer(testLegacyVulndb)
@@ -92,9 +92,8 @@ func TestByModuleLegacy(t *testing.T) {
 // module has known vulnerabilities. Otherwise, we might send
 // unknown private module information to the db.
 func TestMustUseIndex(t *testing.T) {
-	if runtime.GOOS == "js" {
-		t.Skip("skipping test: no network on js")
-	}
+	testenv.NeedsLocalhostNet(t)
+
 	ctx := context.Background()
 	// Create a local http database.
 	srv := newTestServer(testLegacyVulndb)
@@ -132,9 +131,8 @@ func TestMustUseIndex(t *testing.T) {
 }
 
 func TestSpecialPaths(t *testing.T) {
-	if runtime.GOOS == "js" {
-		t.Skip("skipping test: no network on js")
-	}
+	testenv.NeedsLocalhostNet(t)
+
 	ctx := context.Background()
 	srv := newTestServer(testLegacyVulndb)
 	defer srv.Close()
@@ -192,9 +190,7 @@ func TestCorrectFetchesNoCache(t *testing.T) {
 }
 
 func TestLastModifiedTimeLegacy(t *testing.T) {
-	if runtime.GOOS == "js" {
-		t.Skip("skipping test: no network on js")
-	}
+	testenv.NeedsLocalhostNet(t)
 
 	srv := newTestServer(testLegacyVulndb)
 	defer srv.Close()

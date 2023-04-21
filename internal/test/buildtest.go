@@ -12,6 +12,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"golang.org/x/vuln/internal/testenv"
 )
 
 var unsupportedGoosGoarch = map[string]bool{
@@ -24,10 +26,7 @@ var unsupportedGoosGoarch = map[string]bool{
 // It returns the path to the resulting binary, and a function
 // to call when finished with the binary.
 func GoBuild(t *testing.T, dir, tags string, strip bool, envVarVals ...string) (binaryPath string, cleanup func()) {
-	switch runtime.GOOS {
-	case "android", "js", "ios":
-		t.Skipf("skipping on OS without 'go build' %s", runtime.GOOS)
-	}
+	testenv.NeedsGoBuild(t)
 
 	if len(envVarVals)%2 != 0 {
 		t.Fatal("last args should be alternating variables and values")

@@ -15,13 +15,11 @@ import (
 	"testing"
 
 	"golang.org/x/vuln/internal/test"
+	"golang.org/x/vuln/internal/testenv"
 )
 
 func dotest(t *testing.T) (binaryName string, cleanup func()) {
-	switch runtime.GOOS {
-	case "android", "js", "ios":
-		t.Skipf("skipping on OS without 'go build' %s", runtime.GOOS)
-	}
+	testenv.NeedsGoBuild(t)
 	// For now, only works on amd64 platforms.
 	if runtime.GOARCH != "amd64" {
 		t.Skipf("skipping on non-AMD64 system %s", runtime.GOARCH)

@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"testing"
 
@@ -22,14 +21,13 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/semver"
+	"golang.org/x/vuln/internal/testenv"
 	"golang.org/x/vuln/internal/vulncheck/internal/buildinfo"
 )
 
 // TODO: we build binary programatically, so what if the underlying tool chain changes?
 func TestBinary(t *testing.T) {
-	if !hasGoBuild() || runtime.GOOS == "plan9" {
-		t.Skip("fails on android and plan9")
-	}
+	testenv.NeedsGoBuild(t)
 
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
@@ -185,21 +183,6 @@ func TestBinary(t *testing.T) {
 	}
 }
 
-// hasGoBuild reports whether the current system can build programs with “go build”
-// and then run them with os.StartProcess or exec.Command.
-//
-// Duplicated from std/internal/testenv
-func hasGoBuild() bool {
-	if os.Getenv("GO_GCFLAGS") != "" {
-		return false
-	}
-	switch runtime.GOOS {
-	case "android", "js", "ios":
-		return false
-	}
-	return true
-}
-
 func hasGoVersion(exe io.ReaderAt) bool {
 	_, _, bi, _ := buildinfo.ExtractPackagesAndSymbols(exe)
 	return semver.GoTagToSemver(bi.GoVersion) != ""
@@ -212,9 +195,7 @@ func hasGoVersion(exe io.ReaderAt) bool {
 // Note: the issue is still not addressed and the test
 // expectations are set to fail once it gets addressed.
 func Test58509(t *testing.T) {
-	if !hasGoBuild() || runtime.GOOS == "plan9" {
-		t.Skip("fails on android and plan9")
-	}
+	testenv.NeedsGoBuild(t)
 
 	vulnLib := `package bvuln
 
