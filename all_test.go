@@ -22,6 +22,9 @@ var excluded = map[string]bool{
 }
 
 func Test(t *testing.T) {
+	if testing.Short() {
+		t.Skipf("skipping: short mode")
+	}
 	bash, err := exec.LookPath("bash")
 	if err != nil {
 		t.Skipf("skipping: %v", err)
