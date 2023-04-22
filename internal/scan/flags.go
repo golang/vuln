@@ -56,16 +56,20 @@ Usage:
 		fmt.Fprintf(flags.Output(), "\n%s\n", detailsMessage)
 	}
 	if err := flags.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			return nil, errHelp
+		}
 		return nil, err
 	}
 	cfg.patterns = flags.Args()
 	if cfg.mode != modeConvert && len(cfg.patterns) == 0 {
 		flags.Usage()
-		return nil, ErrNoPatterns
+		return nil, errUsage
 	}
 	cfg.tags = tagsFlag
 	if err := validateConfig(cfg); err != nil {
-		return nil, fmt.Errorf("govulncheck: %w", err)
+		fmt.Fprintln(flags.Output(), err)
+		return nil, errUsage
 	}
 	return cfg, nil
 }

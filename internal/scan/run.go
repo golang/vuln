@@ -71,7 +71,7 @@ func doGovulncheck(ctx context.Context, r io.Reader, w io.Writer, args []string)
 		return err
 	}
 	if containsAffectedVulnerabilities(vulns) && !cfg.json {
-		return ErrVulnerabilitiesFound
+		return errVulnerabilitiesFound
 	}
 	return nil
 }

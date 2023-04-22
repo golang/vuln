@@ -128,7 +128,7 @@ func testSuite(dir, govulncheck, vulndbDir string) (*cmdtest.TestSuite, error) {
 	if err != nil {
 		return nil, err
 	}
-	ts.DisableLogging = false
+	ts.DisableLogging = true
 	ts.Commands["govulncheck"] = func(args []string, inputFile string) ([]byte, error) {
 		govulndbURI, err := web.URLFromFilePath(vulndbDir)
 		if err != nil {
@@ -157,7 +157,7 @@ var (
 	heapGoRegexp                 = regexp.MustCompile(`heap\.go:(\d+)`)
 	progressRegexp               = regexp.MustCompile(`Scanning your code and (\d+) packages across (\d+)`)
 	govulncheckRegexp            = regexp.MustCompile(`govulncheck@v(.*) with`)
-	govulncheckBinaryErrorRegexp = regexp.MustCompile(`govulncheck: (.*) is a file`)
+	govulncheckBinaryErrorRegexp = regexp.MustCompile(`"([^"]*") is a file`)
 	govulncheckJSONRegexp        = regexp.MustCompile(`"govulncheck@v(.*)",`)
 	vulndbRegexp                 = regexp.MustCompile(`file:///(.*)/testdata/vulndb`)
 	gorootRegexp                 = regexp.MustCompile(`package (.*) is not in GOROOT (.*)`)

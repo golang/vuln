@@ -12,22 +12,22 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+//lint:file-ignore ST1005 Ignore staticcheck message about error formatting
 var (
 	// ErrVulnerabilitiesFound indicates that vulnerabilities were detected
 	// when running govulncheck. This returns exit status 3 when running
 	// without the -json flag.
-	ErrVulnerabilitiesFound = errors.New("vulnerabilities found")
+	errVulnerabilitiesFound = &exitCodeError{message: "vulnerabilities found", code: 3}
 
-	// ErrNoPatterns indicates that no patterns were passed in when running
-	// govulncheck.
+	// errHelp indicates that usage help was requested.
+	errHelp = &exitCodeError{message: "help requested", code: 0}
+
+	// ErrNoPatterns indicates that there was a usage error on the command line.
 	//
 	// In this case, we assume that the user does not know how to run
 	// govulncheck, and print the usage message with exit status 1.
-	ErrNoPatterns = errors.New("no patterns provided")
-)
+	errUsage = &exitCodeError{message: "invalid usage", code: 1}
 
-//lint:file-ignore ST1005 Ignore staticcheck message about error formatting
-var (
 	// errGoVersionMismatch is used to indicate that there is a mismatch between
 	// the Go version used to build govulncheck and the one currently on PATH.
 	errGoVersionMismatch = errors.New(`Loading packages failed, possibly due to a mismatch between the Go version
@@ -50,6 +50,14 @@ Did you mean to run govulncheck with -mode=binary?
 
 For details, run govulncheck -h.`)
 )
+
+type exitCodeError struct {
+	message string
+	code    int
+}
+
+func (e *exitCodeError) Error() string { return e.message }
+func (e *exitCodeError) ExitCode() int { return e.code }
 
 // packageError contains errors from loading a set of packages.
 type packageError struct {
