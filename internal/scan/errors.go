@@ -22,11 +22,11 @@ var (
 	// errHelp indicates that usage help was requested.
 	errHelp = &exitCodeError{message: "help requested", code: 0}
 
-	// ErrNoPatterns indicates that there was a usage error on the command line.
+	// errUsage indicates that there was a usage error on the command line.
 	//
 	// In this case, we assume that the user does not know how to run
-	// govulncheck, and print the usage message with exit status 1.
-	errUsage = &exitCodeError{message: "invalid usage", code: 1}
+	// govulncheck, and print the usage message with exit status 2.
+	errUsage = &exitCodeError{message: "invalid usage", code: 2}
 
 	// errGoVersionMismatch is used to indicate that there is a mismatch between
 	// the Go version used to build govulncheck and the one currently on PATH.

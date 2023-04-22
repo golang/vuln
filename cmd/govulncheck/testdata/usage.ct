@@ -24,7 +24,7 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 
 
 # Same output as -h, but failure.
-$ govulncheck --> FAIL 1
+$ govulncheck --> FAIL 2
 Govulncheck is a tool for finding known vulnerabilities.
 
 Usage:
