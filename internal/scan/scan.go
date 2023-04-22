@@ -20,6 +20,7 @@ type Cmd struct {
 
 	// Stdout specifies the standard output. If nil, Run connects os.Stdout.
 	Stdout io.Writer
+	Stderr io.Writer
 
 	ctx     context.Context
 	args    []string
@@ -58,6 +59,9 @@ func (c *Cmd) Start() error {
 	}
 	if c.Stdout == nil {
 		c.Stdout = os.Stdout
+	}
+	if c.Stderr == nil {
+		c.Stderr = os.Stderr
 	}
 	c.done = make(chan struct{})
 	go func() {
@@ -98,5 +102,5 @@ func (c *Cmd) scan() error {
 	if err := c.ctx.Err(); err != nil {
 		return err
 	}
-	return doGovulncheck(c.ctx, c.Stdin, c.Stdout, c.args)
+	return doGovulncheck(c.ctx, c.Stdin, c.Stdout, c.Stderr, c.args)
 }

@@ -21,13 +21,13 @@ import (
 // doGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func doGovulncheck(ctx context.Context, r io.Reader, w io.Writer, args []string) error {
-	cfg, err := parseFlags(args)
+func doGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io.Writer, args []string) error {
+	cfg, err := parseFlags(stderr, args)
 	if err != nil {
 		return err
 	}
 	if cfg.mode == modeConvert {
-		return convertJSONToText(ctx, cfg, r, w)
+		return convertJSONToText(ctx, cfg, r, stdout)
 	}
 
 	cfg.Client, err = client.NewClient(cfg.db, nil)
@@ -39,9 +39,9 @@ func doGovulncheck(ctx context.Context, r io.Reader, w io.Writer, args []string)
 	var handler govulncheck.Handler
 	switch {
 	case cfg.json:
-		handler = govulncheck.NewJSONHandler(w)
+		handler = govulncheck.NewJSONHandler(stdout)
 	default:
-		handler = NewTextHandler(w, cfg.mode == modeSource, cfg.verbose)
+		handler = NewTextHandler(stdout, cfg.mode == modeSource, cfg.verbose)
 	}
 
 	// Write the introductory message to the user.

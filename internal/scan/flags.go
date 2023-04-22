@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"golang.org/x/tools/go/buildutil"
@@ -32,10 +33,11 @@ const (
 	modeConvert = "convert" // only intended for use by gopls
 )
 
-func parseFlags(args []string) (*config, error) {
+func parseFlags(stderr io.Writer, args []string) (*config, error) {
 	cfg := &config{}
 	var tagsFlag buildutil.TagsFlag
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
+	flags.SetOutput(stderr)
 	flags.BoolVar(&cfg.json, "json", false, "output JSON")
 	flags.BoolVar(&cfg.verbose, "v", false, "print additional information")
 	flags.BoolVar(&cfg.test, "test", false, "analyze test files (only valid for source mode)")
