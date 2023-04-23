@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"sort"
 	"sync"
+	"sync/atomic"
 
 	"golang.org/x/tools/go/callgraph"
 	"golang.org/x/tools/go/ssa"
@@ -128,11 +129,10 @@ func setModules(r *Result, mods []*Module) {
 }
 
 // pkgID is an id counter for nodes of Imports graph.
-var pkgID int = 0
+var pkgID int64 = 0
 
 func nextPkgID() int {
-	pkgID++
-	return pkgID
+	return int(atomic.AddInt64(&pkgID, 1))
 }
 
 // vulnPkgModSlice computes the slice of pkgs imports and requires graph
@@ -306,11 +306,10 @@ func vulnModuleSlice(result *Result) {
 const stdModID = 1
 
 // modID is an id counter for nodes of Requires graph.
-var modID int = stdModID
+var modID int64 = stdModID
 
 func nextModID() int {
-	modID++
-	return modID
+	return int(atomic.AddInt64(&modID, 1))
 }
 
 // moduleNode creates a module node associated with pkgNode, if one does
@@ -435,11 +434,10 @@ func callGraphSlice(starts []*callgraph.Node, forward bool) *callgraph.Graph {
 }
 
 // funID is an id counter for nodes of Calls graph.
-var funID int = 0
+var funID int64 = 0
 
 func nextFunID() int {
-	funID++
-	return funID
+	return int(atomic.AddInt64(&funID, 1))
 }
 
 // vulnCallGraph creates vulnerability call graph from sources -> sinks reachability info.

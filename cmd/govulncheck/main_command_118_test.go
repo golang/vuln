@@ -11,17 +11,19 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"testing"
 
 	"github.com/google/go-cmdtest"
+	"golang.org/x/vuln/internal/scan"
 	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/web"
 )
@@ -33,19 +35,11 @@ func TestCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Define a command that runs govulncheck with our local DB. We can't use
-	// cmdtest.Program for this because it doesn't let us set the environment,
-	// and that is the only way to tell govulncheck about an alternative vuln
-	// database.
-	binary, cleanup := test.GoBuild(t, ".", "", false) // build govulncheck
-	// Use Cleanup instead of defer, because when subtests are parallel, defer
-	// runs too early.
-	t.Cleanup(cleanup)
 	vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb-v1"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts, err := testSuite("testdata", binary, vulndbDir)
+	ts, err := testSuite("testdata", vulndbDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,13 +85,11 @@ func TestCommandStrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	binary, cleanup := test.GoBuild(t, ".", "", false) // build govulncheck
-	t.Cleanup(cleanup)
 	vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb-v1"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts, err := testSuite("testdata/strip", binary, vulndbDir)
+	ts, err := testSuite("testdata/strip", vulndbDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +115,7 @@ func TestCommandStrip(t *testing.T) {
 // testSuite creates a cmdtest suite from dir. It also defines
 // a govulncheck command on the suite that runs govulncheck
 // against vulnerability database available at vulndbDir.
-func testSuite(dir, govulncheck, vulndbDir string) (*cmdtest.TestSuite, error) {
+func testSuite(dir, vulndbDir string) (*cmdtest.TestSuite, error) {
 	ts, err := cmdtest.Read(dir)
 	if err != nil {
 		return nil, err
@@ -135,14 +127,42 @@ func testSuite(dir, govulncheck, vulndbDir string) (*cmdtest.TestSuite, error) {
 			return nil, fmt.Errorf("failed to create GOVULNDB env var: %v", err)
 		}
 
-		newargs := append([]string{"-db", govulndbURI.String()}, args...)
-		cmd := exec.Command(govulncheck, newargs...)
+		newargs := []string{"-db", govulndbURI.String()}
+		hasDir := false
+		for _, s := range args {
+			if s == "-C" {
+				hasDir = true
+			}
+		}
+		if !hasDir {
+			newargs = append(newargs, "-C", dir)
+		}
+		newargs = append(newargs, args...)
+		buf := &bytes.Buffer{}
+		cmd := scan.Command(context.Background(), newargs...)
+		cmd.Stdout = buf
+		cmd.Stderr = buf
 		if inputFile != "" {
+			//TODO: use as Stdin
 			return nil, errors.New("input redirection makes no sense")
 		}
 		// We set GOVERSION to always get the same results regardless of the underlying Go build system.
-		cmd.Env = append(os.Environ(), "GOVERSION=go1.18")
-		out, err := cmd.CombinedOutput()
+		//TODO: when cmd supports Env:
+		//cmd.Env = append(os.Environ(), "GOVERSION=go1.18")
+		os.Setenv("GOVERSION", "go1.18")
+		err = cmd.Run()
+		switch e := err.(type) {
+		case nil:
+		case interface{ ExitCode() int }:
+			err = &cmdtest.ExitCodeErr{Msg: err.Error(), Code: e.ExitCode()}
+			if e.ExitCode() == 0 {
+				err = nil
+			}
+		default:
+			fmt.Fprintln(buf, err)
+			err = &cmdtest.ExitCodeErr{Msg: err.Error(), Code: 1}
+		}
+		out := buf.Bytes()
 		out = filterGoFilePaths(out)
 		out = filterProgressNumbers(out)
 		out = filterEnvironmentData(out)
@@ -162,6 +182,8 @@ var (
 	vulndbRegexp                 = regexp.MustCompile(`file:///(.*)/testdata/vulndb`)
 	gorootRegexp                 = regexp.MustCompile(`package (.*) is not in GOROOT (.*)`)
 	lastModifiedRegexp           = regexp.MustCompile(`modified (.*)\)`)
+	goVersionRegexp              = regexp.MustCompile(`Using go1.[\.\d]*`)
+	goVersionJSONRegexp          = regexp.MustCompile(`"go_version": "go[^\s"]*"`)
 )
 
 // filterGoFilePaths modifies paths to Go files by replacing their directory with "...".
@@ -191,5 +213,7 @@ func filterEnvironmentData(data []byte) []byte {
 	data = govulncheckBinaryErrorRegexp.ReplaceAll(data, []byte("govulncheck: myfile is a file"))
 	data = vulndbRegexp.ReplaceAll(data, []byte("testdata/vulndb"))
 	data = gorootRegexp.ReplaceAll(data, []byte("package foo is not in GOROOT (/tmp/foo)"))
+	data = goVersionRegexp.ReplaceAll(data, []byte(`Using go1.18`))
+	data = goVersionJSONRegexp.ReplaceAll(data, []byte(`"go_version": "go1.18"`))
 	return lastModifiedRegexp.ReplaceAll(data, []byte("modified 01 Jan 21 00:00 UTC)"))
 }
