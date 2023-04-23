@@ -42,13 +42,3 @@ func FuncName(frame *govulncheck.StackFrame) string {
 	}
 	return strings.Join(strs, ".")
 }
-
-// Pos returns the position of the call in sf as string.
-// If position is not available, return "".
-func Pos(sf *govulncheck.StackFrame) string {
-	p := sf.Position.ToTokenPosition()
-	if p != nil && p.IsValid() {
-		return p.String()
-	}
-	return ""
-}

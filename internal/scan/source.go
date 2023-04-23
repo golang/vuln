@@ -139,10 +139,15 @@ func stackFramesfromEntries(vcs vulncheck.CallStack) []*govulncheck.StackFrame {
 			Package:  e.Function.PkgPath,
 			Receiver: e.Function.Receiver(),
 		}
-		if e.Call == nil {
+		if e.Call == nil || e.Call.Pos == nil {
 			fr.Position = nil
 		} else {
-			fr.Position = govulncheck.FromTokenPosition(e.Call.Pos)
+			fr.Position = &govulncheck.Position{
+				Filename: e.Call.Pos.Filename,
+				Offset:   e.Call.Pos.Offset,
+				Line:     e.Call.Pos.Line,
+				Column:   e.Call.Pos.Column,
+			}
 		}
 		frames = append(frames, fr)
 	}
@@ -247,7 +252,7 @@ func summarizeCallStack(cs govulncheck.CallStack, topPkgs map[string]bool) strin
 		return ""
 	}
 
-	topPos := AbsRelShorter(Pos(cs.Frames[iTop]))
+	topPos := posToString(cs.Frames[iTop].Position)
 	if topPos != "" {
 		topPos += ": "
 	}

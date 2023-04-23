@@ -38,7 +38,7 @@ func TestStackFrame(t *testing.T) {
 		if got := FuncName(test.sf); got != test.wantFunc {
 			t.Errorf("want %v func name; got %v", test.wantFunc, got)
 		}
-		if got := Pos(test.sf); got != test.wantPos {
+		if got := posToString(test.sf.Position); got != test.wantPos {
 			t.Errorf("want %v call position; got %v", test.wantPos, got)
 		}
 	}

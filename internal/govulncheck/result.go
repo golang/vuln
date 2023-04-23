@@ -6,7 +6,6 @@
 package govulncheck
 
 import (
-	"go/token"
 	"time"
 
 	"golang.org/x/vuln/internal/osv"
@@ -149,28 +148,4 @@ type Position struct {
 	Offset   int    `json:"offset"`             // offset, starting at 0
 	Line     int    `json:"line"`               // line number, starting at 1
 	Column   int    `json:"column"`             // column number, starting at 1 (byte count)
-}
-
-func (p *Position) ToTokenPosition() *token.Position {
-	if p == nil {
-		return nil
-	}
-	return &token.Position{
-		Filename: p.Filename,
-		Offset:   p.Offset,
-		Line:     p.Line,
-		Column:   p.Column,
-	}
-}
-
-func FromTokenPosition(p *token.Position) *Position {
-	if p == nil {
-		return nil
-	}
-	return &Position{
-		Filename: p.Filename,
-		Offset:   p.Offset,
-		Line:     p.Line,
-		Column:   p.Column,
-	}
 }

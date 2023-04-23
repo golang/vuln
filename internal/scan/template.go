@@ -239,7 +239,7 @@ func platforms(mod string, e *osv.Entry) []string {
 }
 
 func posToString(p *govulncheck.Position) string {
-	if p == nil {
+	if p == nil || p.Line <= 0 {
 		return ""
 	}
 	return token.Position{
