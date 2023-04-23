@@ -37,7 +37,7 @@ func TestCommand(t *testing.T) {
 	// cmdtest.Program for this because it doesn't let us set the environment,
 	// and that is the only way to tell govulncheck about an alternative vuln
 	// database.
-	binary, cleanup := test.GoBuild(t, ".", "testmode", false) // build govulncheck
+	binary, cleanup := test.GoBuild(t, ".", "", false) // build govulncheck
 	// Use Cleanup instead of defer, because when subtests are parallel, defer
 	// runs too early.
 	t.Cleanup(cleanup)
@@ -91,7 +91,7 @@ func TestCommandStrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	binary, cleanup := test.GoBuild(t, ".", "testmode", false) // build govulncheck
+	binary, cleanup := test.GoBuild(t, ".", "", false) // build govulncheck
 	t.Cleanup(cleanup)
 	vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb-v1"))
 	if err != nil {
@@ -141,7 +141,7 @@ func testSuite(dir, govulncheck, vulndbDir string) (*cmdtest.TestSuite, error) {
 			return nil, errors.New("input redirection makes no sense")
 		}
 		// We set GOVERSION to always get the same results regardless of the underlying Go build system.
-		cmd.Env = append(os.Environ(), "TEST_GOVERSION=go1.18")
+		cmd.Env = append(os.Environ(), "GOVERSION=go1.18")
 		out, err := cmd.CombinedOutput()
 		out = filterGoFilePaths(out)
 		out = filterProgressNumbers(out)
