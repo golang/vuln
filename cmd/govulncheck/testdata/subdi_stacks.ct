@@ -1,4 +1,6 @@
-$ govulncheck -C ${moddir}/multientry -v ./... --> FAIL 3
+# Test govulncheck runs on the subdirectory of a module
+
+$ govulncheck -C ${moddir}/vuln/subdir -show=stacks . --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with
@@ -14,20 +16,10 @@ Vulnerability #1: GO-2021-0113
     used as a vector for a denial of service attack.
   More info: https://pkg.go.dev/vuln/GO-2021-0113
   Module: golang.org/x/text
-    Found in: golang.org/x/text@v0.3.5
+    Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
     Call stacks in your code:
-      #1: for function MustParse
-        golang.org/multientry.main
-            .../main.go:26:3
-        golang.org/multientry.D
-            .../main.go:48:8
-        golang.org/multientry.foobar
-            .../main.go:99:20
-        golang.org/x/text/language.MustParse
-      #2: for function Parse
-        golang.org/multientry.main
-            .../main.go:22:3
-        golang.org/multientry.C
-            .../main.go:44:23
+      #1: for function Parse
+        golang.org/vuln/subdir.Foo
+            .../subdir.go:8:16
         golang.org/x/text/language.Parse

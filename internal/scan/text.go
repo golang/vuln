@@ -17,22 +17,19 @@ import (
 var templateFS embed.FS
 
 // NewtextHandler returns a handler that writes govulncheck output as text.
-func NewTextHandler(w io.Writer, source, verbose bool) govulncheck.Handler {
-	h := &textHandler{
-		w:       w,
-		source:  source,
-		verbose: verbose,
-		color:   false,
+func NewTextHandler(w io.Writer, source bool) *TextHandler {
+	return &TextHandler{
+		w:      w,
+		source: source,
 	}
-	return h
 }
 
-type textHandler struct {
-	w       io.Writer
-	vulns   []*govulncheck.Vuln
-	source  bool
-	verbose bool
-	color   bool
+type TextHandler struct {
+	Show []string
+
+	w      io.Writer
+	vulns  []*govulncheck.Vuln
+	source bool
 }
 
 const (
@@ -45,38 +42,38 @@ const (
 )
 
 func Flush(h govulncheck.Handler) error {
-	if th, ok := h.(*textHandler); ok {
+	if th, ok := h.(*TextHandler); ok {
 		return th.Flush()
 	}
 	return nil
 }
 
-func (h *textHandler) Flush() error {
+func (h *TextHandler) Flush() error {
 	summary := createSummaries(h.vulns)
 	h.vulns = nil
 	return h.runTemplate("govulncheck-summary", summary)
 }
 
 // Config writes text output formatted according to govulncheck-intro.tmpl.
-func (h *textHandler) Config(config *govulncheck.Config) error {
+func (h *TextHandler) Config(config *govulncheck.Config) error {
 	// Print config to the user.
 	return h.runTemplate("govulncheck-intro", config)
 }
 
 // Progress writes progress updates during govulncheck execution..
-func (h *textHandler) Progress(progress *govulncheck.Progress) error {
+func (h *TextHandler) Progress(progress *govulncheck.Progress) error {
 	fmt.Fprintln(h.w)
 	fmt.Fprintln(h.w, progress.Message)
 	return nil
 }
 
 // Vulnerability gathers vulnerabilities to be written.
-func (h *textHandler) Vulnerability(vuln *govulncheck.Vuln) error {
+func (h *TextHandler) Vulnerability(vuln *govulncheck.Vuln) error {
 	h.vulns = append(h.vulns, vuln)
 	return nil
 }
 
-func (h *textHandler) runTemplate(name string, value any) error {
+func (h *TextHandler) runTemplate(name string, value any) error {
 	lineWidth := 80 - labelWidth
 	funcs := template.FuncMap{
 		// used in template for counting vulnerabilities
@@ -85,23 +82,14 @@ func (h *textHandler) runTemplate(name string, value any) error {
 		"indent": func(n int, s string) string { return indent(s, n) },
 		"wrap":   func(s string) string { return wrap(s, lineWidth) },
 	}
-	if h.color {
-		// we only add the color functions if we are in color mode as a safety measure
-		// it means any use of those functions by a non color template will cause an error
-		installColorFunctions(funcs)
-	}
+	installColorFunctions(funcs)
 	tmpl := template.New("all").Funcs(funcs)
 	_, err := tmpl.ParseFS(templateFS, "template/core*.tmpl")
 	if err != nil {
 		return err
 	}
-	if h.verbose {
-		if _, err := tmpl.ParseFS(templateFS, "template/stacks.tmpl"); err != nil {
-			return err
-		}
-	}
-	if h.color {
-		if _, err := tmpl.ParseFS(templateFS, "template/color.tmpl"); err != nil {
+	for _, name := range h.Show {
+		if _, err := tmpl.ParseFS(templateFS, "template/"+name+".tmpl"); err != nil {
 			return err
 		}
 	}

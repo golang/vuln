@@ -14,11 +14,12 @@ Usage:
     	output JSON
   -mode string
     	supports source or binary (default "source")
+  -show value
+    	comma-separated list of text output options
   -tags list
     	comma-separated list of build tags
   -test
     	analyze test files (only valid for source mode)
-  -v	print additional information
 
 For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 
@@ -40,10 +41,11 @@ Usage:
     	output JSON
   -mode string
     	supports source or binary (default "source")
+  -show value
+    	comma-separated list of text output options
   -tags list
     	comma-separated list of build tags
   -test
     	analyze test files (only valid for source mode)
-  -v	print additional information
 
 For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.

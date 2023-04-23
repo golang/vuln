@@ -1,0 +1,4 @@
+# Test of trying to run -json with -v flag
+
+$ govulncheck -C ${moddir}/vuln -show=stacks -json . --> FAIL 2
+the -show flag is not supported for JSON output

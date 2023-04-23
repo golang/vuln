@@ -1,4 +1,0 @@
-# Test of trying to run -json with -v flag
-
-$ govulncheck -C ${moddir}/vuln -v -json . --> FAIL 2
-the -v flag is not supported for JSON output
