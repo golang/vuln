@@ -1,5 +1,7 @@
 {
-  "config": {}
+  "config": {
+    "version": "govulncheck"
+  }
 }
 {
   "vulnerability": {

@@ -14,6 +14,7 @@ for details.
 Vulnerability #1: two-imports
 
   More info: https://pkg.go.dev/vuln/two-imports
-  Found in: golang.org/vmod@v0.0.1
-  Fixed in: golang.org/vmod@v0.1.3
-  Platforms: linux/amd64, windows/amd64
+  Module: golang.org/vmod
+    Found in: golang.org/vmod@v0.0.1
+    Fixed in: golang.org/vmod@v0.1.3
+    Platforms: linux/amd64, windows/amd64

@@ -5,8 +5,8 @@
 package scan
 
 import (
-	_ "embed"
 	"fmt"
+	"go/token"
 	"sort"
 	"strings"
 
@@ -15,39 +15,41 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-var (
-	//go:embed template/config.tmpl
-	introTemplate string
-
-	//go:embed template/output.tmpl
-	outputTemplate string
-)
-
-// tmplResult is a structure containing summarized govulncheck.Result, passed
-// to outputTemplate.
-type tmplResult struct {
-	Affected        []tmplVulnInfo
-	Unaffected      []tmplVulnInfo
-	AffectedModules int
-	StdlibAffected  bool
+type summaries struct {
+	Affected        []vulnSummary `json:"affected,omitempty"`
+	Unaffected      []vulnSummary `json:"unaffected,omitempty"`
+	AffectedModules int           `json:"affected_modules,omitempty"`
+	StdlibAffected  bool          `json:"stdlib_affected,omitempty"`
 }
 
-// createTmplResult transforms Result r into a
-// template structure for printing.
-func createTmplResult(vulns []*govulncheck.Vuln, verbose, source bool) tmplResult {
-	// unaffected are (imported) OSVs, none of which vulnerabilities are called.
-	var (
-		r      tmplResult
-		vInfos []tmplVulnInfo
-	)
-	topPkgs := topPackages(vulns)
-	for _, v := range vulns {
-		vInfos = append(vInfos, createTmplVulnInfo(v, verbose, source, topPkgs))
-	}
-	r.Affected, r.Unaffected = splitVulns(vInfos)
-	r.AffectedModules = affectedModules(vInfos)
-	r.StdlibAffected = stdlibAffected(vInfos)
-	return r
+type vulnSummary struct {
+	OSV      string
+	Details  string
+	Modules  []moduleSummary
+	Affected bool
+}
+
+type moduleSummary struct {
+	IsStd        bool
+	Module       string
+	FoundVersion string
+	FixedVersion string
+	Platforms    []string
+	CallStacks   []callStackSummary
+}
+
+type callStackSummary struct {
+	Symbol  string
+	Compact string
+	Frames  []stackFrameSummary
+	// Suppressed is true for entries who's compact form would be a repetition
+	Suppressed bool
+}
+
+type stackFrameSummary struct {
+	Symbol   string
+	Name     string
+	Position string
 }
 
 func topPackages(vulns []*govulncheck.Vuln) map[string]bool {
@@ -66,80 +68,44 @@ func topPackages(vulns []*govulncheck.Vuln) map[string]bool {
 	return topPkgs
 }
 
-func splitVulns(vulns []tmplVulnInfo) (affected, unaffected []tmplVulnInfo) {
-	for _, a := range vulns {
-		if a.Affected {
-			affected = append(affected, a)
+func createSummaries(vulns []*govulncheck.Vuln) summaries {
+	s := summaries{}
+	findings := merge(vulns)
+	sortResult(findings)
+	topPkgs := topPackages(vulns)
+	// unaffected are (imported) OSVs none of
+	// which vulnerabilities are called.
+	for _, v := range findings {
+		entry := createVulnSummary(v, topPkgs)
+		if entry.Affected {
+			s.Affected = append(s.Affected, entry)
 		} else {
-			unaffected = append(unaffected, a)
+			s.Unaffected = append(s.Unaffected, entry)
 		}
 	}
-	return affected, unaffected
-}
 
-// AffectedModules returns the number of unique modules
-// whose vulnerabilties are detected.
-func affectedModules(vulns []tmplVulnInfo) int {
-	mods := make(map[string]bool)
-	for _, a := range vulns {
-		if !a.Affected {
-			continue
-		}
-		for _, m := range a.Modules {
-			if !m.IsStd {
-				mods[m.Module] = true
-			}
-		}
-	}
-	return len(mods)
-}
-
-// stdlibAffected tells if some of the vulnerabilities
-// detected come from standard library.
-func stdlibAffected(vulns []tmplVulnInfo) bool {
-	for _, a := range vulns {
-		if !a.Affected {
-			continue
-		}
+	mods := make(map[string]struct{})
+	for _, a := range s.Affected {
 		for _, m := range a.Modules {
 			if m.IsStd {
-				return true
+				s.StdlibAffected = true
+			} else {
+				mods[m.Module] = struct{}{}
 			}
 		}
 	}
-	return false
+	s.AffectedModules = len(mods)
+	return s
 }
 
-// tmplVulnInfo is a vulnerability info
-// structure used by the outputTemplate.
-type tmplVulnInfo struct {
-	ID       string
-	Details  string
-	Modules  []tmplModVulnInfo
-	Affected bool
-}
-
-// createTmplVulnInfo creates a template vuln info for
-// a vulnerability that is called by source code or
-// present in the binary.
-func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool, topPkgs map[string]bool) tmplVulnInfo {
-	vInfo := tmplVulnInfo{
-		ID:       v.OSV.ID,
-		Details:  v.OSV.Details,
-		Affected: !source || IsCalled(v),
+func createVulnSummary(v *govulncheck.Vuln, topPkgs map[string]bool) vulnSummary {
+	vInfo := vulnSummary{
+		Affected: IsCalled(v),
 	}
-
-	// stacks returns call stack info of p as a
-	// string depending on verbose and source mode.
-	stacks := func(p *govulncheck.Package) string {
-		if !source {
-			return ""
-		}
-
-		if verbose {
-			return verboseCallStacks(p.CallStacks)
-		}
-		return defaultCallStacks(p.CallStacks, topPkgs)
+	osv := v.OSV
+	if osv != nil {
+		vInfo.OSV = osv.ID
+		vInfo.Details = osv.Details
 	}
 
 	for _, m := range v.Modules {
@@ -149,19 +115,19 @@ func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool, topPkgs map[s
 			// to the user is confusing. In most cases, stdlib
 			// vulnerabilities affect only one package anyhow.
 			for _, p := range m.Packages {
-				if source && len(p.CallStacks) == 0 {
+				if len(p.CallStacks) == 0 {
 					// package symbols not exercised, nothing to do here
 					continue
 				}
-				tm := createTmplModule(m, p.Path, v.OSV)
-				tm.Stacks = stacks(p) // for binary mode, this will be ""
-				vInfo.Modules = append(vInfo.Modules, tm)
+				tm := createModuleSummary(m, p.Path, osv)
+				addStacks(&tm, p, topPkgs)
+				attachModule(&vInfo, tm)
 			}
 			if len(vInfo.Modules) == 0 {
 				p := m.Packages[0]
-				tm := createTmplModule(m, p.Path, v.OSV)
-				tm.Stacks = stacks(p) // for binary mode, this will be ""
-				vInfo.Modules = append(vInfo.Modules, tm)
+				tm := createModuleSummary(m, p.Path, osv)
+				addStacks(&tm, p, topPkgs) // for binary mode, this will be ""
+				attachModule(&vInfo, tm)
 			}
 			continue
 		}
@@ -169,85 +135,61 @@ func createTmplVulnInfo(v *govulncheck.Vuln, verbose, source bool, topPkgs map[s
 		// For third-party packages, we create a single output entry for
 		// the whole module by merging call stack info of each exercised
 		// package (in source mode).
-		var moduleStacks []string
-		if source {
-			for _, p := range m.Packages {
-				if len(p.CallStacks) == 0 {
-					// package symbols not exercised, nothing to do here
-					continue
-				}
-				moduleStacks = append(moduleStacks, stacks(p))
-			}
+		tm := createModuleSummary(m, m.Path, osv)
+		for _, p := range m.Packages {
+			addStacks(&tm, p, topPkgs)
 		}
-		tm := createTmplModule(m, m.Path, v.OSV)
-		tm.Stacks = strings.Join(moduleStacks, "\n") // for binary mode, this will be ""
-		vInfo.Modules = append(vInfo.Modules, tm)
+		attachModule(&vInfo, tm)
 	}
 	return vInfo
 }
 
-// tmplModVulnInfo is a module vulnerability
-// structure used by the outputTemplate.
-type tmplModVulnInfo struct {
-	IsStd     bool
-	Module    string
-	Found     string
-	Fixed     string
-	Platforms []string
-	Stacks    string
-}
-
-func createTmplModule(m *govulncheck.Module, path string, osv *osv.Entry) tmplModVulnInfo {
-	return tmplModVulnInfo{
-		IsStd:     m.Path == internal.GoStdModulePath,
-		Module:    path,
-		Found:     moduleVersionString(path, m.FoundVersion),
-		Fixed:     moduleVersionString(path, m.FixedVersion),
-		Platforms: platforms(m.Path, osv),
+func createModuleSummary(m *govulncheck.Module, path string, oe *osv.Entry) moduleSummary {
+	return moduleSummary{
+		IsStd:        m.Path == internal.GoStdModulePath,
+		Module:       path,
+		FoundVersion: moduleVersionString(path, m.FoundVersion),
+		FixedVersion: moduleVersionString(path, m.FixedVersion),
+		Platforms:    platforms(m.Path, oe),
 	}
 }
 
-func defaultCallStacks(css []govulncheck.CallStack, topPkgs map[string]bool) string {
-	var summaries []string
-	for _, cs := range css {
-		s := summarizeCallStack(cs, topPkgs)
-		summaries = append(summaries, s)
-	}
-
-	// Sort call stack summaries and get rid of duplicates.
+func attachModule(s *vulnSummary, m moduleSummary) {
+	// Suppress duplicate compact call stack summaries.
 	// Note that different call stacks can yield same summaries.
-	if len(summaries) > 0 {
-		sort.Strings(summaries)
-		summaries = compact(summaries)
+	seen := map[string]struct{}{}
+	for i, css := range m.CallStacks {
+		if _, wasSeen := seen[css.Compact]; !wasSeen {
+			seen[css.Compact] = struct{}{}
+		} else {
+			m.CallStacks[i].Suppressed = true
+		}
 	}
-	var b strings.Builder
-	for _, s := range summaries {
-		b.WriteString(s)
-		b.WriteString("\n")
-	}
-	return b.String()
+	s.Modules = append(s.Modules, m)
 }
 
-func verboseCallStacks(css []govulncheck.CallStack) string {
-	// Display one full call stack for each vuln.
-	i := 1
-	var b strings.Builder
-	for _, cs := range css {
-		vf := cs.Frames[len(cs.Frames)-1]
-		symbol := vf.Function
-		if vf.Receiver != "" {
-			symbol = fmt.Sprintf("%s.%s", vf.Receiver, vf.Function)
+func addStacks(m *moduleSummary, p *govulncheck.Package, topPkgs map[string]bool) {
+	for _, cs := range p.CallStacks {
+		if len(cs.Frames) == 0 {
+			continue
 		}
-		b.WriteString(fmt.Sprintf("#%d: for function %s\n", i, symbol))
+		css := callStackSummary{
+			Compact: summarizeCallStack(cs, topPkgs),
+		}
 		for _, e := range cs.Frames {
-			b.WriteString(fmt.Sprintf("  %s\n", FuncName(e)))
-			if pos := AbsRelShorter(Pos(e)); pos != "" {
-				b.WriteString(fmt.Sprintf("      %s\n", pos))
+			symbol := e.Function
+			if e.Receiver != "" {
+				symbol = fmt.Sprint(e.Receiver, ".", symbol)
 			}
+			css.Frames = append(css.Frames, stackFrameSummary{
+				Symbol:   symbol,
+				Name:     FuncName(e),
+				Position: posToString(e.Position),
+			})
 		}
-		i++
+		css.Symbol = css.Frames[len(css.Frames)-1].Symbol
+		m.CallStacks = append(m.CallStacks, css)
 	}
-	return b.String()
 }
 
 // platforms returns a string describing the GOOS, GOARCH,
@@ -294,6 +236,18 @@ func platforms(mod string, e *osv.Entry) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+func posToString(p *govulncheck.Position) string {
+	if p == nil {
+		return ""
+	}
+	return token.Position{
+		Filename: AbsRelShorter(p.Filename),
+		Offset:   p.Offset,
+		Line:     p.Line,
+		Column:   p.Column,
+	}.String()
 }
 
 // wrap wraps s to fit in maxWidth by breaking it into lines at whitespace. If a

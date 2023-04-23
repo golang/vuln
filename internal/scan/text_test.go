@@ -44,22 +44,3 @@ func TestWrap(t *testing.T) {
 		}
 	}
 }
-
-func TestPluralize(t *testing.T) {
-	for _, test := range []struct {
-		i    int
-		s    string
-		want string
-	}{
-		{0, "vulnerability", "vulnerabilities"},
-		{1, "vulnerability", "vulnerability"},
-		{2, "vulnerability", "vulnerabilities"},
-		{0, "module", "modules"},
-		{1, "module", "module"},
-		{2, "module", "modules"},
-	} {
-		if got := pluralize(test.i, test.s); got != test.want {
-			t.Errorf("pluralize(%d, %q): %q; want = %q", test.i, test.s, got, test.want)
-		}
-	}
-}

@@ -15,8 +15,9 @@ take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
 for details.
 
 Vulnerability #1: GO-2021-0265
-  A maliciously crafted path can cause Get and other query
-  functions to consume excessive amounts of CPU and time.
+    A maliciously crafted path can cause Get and other query
+    functions to consume excessive amounts of CPU and time.
   More info: https://pkg.go.dev/vuln/GO-2021-0265
-  Found in: github.com/tidwall/gjson@v1.9.2
-  Fixed in: github.com/tidwall/gjson@v1.9.3
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.9.2
+    Fixed in: github.com/tidwall/gjson@v1.9.3

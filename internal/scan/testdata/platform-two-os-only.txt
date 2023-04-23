@@ -14,6 +14,7 @@ for details.
 Vulnerability #1: two-os-only
 
   More info: https://pkg.go.dev/vuln/two-os-only
-  Found in: golang.org/vmod@v0.0.1
-  Fixed in: golang.org/vmod@v0.1.3
-  Platforms: windows, linux
+  Module: golang.org/vmod
+    Found in: golang.org/vmod@v0.0.1
+    Fixed in: golang.org/vmod@v0.1.3
+    Platforms: windows, linux

@@ -5,13 +5,16 @@
 package scan
 
 import (
+	"embed"
 	"fmt"
 	"io"
-	"strings"
 	"text/template"
 
 	"golang.org/x/vuln/internal/govulncheck"
 )
+
+//go:embed template
+var templateFS embed.FS
 
 // NewtextHandler returns a handler that writes govulncheck output as text.
 func NewTextHandler(w io.Writer, source, verbose bool) govulncheck.Handler {
@@ -19,6 +22,7 @@ func NewTextHandler(w io.Writer, source, verbose bool) govulncheck.Handler {
 		w:       w,
 		source:  source,
 		verbose: verbose,
+		color:   false,
 	}
 	return h
 }
@@ -28,6 +32,7 @@ type textHandler struct {
 	vulns   []*govulncheck.Vuln
 	source  bool
 	verbose bool
+	color   bool
 }
 
 const (
@@ -47,42 +52,15 @@ func Flush(h govulncheck.Handler) error {
 }
 
 func (h *textHandler) Flush() error {
-	lineWidth := 80 - labelWidth
-	funcMap := template.FuncMap{
-		"commaseparate": func(s []string) string {
-			return strings.Join(s, ", ")
-		},
-		// used in template for counting vulnerabilities
-		"inc": func(i int) int {
-			return i + 1
-		},
-		// indent reversed to support template pipelining
-		"indent": func(n int, s string) string {
-			return indent(s, n)
-		},
-		"pluralize": pluralize,
-		"wrap": func(s string) string {
-			return wrap(s, lineWidth)
-		},
-	}
-
-	tmplRes := createTmplResult(h.vulns, h.verbose, h.source)
+	summary := createSummaries(h.vulns)
 	h.vulns = nil
-	tmpl, err := template.New("govulncheck").Funcs(funcMap).Parse(outputTemplate)
-	if err != nil {
-		return err
-	}
-	return tmpl.Execute(h.w, tmplRes)
+	return h.runTemplate("govulncheck-summary", summary)
 }
 
 // Config writes text output formatted according to govulncheck-intro.tmpl.
 func (h *textHandler) Config(config *govulncheck.Config) error {
 	// Print config to the user.
-	tmpl, err := template.New("govulncheck-intro").Parse(introTemplate)
-	if err != nil {
-		return err
-	}
-	return tmpl.Execute(h.w, config)
+	return h.runTemplate("govulncheck-intro", config)
 }
 
 // Progress writes progress updates during govulncheck execution..
@@ -98,12 +76,35 @@ func (h *textHandler) Vulnerability(vuln *govulncheck.Vuln) error {
 	return nil
 }
 
-func pluralize(i int, s string) string {
-	if i == 1 {
-		return s
+func (h *textHandler) runTemplate(name string, value any) error {
+	lineWidth := 80 - labelWidth
+	funcs := template.FuncMap{
+		// used in template for counting vulnerabilities
+		"inc": func(i int) int { return i + 1 },
+		// indent reversed to support template pipelining
+		"indent": func(n int, s string) string { return indent(s, n) },
+		"wrap":   func(s string) string { return wrap(s, lineWidth) },
 	}
-	if string(s[len(s)-1]) == "y" {
-		return s[0:len(s)-1] + "ies"
+	if h.color {
+		// we only add the color functions if we are in color mode as a safety measure
+		// it means any use of those functions by a non color template will cause an error
+		installColorFunctions(funcs)
 	}
-	return s + "s"
+	tmpl := template.New("all").Funcs(funcs)
+	_, err := tmpl.ParseFS(templateFS, "template/core*.tmpl")
+	if err != nil {
+		return err
+	}
+	if h.verbose {
+		if _, err := tmpl.ParseFS(templateFS, "template/stacks.tmpl"); err != nil {
+			return err
+		}
+	}
+	if h.color {
+		if _, err := tmpl.ParseFS(templateFS, "template/color.tmpl"); err != nil {
+			return err
+		}
+	}
+
+	return tmpl.ExecuteTemplate(h.w, name, value)
 }

@@ -1,0 +1,14 @@
+{{define "govulncheck-intro"}}{{/*
+This template is a text template used to communicate to the
+user the environment used for vulnerability analysis, namely
+the Go version, govulncheck version, vuln dbs with their last
+modified timestamp.
+*/ -}}
+govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+
+Using
+{{- if .GoVersion}} {{block "Go" .GoVersion}}{{.}}{{end}} and{{end}}
+{{- if .Version}} {{block "Scanner" .Version}}{{.}}{{end}} with{{end}}
+vulnerability data from {{.DataSource}}
+{{- if .LastModified}} (last modified {{.LastModified}}){{end}}.
+{{end}}{{/*Preamble*/}}

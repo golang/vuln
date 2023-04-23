@@ -1,5 +1,7 @@
 {
-  "config": {}
+  "config": {
+    "version": "govulncheck"
+  }
 }
 {
   "vulnerability": {
@@ -30,7 +32,21 @@
       {
         "path": "golang.org/vmod",
         "found_version": "v0.0.1",
-        "fixed_version": "v0.1.3"
+        "fixed_version": "v0.1.3",
+        "packages": [
+          {
+            "path": "",
+            "callstacks": [
+              {
+                "frames": [
+                  {
+                    "function": "Vuln"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
     ]
   }
@@ -58,7 +74,16 @@
         "found_version": "v0.0.1",
         "packages": [
           {
-            "path": "net/http"
+            "path": "net/http",
+            "callstacks": [
+              {
+                "frames": [
+                  {
+                    "function": "Vuln2"
+                  }
+                ]
+              }
+            ]
           }
         ]
       }

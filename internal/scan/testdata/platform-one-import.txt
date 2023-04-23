@@ -14,6 +14,7 @@ for details.
 Vulnerability #1: one-import
 
   More info: https://pkg.go.dev/vuln/one-import
-  Found in: golang.org/vmod@v0.0.1
-  Fixed in: golang.org/vmod@v0.1.3
-  Platforms: linux/amd64, linux/wasm, windows/amd64, windows/wasm
+  Module: golang.org/vmod
+    Found in: golang.org/vmod@v0.0.1
+    Fixed in: golang.org/vmod@v0.1.3
+    Platforms: linux/amd64, linux/wasm, windows/amd64, windows/wasm

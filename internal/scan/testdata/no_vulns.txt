@@ -12,8 +12,9 @@ take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
 for details.
 
 Vulnerability #1: GO-0000-0001
-  Third-party vulnerability
+    Third-party vulnerability
   More info: https://pkg.go.dev/vuln/GO-0000-0001
-  Found in: golang.org/vmod@v0.0.1
-  Fixed in: golang.org/vmod@v0.1.3
-  Platforms: amd
+  Module: golang.org/vmod
+    Found in: golang.org/vmod@v0.0.1
+    Fixed in: golang.org/vmod@v0.1.3
+    Platforms: amd

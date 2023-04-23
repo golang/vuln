@@ -234,27 +234,6 @@ func pkgMap(pkgs []*vulncheck.Package) map[string]*vulncheck.Package {
 	return m
 }
 
-// compact replaces consecutive runs of equal elements with a single copy.
-// This is like the uniq command found on Unix.
-// compact modifies the contents of the slice s; it does not create a new slice.
-//
-// Modified (generics removed) from exp/slices/slices.go.
-func compact(s []string) []string {
-	if len(s) == 0 {
-		return s
-	}
-	i := 1
-	last := s[0]
-	for _, v := range s[1:] {
-		if v != last {
-			s[i] = v
-			i++
-			last = v
-		}
-	}
-	return s[:i]
-}
-
 func moduleVersionString(modulePath, version string) string {
 	if version == "" {
 		return ""

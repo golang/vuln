@@ -1,0 +1,7 @@
+{{define "InformationalTitle"}}{{fg "blue"}}"=== Informational ==="{{reset}}{{end}}
+{{define "Go"}}{{bold}}{{.}}{{reset}}{{end}}
+{{define "Scanner"}}{{bold}}{{.}}{{reset}}{{end}}
+{{define "OSV"}}{{bold}}{{if .Affected}}{{fg "red"}}{{else}}{{fg "green"}}{{end}}{{.OSV}}{{reset}}{{end}}
+{{define "Details"}}{{faint}}{{wrap . | indent 4}}{{reset}}{{end}}
+{{define "Key"}}{{fg "yellow"}}{{faint}}{{.}}{{reset}}{{end}}
+{{define "Value"}}{{fg "cyan"}}{{bold}}{{.}}{{reset}}{{end}}

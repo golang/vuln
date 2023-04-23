@@ -4,21 +4,17 @@ Using govulncheck with
 vulnerability data from .
 Your code is affected by 2 vulnerabilities from 1 module and the Go standard library.
 
-Vulnerability #1: GO-0000-0001
-  Third-party vulnerability
+Vulnerability #1: GO-0000-0002
+    Stdlib vulnerability
+  More info: https://pkg.go.dev/vuln/GO-0000-0002
+  Standard library
+    Found in: net/http@v0.0.1
+    Fixed in: N/A
 
+Vulnerability #2: GO-0000-0001
+    Third-party vulnerability
   More info: https://pkg.go.dev/vuln/GO-0000-0001
-
   Module: golang.org/vmod
     Found in: golang.org/vmod@v0.0.1
     Fixed in: golang.org/vmod@v0.1.3
     Platforms: amd
-
-Vulnerability #2: GO-0000-0002
-  Stdlib vulnerability
-
-  More info: https://pkg.go.dev/vuln/GO-0000-0002
-
-  Standard library
-    Found in: net/http@v0.0.1
-    Fixed in: N/A

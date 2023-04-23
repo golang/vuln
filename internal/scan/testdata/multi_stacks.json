@@ -1,5 +1,7 @@
 {
-  "config": {}
+  "config": {
+    "version": "govulncheck"
+  }
 }
 {
   "vulnerability": {
@@ -67,7 +69,7 @@
         "fixed_version": "v0.0.4",
         "packages": [
           {
-            "path": "golang.org/vmod1",
+            "path": "",
             "callstacks": [
               {
                 "frames": [
@@ -83,7 +85,7 @@
             ]
           },
           {
-            "path": "golang.org/vmod1",
+            "path": "",
             "callstacks": [
               {
                 "frames": [

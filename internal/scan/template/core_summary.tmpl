@@ -1,0 +1,72 @@
+{{define "govulncheck-summary"}}{{/*
+This template is a text template used to print out vulncheck output.
+It consists of three sections showing:
+1) The number of vulnerabilities detected.
+2) Callstacks detected for each pair of module and vulnerability.
+3) Vulnerabilities that are only imported but not called.
+*/ -}}
+{{- template "VulnCount" . -}}
+{{- template "Vulnerability" .Affected -}}
+{{- template "Informational" . -}}
+{{- template "Vulnerability" .Unaffected -}}
+{{- end}}{{/*Summary*/}}
+
+{{define "VulnCount" -}}
+{{if eq (len .Affected) 0}}No vulnerabilities found.
+{{else}}Your code is affected by {{template "Value" (len .Affected)}}
+{{- if eq (len .Affected) 1}} vulnerability{{else}} vulnerabilities{{end}} from
+{{- if eq .AffectedModules 0}}{{else if eq .AffectedModules 1}} 1 module{{else}} {{template "Value" .AffectedModules}} modules{{end}}
+{{- if .StdlibAffected}}{{if ne .AffectedModules 0}} and{{end}} the Go standard library{{end}}.
+{{- end}}
+{{- end}}{{/*VulnCount*/}}
+
+{{- define "Informational" -}}
+{{if len .Unaffected}}
+{{block "InformationalTitle" .}}=== Informational ==={{end}}
+
+Found {{if eq (len .Unaffected) 1}}1 vulnerability{{else}}{{len .Unaffected}} vulnerabilities{{end}} in packages that you import, but there are no call
+stacks leading to the use of {{if eq (len .Unaffected) 1}}this vulnerability{{else}}these vulnerabilities{{end}}. You may not need to
+take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+for details.
+{{- end -}}
+{{- end}}{{/*Informational*/}}
+
+{{- define "Vulnerability" -}}
+{{- if len . -}}
+{{- $idx := 0}}{{range $vulnInfo := .}}
+{{- $idx = inc $idx}}
+
+{{template "Key" "Vulnerability"}} #{{$idx}}: {{block "OSV" $vulnInfo}}{{.OSV}}{{end}}
+{{block "Details" $vulnInfo.Details}}{{wrap . | indent 4}}{{end}}
+  {{template "Key" "More info:"}} https://pkg.go.dev/vuln/{{$vulnInfo.OSV}}
+{{- range $modInfo := $vulnInfo.Modules}}
+{{- if $modInfo.IsStd}}
+  Standard library
+{{- else}}
+  {{template "Key" "Module:"}} {{$modInfo.Module}}
+{{- end}}
+    {{template "Key" "Found in:"}} {{$modInfo.FoundVersion}}
+    {{template "Key" "Fixed in:"}} {{if $modInfo.FixedVersion}}{{$modInfo.FixedVersion}}{{else}}N/A{{end}}
+{{- if $modInfo.Platforms}}
+    {{template "Key" "Platforms:"}} {{template "Platforms" $modInfo.Platforms}}
+{{- end}}
+{{- template "CallStacks" $modInfo.CallStacks}}{{end}}
+{{- end -}}
+{{- end -}}
+{{- end -}}{{/*Vulnerability*/}}
+
+{{- define "Platforms" -}}
+  {{$sep := ""}}{{range .}}{{$sep}}{{.}}{{$sep = ", "}}{{end}}
+{{- end}}{{/*Platforms*/}}
+
+{{- define "CallStacks" -}}
+{{- $count:=0}}{{range $entry := .}}{{if and .Compact (not .Suppressed)}}{{$count = inc $count}}{{end}}{{end}}
+{{- if $count}}
+    {{template "Key" "Call stacks in your code:"}}
+{{range $entry := .}}{{if and .Compact (not .Suppressed)}}      {{.Compact}}
+{{end}}{{end}}
+{{- end -}}
+{{- end}}{{/*CallStacks*/}}
+
+{{define "Key"}}{{.}}{{end}}
+{{define "Value"}}{{.}}{{end}}
