@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/internal/testenv"
 	"golang.org/x/vuln/internal/vulncheck/internal/buildinfo"
@@ -119,7 +120,7 @@ func TestBinary(t *testing.T) {
 	}
 
 	// Test imports only mode
-	cfg := &Config{
+	cfg := &govulncheck.Config{
 		ImportsOnly: true,
 	}
 	res, err := Binary(context.Background(), bin, cfg, c)
@@ -150,7 +151,7 @@ func TestBinary(t *testing.T) {
 	}
 
 	// Test the symbols (non-import mode)
-	cfg = &Config{}
+	cfg = &govulncheck.Config{}
 	res, err = Binary(context.Background(), bin, cfg, c)
 	if err != nil {
 		t.Fatal(err)
@@ -263,7 +264,7 @@ func Vuln() {
 				t.Fatal(err)
 			}
 
-			cfg := &Config{}
+			cfg := &govulncheck.Config{}
 			res, err := Binary(context.Background(), bin, cfg, c)
 			if err != nil {
 				t.Fatal(err)

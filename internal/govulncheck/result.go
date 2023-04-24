@@ -37,6 +37,16 @@ type Config struct {
 	// GoVersion is the version of Go used for analyzing standard library
 	// vulnerabilities.
 	GoVersion string `json:"go_version,omitempty"`
+
+	// Consider only vulnerabilities that apply to this OS.
+	GOOS string `json:"goos,omitempty"`
+
+	// Consider only vulnerabilities that apply to this architecture.
+	GOARCH string `json:"goarch,omitempty"`
+
+	// ImportsOnly instructs vulncheck to analyze import chains only.
+	// Otherwise, call chains are analyzed too.
+	ImportsOnly bool `json:"imports_only,omitempty"`
 }
 
 type Progress struct {

@@ -12,9 +12,10 @@ import (
 	"io"
 
 	"golang.org/x/vuln/internal/client"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
-func binary(ctx context.Context, exe io.ReaderAt, cfg *vulncheck.Config, client client.Client) (_ *vulncheck.Result, err error) {
+func binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, client client.Client) (_ *vulncheck.Result, err error) {
 	return vulncheck.Binary(ctx, exe, cfg, client)
 }

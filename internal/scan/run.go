@@ -35,7 +35,7 @@ func doGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io
 		return err
 	}
 
-	config := newConfig(ctx, cfg, client)
+	prepareConfig(ctx, cfg, client)
 	var handler govulncheck.Handler
 	switch {
 	case cfg.json:
@@ -45,7 +45,7 @@ func doGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io
 	}
 
 	// Write the introductory message to the user.
-	if err := handler.Config(config); err != nil {
+	if err := handler.Config(&cfg.Config); err != nil {
 		return err
 	}
 
@@ -85,22 +85,21 @@ func containsAffectedVulnerabilities(vulns []*govulncheck.Vuln) bool {
 	return false
 }
 
-func newConfig(ctx context.Context, cfg *config, client client.Client) *govulncheck.Config {
-	config := govulncheck.Config{DataSource: cfg.db}
+func prepareConfig(ctx context.Context, cfg *config, client client.Client) {
+	cfg.DataSource = cfg.db
 	if cfg.mode == modeSource {
 		// The Go version is only relevant for source analysis, so omit it for
 		// binary mode.
 		if v, err := internal.GoEnv("GOVERSION"); err == nil {
-			config.GoVersion = v
+			cfg.GoVersion = v
 		}
 	}
 	if bi, ok := debug.ReadBuildInfo(); ok {
-		config.Version = scannerVersion(bi)
+		cfg.Version = scannerVersion(bi)
 	}
 	if mod, err := client.LastModifiedTime(ctx); err == nil {
-		config.LastModified = &mod
+		cfg.LastModified = &mod
 	}
-	return &config
 }
 
 // scannerVersion reconstructs the current version of

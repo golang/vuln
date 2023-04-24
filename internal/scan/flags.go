@@ -12,11 +12,11 @@ import (
 	"os"
 
 	"golang.org/x/tools/go/buildutil"
-	"golang.org/x/vuln/internal/vulncheck"
+	"golang.org/x/vuln/internal/govulncheck"
 )
 
 type config struct {
-	vulncheck.Config
+	govulncheck.Config
 	patterns []string
 	mode     string
 	db       string

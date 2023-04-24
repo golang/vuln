@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/client"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/test"
 )
@@ -126,7 +127,7 @@ func TestImports(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &Config{
+	cfg := &govulncheck.Config{
 		ImportsOnly: true,
 	}
 	os.Setenv("GOVERSION", "go1.18")
@@ -272,7 +273,7 @@ func TestRequires(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &Config{
+	cfg := &govulncheck.Config{
 		ImportsOnly: true,
 	}
 	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
@@ -513,7 +514,7 @@ func TestCalls(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &Config{}
+	cfg := &govulncheck.Config{}
 	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
 	if err != nil {
 		t.Fatal(err)
@@ -610,7 +611,7 @@ func TestFiltering(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 
-	cfg := &Config{
+	cfg := &govulncheck.Config{
 		ImportsOnly: true,
 	}
 
@@ -701,7 +702,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 
-	cfg := &Config{}
+	cfg := &govulncheck.Config{}
 	result, err := Source(context.Background(), Convert(pkgs), cfg, client)
 	if err != nil {
 		t.Fatal(err)
@@ -770,7 +771,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &Config{}
+	cfg := &govulncheck.Config{}
 	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
 	if err != nil {
 		t.Fatal(err)
@@ -854,7 +855,7 @@ func TestRecursion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &Config{}
+	cfg := &govulncheck.Config{}
 	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
 	if err != nil {
 		t.Fatal(err)
@@ -913,7 +914,7 @@ func TestIssue57174(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &Config{}
+	cfg := &govulncheck.Config{}
 	_, err = Source(context.Background(), Convert(pkgs), cfg, c)
 	if err != nil {
 		t.Fatal(err)

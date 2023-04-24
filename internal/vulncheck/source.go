@@ -15,6 +15,7 @@ import (
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/semver"
 )
@@ -28,7 +29,7 @@ import (
 // some known vulnerabilities.
 //
 // 3) A CallGraph leading to the use of a known vulnerable function or method.
-func Source(ctx context.Context, pkgs []*Package, cfg *Config, client client.Client) (_ *Result, err error) {
+func Source(ctx context.Context, pkgs []*Package, cfg *govulncheck.Config, client client.Client) (_ *Result, err error) {
 	// buildSSA builds a whole program that assumes all packages use the same FileSet.
 	// Check all packages in pkgs are using the same FileSet.
 	// TODO(https://go.dev/issue/59729): take FileSet out of Package and
