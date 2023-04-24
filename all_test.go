@@ -21,7 +21,7 @@ var excluded = map[string]bool{
 	"golang.org/x/exp": true,
 }
 
-func Test(t *testing.T) {
+func TestBashChecks(t *testing.T) {
 	if testing.Short() {
 		t.Skipf("skipping: short mode")
 	}
@@ -41,7 +41,9 @@ func Test(t *testing.T) {
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
+}
 
+func TestDependencies(t *testing.T) {
 	dat, err := os.ReadFile("go.mod")
 	if err != nil {
 		t.Fatal(err)
