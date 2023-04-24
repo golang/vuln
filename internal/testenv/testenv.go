@@ -88,7 +88,7 @@ func NeedsExec(t testing.TB) {
 	}
 }
 
-func HasGoBuild() bool {
+func HasGoBuild() (bool, error) {
 	hasGoBuildOnce.Do(func() {
 		if !HasExec() {
 			hasGoBuildErr = tryExecErr
@@ -114,7 +114,7 @@ func HasGoBuild() bool {
 		hasGoBuild = true
 	})
 
-	return hasGoBuild
+	return hasGoBuild, hasGoBuildErr
 }
 
 var (
@@ -124,7 +124,7 @@ var (
 )
 
 func NeedsGoBuild(t testing.TB) {
-	if !HasGoBuild() {
+	if hgb, _ := HasGoBuild(); !hgb {
 		t.Helper()
 		t.Skipf("skipping test: 'go build' not supported on %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
