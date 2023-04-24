@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/packages"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/semver"
@@ -30,12 +31,15 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, clien
 	}
 
 	cmods := convertModules(mods)
-	// set the stdlib version for detection of vulns in the standard library
-	// TODO(https://go.dev/issue/53740): what if Go version is not in semver
-	// format?
-	stdlibModule.Version = semver.GoTagToSemver(bi.GoVersion)
+
 	// Add "stdlib" module.
-	cmods = append(cmods, stdlibModule)
+	cmods = append(cmods, &Module{
+		Path: internal.GoStdModulePath,
+		// set the stdlib version for detection of vulns in the standard library
+		// TODO(https://go.dev/issue/53740): what if Go version is not in semver
+		// format?
+		Version: semver.GoTagToSemver(bi.GoVersion),
+	})
 
 	mv, err := FetchVulnerabilities(ctx, client, cmods)
 	if err != nil {
@@ -135,7 +139,7 @@ func convertModules(mods []*packages.Module) []*Module {
 // If no module path matches, findPackageModule returns the empty string.
 func findPackageModule(pkg string, mods []*Module) string {
 	if isStdPackage(pkg) {
-		return stdlibModule.Path
+		return internal.GoStdModulePath
 	}
 
 	for _, m := range mods {

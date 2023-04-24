@@ -46,14 +46,10 @@ func Source(ctx context.Context, pkgs []*Package, cfg *govulncheck.Config, clien
 		}
 	}
 
-	// set the stdlib version for detection of vulns in the standard library
-	// TODO(https://go.dev/issue/53740): what if Go version is not in semver format?
 	gover, err := internal.GoEnv("GOVERSION")
 	if err != nil {
 		return nil, err
 	}
-	stdlibModule.Version = semver.GoTagToSemver(gover)
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -76,7 +72,7 @@ func Source(ctx context.Context, pkgs []*Package, cfg *govulncheck.Config, clien
 		}()
 	}
 
-	mods := extractModules(pkgs)
+	mods := extractModules(pkgs, gover)
 	mv, err := FetchVulnerabilities(ctx, client, mods)
 	if err != nil {
 		return nil, err
@@ -87,6 +83,11 @@ func Source(ctx context.Context, pkgs []*Package, cfg *govulncheck.Config, clien
 		Imports:  &ImportGraph{Packages: make(map[int]*PkgNode)},
 		Requires: &RequireGraph{Modules: make(map[int]*ModNode)},
 		Calls:    &CallGraph{Functions: make(map[int]*FuncNode)},
+	}
+	result.Requires.Modules[stdModID] = &ModNode{
+		ID:      stdModID,
+		Path:    internal.GoStdModulePath,
+		Version: gover,
 	}
 
 	vulnPkgModSlice(pkgs, modVulns, result)
@@ -302,8 +303,10 @@ func vulnModuleSlice(result *Result) {
 	}
 }
 
+const stdModID = 1
+
 // modID is an id counter for nodes of Requires graph.
-var modID int = 0
+var modID int = stdModID
 
 func nextModID() int {
 	modID++
@@ -314,11 +317,11 @@ func nextModID() int {
 // not exist already, and returns id of the module node. The actual module
 // node is stored to result.
 func moduleNodeID(pkgNode *PkgNode, result *Result, modNodeIDs map[string]int) int {
-	mod := pkgNode.pkg.Module
 	if isStdPackage(pkgNode.Path) {
 		// standard library packages don't have a module.
-		mod = stdlibModule
+		return stdModID
 	}
+	mod := pkgNode.pkg.Module
 	if mod == nil {
 		return 0
 	}
@@ -544,11 +547,6 @@ func addCallSinkForVuln(callID int, osv *osv.Entry, symbol, pkg string, result *
 	}
 }
 
-var stdlibModule = &Module{
-	Path: internal.GoStdModulePath,
-	// Version is populated by Source and Binary based on user input
-}
-
 // modKey creates a unique string identifier for mod.
 func modKey(mod *Module) string {
 	if mod == nil {
@@ -559,13 +557,19 @@ func modKey(mod *Module) string {
 
 // extractModules collects modules in `pkgs` up to uniqueness of
 // module path and version.
-func extractModules(pkgs []*Package) []*Module {
+func extractModules(pkgs []*Package, goversion string) []*Module {
 	modMap := map[string]*Module{}
 
 	// Add "stdlib" module. Even if stdlib is not used, which
 	// is unlikely, it won't appear in vulncheck.Modules nor
 	// other results.
-	modMap[stdlibModule.Path] = stdlibModule
+
+	// set the stdlib version for detection of vulns in the standard library
+	// TODO(https://go.dev/issue/53740): what if Go version is not in semver format?
+	modMap[internal.GoStdModulePath] = &Module{
+		Path:    internal.GoStdModulePath,
+		Version: semver.GoTagToSemver(goversion),
+	}
 
 	seen := map[*Package]bool{}
 	var extract func(*Package, map[string]*Module)

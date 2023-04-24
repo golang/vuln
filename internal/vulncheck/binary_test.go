@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/internal/testenv"
@@ -128,7 +129,7 @@ func TestBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	hasGo := hasGoVersion(bin)
+	goversion := getGoVersion(bin)
 	// In importsOnly mode, vulnerable symbols
 	// {avuln.VulnData.Vuln1, avuln.VulnData.Vuln2, bvuln.Vuln}
 	// should be detected.
@@ -137,7 +138,7 @@ func TestBinary(t *testing.T) {
 		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
 		{Symbol: "VulnData.Vuln2", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
 	}
-	if hasGo {
+	if goversion != "" {
 		// If binary has recognizable Go version available,
 		// then archive/zip.OpenReader should be detected too.
 		wantVulns = append(wantVulns, &Vuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
@@ -160,7 +161,7 @@ func TestBinary(t *testing.T) {
 	wantVulns = []*Vuln{
 		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
 	}
-	if hasGo {
+	if goversion != "" {
 		// If binary has recognizable Go version available,
 		// then archive/zip.OpenReader should be detected too.
 		wantVulns = append(wantVulns, &Vuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
@@ -179,7 +180,7 @@ func TestBinary(t *testing.T) {
 		{Path: "golang.org/amod", Version: "v1.1.3"},
 		{Path: "golang.org/bmod", Version: "v0.5.0"},
 		{Path: "golang.org/cmod", Version: "v1.1.3"},
-		stdlibModule,
+		{Path: internal.GoStdModulePath, Version: goversion},
 	}
 	gotMods := res.Modules
 	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
@@ -188,9 +189,9 @@ func TestBinary(t *testing.T) {
 	}
 }
 
-func hasGoVersion(exe io.ReaderAt) bool {
+func getGoVersion(exe io.ReaderAt) string {
 	_, _, bi, _ := buildinfo.ExtractPackagesAndSymbols(exe)
-	return semver.GoTagToSemver(bi.GoVersion) != ""
+	return semver.GoTagToSemver(bi.GoVersion)
 }
 
 // Test58509 is supposed to test issue #58509 where a whole

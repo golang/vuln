@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"golang.org/x/tools/go/packages"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/semver"
 )
@@ -392,7 +393,7 @@ func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry 
 	var mostSpecificMod *ModVulns
 	for _, mod := range mv {
 		md := mod
-		if isStd && mod.Module == stdlibModule {
+		if isStd && mod.Module.Path == internal.GoStdModulePath {
 			// standard library packages do not have an associated module,
 			// so we relate them to the artificial stdlib module.
 			mostSpecificMod = md

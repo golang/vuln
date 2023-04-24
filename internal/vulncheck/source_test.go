@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
@@ -319,7 +320,7 @@ func TestRequires(t *testing.T) {
 		{Path: "golang.org/entry"},
 		{Path: "golang.org/imod1", Version: "v0.0.0"},
 		{Path: "golang.org/imod2", Version: "v0.0.0"},
-		stdlibModule,
+		{Path: internal.GoStdModulePath, Version: "v1.18.0"},
 	}
 	gotMods := result.Modules
 	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
