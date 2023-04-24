@@ -30,12 +30,12 @@ func doGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io
 		return convertJSONToText(ctx, cfg, r, stdout)
 	}
 
-	cfg.Client, err = client.NewClient(cfg.db, nil)
+	client, err := client.NewClient(cfg.db, nil)
 	if err != nil {
 		return err
 	}
 
-	config := newConfig(ctx, cfg)
+	config := newConfig(ctx, cfg, client)
 	var handler govulncheck.Handler
 	switch {
 	case cfg.json:
@@ -53,9 +53,9 @@ func doGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io
 	switch cfg.mode {
 	case modeSource:
 		dir := filepath.FromSlash(cfg.dir)
-		vulns, err = runSource(ctx, handler, cfg, dir)
+		vulns, err = runSource(ctx, handler, cfg, client, dir)
 	case modeBinary:
-		vulns, err = runBinary(ctx, handler, cfg)
+		vulns, err = runBinary(ctx, handler, cfg, client)
 	}
 	if err != nil {
 		return err
@@ -85,7 +85,7 @@ func containsAffectedVulnerabilities(vulns []*govulncheck.Vuln) bool {
 	return false
 }
 
-func newConfig(ctx context.Context, cfg *config) *govulncheck.Config {
+func newConfig(ctx context.Context, cfg *config, client client.Client) *govulncheck.Config {
 	config := govulncheck.Config{DataSource: cfg.db}
 	if cfg.mode == modeSource {
 		// The Go version is only relevant for source analysis, so omit it for
@@ -97,7 +97,7 @@ func newConfig(ctx context.Context, cfg *config) *govulncheck.Config {
 	if bi, ok := debug.ReadBuildInfo(); ok {
 		config.Version = scannerVersion(bi)
 	}
-	if mod, err := cfg.Client.LastModifiedTime(ctx); err == nil {
+	if mod, err := client.LastModifiedTime(ctx); err == nil {
 		config.LastModified = &mod
 	}
 	return &config

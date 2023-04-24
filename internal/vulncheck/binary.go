@@ -15,13 +15,14 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/packages"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/internal/vulncheck/internal/buildinfo"
 )
 
 // Binary detects presence of vulnerable symbols in exe.
 // The Calls, Imports, and Requires fields on Result will be empty.
-func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err error) {
+func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config, client client.Client) (_ *Result, err error) {
 	mods, packageSymbols, bi, err := buildinfo.ExtractPackagesAndSymbols(exe)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse provided binary: %v", err)
@@ -35,7 +36,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *Config) (_ *Result, err e
 	// Add "stdlib" module.
 	cmods = append(cmods, stdlibModule)
 
-	mv, err := FetchVulnerabilities(ctx, cfg.Client, cmods)
+	mv, err := FetchVulnerabilities(ctx, client, cmods)
 	if err != nil {
 		return nil, err
 	}

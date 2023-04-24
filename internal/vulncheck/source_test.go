@@ -127,12 +127,11 @@ func TestImports(t *testing.T) {
 	}
 
 	cfg := &Config{
-		Client:      c,
 		ImportsOnly: true,
 	}
 	os.Setenv("GOVERSION", "go1.18")
 
-	result, err := Source(context.Background(), Convert(pkgs), cfg)
+	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,10 +273,9 @@ func TestRequires(t *testing.T) {
 	}
 
 	cfg := &Config{
-		Client:      c,
 		ImportsOnly: true,
 	}
-	result, err := Source(context.Background(), Convert(pkgs), cfg)
+	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -515,10 +513,8 @@ func TestCalls(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &Config{
-		Client: c,
-	}
-	result, err := Source(context.Background(), Convert(pkgs), cfg)
+	cfg := &Config{}
+	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -615,14 +611,13 @@ func TestFiltering(t *testing.T) {
 	}
 
 	cfg := &Config{
-		Client:      client,
 		ImportsOnly: true,
 	}
 
 	os.Setenv("GOOS", "linux")
 	os.Setenv("GOARCH", "amd64")
 
-	result, err := Source(context.Background(), Convert(pkgs), cfg)
+	result, err := Source(context.Background(), Convert(pkgs), cfg, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -634,7 +629,7 @@ func TestFiltering(t *testing.T) {
 	os.Setenv("GOOS", "freebsd")
 	os.Setenv("GOARCH", "arm64")
 
-	result, err = Source(context.Background(), Convert(pkgs), cfg)
+	result, err = Source(context.Background(), Convert(pkgs), cfg, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -706,10 +701,8 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 
-	cfg := &Config{
-		Client: client,
-	}
-	result, err := Source(context.Background(), Convert(pkgs), cfg)
+	cfg := &Config{}
+	result, err := Source(context.Background(), Convert(pkgs), cfg, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -777,10 +770,8 @@ func TestNoSyntheticNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &Config{
-		Client: c,
-	}
-	result, err := Source(context.Background(), Convert(pkgs), cfg)
+	cfg := &Config{}
+	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -863,10 +854,8 @@ func TestRecursion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &Config{
-		Client: c,
-	}
-	result, err := Source(context.Background(), Convert(pkgs), cfg)
+	cfg := &Config{}
+	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -924,10 +913,8 @@ func TestIssue57174(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &Config{
-		Client: c,
-	}
-	_, err = Source(context.Background(), Convert(pkgs), cfg)
+	cfg := &Config{}
+	_, err = Source(context.Background(), Convert(pkgs), cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/packages"
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/vulncheck"
 )
@@ -23,7 +24,7 @@ import (
 // Vulnerabilities can be called (affecting the package, because a vulnerable
 // symbol is actually exercised) or just imported by the package
 // (likely having a non-affecting outcome).
-func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, dir string) ([]*govulncheck.Vuln, error) {
+func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, client client.Client, dir string) ([]*govulncheck.Vuln, error) {
 	var pkgs []*vulncheck.Package
 	pkgs, err := loadPackages(cfg, dir)
 	if err != nil {
@@ -39,7 +40,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, di
 	if err := handler.Progress(sourceProgressMessage(pkgs)); err != nil {
 		return nil, err
 	}
-	vr, err := vulncheck.Source(ctx, pkgs, &cfg.Config)
+	vr, err := vulncheck.Source(ctx, pkgs, &cfg.Config, client)
 	if err != nil {
 		return nil, err
 	}

@@ -209,7 +209,7 @@ func TestInits(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 	vpkgs := vulncheck.Convert(pkgs)
-	result, err := vulncheck.Source(context.Background(), vpkgs, &vulncheck.Config{Client: testClient})
+	result, err := vulncheck.Source(context.Background(), vpkgs, &vulncheck.Config{}, testClient)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,12 +14,13 @@ import (
 	"strings"
 	"unicode"
 
+	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
 // runBinary detects presence of vulnerable symbols in an executable.
-func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config) ([]*govulncheck.Vuln, error) {
+func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, client client.Client) ([]*govulncheck.Vuln, error) {
 	var exe *os.File
 	exe, err := os.Open(cfg.patterns[0])
 	if err != nil {
@@ -31,7 +32,7 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config) ([
 	if err := handler.Progress(p); err != nil {
 		return nil, err
 	}
-	vr, err := binary(ctx, exe, &cfg.Config)
+	vr, err := binary(ctx, exe, &cfg.Config, client)
 	if err != nil {
 		return nil, fmt.Errorf("govulncheck: %v", err)
 	}

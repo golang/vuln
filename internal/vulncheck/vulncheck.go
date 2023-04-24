@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"golang.org/x/tools/go/packages"
-	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/semver"
 )
@@ -23,9 +22,6 @@ type Config struct {
 	// ImportsOnly instructs vulncheck to analyze import chains only.
 	// Otherwise, call chains are analyzed too.
 	ImportsOnly bool
-
-	// Client is used for querying data from a vulnerability database.
-	Client client.Client
 
 	// Consider only vulnerabilities that apply to this OS and architecture.
 	// An empty string means "all" (don't filter).
