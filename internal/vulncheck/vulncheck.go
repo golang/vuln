@@ -27,11 +27,6 @@ type Config struct {
 	// Client is used for querying data from a vulnerability database.
 	Client client.Client
 
-	// SourceGoVersion is Go version used to build Source inputs passed
-	// to vulncheck. If not provided, the current Go version at PATH
-	// is used to detect vulnerabilities in Go standard library.
-	SourceGoVersion string
-
 	// Consider only vulnerabilities that apply to this OS and architecture.
 	// An empty string means "all" (don't filter).
 	// Applies only to Source.

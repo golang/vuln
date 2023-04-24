@@ -127,10 +127,10 @@ func TestImports(t *testing.T) {
 	}
 
 	cfg := &Config{
-		Client:          c,
-		ImportsOnly:     true,
-		SourceGoVersion: "go1.18",
+		Client:      c,
+		ImportsOnly: true,
 	}
+	os.Setenv("GOVERSION", "go1.18")
 
 	result, err := Source(context.Background(), Convert(pkgs), cfg)
 	if err != nil {

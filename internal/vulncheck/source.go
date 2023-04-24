@@ -46,15 +46,11 @@ func Source(ctx context.Context, pkgs []*Package, cfg *Config) (_ *Result, err e
 
 	// set the stdlib version for detection of vulns in the standard library
 	// TODO(https://go.dev/issue/53740): what if Go version is not in semver format?
-	if cfg.SourceGoVersion != "" {
-		stdlibModule.Version = semver.GoTagToSemver(cfg.SourceGoVersion)
-	} else {
-		gover, err := internal.GoEnv("GOVERSION")
-		if err != nil {
-			return nil, err
-		}
-		stdlibModule.Version = semver.GoTagToSemver(gover)
+	gover, err := internal.GoEnv("GOVERSION")
+	if err != nil {
+		return nil, err
 	}
+	stdlibModule.Version = semver.GoTagToSemver(gover)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
