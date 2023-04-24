@@ -1,0 +1,4 @@
+# Test of query mode with multiple inputs (currently unsupported).
+
+$ govulncheck -mode=query -json example.com@v1.0.0 example.com@v2.0.0 --> FAIL 1
+only one query can be handled at a time in query mode

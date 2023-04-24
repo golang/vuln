@@ -1,0 +1,4 @@
+# Test of query mode with invalid input.
+
+$ govulncheck -mode=query -json example.com/module@ --> FAIL 1
+invalid query example.com/module@: must be of the form module@version

@@ -56,6 +56,8 @@ func doGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io
 		vulns, err = runSource(ctx, handler, cfg, client, dir)
 	case modeBinary:
 		vulns, err = runBinary(ctx, handler, cfg, client)
+	case modeQuery:
+		vulns, err = runQuery(ctx, handler, cfg, client)
 	}
 	if err != nil {
 		return err

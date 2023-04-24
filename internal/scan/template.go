@@ -123,7 +123,7 @@ func createVulnSummary(v *govulncheck.Vuln, topPkgs map[string]bool) vulnSummary
 				addStacks(&tm, p, topPkgs)
 				attachModule(&vInfo, tm)
 			}
-			if len(vInfo.Modules) == 0 {
+			if len(vInfo.Modules) == 0 && len(m.Packages) > 0 {
 				p := m.Packages[0]
 				tm := createModuleSummary(m, p.Path, osv)
 				addStacks(&tm, p, topPkgs) // for binary mode, this will be ""

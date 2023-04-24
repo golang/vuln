@@ -31,6 +31,7 @@ const (
 	modeBinary  = "binary"
 	modeSource  = "source"
 	modeConvert = "convert" // only intended for use by gopls
+	modeQuery   = "query"   // only intended for use by gopls
 )
 
 func parseFlags(stderr io.Writer, args []string) (*config, error) {
@@ -80,6 +81,7 @@ var supportedModes = map[string]bool{
 	modeSource:  true,
 	modeBinary:  true,
 	modeConvert: true,
+	modeQuery:   true,
 }
 
 func validateConfig(cfg *config) error {
@@ -119,6 +121,27 @@ func validateConfig(cfg *config) error {
 		}
 		if len(cfg.tags) > 0 {
 			return fmt.Errorf("the -tags flag is not supported in convert mode")
+		}
+	case modeQuery:
+		if cfg.test {
+			return fmt.Errorf("the -test flag is not supported in query mode")
+		}
+		if len(cfg.tags) > 0 {
+			return fmt.Errorf("the -tags flag is not supported in query mode")
+		}
+		if !cfg.json {
+			return fmt.Errorf("the -json flag must be set in query mode")
+		}
+		if cfg.verbose {
+			return fmt.Errorf("the -v flag is not supported in query mode")
+		}
+		if len(cfg.patterns) != 1 {
+			return fmt.Errorf("only one query can be handled at a time in query mode")
+		}
+		// Parse the input here so that we can catch errors before
+		// outputting the Config.
+		if _, _, err := parseModuleQuery(cfg.patterns[0]); err != nil {
+			return err
 		}
 	}
 	if cfg.json && cfg.verbose {

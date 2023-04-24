@@ -1,0 +1,155 @@
+# Test of query mode for a third party module.
+
+$ govulncheck -mode=query -json github.com/tidwall/gjson@v1.6.5
+{
+  "config": {
+    "version": govulncheck@v0.0.0-00000000000-20000101010101
+    "data_source": "testdata/vulndb-v1",
+    "last_modified": "2023-04-03T15:57:51Z"
+  }
+}
+{
+  "progress": {
+    "message": "Looking up vulnerabilities in github.com/tidwall/gjson at v1.6.5..."
+  }
+}
+{
+  "vulnerability": {
+    "osv": {
+      "schema_version": "1.3.1",
+      "id": "GO-2021-0054",
+      "modified": "2023-04-03T15:57:51Z",
+      "published": "2021-04-14T20:04:52Z",
+      "aliases": [
+        "CVE-2020-36067",
+        "GHSA-p64j-r5f4-pwwx"
+      ],
+      "details": "Due to improper bounds checking, maliciously crafted JSON objects can cause an out-of-bounds panic. If parsing user input, this may be used as a denial of service vector.",
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/tidwall/gjson",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.6.6"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "github.com/tidwall/gjson",
+                "symbols": [
+                  "Result.ForEach",
+                  "unwrap"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "references": [
+        {
+          "type": "FIX",
+          "url": "https://github.com/tidwall/gjson/commit/bf4efcb3c18d1825b2988603dea5909140a5302b"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/tidwall/gjson/issues/196"
+        }
+      ],
+      "credits": [
+        {
+          "name": "@toptotu"
+        }
+      ],
+      "database_specific": {
+        "url": "https://pkg.go.dev/vuln/GO-2021-0054"
+      }
+    }
+  }
+}
+{
+  "vulnerability": {
+    "osv": {
+      "schema_version": "1.3.1",
+      "id": "GO-2021-0265",
+      "modified": "2023-04-03T15:57:51Z",
+      "published": "2022-08-15T18:06:07Z",
+      "aliases": [
+        "CVE-2021-42248",
+        "CVE-2021-42836",
+        "GHSA-c9gm-7rfj-8w5h",
+        "GHSA-ppj4-34rq-v8j9"
+      ],
+      "details": "A maliciously crafted path can cause Get and other query functions to consume excessive amounts of CPU and time.",
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/tidwall/gjson",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.9.3"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "github.com/tidwall/gjson",
+                "symbols": [
+                  "Get",
+                  "GetBytes",
+                  "GetMany",
+                  "GetManyBytes",
+                  "Result.Get",
+                  "parseObject",
+                  "queryMatches"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "references": [
+        {
+          "type": "FIX",
+          "url": "https://github.com/tidwall/gjson/commit/77a57fda87dca6d0d7d4627d512a630f89a91c96"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/tidwall/gjson/issues/237"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/tidwall/gjson/issues/236"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/tidwall/gjson/commit/590010fdac311cc8990ef5c97448d4fec8f29944"
+        }
+      ],
+      "database_specific": {
+        "url": "https://pkg.go.dev/vuln/GO-2021-0265"
+      }
+    }
+  }
+}
