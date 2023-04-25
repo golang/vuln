@@ -59,11 +59,6 @@ check_headers() {
   fi
 }
 
-# check_vet runs go vet on source files.
-check_vet() {
-  runcmd go vet -all ./...
-}
-
 # check_misspell runs misspell on source files.
 check_misspell() {
   ensure_go_binary github.com/client9/misspell/cmd/misspell
@@ -80,7 +75,6 @@ check_shellcheck() {
 }
 
 go_linters() {
-  check_vet
   check_misspell
 }
 

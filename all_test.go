@@ -93,6 +93,11 @@ func TestUnparam(t *testing.T) {
 	rungo(t, "run", "mvdan.cc/unparam@v0.0.0-20230312165513-e84e2d14e3b8", "./...")
 }
 
+func TestVet(t *testing.T) {
+	skipIfShort(t)
+	rungo(t, "vet", "-all", "./...")
+}
+
 func rungo(t *testing.T, args ...string) {
 	cmd := exec.Command("go", args...)
 	if output, err := cmd.CombinedOutput(); err != nil {
