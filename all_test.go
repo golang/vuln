@@ -81,6 +81,20 @@ func TestGovulncheck(t *testing.T) {
 	}
 }
 
+func TestStaticCheck(t *testing.T) {
+	skipIfShort(t)
+	skipIfTrybot(t)
+	rungo(t, "run", "honnef.co/go/tools/cmd/staticcheck@v0.4.3", "./...")
+}
+
+func rungo(t *testing.T, args ...string) {
+	cmd := exec.Command("go", args...)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Log("\n" + string(output))
+		t.Error("command had non zero exit code")
+	}
+}
+
 func isTrybot() bool { return os.Getenv("GO_BUILDER_NAME") != "" }
 
 func skipIfShort(t *testing.T) {

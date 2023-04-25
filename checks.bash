@@ -71,12 +71,6 @@ check_vet() {
   runcmd go vet -all ./...
 }
 
-# check_staticcheck runs staticcheck on source files.
-check_staticcheck() {
-  ensure_go_binary honnef.co/go/tools/cmd/staticcheck
-  runcmd staticcheck ./...
-}
-
 # check_misspell runs misspell on source files.
 check_misspell() {
   ensure_go_binary github.com/client9/misspell/cmd/misspell
@@ -108,7 +102,6 @@ runchecks() {
   # These checks only run locally due to a limitation with TryBots.
   check_shellcheck
   check_unparam
-  check_staticcheck
 }
 
 # trybots runs checks supported by TryBots.
