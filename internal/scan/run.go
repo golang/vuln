@@ -27,7 +27,7 @@ func doGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io
 		return err
 	}
 	if cfg.mode == modeConvert {
-		return convertJSONToText(ctx, cfg, r, stdout)
+		return convertJSONToText(cfg, r, stdout)
 	}
 
 	client, err := client.NewClient(cfg.db, nil)
@@ -139,7 +139,7 @@ func scannerVersion(bi *debug.BuildInfo) string {
 
 // convertJSONToText converts r, which is expected to be the JSON output of govulncheck,
 // into the text output, and writes the output to w.
-func convertJSONToText(ctx context.Context, cfg *config, r io.Reader, w io.Writer) error {
+func convertJSONToText(cfg *config, r io.Reader, w io.Writer) error {
 	// TODO: instead of hardcoding source=true, determine source based on the
 	// config decoded from the JSON output.
 	h := NewTextHandler(w, true, cfg.verbose)
