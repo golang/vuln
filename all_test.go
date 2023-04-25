@@ -87,6 +87,12 @@ func TestStaticCheck(t *testing.T) {
 	rungo(t, "run", "honnef.co/go/tools/cmd/staticcheck@v0.4.3", "./...")
 }
 
+func TestUnparam(t *testing.T) {
+	skipIfShort(t)
+	skipIfTrybot(t)
+	rungo(t, "run", "mvdan.cc/unparam@v0.0.0-20230312165513-e84e2d14e3b8", "./...")
+}
+
 func rungo(t *testing.T, args ...string) {
 	cmd := exec.Command("go", args...)
 	if output, err := cmd.CombinedOutput(); err != nil {

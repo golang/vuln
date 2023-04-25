@@ -59,13 +59,6 @@ check_headers() {
   fi
 }
 
-
-# check_unparam runs unparam on source files.
-check_unparam() {
-    ensure_go_binary mvdan.cc/unparam
-    runcmd unparam ./...
-}
-
 # check_vet runs go vet on source files.
 check_vet() {
   runcmd go vet -all ./...
@@ -101,7 +94,6 @@ runchecks() {
 
   # These checks only run locally due to a limitation with TryBots.
   check_shellcheck
-  check_unparam
 }
 
 # trybots runs checks supported by TryBots.
