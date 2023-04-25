@@ -8,9 +8,12 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"io/fs"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -22,6 +25,10 @@ import (
 var excluded = map[string]bool{
 	"golang.org/x/exp": true,
 }
+
+var goHeader = regexp.MustCompile(`^// Copyright 20\d\d The Go Authors\. All rights reserved\.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file\.`)
 
 func TestBashChecks(t *testing.T) {
 	skipIfShort(t)
@@ -102,6 +109,30 @@ func TestMisspell(t *testing.T) {
 	skipIfShort(t)
 	skipIfTrybot(t)
 	rungo(t, "run", "github.com/client9/misspell/cmd/misspell@v0.3.4", "-error", ".")
+}
+
+func TestHeaders(t *testing.T) {
+	sfs := os.DirFS(".")
+	fs.WalkDir(sfs, ".", func(path string, d fs.DirEntry, _ error) error {
+		if d.IsDir() {
+			if d.Name() == "testdata" {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(path, ".go") {
+			return nil
+		}
+		f, err := sfs.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		if !goHeader.MatchReader(bufio.NewReader(f)) {
+			t.Errorf("%v: incorrect go header", path)
+		}
+		return nil
+	})
 }
 
 func rungo(t *testing.T, args ...string) {
