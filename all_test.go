@@ -98,6 +98,12 @@ func TestVet(t *testing.T) {
 	rungo(t, "vet", "-all", "./...")
 }
 
+func TestMisspell(t *testing.T) {
+	skipIfShort(t)
+	skipIfTrybot(t)
+	rungo(t, "run", "github.com/client9/misspell/cmd/misspell@v0.3.4", "-error", ".")
+}
+
 func rungo(t *testing.T, args ...string) {
 	cmd := exec.Command("go", args...)
 	if output, err := cmd.CombinedOutput(); err != nil {

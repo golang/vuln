@@ -59,12 +59,6 @@ check_headers() {
   fi
 }
 
-# check_misspell runs misspell on source files.
-check_misspell() {
-  ensure_go_binary github.com/client9/misspell/cmd/misspell
-  runcmd misspell -error .
-}
-
 # check_shellcheck runs shellcheck on .bash and .sh files.
 check_shellcheck() {
   if ! [ -x "$(command -v shellcheck)" ]; then
@@ -72,10 +66,6 @@ check_shellcheck() {
   fi
   runcmd shellcheck -x checks.bash
   runcmd shellcheck ./**/*.sh
-}
-
-go_linters() {
-  check_misspell
 }
 
 go_modtidy() {
@@ -93,7 +83,6 @@ runchecks() {
 # trybots runs checks supported by TryBots.
 trybots() {
   check_headers "$@"
-  go_linters
   go_modtidy
 }
 
