@@ -14,10 +14,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal/scan"
+	"golang.org/x/vuln/internal/testenv"
 	"golang.org/x/vuln/internal/web"
 )
 
 func TestConvert(t *testing.T) {
+	testenv.NeedsGoBuild(t)
+
 	testDir, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
