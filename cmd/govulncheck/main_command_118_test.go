@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"runtime"
 	"testing"
+	"unsafe"
 
 	"github.com/google/go-cmdtest"
 	"golang.org/x/vuln/internal/scan"
@@ -121,7 +122,31 @@ func testSuite(dir, vulndbDir string) (*cmdtest.TestSuite, error) {
 		return nil, err
 	}
 	ts.DisableLogging = true
+
+	// Limit the number of concurrent scans. Scanning is implemented using
+	// x/tools/go/ssa, which is known to be memory-hungry
+	// (see https://go.dev/issue/14113), and by default the testing package
+	// allows up to GOMAXPROCS parallel tests at a time.
+	//
+	// For now we arbitrarily limit to ⌈GOMAXPROCS/4⌉, on the theory that many Go
+	// developer and CI machines have at least 8 logical cores and we want most
+	// runs of the test to exercise at least a little concurrency. If that turns
+	// out to still be too high, we may consider reducing it further.
+	//
+	// Since all of the scans run in the same process, we need an especially low
+	// limit on 32-bit platforms: we may run out of virtual address space well
+	// before we run out of system RAM.
+	type token struct{}
+	limit := (runtime.GOMAXPROCS(0) + 3) / 4
+	if limit > 2 && unsafe.Sizeof(uintptr(0)) < 8 {
+		limit = 2
+	}
+	sem := make(chan token, limit)
+
 	ts.Commands["govulncheck"] = func(args []string, inputFile string) ([]byte, error) {
+		sem <- token{}
+		defer func() { <-sem }()
+
 		govulndbURI, err := web.URLFromFilePath(vulndbDir)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create GOVULNDB env var: %v", err)
