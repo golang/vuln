@@ -104,7 +104,6 @@ func TestUnparam(t *testing.T) {
 }
 
 func TestVet(t *testing.T) {
-	skipIfShort(t)
 	rungo(t, "vet", "-all", "./...")
 }
 
