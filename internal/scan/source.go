@@ -64,7 +64,6 @@ func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
 	cfg.BuildFlags = buildFlags
 
 	pkgs, err := packages.Load(cfg, c.patterns...)
-	vpkgs := vulncheck.Convert(pkgs)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +74,7 @@ func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
 	if len(perrs) > 0 {
 		err = &packageError{perrs}
 	}
-	return vpkgs, err
+	return pkgs, err
 }
 
 func createSourceResult(vr *vulncheck.Result) []*govulncheck.Vuln {

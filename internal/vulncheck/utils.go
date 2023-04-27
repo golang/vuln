@@ -29,11 +29,11 @@ func buildSSA(pkgs []*Package, fset *token.FileSet) (*ssa.Program, []*ssa.Packag
 	prog := ssa.NewProgram(fset, ssa.InstantiateGenerics)
 
 	imports := make(map[*Package]*ssa.Package)
-	var createImports func([]*Package)
-	createImports = func(pkgs []*Package) {
+	var createImports func(map[string]*Package)
+	createImports = func(pkgs map[string]*Package) {
 		for _, p := range pkgs {
 			if _, ok := imports[p]; !ok {
-				i := prog.CreatePackage(p.Pkg, p.Syntax, p.TypesInfo, true)
+				i := prog.CreatePackage(p.Types, p.Syntax, p.TypesInfo, true)
 				imports[p] = i
 				createImports(p.Imports)
 			}
@@ -49,7 +49,7 @@ func buildSSA(pkgs []*Package, fset *token.FileSet) (*ssa.Program, []*ssa.Packag
 		if sp, ok := imports[tp]; ok {
 			ssaPkgs = append(ssaPkgs, sp)
 		} else {
-			sp := prog.CreatePackage(tp.Pkg, tp.Syntax, tp.TypesInfo, false)
+			sp := prog.CreatePackage(tp.Types, tp.Syntax, tp.TypesInfo, false)
 			ssaPkgs = append(ssaPkgs, sp)
 		}
 	}

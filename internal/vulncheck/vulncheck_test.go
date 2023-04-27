@@ -453,15 +453,13 @@ func TestConvert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	vpkgs := Convert(pkgs)
-
 	wantPkgs := map[string][]string{
 		"golang.org/amod/avuln": {"golang.org/wmod/w"},
 		"golang.org/bmod/bvuln": nil,
 		"golang.org/entry/x":    {"golang.org/amod/avuln"},
 		"golang.org/wmod/w":     {"golang.org/bmod/bvuln"},
 	}
-	if got := pkgPathToImports(vpkgs); !reflect.DeepEqual(got, wantPkgs) {
+	if got := pkgPathToImports(pkgs); !reflect.DeepEqual(got, wantPkgs) {
 		t.Errorf("want %v;got %v", wantPkgs, got)
 	}
 
@@ -471,7 +469,7 @@ func TestConvert(t *testing.T) {
 		"golang.org/entry": "",
 		"golang.org/wmod":  "v0.0.0",
 	}
-	if got := modulePathToVersion(vpkgs); !reflect.DeepEqual(got, wantMods) {
+	if got := modulePathToVersion(pkgs); !reflect.DeepEqual(got, wantMods) {
 		t.Errorf("want %v;got %v", wantMods, got)
 	}
 }

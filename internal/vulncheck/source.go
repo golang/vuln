@@ -211,7 +211,7 @@ func vulnImportSlice(pkg *Package, modVulns moduleVulnerabilities, result *Resul
 
 				symbols := p.Symbols
 				if len(symbols) == 0 {
-					symbols = allSymbols(pkg.Pkg)
+					symbols = allSymbols(pkg.Types)
 				}
 
 				for _, symbol := range symbols {

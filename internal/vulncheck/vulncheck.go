@@ -6,9 +6,7 @@ package vulncheck
 
 import (
 	"fmt"
-	"go/ast"
 	"go/token"
-	"go/types"
 	"strings"
 	"time"
 
@@ -20,59 +18,10 @@ import (
 
 // Package is a Go package for vulncheck analysis. It is a version of
 // packages.Package trimmed down to reduce memory consumption.
-type Package struct {
-	Name      string
-	PkgPath   string
-	Imports   []*Package
-	Pkg       *types.Package
-	Fset      *token.FileSet
-	Syntax    []*ast.File
-	TypesInfo *types.Info
-	Module    *Module
-}
+type Package = packages.Package
 
 // Module is a Go module for vulncheck analysis.
-type Module struct {
-	Path    string
-	Version string
-	Dir     string
-	Replace *Module
-}
-
-// Convert transforms a slice of packages.Package to
-// a slice of corresponding vulncheck.Package.
-func Convert(pkgs []*packages.Package) []*Package {
-	convertMod := newModuleConverter()
-	ps := make(map[*packages.Package]*Package)
-	var pkg func(*packages.Package) *Package
-	pkg = func(p *packages.Package) *Package {
-		if vp, ok := ps[p]; ok {
-			return vp
-		}
-
-		vp := &Package{
-			Name:      p.Name,
-			PkgPath:   p.PkgPath,
-			Pkg:       p.Types,
-			Fset:      p.Fset,
-			Syntax:    p.Syntax,
-			TypesInfo: p.TypesInfo,
-			Module:    convertMod(p.Module),
-		}
-		ps[p] = vp
-
-		for _, i := range p.Imports {
-			vp.Imports = append(vp.Imports, pkg(i))
-		}
-		return vp
-	}
-
-	var vpkgs []*Package
-	for _, p := range pkgs {
-		vpkgs = append(vpkgs, pkg(p))
-	}
-	return vpkgs
-}
+type Module = packages.Module
 
 // Result contains information on how known vulnerabilities are reachable
 // in the call graph, package imports graph, and module requires graph of

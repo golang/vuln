@@ -133,7 +133,7 @@ func TestImports(t *testing.T) {
 	}
 	os.Setenv("GOVERSION", "go1.18")
 
-	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
+	result, err := Source(context.Background(), pkgs, cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,14 +180,14 @@ func TestImports(t *testing.T) {
 		{Path: "golang.org/amod", Version: "v1.1.3"},
 		{Path: "golang.org/bmod", Version: "v0.5.0"},
 		{Path: "golang.org/cmod", Version: "v0.3.0"},
-		{Path: "golang.org/entry"},
+		{Path: "golang.org/entry", Main: true},
 		{Path: "golang.org/wmod", Version: "v0.0.0"},
 		{Path: "golang.org/zmod", Version: "v0.0.0"},
 		{Path: "stdlib", Version: "v1.18.0"},
 	}
 	gotMods := result.Modules
 	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
-	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(Module{}, "Dir")); diff != "" {
+	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(Module{}, "Dir", "Time", "GoMod", "GoVersion")); diff != "" {
 		t.Errorf("modules mismatch (-want, +got):\n%s", diff)
 	}
 }
@@ -277,7 +277,7 @@ func TestRequires(t *testing.T) {
 	cfg := &govulncheck.Config{
 		ImportsOnly: true,
 	}
-	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
+	result, err := Source(context.Background(), pkgs, cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,14 +317,14 @@ func TestRequires(t *testing.T) {
 	wantMods := []*Module{
 		{Path: "golang.org/amod", Version: "v0.0.1"},
 		{Path: "golang.org/bmod", Version: "v0.5.0"},
-		{Path: "golang.org/entry"},
+		{Path: "golang.org/entry", Main: true},
 		{Path: "golang.org/imod1", Version: "v0.0.0"},
 		{Path: "golang.org/imod2", Version: "v0.0.0"},
 		{Path: internal.GoStdModulePath, Version: "v1.18.0"},
 	}
 	gotMods := result.Modules
 	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
-	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(Module{}, "Dir")); diff != "" {
+	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(Module{}, "Dir", "Time", "GoMod", "GoVersion")); diff != "" {
 		t.Errorf("modules mismatch (-want, +got):\n%s", diff)
 	}
 }
@@ -516,7 +516,7 @@ func TestCalls(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{}
-	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
+	result, err := Source(context.Background(), pkgs, cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -619,7 +619,7 @@ func TestFiltering(t *testing.T) {
 	os.Setenv("GOOS", "linux")
 	os.Setenv("GOARCH", "amd64")
 
-	result, err := Source(context.Background(), Convert(pkgs), cfg, client)
+	result, err := Source(context.Background(), pkgs, cfg, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -631,7 +631,7 @@ func TestFiltering(t *testing.T) {
 	os.Setenv("GOOS", "freebsd")
 	os.Setenv("GOARCH", "arm64")
 
-	result, err = Source(context.Background(), Convert(pkgs), cfg, client)
+	result, err = Source(context.Background(), pkgs, cfg, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -704,7 +704,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{}
-	result, err := Source(context.Background(), Convert(pkgs), cfg, client)
+	result, err := Source(context.Background(), pkgs, cfg, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -773,7 +773,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{}
-	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
+	result, err := Source(context.Background(), pkgs, cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -857,7 +857,7 @@ func TestRecursion(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{}
-	result, err := Source(context.Background(), Convert(pkgs), cfg, c)
+	result, err := Source(context.Background(), pkgs, cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -916,7 +916,7 @@ func TestIssue57174(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{}
-	_, err = Source(context.Background(), Convert(pkgs), cfg, c)
+	_, err = Source(context.Background(), pkgs, cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
