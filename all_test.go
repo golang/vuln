@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/mod/modfile"
 	"golang.org/x/vuln/internal/scan"
+	"mvdan.cc/unparam/check"
 )
 
 // excluded contains the set of modules that x/vuln should not depend on.
@@ -93,8 +94,13 @@ func TestStaticCheck(t *testing.T) {
 }
 
 func TestUnparam(t *testing.T) {
-	skipIfShort(t)
-	rungo(t, "run", "mvdan.cc/unparam@v0.0.0-20230312165513-e84e2d14e3b8", "./...")
+	warns, err := check.UnusedParams(false, false, false, "./...")
+	if err != nil {
+		t.Fatalf("check.UnusedParams: %v", err)
+	}
+	for _, warn := range warns {
+		t.Errorf(warn)
+	}
 }
 
 func TestVet(t *testing.T) {
