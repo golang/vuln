@@ -74,7 +74,6 @@ func TestDependencies(t *testing.T) {
 
 func TestGovulncheck(t *testing.T) {
 	skipIfShort(t)
-	skipIfTrybot(t)
 	ctx := context.Background()
 	err := scan.Command(ctx, "./...").Run()
 	switch err := err.(type) {
@@ -90,13 +89,11 @@ func TestGovulncheck(t *testing.T) {
 
 func TestStaticCheck(t *testing.T) {
 	skipIfShort(t)
-	skipIfTrybot(t)
 	rungo(t, "run", "honnef.co/go/tools/cmd/staticcheck@v0.4.3", "./...")
 }
 
 func TestUnparam(t *testing.T) {
 	skipIfShort(t)
-	skipIfTrybot(t)
 	rungo(t, "run", "mvdan.cc/unparam@v0.0.0-20230312165513-e84e2d14e3b8", "./...")
 }
 
@@ -107,7 +104,6 @@ func TestVet(t *testing.T) {
 
 func TestMisspell(t *testing.T) {
 	skipIfShort(t)
-	skipIfTrybot(t)
 	rungo(t, "run", "github.com/client9/misspell/cmd/misspell@v0.3.4", "-error", ".")
 }
 
@@ -143,16 +139,8 @@ func rungo(t *testing.T, args ...string) {
 	}
 }
 
-func isTrybot() bool { return os.Getenv("GO_BUILDER_NAME") != "" }
-
 func skipIfShort(t *testing.T) {
 	if testing.Short() {
 		t.Skipf("skipping: short mode")
-	}
-}
-
-func skipIfTrybot(t *testing.T) {
-	if isTrybot() {
-		t.Skip("skipping: trybot")
 	}
 }
