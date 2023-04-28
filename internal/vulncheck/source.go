@@ -87,9 +87,11 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 		Calls:    &CallGraph{Functions: make(map[int]*FuncNode)},
 	}
 	result.Requires.Modules[stdModID] = &ModNode{
-		ID:      stdModID,
-		Path:    internal.GoStdModulePath,
-		Version: gover,
+		ID: stdModID,
+		Module: &packages.Module{
+			Path:    internal.GoStdModulePath,
+			Version: gover,
+		},
 	}
 
 	vulnPkgModSlice(pkgs, modVulns, result)
@@ -331,9 +333,8 @@ func moduleNodeID(pkgNode *PkgNode, result *Result, modNodeIDs map[string]int) i
 
 	id := nextModID()
 	n := &ModNode{
-		ID:      id,
-		Path:    mod.Path,
-		Version: mod.Version,
+		ID:     id,
+		Module: mod,
 	}
 	result.Requires.Modules[id] = n
 	modNodeIDs[mk] = id
@@ -346,8 +347,8 @@ func moduleNodeID(pkgNode *PkgNode, result *Result, modNodeIDs map[string]int) i
 		} else {
 			rid := nextModID()
 			rn := &ModNode{
-				Path:    mod.Replace.Path,
-				Version: mod.Replace.Version,
+				ID:     rid,
+				Module: mod.Replace,
 			}
 			result.Requires.Modules[rid] = rn
 			modNodeIDs[rmk] = rid

@@ -198,11 +198,8 @@ type ModNode struct {
 	// ID is the id used to identify the ModNode in CallGraph.
 	ID int
 
-	// Path is the module path.
-	Path string
-
-	// Version is the module version.
-	Version string
+	// embed the Module this node wraps
+	*packages.Module
 
 	// Replace is the ID of the replacement module node.
 	// A zero value means there is no replacement.
