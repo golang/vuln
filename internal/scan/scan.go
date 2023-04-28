@@ -67,7 +67,9 @@ func (c *Cmd) Start() error {
 	go func() {
 		defer func() {
 			for _, cl := range c.closers {
-				cl.Close()
+				if err := cl.Close(); err != nil && c.err == nil {
+					c.err = err
+				}
 			}
 			c.closers = nil
 			close(c.done)
