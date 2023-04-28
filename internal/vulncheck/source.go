@@ -188,10 +188,8 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 	// Module id gets populated later.
 	id := nextPkgID()
 	pkgNode := &PkgNode{
-		ID:   id,
-		Name: pkg.Name,
-		Path: pkg.PkgPath,
-		pkg:  pkg,
+		ID:  id,
+		pkg: pkg,
 	}
 	analyzed[pkg] = pkgNode
 
@@ -206,7 +204,7 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 	for _, osv := range vulns {
 		for _, affected := range osv.Affected {
 			for _, p := range affected.EcosystemSpecific.Packages {
-				if p.Path != pkgNode.Path {
+				if p.Path != pkgNode.pkg.PkgPath {
 					continue
 				}
 
@@ -219,7 +217,7 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 					vuln := &Vuln{
 						OSV:        osv,
 						Symbol:     symbol,
-						PkgPath:    pkgNode.Path,
+						PkgPath:    pkgNode.pkg.PkgPath,
 						ImportSink: id,
 					}
 					result.Vulns = append(result.Vulns, vuln)
@@ -317,7 +315,7 @@ func nextModID() int {
 // not exist already, and returns id of the module node. The actual module
 // node is stored to result.
 func moduleNodeID(pkgNode *PkgNode, result *Result, modNodeIDs map[string]int) int {
-	if isStdPackage(pkgNode.Path) {
+	if isStdPackage(pkgNode.pkg.PkgPath) {
 		// standard library packages don't have a module.
 		return stdModID
 	}

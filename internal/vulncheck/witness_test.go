@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"golang.org/x/tools/go/packages"
 )
 
 // chainsToString converts map Vuln:chains to Vuln.PkgPath:["pkg1->...->pkgN", ...]
@@ -19,7 +21,7 @@ func chainsToString(chains map[*Vuln][]ImportChain) map[string][]string {
 		for _, ch := range chs {
 			var chStr []string
 			for _, imp := range ch {
-				chStr = append(chStr, imp.Path)
+				chStr = append(chStr, imp.pkg.PkgPath)
 			}
 			chsStr = append(chsStr, strings.Join(chStr, "->"))
 		}
@@ -55,12 +57,12 @@ func TestImportChains(t *testing.T) {
 	//      |   interm2
 	//      |   /     |
 	//     vuln1    vuln2
-	e1 := &PkgNode{ID: 1, Path: "entry1"}
-	e2 := &PkgNode{ID: 2, Path: "entry2"}
-	i1 := &PkgNode{ID: 3, Path: "interm1", ImportedBy: []int{1}}
-	i2 := &PkgNode{ID: 4, Path: "interm2", ImportedBy: []int{2, 3}}
-	v1 := &PkgNode{ID: 5, Path: "vuln1", ImportedBy: []int{3, 4}}
-	v2 := &PkgNode{ID: 6, Path: "vuln2", ImportedBy: []int{4}}
+	e1 := &PkgNode{ID: 1, pkg: &packages.Package{PkgPath: "entry1"}}
+	e2 := &PkgNode{ID: 2, pkg: &packages.Package{PkgPath: "entry2"}}
+	i1 := &PkgNode{ID: 3, pkg: &packages.Package{PkgPath: "interm1"}, ImportedBy: []int{1}}
+	i2 := &PkgNode{ID: 4, pkg: &packages.Package{PkgPath: "interm2"}, ImportedBy: []int{2, 3}}
+	v1 := &PkgNode{ID: 5, pkg: &packages.Package{PkgPath: "vuln1"}, ImportedBy: []int{3, 4}}
+	v2 := &PkgNode{ID: 6, pkg: &packages.Package{PkgPath: "vuln2"}, ImportedBy: []int{4}}
 
 	ig := &ImportGraph{
 		Packages: map[int]*PkgNode{1: e1, 2: e2, 3: i1, 4: i2, 5: v1, 6: v2},

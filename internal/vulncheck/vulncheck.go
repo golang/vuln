@@ -232,12 +232,6 @@ type PkgNode struct {
 	// ID is the id used to identify the PkgNode in ImportGraph.
 	ID int
 
-	// Name is the package identifier as it appears in the source code.
-	Name string
-
-	// Path is the package path.
-	Path string
-
 	// Module holds ID of the corresponding module (node) in the Requires graph.
 	Module int
 
