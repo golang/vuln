@@ -25,7 +25,7 @@ import (
 // symbol is actually exercised) or just imported by the package
 // (likely having a non-affecting outcome).
 func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client, dir string) ([]*govulncheck.Vuln, error) {
-	var pkgs []*vulncheck.Package
+	var pkgs []*packages.Package
 	pkgs, err := loadPackages(cfg, dir)
 	if err != nil {
 		// Try to provide a meaningful and actionable error message.
@@ -51,7 +51,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 // provided by tagsFlag. Uses load mode needed for vulncheck analysis. If the
 // packages contain errors, a packageError is returned containing a list of
 // the errors, along with the packages themselves.
-func loadPackages(c *config, dir string) ([]*vulncheck.Package, error) {
+func loadPackages(c *config, dir string) ([]*packages.Package, error) {
 	var buildFlags []string
 	if c.tags != nil {
 		buildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(c.tags, ","))}
@@ -160,7 +160,7 @@ func stackFramesfromEntries(vcs vulncheck.CallStack) []*govulncheck.StackFrame {
 //
 // P is the number of strictly dependent packages of
 // topPkgs and Y is the number of their modules.
-func sourceProgressMessage(topPkgs []*vulncheck.Package) *govulncheck.Progress {
+func sourceProgressMessage(topPkgs []*packages.Package) *govulncheck.Progress {
 	pkgs, mods := depPkgsAndMods(topPkgs)
 
 	pkgsPhrase := fmt.Sprintf("%d package", pkgs)
@@ -179,7 +179,7 @@ func sourceProgressMessage(topPkgs []*vulncheck.Package) *govulncheck.Progress {
 
 // depPkgsAndMods returns the number of packages that
 // topPkgs depend on and the number of their modules.
-func depPkgsAndMods(topPkgs []*vulncheck.Package) (int, int) {
+func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 	tops := make(map[string]bool)
 	depPkgs := make(map[string]bool)
 	depMods := make(map[string]bool)
@@ -188,8 +188,8 @@ func depPkgsAndMods(topPkgs []*vulncheck.Package) (int, int) {
 		tops[t.PkgPath] = true
 	}
 
-	var visit func(*vulncheck.Package, bool)
-	visit = func(p *vulncheck.Package, top bool) {
+	var visit func(*packages.Package, bool)
+	visit = func(p *packages.Package, top bool) {
 		path := p.PkgPath
 		if depPkgs[path] {
 			return
@@ -360,7 +360,7 @@ func summarizeVuln(frames []*govulncheck.StackFrame, iTop int, vulnPkg string) (
 
 // updateInitPositions populates non-existing positions of init functions
 // and their respective calls in callStacks (see #51575).
-func updateInitPositions(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, pkgs []*vulncheck.Package) {
+func updateInitPositions(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, pkgs []*packages.Package) {
 	pMap := pkgMap(pkgs)
 	for _, css := range callStacks {
 		for _, cs := range css {
@@ -382,7 +382,7 @@ func updateInitPositions(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, p
 //
 //	P.init -> P.init#d: P.init is an implicit init. We say it calls the explicit
 //	P.init#d at the place of "package P" statement.
-func updateInitCallPosition(curr *vulncheck.StackEntry, next vulncheck.StackEntry, pkgs map[string]*vulncheck.Package) {
+func updateInitCallPosition(curr *vulncheck.StackEntry, next vulncheck.StackEntry, pkgs map[string]*packages.Package) {
 	call := curr.Call
 	if !isInit(next.Function) || (call.Pos != nil && call.Pos.IsValid()) {
 		// Skip non-init functions and inits whose call site position is available.
@@ -403,7 +403,7 @@ func updateInitCallPosition(curr *vulncheck.StackEntry, next vulncheck.StackEntr
 	call.Pos = &pos
 }
 
-func importStatementPos(pkg *vulncheck.Package, importPath string) token.Position {
+func importStatementPos(pkg *packages.Package, importPath string) token.Position {
 	var importSpec *ast.ImportSpec
 spec:
 	for _, f := range pkg.Syntax {
@@ -429,7 +429,7 @@ spec:
 	return pkg.Fset.Position(importSpec.Pos())
 }
 
-func packageStatementPos(pkg *vulncheck.Package) token.Position {
+func packageStatementPos(pkg *packages.Package) token.Position {
 	if len(pkg.Syntax) == 0 {
 		return token.Position{}
 	}
@@ -440,7 +440,7 @@ func packageStatementPos(pkg *vulncheck.Package) token.Position {
 
 // updateInitPosition updates the position of P.init function in a stack frame if one
 // is not available. The new position is the position of the "package P" statement.
-func updateInitPosition(se *vulncheck.StackEntry, pkgs map[string]*vulncheck.Package) {
+func updateInitPosition(se *vulncheck.StackEntry, pkgs map[string]*packages.Package) {
 	fun := se.Function
 	if !isInit(fun) || (fun.Pos != nil && fun.Pos.IsValid()) {
 		// Skip non-init functions and inits whose position is available.

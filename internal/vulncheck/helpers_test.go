@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"sort"
 
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/semver"
@@ -125,11 +126,11 @@ func callGraphToStrMap(cg *CallGraph) map[string][]string {
 	return m
 }
 
-func pkgPathToImports(pkgs []*Package) map[string][]string {
+func pkgPathToImports(pkgs []*packages.Package) map[string][]string {
 	m := make(map[string][]string)
-	seen := make(map[*Package]bool)
-	var visit func(*Package)
-	visit = func(p *Package) {
+	seen := make(map[*packages.Package]bool)
+	var visit func(*packages.Package)
+	visit = func(p *packages.Package) {
 		if seen[p] {
 			return
 		}
@@ -148,11 +149,11 @@ func pkgPathToImports(pkgs []*Package) map[string][]string {
 	return m
 }
 
-func modulePathToVersion(pkgs []*Package) map[string]string {
+func modulePathToVersion(pkgs []*packages.Package) map[string]string {
 	m := make(map[string]string)
-	seen := make(map[*Package]bool)
-	var visit func(*Package)
-	visit = func(p *Package) {
+	seen := make(map[*packages.Package]bool)
+	var visit func(*packages.Package)
+	visit = func(p *packages.Package) {
 		if seen[p] || p.Module == nil {
 			return
 		}

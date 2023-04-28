@@ -37,13 +37,6 @@ type Config struct {
 	GOOS, GOARCH string
 }
 
-// Package is a Go package for vulncheck analysis. It is a version of
-// packages.Package trimmed down to reduce memory consumption.
-type Package = packages.Package
-
-// Module is a Go module for vulncheck analysis.
-type Module = packages.Module
-
 // Result contains information on how known vulnerabilities are reachable
 // in the call graph, package imports graph, and module requires graph of
 // the user code.
@@ -73,7 +66,7 @@ type Result struct {
 	Vulns []*Vuln
 
 	// Modules are the modules that comprise the user code.
-	Modules []*Module
+	Modules []*packages.Module
 }
 
 // Vuln provides information on how a vulnerability is affecting user code by
@@ -252,7 +245,7 @@ type PkgNode struct {
 	ImportedBy []int
 
 	// pkg is used for connecting package node to module and call graph nodes.
-	pkg *Package
+	pkg *packages.Package
 }
 
 // moduleVulnerabilities is an internal structure for
@@ -262,7 +255,7 @@ type moduleVulnerabilities []*ModVulns
 
 // ModVulns groups vulnerabilities per module.
 type ModVulns struct {
-	Module *Module
+	Module *packages.Module
 	Vulns  []*osv.Entry
 }
 
@@ -430,26 +423,4 @@ func contains(symbols []string, target string) bool {
 		}
 	}
 	return false
-}
-
-func newModuleConverter() func(m *packages.Module) *Module {
-	pmap := map[*packages.Module]*Module{}
-	var convert func(m *packages.Module) *Module
-	convert = func(m *packages.Module) *Module {
-		if m == nil {
-			return nil
-		}
-		if vm, ok := pmap[m]; ok {
-			return vm
-		}
-		vm := &Module{
-			Path:    m.Path,
-			Version: m.Version,
-			Dir:     m.Dir,
-			Replace: convert(m.Replace),
-		}
-		pmap[m] = vm
-		return vm
-	}
-	return convert
 }

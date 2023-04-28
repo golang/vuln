@@ -14,6 +14,7 @@ import (
 	"golang.org/x/tools/go/callgraph"
 	"golang.org/x/tools/go/callgraph/cha"
 	"golang.org/x/tools/go/callgraph/vta"
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/ssa/ssautil"
 	"golang.org/x/tools/go/types/typeutil"
 	"golang.org/x/vuln/internal/osv"
@@ -24,13 +25,13 @@ import (
 // buildSSA creates an ssa representation for pkgs. Returns
 // the ssa program encapsulating the packages and top level
 // ssa packages corresponding to pkgs.
-func buildSSA(pkgs []*Package, fset *token.FileSet) (*ssa.Program, []*ssa.Package) {
+func buildSSA(pkgs []*packages.Package, fset *token.FileSet) (*ssa.Program, []*ssa.Package) {
 	// TODO(https://go.dev/issue/57221): what about entry functions that are generics?
 	prog := ssa.NewProgram(fset, ssa.InstantiateGenerics)
 
-	imports := make(map[*Package]*ssa.Package)
-	var createImports func(map[string]*Package)
-	createImports = func(pkgs map[string]*Package) {
+	imports := make(map[*packages.Package]*ssa.Package)
+	var createImports func(map[string]*packages.Package)
+	createImports = func(pkgs map[string]*packages.Package) {
 		for _, p := range pkgs {
 			if _, ok := imports[p]; !ok {
 				i := prog.CreatePackage(p.Types, p.Syntax, p.TypesInfo, true)

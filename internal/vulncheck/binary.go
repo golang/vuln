@@ -30,10 +30,8 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, clien
 		return nil, fmt.Errorf("could not parse provided binary: %v", err)
 	}
 
-	cmods := convertModules(mods)
-
 	// Add "stdlib" module.
-	cmods = append(cmods, &Module{
+	mods = append(mods, &packages.Module{
 		Path: internal.GoStdModulePath,
 		// set the stdlib version for detection of vulns in the standard library
 		// TODO(https://go.dev/issue/53740): what if Go version is not in semver
@@ -41,7 +39,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, clien
 		Version: semver.GoTagToSemver(bi.GoVersion),
 	})
 
-	mv, err := FetchVulnerabilities(ctx, client, cmods)
+	mv, err := FetchVulnerabilities(ctx, client, mods)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +61,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, clien
 		addRequiresOnlyVulns(result, modVulns)
 	} else {
 		for pkg, symbols := range packageSymbols {
-			mod := findPackageModule(pkg, cmods)
+			mod := findPackageModule(pkg, mods)
 			if cfg.ImportsOnly {
 				addImportsOnlyVulns(pkg, mod, symbols, result, modVulns)
 			} else {
@@ -71,7 +69,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, clien
 			}
 		}
 	}
-	setModules(result, cmods)
+	setModules(result, mods)
 	return result, nil
 }
 
@@ -124,20 +122,11 @@ func addSymbolVulns(pkg, mod string, symbols []string, result *Result, modVulns 
 	}
 }
 
-func convertModules(mods []*packages.Module) []*Module {
-	vmods := make([]*Module, len(mods))
-	convertMod := newModuleConverter()
-	for i, mod := range mods {
-		vmods[i] = convertMod(mod)
-	}
-	return vmods
-}
-
 // findPackageModule returns the path of a module that could contain the import
 // path pkg. It uses paths only. It is possible but unlikely for a package path
 // to match two or more different module paths. We just take the first one.
 // If no module path matches, findPackageModule returns the empty string.
-func findPackageModule(pkg string, mods []*Module) string {
+func findPackageModule(pkg string, mods []*packages.Module) string {
 	if isStdPackage(pkg) {
 		return internal.GoStdModulePath
 	}

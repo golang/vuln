@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
@@ -200,7 +201,7 @@ func pkgPath(fn *vulncheck.FuncNode) string {
 }
 
 // moduleVersionMap builds a map from module paths to versions.
-func moduleVersionMap(mods []*vulncheck.Module) map[string]string {
+func moduleVersionMap(mods []*packages.Module) map[string]string {
 	moduleVersions := map[string]string{}
 	for _, m := range mods {
 		v := m.Version
@@ -214,10 +215,10 @@ func moduleVersionMap(mods []*vulncheck.Module) map[string]string {
 
 // pkgMap creates a map from package paths to packages for all pkgs
 // and their transitive imports.
-func pkgMap(pkgs []*vulncheck.Package) map[string]*vulncheck.Package {
-	m := make(map[string]*vulncheck.Package)
-	var visit func(*vulncheck.Package)
-	visit = func(p *vulncheck.Package) {
+func pkgMap(pkgs []*packages.Package) map[string]*packages.Package {
+	m := make(map[string]*packages.Package)
+	var visit func(*packages.Package)
+	visit = func(p *packages.Package) {
 		if _, ok := m[p.PkgPath]; ok {
 			return
 		}

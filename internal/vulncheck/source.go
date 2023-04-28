@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 
 	"golang.org/x/tools/go/callgraph"
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
@@ -30,7 +31,7 @@ import (
 // some known vulnerabilities.
 //
 // 3) A CallGraph leading to the use of a known vulnerable function or method.
-func Source(ctx context.Context, pkgs []*Package, cfg *govulncheck.Config, client *client.Client) (_ *Result, err error) {
+func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client) (_ *Result, err error) {
 	// buildSSA builds a whole program that assumes all packages use the same FileSet.
 	// Check all packages in pkgs are using the same FileSet.
 	// TODO(https://go.dev/issue/59729): take FileSet out of Package and
@@ -115,7 +116,7 @@ func Source(ctx context.Context, pkgs []*Package, cfg *govulncheck.Config, clien
 }
 
 // Set r.Modules to an adjusted list of modules.
-func setModules(r *Result, mods []*Module) {
+func setModules(r *Result, mods []*packages.Module) {
 	// Remove Dirs from modules; they aren't needed and complicate testing.
 	for _, m := range mods {
 		m.Dir = ""
@@ -138,12 +139,12 @@ func nextPkgID() int {
 // vulnPkgModSlice computes the slice of pkgs imports and requires graph
 // leading to imports/requires of vulnerable packages/modules in modVulns
 // and stores the computed slices to result.
-func vulnPkgModSlice(pkgs []*Package, modVulns moduleVulnerabilities, result *Result) {
+func vulnPkgModSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, result *Result) {
 	// analyzedPkgs contains information on packages analyzed thus far.
 	// If a package is mapped to nil, this means it has been visited
 	// but it does not lead to a vulnerable imports. Otherwise, a
 	// visited package is mapped to Imports package node.
-	analyzedPkgs := make(map[*Package]*PkgNode)
+	analyzedPkgs := make(map[*packages.Package]*PkgNode)
 	for _, pkg := range pkgs {
 		// Top level packages that lead to vulnerable imports are
 		// stored as result.Imports graph entry points.
@@ -161,7 +162,7 @@ func vulnPkgModSlice(pkgs []*Package, modVulns moduleVulnerabilities, result *Re
 // a package with known vulnerabilities. If that is the case, populates result.Imports
 // graph with this reachability information and returns the result.Imports package
 // node for pkg. Otherwise, returns nil.
-func vulnImportSlice(pkg *Package, modVulns moduleVulnerabilities, result *Result, analyzed map[*Package]*PkgNode) *PkgNode {
+func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, result *Result, analyzed map[*packages.Package]*PkgNode) *PkgNode {
 	if pn, ok := analyzed[pkg]; ok {
 		return pn
 	}
@@ -546,7 +547,7 @@ func addCallSinkForVuln(callID int, osv *osv.Entry, symbol, pkg string, result *
 }
 
 // modKey creates a unique string identifier for mod.
-func modKey(mod *Module) string {
+func modKey(mod *packages.Module) string {
 	if mod == nil {
 		return ""
 	}
@@ -555,23 +556,23 @@ func modKey(mod *Module) string {
 
 // extractModules collects modules in `pkgs` up to uniqueness of
 // module path and version.
-func extractModules(pkgs []*Package, goversion string) []*Module {
-	modMap := map[string]*Module{}
+func extractModules(pkgs []*packages.Package, goversion string) []*packages.Module {
+	modMap := map[string]*packages.Module{}
 
 	// Add "stdlib" module. Even if stdlib is not used, which
-	// is unlikely, it won't appear in vulncheck.Modules nor
+	// is unlikely, it won't appear in packages.Modules nor
 	// other results.
 
 	// set the stdlib version for detection of vulns in the standard library
 	// TODO(https://go.dev/issue/53740): what if Go version is not in semver format?
-	modMap[internal.GoStdModulePath] = &Module{
+	modMap[internal.GoStdModulePath] = &packages.Module{
 		Path:    internal.GoStdModulePath,
 		Version: semver.GoTagToSemver(goversion),
 	}
 
-	seen := map[*Package]bool{}
-	var extract func(*Package, map[string]*Module)
-	extract = func(pkg *Package, modMap map[string]*Module) {
+	seen := map[*packages.Package]bool{}
+	var extract func(*packages.Package, map[string]*packages.Module)
+	extract = func(pkg *packages.Package, modMap map[string]*packages.Module) {
 		if pkg == nil || seen[pkg] {
 			return
 		}
@@ -591,7 +592,7 @@ func extractModules(pkgs []*Package, goversion string) []*Module {
 		extract(pkg, modMap)
 	}
 
-	modules := []*Module{}
+	modules := []*packages.Module{}
 	for _, mod := range modMap {
 		modules = append(modules, mod)
 	}

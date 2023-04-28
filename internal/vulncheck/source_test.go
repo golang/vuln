@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
@@ -176,7 +177,7 @@ func TestImports(t *testing.T) {
 	}
 
 	// Check that the source's modules are returned.
-	wantMods := []*Module{
+	wantMods := []*packages.Module{
 		{Path: "golang.org/amod", Version: "v1.1.3"},
 		{Path: "golang.org/bmod", Version: "v0.5.0"},
 		{Path: "golang.org/cmod", Version: "v0.3.0"},
@@ -187,7 +188,7 @@ func TestImports(t *testing.T) {
 	}
 	gotMods := result.Modules
 	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
-	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(Module{}, "Dir", "Time", "GoMod", "GoVersion")); diff != "" {
+	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(packages.Module{}, "Dir", "Time", "GoMod", "GoVersion")); diff != "" {
 		t.Errorf("modules mismatch (-want, +got):\n%s", diff)
 	}
 }
@@ -314,7 +315,7 @@ func TestRequires(t *testing.T) {
 	}
 
 	// Check that the source's modules are returned.
-	wantMods := []*Module{
+	wantMods := []*packages.Module{
 		{Path: "golang.org/amod", Version: "v0.0.1"},
 		{Path: "golang.org/bmod", Version: "v0.5.0"},
 		{Path: "golang.org/entry", Main: true},
@@ -324,7 +325,7 @@ func TestRequires(t *testing.T) {
 	}
 	gotMods := result.Modules
 	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
-	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(Module{}, "Dir", "Time", "GoMod", "GoVersion")); diff != "" {
+	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(packages.Module{}, "Dir", "Time", "GoMod", "GoVersion")); diff != "" {
 		t.Errorf("modules mismatch (-want, +got):\n%s", diff)
 	}
 }

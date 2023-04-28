@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/vulncheck"
@@ -25,11 +26,11 @@ func TestFetchVulnerabilities(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := vulncheck.FetchVulnerabilities(context.Background(), mc, []*vulncheck.Module{
+	got, err := vulncheck.FetchVulnerabilities(context.Background(), mc, []*packages.Module{
 		{Path: "example.mod/a", Version: "v1.0.0"},
 		{Path: "example.mod/b", Version: "v1.0.4"},
-		{Path: "example.mod/c", Replace: &vulncheck.Module{Path: "example.mod/d", Version: "v1.0.0"}, Version: "v2.0.0"},
-		{Path: "example.mod/e", Replace: &vulncheck.Module{Path: "../local/example.mod/d", Version: "v1.0.1"}, Version: "v2.1.0"},
+		{Path: "example.mod/c", Replace: &packages.Module{Path: "example.mod/d", Version: "v1.0.0"}, Version: "v2.0.0"},
+		{Path: "example.mod/e", Replace: &packages.Module{Path: "../local/example.mod/d", Version: "v1.0.1"}, Version: "v2.1.0"},
 	})
 	if err != nil {
 		t.Fatalf("FetchVulnerabilities failed: %s", err)
@@ -37,15 +38,15 @@ func TestFetchVulnerabilities(t *testing.T) {
 
 	want := []*vulncheck.ModVulns{
 		{
-			Module: &vulncheck.Module{Path: "example.mod/a", Version: "v1.0.0"},
+			Module: &packages.Module{Path: "example.mod/a", Version: "v1.0.0"},
 			Vulns:  []*osv.Entry{a},
 		},
 		{
-			Module: &vulncheck.Module{Path: "example.mod/b", Version: "v1.0.4"},
+			Module: &packages.Module{Path: "example.mod/b", Version: "v1.0.4"},
 			Vulns:  []*osv.Entry{b},
 		},
 		{
-			Module: &vulncheck.Module{Path: "example.mod/c", Replace: &vulncheck.Module{Path: "example.mod/d", Version: "v1.0.0"}, Version: "v2.0.0"},
+			Module: &packages.Module{Path: "example.mod/c", Replace: &packages.Module{Path: "example.mod/d", Version: "v1.0.0"}, Version: "v2.0.0"},
 			Vulns:  []*osv.Entry{c},
 		},
 	}
