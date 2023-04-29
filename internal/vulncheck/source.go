@@ -321,7 +321,10 @@ func moduleNodeID(pkgNode *PkgNode, result *Result, modNodeIDs map[string]int) i
 		// standard library packages don't have a module.
 		return stdModID
 	}
-	mod := pkgNode.pkg.Module
+	return getModuleNodeID(pkgNode.pkg.Module, result, modNodeIDs)
+}
+
+func getModuleNodeID(mod *packages.Module, result *Result, modNodeIDs map[string]int) int {
 	if mod == nil {
 		return 0
 	}
@@ -331,31 +334,18 @@ func moduleNodeID(pkgNode *PkgNode, result *Result, modNodeIDs map[string]int) i
 		return id
 	}
 
-	id := nextModID()
 	n := &ModNode{
-		ID:     id,
+		ID:     nextModID(),
 		Module: mod,
 	}
-	result.Requires.Modules[id] = n
-	modNodeIDs[mk] = id
+	result.Requires.Modules[n.ID] = n
+	modNodeIDs[mk] = n.ID
 
 	// Create a replace module too when applicable.
 	if mod.Replace != nil {
-		rmk := modKey(mod.Replace)
-		if rid, ok := modNodeIDs[rmk]; ok {
-			n.Replace = rid
-		} else {
-			rid := nextModID()
-			rn := &ModNode{
-				ID:     rid,
-				Module: mod.Replace,
-			}
-			result.Requires.Modules[rid] = rn
-			modNodeIDs[rmk] = rid
-			n.Replace = rid
-		}
+		n.Replace = getModuleNodeID(mod.Replace, result, modNodeIDs)
 	}
-	return id
+	return n.ID
 }
 
 // vulnCallGraphSlice checks if known vulnerabilities are transitively reachable from sources
