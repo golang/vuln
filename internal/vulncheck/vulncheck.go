@@ -67,6 +67,9 @@ type Result struct {
 
 	// Modules are the modules that comprise the user code.
 	Modules []*packages.Module
+
+	// ModulesByPath contains all module nodes indexed by path.
+	ModulesByPath map[string]*ModNode
 }
 
 // Vuln provides information on how a vulnerability is affecting user code by

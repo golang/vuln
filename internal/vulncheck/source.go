@@ -82,9 +82,10 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	modVulns := moduleVulnerabilities(mv)
 	modVulns = modVulns.filter(cfg.GOOS, cfg.GOARCH)
 	result := &Result{
-		Imports:  &ImportGraph{Packages: make(map[int]*PkgNode)},
-		Requires: &RequireGraph{Modules: make(map[int]*ModNode)},
-		Calls:    &CallGraph{Functions: make(map[int]*FuncNode)},
+		Imports:       &ImportGraph{Packages: make(map[int]*PkgNode)},
+		Requires:      &RequireGraph{Modules: make(map[int]*ModNode)},
+		Calls:         &CallGraph{Functions: make(map[int]*FuncNode)},
+		ModulesByPath: make(map[string]*ModNode),
 	}
 	result.Requires.Modules[stdModID] = &ModNode{
 		ID: stdModID,
@@ -233,9 +234,6 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 // vulnModuleSlice populates result.Requires as an overlay
 // of result.Imports.
 func vulnModuleSlice(result *Result) {
-	// Map from module nodes, identified with their
-	// path and version, to their unique ids.
-	modNodeIDs := make(map[string]int)
 	// We first collect inverse requires by (predecessor)
 	// relation on module node ids.
 	modPredRelation := make(map[int]map[int]bool)
@@ -248,7 +246,7 @@ func vulnModuleSlice(result *Result) {
 	for _, id := range pkgIDs {
 		pkgNode := result.Imports.Packages[id]
 		// Create or get module node for pkgNode.
-		modID := moduleNodeID(pkgNode, result, modNodeIDs)
+		modID := moduleNodeID(pkgNode, result)
 		pkgNode.Module = modID
 
 		// Update the set of predecessors.
@@ -258,7 +256,7 @@ func vulnModuleSlice(result *Result) {
 		predSet := modPredRelation[modID]
 
 		for _, predPkgID := range pkgNode.ImportedBy {
-			predModID := moduleNodeID(result.Imports.Packages[predPkgID], result, modNodeIDs)
+			predModID := moduleNodeID(result.Imports.Packages[predPkgID], result)
 			// We don't add module edges for imports
 			// of packages in the same module as that
 			// will create self-loops in Requires graphs.
@@ -272,7 +270,7 @@ func vulnModuleSlice(result *Result) {
 	// Add entry module IDs.
 	seenEntries := make(map[int]bool)
 	for _, epID := range result.Imports.Entries {
-		entryModID := moduleNodeID(result.Imports.Packages[epID], result, modNodeIDs)
+		entryModID := moduleNodeID(result.Imports.Packages[epID], result)
 		if seenEntries[entryModID] {
 			continue
 		}
@@ -316,21 +314,21 @@ func nextModID() int {
 // moduleNode creates a module node associated with pkgNode, if one does
 // not exist already, and returns id of the module node. The actual module
 // node is stored to result.
-func moduleNodeID(pkgNode *PkgNode, result *Result, modNodeIDs map[string]int) int {
+func moduleNodeID(pkgNode *PkgNode, result *Result) int {
 	if isStdPackage(pkgNode.pkg.PkgPath) {
 		// standard library packages don't have a module.
 		return stdModID
 	}
-	return getModuleNodeID(pkgNode.pkg.Module, result, modNodeIDs)
+	return getModuleNodeID(pkgNode.pkg.Module, result)
 }
 
-func getModuleNodeID(mod *packages.Module, result *Result, modNodeIDs map[string]int) int {
+func getModuleNodeID(mod *packages.Module, result *Result) int {
 	if mod == nil {
 		return 0
 	}
 
-	if id, ok := modNodeIDs[mod.Path]; ok {
-		return id
+	if n, ok := result.ModulesByPath[mod.Path]; ok {
+		return n.ID
 	}
 
 	n := &ModNode{
@@ -338,11 +336,11 @@ func getModuleNodeID(mod *packages.Module, result *Result, modNodeIDs map[string
 		Module: mod,
 	}
 	result.Requires.Modules[n.ID] = n
-	modNodeIDs[mod.Path] = n.ID
+	result.ModulesByPath[n.Path] = n
 
 	// Create a replace module too when applicable.
 	if mod.Replace != nil {
-		n.Replace = getModuleNodeID(mod.Replace, result, modNodeIDs)
+		n.Replace = getModuleNodeID(mod.Replace, result)
 	}
 	return n.ID
 }
