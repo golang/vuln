@@ -329,8 +329,7 @@ func getModuleNodeID(mod *packages.Module, result *Result, modNodeIDs map[string
 		return 0
 	}
 
-	mk := modKey(mod)
-	if id, ok := modNodeIDs[mk]; ok {
+	if id, ok := modNodeIDs[mod.Path]; ok {
 		return id
 	}
 
@@ -339,7 +338,7 @@ func getModuleNodeID(mod *packages.Module, result *Result, modNodeIDs map[string
 		Module: mod,
 	}
 	result.Requires.Modules[n.ID] = n
-	modNodeIDs[mk] = n.ID
+	modNodeIDs[mod.Path] = n.ID
 
 	// Create a replace module too when applicable.
 	if mod.Replace != nil {
@@ -535,14 +534,6 @@ func addCallSinkForVuln(callID int, osv *osv.Entry, symbol, pkg string, result *
 	}
 }
 
-// modKey creates a unique string identifier for mod.
-func modKey(mod *packages.Module) string {
-	if mod == nil {
-		return ""
-	}
-	return fmt.Sprintf("%s@%s", mod.Path, mod.Version)
-}
-
 // extractModules collects modules in `pkgs` up to uniqueness of
 // module path and version.
 func extractModules(pkgs []*packages.Package, goversion string) []*packages.Module {
@@ -567,9 +558,9 @@ func extractModules(pkgs []*packages.Package, goversion string) []*packages.Modu
 		}
 		if pkg.Module != nil {
 			if pkg.Module.Replace != nil {
-				modMap[modKey(pkg.Module.Replace)] = pkg.Module
+				modMap[pkg.Module.Replace.Path] = pkg.Module
 			} else {
-				modMap[modKey(pkg.Module)] = pkg.Module
+				modMap[pkg.Module.Path] = pkg.Module
 			}
 		}
 		seen[pkg] = true
