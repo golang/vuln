@@ -289,12 +289,12 @@ func TestRequires(t *testing.T) {
 	}
 
 	// Check that vulnerabilities are connected to the requires graph.
-	if v := result.Vulns[0]; v.RequireSink == 0 {
+	if v := result.Vulns[0]; v.RequireSink == nil {
 		t.Errorf("want RequireSink !=0 for %v:%v; got %v", v.Symbol, v.PkgPath, v.RequireSink)
 	}
 
 	// Check that the module entry points are collected.
-	if got := len(result.Requires.Entries); got != 1 {
+	if got := len(result.EntryModules); got != 1 {
 		t.Errorf("want 1 module entry point; got %v", got)
 	}
 
@@ -310,7 +310,7 @@ func TestRequires(t *testing.T) {
 		"golang.org/amod":  {"golang.org/bmod"},
 	}
 
-	if rgStrMap := reqGraphToStrMap(result.Requires); !reflect.DeepEqual(wantRequires, rgStrMap) {
+	if rgStrMap := reqGraphToStrMap(result); !reflect.DeepEqual(wantRequires, rgStrMap) {
 		t.Errorf("want %v requires graph; got %v", wantRequires, rgStrMap)
 	}
 

@@ -31,12 +31,8 @@ type Result struct {
 	// when no packages with vulnerabilities are imported in the program.
 	Imports *ImportGraph
 
-	// Requires is a module dependency graph whose roots are entry user modules
-	// and sinks are modules with some vulnerable packages. It is empty when no
-	// modules with vulnerabilities are required by the program. If used, the
-	// standard library is modeled as an artificial "stdlib" module whose version
-	// is the Go version used to build the code under analysis.
-	Requires *RequireGraph
+	// EntryModules are ModNodes of a subset of Modules representing modules of vulncheck entry points.
+	EntryModules []*ModNode
 
 	// Vulns contains information on detected vulnerabilities and their place in
 	// the above graphs. Only vulnerabilities whose symbols are reachable in Calls,
@@ -91,7 +87,7 @@ type Vuln struct {
 	// ModPath.
 	//
 	// When analyzing binaries, RequireSink will be unavailable and set to 0.
-	RequireSink int
+	RequireSink *ModNode
 }
 
 // CallGraph is a slice of a full program call graph whose sinks are vulnerable
@@ -160,35 +156,17 @@ type CallSite struct {
 	Resolved bool
 }
 
-// RequireGraph is a slice of a full program module requires graph whose sinks
-// are modules with known vulnerabilities and sources are modules of user entry
-// packages.
-//
-// RequireGraph is directed from a vulnerable module towards the program entry
-// modules (see ModNode) for a more efficient traversal of the slice related
-// to a particular vulnerability.
-type RequireGraph struct {
-	// Modules contains all module nodes as a map: module node id -> module node.
-	Modules map[int]*ModNode
-
-	// Entries are IDs of a subset of Modules representing modules of vulncheck entry points.
-	Entries []int
-}
-
 // A ModNode describes a module in the requires graph.
 type ModNode struct {
-	// ID is the id used to identify the ModNode in CallGraph.
-	ID int
-
 	// embed the Module this node wraps
 	*packages.Module
 
-	// Replace is the ID of the replacement module node.
+	// Replace is the replacement module node.
 	// A zero value means there is no replacement.
-	Replace int
+	Replace *ModNode
 
-	// RequiredBy contains IDs of the modules requiring this module.
-	RequiredBy []int
+	// RequiredBy contains the modules requiring this module.
+	RequiredBy []*ModNode
 }
 
 // ImportGraph is a slice of a full program package import graph whose sinks are
@@ -212,7 +190,7 @@ type PkgNode struct {
 	ID int
 
 	// Module holds ID of the corresponding module (node) in the Requires graph.
-	Module int
+	Module *ModNode
 
 	// ImportedBy contains IDs of packages directly importing this package.
 	ImportedBy []int

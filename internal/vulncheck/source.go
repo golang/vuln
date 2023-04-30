@@ -83,12 +83,10 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	modVulns = modVulns.filter(cfg.GOOS, cfg.GOARCH)
 	result := &Result{
 		Imports:       &ImportGraph{Packages: make(map[int]*PkgNode)},
-		Requires:      &RequireGraph{Modules: make(map[int]*ModNode)},
 		Calls:         &CallGraph{Functions: make(map[int]*FuncNode)},
 		ModulesByPath: make(map[string]*ModNode),
 	}
-	result.Requires.Modules[stdModID] = &ModNode{
-		ID: stdModID,
+	result.ModulesByPath[internal.GoStdModulePath] = &ModNode{
 		Module: &packages.Module{
 			Path:    internal.GoStdModulePath,
 			Version: gover,
@@ -236,7 +234,7 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 func vulnModuleSlice(result *Result) {
 	// We first collect inverse requires by (predecessor)
 	// relation on module node ids.
-	modPredRelation := make(map[int]map[int]bool)
+	modPredRelation := make(map[string]map[string]bool)
 	// Sort keys so modules are assigned IDs deterministically, for tests.
 	var pkgIDs []int
 	for id := range result.Imports.Packages {
@@ -246,103 +244,80 @@ func vulnModuleSlice(result *Result) {
 	for _, id := range pkgIDs {
 		pkgNode := result.Imports.Packages[id]
 		// Create or get module node for pkgNode.
-		modID := moduleNodeID(pkgNode, result)
-		pkgNode.Module = modID
+		pkgNode.Module = moduleNode(pkgNode, result)
 
 		// Update the set of predecessors.
-		if _, ok := modPredRelation[modID]; !ok {
-			modPredRelation[modID] = make(map[int]bool)
+		if _, ok := modPredRelation[pkgNode.Module.Path]; !ok {
+			modPredRelation[pkgNode.Module.Path] = make(map[string]bool)
 		}
-		predSet := modPredRelation[modID]
+		predSet := modPredRelation[pkgNode.Module.Path]
 
 		for _, predPkgID := range pkgNode.ImportedBy {
-			predModID := moduleNodeID(result.Imports.Packages[predPkgID], result)
+			predMod := moduleNode(result.Imports.Packages[predPkgID], result)
 			// We don't add module edges for imports
 			// of packages in the same module as that
 			// will create self-loops in Requires graphs.
-			if predModID == modID {
+			if predMod.Path == pkgNode.Module.Path {
 				continue
 			}
-			predSet[predModID] = true
+			predSet[predMod.Path] = true
 		}
 	}
 
 	// Add entry module IDs.
-	seenEntries := make(map[int]bool)
+	seenEntries := make(map[string]bool)
 	for _, epID := range result.Imports.Entries {
-		entryModID := moduleNodeID(result.Imports.Packages[epID], result)
-		if seenEntries[entryModID] {
+		entryMod := moduleNode(result.Imports.Packages[epID], result)
+		if seenEntries[entryMod.Path] {
 			continue
 		}
-		seenEntries[entryModID] = true
-		result.Requires.Entries = append(result.Requires.Entries, entryModID)
+		seenEntries[entryMod.Path] = true
+		result.EntryModules = append(result.EntryModules, entryMod)
 	}
 
 	// Store the predecessor requires relation to result.
-	for modID := range modPredRelation {
-		if modID == 0 {
-			continue
+	for modPath := range modPredRelation {
+		var preds []*ModNode
+		for predPath := range modPredRelation[modPath] {
+			preds = append(preds, result.ModulesByPath[predPath])
 		}
-
-		var predIDs []int
-		for predID := range modPredRelation[modID] {
-			predIDs = append(predIDs, predID)
-		}
-		modNode := result.Requires.Modules[modID]
-		modNode.RequiredBy = predIDs
+		modNode := result.ModulesByPath[modPath]
+		modNode.RequiredBy = preds
 	}
 
 	// And finally update Vulns with module information.
 	for _, vuln := range result.Vulns {
 		pkgNode := result.Imports.Packages[vuln.ImportSink]
-		modNode := result.Requires.Modules[pkgNode.Module]
-
 		vuln.RequireSink = pkgNode.Module
-		vuln.ModPath = modNode.Path
+		vuln.ModPath = pkgNode.Module.Path
 	}
-}
-
-const stdModID = 1
-
-// modID is an id counter for nodes of Requires graph.
-var modID int64 = stdModID
-
-func nextModID() int {
-	return int(atomic.AddInt64(&modID, 1))
 }
 
 // moduleNode creates a module node associated with pkgNode, if one does
 // not exist already, and returns id of the module node. The actual module
 // node is stored to result.
-func moduleNodeID(pkgNode *PkgNode, result *Result) int {
+func moduleNode(pkgNode *PkgNode, result *Result) *ModNode {
 	if isStdPackage(pkgNode.pkg.PkgPath) {
 		// standard library packages don't have a module.
-		return stdModID
+		return result.ModulesByPath[internal.GoStdModulePath]
 	}
-	return getModuleNodeID(pkgNode.pkg.Module, result)
+	return getModuleNode(pkgNode.pkg.Module, result)
 }
 
-func getModuleNodeID(mod *packages.Module, result *Result) int {
+func getModuleNode(mod *packages.Module, result *Result) *ModNode {
 	if mod == nil {
-		return 0
+		return nil
 	}
-
 	if n, ok := result.ModulesByPath[mod.Path]; ok {
-		return n.ID
+		return n
 	}
-
-	n := &ModNode{
-		ID:     nextModID(),
-		Module: mod,
-	}
-	result.Requires.Modules[n.ID] = n
+	n := &ModNode{Module: mod}
 	result.ModulesByPath[n.Path] = n
-
 	// Create a replace module too when applicable.
 	if mod.Replace != nil {
-		n.Replace = getModuleNodeID(mod.Replace, result)
+		n.Replace = getModuleNode(mod.Replace, result)
 	}
-	return n.ID
+	return n
 }
 
 // vulnCallGraphSlice checks if known vulnerabilities are transitively reachable from sources

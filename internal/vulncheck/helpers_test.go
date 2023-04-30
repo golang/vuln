@@ -86,11 +86,10 @@ func impGraphToStrMap(ig *ImportGraph) map[string][]string {
 	return m
 }
 
-func reqGraphToStrMap(rg *RequireGraph) map[string][]string {
+func reqGraphToStrMap(r *Result) map[string][]string {
 	m := make(map[string][]string)
-	for _, n := range rg.Modules {
-		for _, predId := range n.RequiredBy {
-			pred := rg.Modules[predId]
+	for _, n := range r.ModulesByPath {
+		for _, pred := range n.RequiredBy {
 			m[pred.Path] = append(m[pred.Path], n.Path)
 		}
 	}
