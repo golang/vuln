@@ -73,11 +73,10 @@ func vulnsToString(vulns []*osv.Entry) string {
 	return s
 }
 
-func impGraphToStrMap(ig *ImportGraph) map[string][]string {
+func impGraphToStrMap(r *Result) map[string][]string {
 	m := make(map[string][]string)
-	for _, n := range ig.Packages {
-		for _, predId := range n.ImportedBy {
-			pred := ig.Packages[predId]
+	for _, n := range r.Packages {
+		for _, pred := range n.ImportedBy {
 			m[pred.pkg.PkgPath] = append(m[pred.pkg.PkgPath], n.pkg.PkgPath)
 		}
 	}

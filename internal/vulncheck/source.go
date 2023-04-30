@@ -82,7 +82,7 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	modVulns := moduleVulnerabilities(mv)
 	modVulns = modVulns.filter(cfg.GOOS, cfg.GOARCH)
 	result := &Result{
-		Imports:       &ImportGraph{Packages: make(map[int]*PkgNode)},
+		Packages:      make(map[string]*PkgNode),
 		Calls:         &CallGraph{Functions: make(map[int]*FuncNode)},
 		ModulesByPath: make(map[string]*ModNode),
 	}
@@ -97,7 +97,7 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	setModules(result, mods)
 	// Return result immediately if in ImportsOnly mode or
 	// if there are no vulnerable packages.
-	if cfg.ImportsOnly || len(result.Imports.Packages) == 0 {
+	if cfg.ImportsOnly || len(result.Packages) == 0 {
 		return result, nil
 	}
 
@@ -109,7 +109,7 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	vulnCallGraphSlice(entries, modVulns, cg, result)
 
 	// Release residual memory.
-	for _, p := range result.Imports.Packages {
+	for _, p := range result.Packages {
 		p.pkg = nil
 	}
 
@@ -130,13 +130,6 @@ func setModules(r *Result, mods []*packages.Module) {
 	r.Modules = append(r.Modules, mods...)
 }
 
-// pkgID is an id counter for nodes of Imports graph.
-var pkgID int64 = 0
-
-func nextPkgID() int {
-	return int(atomic.AddInt64(&pkgID, 1))
-}
-
 // vulnPkgModSlice computes the slice of pkgs imports and requires graph
 // leading to imports/requires of vulnerable packages/modules in modVulns
 // and stores the computed slices to result.
@@ -148,9 +141,9 @@ func vulnPkgModSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, r
 	analyzedPkgs := make(map[*packages.Package]*PkgNode)
 	for _, pkg := range pkgs {
 		// Top level packages that lead to vulnerable imports are
-		// stored as result.Imports graph entry points.
+		// stored as result.EntryPackages graph entry points.
 		if e := vulnImportSlice(pkg, modVulns, result, analyzedPkgs); e != nil {
-			result.Imports.Entries = append(result.Imports.Entries, e.ID)
+			result.EntryPackages = append(result.EntryPackages, e)
 		}
 	}
 
@@ -187,18 +180,16 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 	}
 
 	// Module id gets populated later.
-	id := nextPkgID()
 	pkgNode := &PkgNode{
-		ID:  id,
 		pkg: pkg,
 	}
 	analyzed[pkg] = pkgNode
 
-	result.Imports.Packages[id] = pkgNode
+	result.Packages[pkg.ID] = pkgNode
 
 	// Save node predecessor information.
 	for _, impSliceNode := range onSlice {
-		impSliceNode.ImportedBy = append(impSliceNode.ImportedBy, id)
+		impSliceNode.ImportedBy = append(impSliceNode.ImportedBy, pkgNode)
 	}
 
 	// Create Vuln entry for each symbol of known OSV entries for pkg.
@@ -219,7 +210,7 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 						OSV:        osv,
 						Symbol:     symbol,
 						PkgPath:    pkgNode.pkg.PkgPath,
-						ImportSink: id,
+						ImportSink: pkgNode,
 					}
 					result.Vulns = append(result.Vulns, vuln)
 				}
@@ -235,14 +226,7 @@ func vulnModuleSlice(result *Result) {
 	// We first collect inverse requires by (predecessor)
 	// relation on module node ids.
 	modPredRelation := make(map[string]map[string]bool)
-	// Sort keys so modules are assigned IDs deterministically, for tests.
-	var pkgIDs []int
-	for id := range result.Imports.Packages {
-		pkgIDs = append(pkgIDs, id)
-	}
-	sort.Ints(pkgIDs)
-	for _, id := range pkgIDs {
-		pkgNode := result.Imports.Packages[id]
+	for _, pkgNode := range result.Packages {
 		// Create or get module node for pkgNode.
 		pkgNode.Module = moduleNode(pkgNode, result)
 
@@ -252,8 +236,8 @@ func vulnModuleSlice(result *Result) {
 		}
 		predSet := modPredRelation[pkgNode.Module.Path]
 
-		for _, predPkgID := range pkgNode.ImportedBy {
-			predMod := moduleNode(result.Imports.Packages[predPkgID], result)
+		for _, predPkg := range pkgNode.ImportedBy {
+			predMod := moduleNode(predPkg, result)
 			// We don't add module edges for imports
 			// of packages in the same module as that
 			// will create self-loops in Requires graphs.
@@ -266,8 +250,8 @@ func vulnModuleSlice(result *Result) {
 
 	// Add entry module IDs.
 	seenEntries := make(map[string]bool)
-	for _, epID := range result.Imports.Entries {
-		entryMod := moduleNode(result.Imports.Packages[epID], result)
+	for _, ePkg := range result.EntryPackages {
+		entryMod := moduleNode(ePkg, result)
 		if seenEntries[entryMod.Path] {
 			continue
 		}
@@ -287,9 +271,8 @@ func vulnModuleSlice(result *Result) {
 
 	// And finally update Vulns with module information.
 	for _, vuln := range result.Vulns {
-		pkgNode := result.Imports.Packages[vuln.ImportSink]
-		vuln.RequireSink = pkgNode.Module
-		vuln.ModPath = pkgNode.Module.Path
+		vuln.RequireSink = vuln.ImportSink.Module
+		vuln.ModPath = vuln.ImportSink.Module.Path
 	}
 }
 

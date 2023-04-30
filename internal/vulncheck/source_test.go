@@ -149,13 +149,13 @@ func TestImports(t *testing.T) {
 
 	// Check that vulnerabilities are connected to the imports graph.
 	for _, v := range result.Vulns {
-		if v.ImportSink == 0 {
+		if v.ImportSink == nil {
 			t.Errorf("want ImportSink !=0 for %v:%v; got %v", v.Symbol, v.PkgPath, v.ImportSink)
 		}
 	}
 
 	// Check that the package entry points are collected.
-	if got := len(result.Imports.Entries); got != 2 {
+	if got := len(result.EntryPackages); got != 2 {
 		t.Errorf("want 2 package entry points; got %v", got)
 	}
 
@@ -172,7 +172,7 @@ func TestImports(t *testing.T) {
 		"golang.org/zmod/z":     {"archive/zip"},
 	}
 
-	if igStrMap := impGraphToStrMap(result.Imports); !reflect.DeepEqual(wantImports, igStrMap) {
+	if igStrMap := impGraphToStrMap(result); !reflect.DeepEqual(wantImports, igStrMap) {
 		t.Errorf("want %v imports graph; got %v", wantImports, igStrMap)
 	}
 

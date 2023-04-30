@@ -33,7 +33,7 @@ type ImportChain []*PkgNode
 // slice of identified import chains.
 func ImportChains(res *Result) map[*Vuln][]ImportChain {
 	// Group vulns per package.
-	vPerPkg := make(map[int][]*Vuln)
+	vPerPkg := make(map[*PkgNode][]*Vuln)
 	for _, v := range res.Vulns {
 		vPerPkg[v.ImportSink] = append(vPerPkg[v.ImportSink], v)
 	}
@@ -42,12 +42,12 @@ func ImportChains(res *Result) map[*Vuln][]ImportChain {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	chains := make(map[*Vuln][]ImportChain)
-	for pkgID, vulns := range vPerPkg {
-		pID := pkgID
+	for pkgNode, vulns := range vPerPkg {
+		pkgNode := pkgNode
 		vs := vulns
 		wg.Add(1)
 		go func() {
-			pChains := importChains(pID, res)
+			pChains := importChains(pkgNode, res)
 			mu.Lock()
 			for _, v := range vs {
 				chains[v] = pChains
@@ -62,39 +62,38 @@ func ImportChains(res *Result) map[*Vuln][]ImportChain {
 
 // importChains finds representative chains of package imports
 // leading to vulnerable package identified with vulnSinkID.
-func importChains(vulnSinkID int, res *Result) []ImportChain {
-	if vulnSinkID == 0 {
+func importChains(vulnSink *PkgNode, res *Result) []ImportChain {
+	if vulnSink == nil {
 		return nil
 	}
 
 	// Entry packages, needed for finalizing chains.
-	entries := make(map[int]bool)
-	for _, e := range res.Imports.Entries {
-		entries[e] = true
+	entries := make(map[string]bool)
+	for _, e := range res.EntryPackages {
+		entries[e.pkg.ID] = true
 	}
 
 	var chains []ImportChain
-	seen := make(map[int]bool)
+	seen := make(map[string]bool)
 
 	queue := list.New()
-	queue.PushBack(&importChain{pkg: res.Imports.Packages[vulnSinkID]})
+	queue.PushBack(&importChain{pkg: vulnSink})
 	for queue.Len() > 0 {
 		front := queue.Front()
 		c := front.Value.(*importChain)
 		queue.Remove(front)
 
 		pkg := c.pkg
-		if seen[pkg.ID] {
+		if seen[pkg.pkg.ID] {
 			continue
 		}
-		seen[pkg.ID] = true
+		seen[pkg.pkg.ID] = true
 
-		for _, impBy := range pkg.ImportedBy {
-			imp := res.Imports.Packages[impBy]
+		for _, imp := range pkg.ImportedBy {
 			newC := &importChain{pkg: imp, child: c}
 			// If the next package is an entry, we have
 			// a chain to report.
-			if entries[imp.ID] {
+			if entries[imp.pkg.ID] {
 				chains = append(chains, newC.ImportChain())
 			}
 			queue.PushBack(newC)

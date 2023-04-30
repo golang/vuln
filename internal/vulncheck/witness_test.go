@@ -57,20 +57,19 @@ func TestImportChains(t *testing.T) {
 	//      |   interm2
 	//      |   /     |
 	//     vuln1    vuln2
-	e1 := &PkgNode{ID: 1, pkg: &packages.Package{PkgPath: "entry1"}}
-	e2 := &PkgNode{ID: 2, pkg: &packages.Package{PkgPath: "entry2"}}
-	i1 := &PkgNode{ID: 3, pkg: &packages.Package{PkgPath: "interm1"}, ImportedBy: []int{1}}
-	i2 := &PkgNode{ID: 4, pkg: &packages.Package{PkgPath: "interm2"}, ImportedBy: []int{2, 3}}
-	v1 := &PkgNode{ID: 5, pkg: &packages.Package{PkgPath: "vuln1"}, ImportedBy: []int{3, 4}}
-	v2 := &PkgNode{ID: 6, pkg: &packages.Package{PkgPath: "vuln2"}, ImportedBy: []int{4}}
-
-	ig := &ImportGraph{
-		Packages: map[int]*PkgNode{1: e1, 2: e2, 3: i1, 4: i2, 5: v1, 6: v2},
-		Entries:  []int{1, 2},
+	e1 := &PkgNode{pkg: &packages.Package{ID: "1", PkgPath: "entry1"}}
+	e2 := &PkgNode{pkg: &packages.Package{ID: "2", PkgPath: "entry2"}}
+	i1 := &PkgNode{pkg: &packages.Package{ID: "3", PkgPath: "interm1"}, ImportedBy: []*PkgNode{e1}}
+	i2 := &PkgNode{pkg: &packages.Package{ID: "4", PkgPath: "interm2"}, ImportedBy: []*PkgNode{e2, i1}}
+	v1 := &PkgNode{pkg: &packages.Package{ID: "5", PkgPath: "vuln1"}, ImportedBy: []*PkgNode{i1, i2}}
+	v2 := &PkgNode{pkg: &packages.Package{ID: "6", PkgPath: "vuln2"}, ImportedBy: []*PkgNode{i2}}
+	vuln1 := &Vuln{ImportSink: v1, PkgPath: "vuln1"}
+	vuln2 := &Vuln{ImportSink: v2, PkgPath: "vuln2"}
+	res := &Result{
+		Packages:      map[string]*PkgNode{"1": e1, "2": e2, "3": i1, "4": i2, "5": v1, "6": v2},
+		EntryPackages: []*PkgNode{e1, e2},
+		Vulns:         []*Vuln{vuln1, vuln2},
 	}
-	vuln1 := &Vuln{ImportSink: 5, PkgPath: "vuln1"}
-	vuln2 := &Vuln{ImportSink: 6, PkgPath: "vuln2"}
-	res := &Result{Imports: ig, Vulns: []*Vuln{vuln1, vuln2}}
 
 	// The chain entry1->interm1->interm2->vuln1 is not reported
 	// as there exist a shorter trace going from entry1 to vuln1

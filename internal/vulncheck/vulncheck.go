@@ -26,10 +26,14 @@ type Result struct {
 	// via the program call graph.
 	Calls *CallGraph
 
-	// Imports is a package dependency graph whose roots are entry user packages
-	// and sinks are packages with some known vulnerable symbols. It is empty
-	// when no packages with vulnerabilities are imported in the program.
-	Imports *ImportGraph
+	// Packages contains all package nodes as a map: package node id -> package node.
+	Packages map[string]*PkgNode
+
+	// EntryPackages are a subset of Packages representing packages of vulncheck entry points.
+	EntryPackages []*PkgNode
+
+	// ModulesByPath contains all module nodes indexed by path.
+	ModulesByPath map[string]*ModNode
 
 	// EntryModules are ModNodes of a subset of Modules representing modules of vulncheck entry points.
 	EntryModules []*ModNode
@@ -42,9 +46,6 @@ type Result struct {
 
 	// Modules are the modules that comprise the user code.
 	Modules []*packages.Module
-
-	// ModulesByPath contains all module nodes indexed by path.
-	ModulesByPath map[string]*ModNode
 }
 
 // Vuln provides information on how a vulnerability is affecting user code by
@@ -81,7 +82,7 @@ type Vuln struct {
 	//
 	// When analyzing binaries or PkgPath is not imported, ImportSink will be
 	// unavailable and set to 0.
-	ImportSink int
+	ImportSink *PkgNode
 
 	// RequireSink is the ID of the ModNode in Result.Requires corresponding to
 	// ModPath.
@@ -169,31 +170,13 @@ type ModNode struct {
 	RequiredBy []*ModNode
 }
 
-// ImportGraph is a slice of a full program package import graph whose sinks are
-// packages with some known vulnerabilities and sources are user specified
-// packages.
-//
-// ImportGraph is directed from a vulnerable package towards the program entry
-// packages (see PkgNode) for a more efficient traversal of the slice related
-// to a particular vulnerability.
-type ImportGraph struct {
-	// Packages contains all package nodes as a map: package node id -> package node.
-	Packages map[int]*PkgNode
-
-	// Entries are IDs of a subset of Packages representing packages of vulncheck entry points.
-	Entries []int
-}
-
 // A PkgNode describes a package in the import graph.
 type PkgNode struct {
-	// ID is the id used to identify the PkgNode in ImportGraph.
-	ID int
-
 	// Module holds ID of the corresponding module (node) in the Requires graph.
 	Module *ModNode
 
-	// ImportedBy contains IDs of packages directly importing this package.
-	ImportedBy []int
+	// ImportedBy contains packages directly importing this package.
+	ImportedBy []*PkgNode
 
 	// pkg is used for connecting package node to module and call graph nodes.
 	pkg *packages.Package
