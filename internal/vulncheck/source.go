@@ -10,7 +10,6 @@ import (
 	"go/token"
 	"sort"
 	"sync"
-	"sync/atomic"
 
 	"golang.org/x/tools/go/callgraph"
 	"golang.org/x/tools/go/packages"
@@ -83,7 +82,6 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	modVulns = modVulns.filter(cfg.GOOS, cfg.GOARCH)
 	result := &Result{
 		Packages:      make(map[string]*PkgNode),
-		Calls:         &CallGraph{Functions: make(map[int]*FuncNode)},
 		ModulesByPath: make(map[string]*ModNode),
 	}
 	result.ModulesByPath[internal.GoStdModulePath] = &ModNode{
@@ -378,13 +376,6 @@ func callGraphSlice(starts []*callgraph.Node, forward bool) *callgraph.Graph {
 	return g
 }
 
-// funID is an id counter for nodes of Calls graph.
-var funID int64 = 0
-
-func nextFunID() int {
-	return int(atomic.AddInt64(&funID, 1))
-}
-
 // vulnCallGraph creates vulnerability call graph from sources -> sinks reachability info.
 func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.Entry, result *Result) {
 	nodes := make(map[*ssa.Function]*FuncNode)
@@ -394,14 +385,13 @@ func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.E
 		}
 		fn := funcNode(f)
 		nodes[f] = fn
-		result.Calls.Functions[fn.ID] = fn
 		return fn
 	}
 
 	// First create entries and sinks and store relevant information.
 	for _, s := range sources {
 		fn := createNode(s.Func)
-		result.Calls.Entries = append(result.Calls.Entries, fn.ID)
+		result.EntryFunctions = append(result.EntryFunctions, fn)
 	}
 
 	for s, vulns := range sinks {
@@ -411,7 +401,7 @@ func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.E
 		// Populate CallSink field for each detected vuln symbol.
 		for _, osv := range vulns {
 			if vulnMatchesPackage(osv, funNode.PkgPath) {
-				addCallSinkForVuln(funNode.ID, osv, dbFuncName(f), funNode.PkgPath, result)
+				addCallSinkForVuln(funNode, osv, dbFuncName(f), funNode.PkgPath, result)
 			}
 		}
 	}
@@ -430,7 +420,7 @@ func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.E
 
 			call := edge.Site
 			cs := &CallSite{
-				Parent:   nCaller.ID,
+				Parent:   nCaller,
 				Name:     call.Common().Value.Name(),
 				RecvType: callRecvType(call),
 				Resolved: resolved(call),
@@ -469,22 +459,21 @@ func pkgPath(f *ssa.Function) string {
 }
 
 func funcNode(f *ssa.Function) *FuncNode {
-	id := nextFunID()
-	return &FuncNode{
-		ID:       id,
+	node := &FuncNode{
 		Name:     f.Name(),
 		PkgPath:  pkgPath(f),
 		RecvType: funcRecvType(f),
 		Pos:      funcPosition(f),
 	}
+	return node
 }
 
 // addCallSinkForVuln adds callID as call sink to vuln of result.Vulns
 // identified with <osv, symbol, pkg>.
-func addCallSinkForVuln(callID int, osv *osv.Entry, symbol, pkg string, result *Result) {
+func addCallSinkForVuln(call *FuncNode, osv *osv.Entry, symbol, pkg string, result *Result) {
 	for _, vuln := range result.Vulns {
 		if vuln.OSV == osv && vuln.Symbol == symbol && vuln.PkgPath == pkg {
-			vuln.CallSink = callID
+			vuln.CallSink = call
 			return
 		}
 	}

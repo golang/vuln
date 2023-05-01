@@ -94,20 +94,18 @@ func TestCallStacks(t *testing.T) {
 	//      |   interm2(interface)
 	//      |   /     |
 	//     vuln1    vuln2
-	e1 := &FuncNode{ID: 1, Name: "entry1"}
-	e2 := &FuncNode{ID: 2, Name: "entry2"}
-	i1 := &FuncNode{ID: 3, Name: "interm1", PkgPath: "net/http", CallSites: []*CallSite{{Parent: 1, Resolved: true}}}
-	i2 := &FuncNode{ID: 4, Name: "interm2", CallSites: []*CallSite{{Parent: 2, Resolved: true}, {Parent: 3, Resolved: true}}}
-	v1 := &FuncNode{ID: 5, Name: "vuln1", CallSites: []*CallSite{{Parent: 3, Resolved: true}, {Parent: 4, Resolved: false}}}
-	v2 := &FuncNode{ID: 6, Name: "vuln2", CallSites: []*CallSite{{Parent: 4, Resolved: false}}}
-
-	cg := &CallGraph{
-		Functions: map[int]*FuncNode{1: e1, 2: e2, 3: i1, 4: i2, 5: v1, 6: v2},
-		Entries:   []int{1, 2},
+	e1 := &FuncNode{Name: "entry1"}
+	e2 := &FuncNode{Name: "entry2"}
+	i1 := &FuncNode{Name: "interm1", PkgPath: "net/http", CallSites: []*CallSite{{Parent: e1, Resolved: true}}}
+	i2 := &FuncNode{Name: "interm2", CallSites: []*CallSite{{Parent: e2, Resolved: true}, {Parent: i1, Resolved: true}}}
+	v1 := &FuncNode{Name: "vuln1", CallSites: []*CallSite{{Parent: i1, Resolved: true}, {Parent: i2, Resolved: false}}}
+	v2 := &FuncNode{Name: "vuln2", CallSites: []*CallSite{{Parent: i2, Resolved: false}}}
+	vuln1 := &Vuln{CallSink: v1, Symbol: "vuln1"}
+	vuln2 := &Vuln{CallSink: v2, Symbol: "vuln2"}
+	res := &Result{
+		EntryFunctions: []*FuncNode{e1, e2},
+		Vulns:          []*Vuln{vuln1, vuln2},
 	}
-	vuln1 := &Vuln{CallSink: 5, Symbol: "vuln1"}
-	vuln2 := &Vuln{CallSink: 6, Symbol: "vuln2"}
-	res := &Result{Calls: cg, Vulns: []*Vuln{vuln1, vuln2}}
 
 	want := map[string][]string{
 		"vuln1": {"entry2->interm2->vuln1", "entry1->interm1->vuln1"},

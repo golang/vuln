@@ -90,7 +90,7 @@ func createSourceResult(vr *vulncheck.Result) []*govulncheck.Vuln {
 	// Needed for creating unique call stacks.
 	vulnsPerPkg := make(map[key][]*vulncheck.Vuln)
 	for _, vv := range vr.Vulns {
-		if vv.CallSink != 0 {
+		if vv.CallSink != nil {
 			k := key{id: vv.OSV.ID, pkg: vv.PkgPath, mod: vv.ModPath}
 			vulnsPerPkg[k] = append(vulnsPerPkg[k], vv)
 		}
@@ -110,9 +110,9 @@ func createSourceResult(vr *vulncheck.Result) []*govulncheck.Vuln {
 		}
 		v := &govulncheck.Vuln{OSV: vv.OSV, Modules: []*govulncheck.Module{m}}
 
-		if vv.CallSink != 0 {
+		if vv.CallSink != nil {
 			k := key{id: vv.OSV.ID, pkg: vv.PkgPath, mod: vv.ModPath}
-			vcs := uniqueCallStack(vv, callStacks[vv], vulnsPerPkg[k], vr)
+			vcs := uniqueCallStack(vv, callStacks[vv], vulnsPerPkg[k])
 			if vcs != nil {
 				cs := govulncheck.CallStack{
 					Frames: stackFramesfromEntries(vcs),
@@ -476,17 +476,16 @@ func isAnonymousFunction(funcName string) bool {
 
 // uniqueCallStack returns the first unique call stack among css, if any.
 // Unique means that the call stack does not go through symbols of vg.
-func uniqueCallStack(v *vulncheck.Vuln, css []vulncheck.CallStack, vg []*vulncheck.Vuln, r *vulncheck.Result) vulncheck.CallStack {
+func uniqueCallStack(v *vulncheck.Vuln, css []vulncheck.CallStack, vg []*vulncheck.Vuln) vulncheck.CallStack {
 	vulnFuncs := make(map[*vulncheck.FuncNode]bool)
 	for _, v := range vg {
-		vulnFuncs[r.Calls.Functions[v.CallSink]] = true
+		vulnFuncs[v.CallSink] = true
 	}
 
-	vulnFunc := r.Calls.Functions[v.CallSink]
 callstack:
 	for _, cs := range css {
 		for _, e := range cs {
-			if e.Function != vulnFunc && vulnFuncs[e.Function] {
+			if e.Function != v.CallSink && vulnFuncs[e.Function] {
 				continue callstack
 			}
 		}

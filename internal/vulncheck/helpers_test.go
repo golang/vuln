@@ -97,31 +97,35 @@ func reqGraphToStrMap(r *Result) map[string][]string {
 	return m
 }
 
-func callGraphToStrMap(cg *CallGraph) map[string][]string {
-	type edge struct {
-		// src and dest are ids ofr source and
-		// destination nodes in a callgraph edge.
-		src, dst int
-	}
+type edge struct {
+	// src and dest are ids of source and
+	// destination nodes in a callgraph edge.
+	src, dst string
+}
+
+func callGraphToStrMap(r *Result) map[string][]string {
 	// seen edges, to avoid repetitions
 	seen := make(map[edge]bool)
-
 	m := make(map[string][]string)
-	for _, n := range cg.Functions {
-		fName := n.String()
-		for _, callsite := range n.CallSites {
-			e := edge{src: callsite.Parent, dst: n.ID}
-			if seen[e] {
-				continue
-			}
-			caller := cg.Functions[e.src]
-			callerName := caller.String()
-			m[callerName] = append(m[callerName], fName)
-		}
+	for _, v := range r.Vulns {
+		updateCallGraph(m, v.CallSink, seen)
 	}
-
 	sortStrMap(m)
 	return m
+}
+
+func updateCallGraph(callGraph map[string][]string, f *FuncNode, seen map[edge]bool) {
+	fName := f.String()
+	for _, callsite := range f.CallSites {
+		e := edge{src: callsite.Parent.Name, dst: f.Name}
+		if seen[e] {
+			continue
+		}
+		seen[e] = true
+		callerName := callsite.Parent.String()
+		callGraph[callerName] = append(callGraph[callerName], fName)
+		updateCallGraph(callGraph, callsite.Parent, seen)
+	}
 }
 
 func pkgPathToImports(pkgs []*packages.Package) map[string][]string {

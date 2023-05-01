@@ -28,16 +28,9 @@ func TestUniqueCallStack(t *testing.T) {
 	v2 := &vulncheck.FuncNode{Name: "V2"}
 	v3 := &vulncheck.FuncNode{Name: "V3"}
 
-	vuln1 := &vulncheck.Vuln{Symbol: "V1", CallSink: 1}
-	vuln2 := &vulncheck.Vuln{Symbol: "V2", CallSink: 2}
-	vuln3 := &vulncheck.Vuln{Symbol: "V3", CallSink: 3}
-
-	vr := &vulncheck.Result{
-		Calls: &vulncheck.CallGraph{
-			Functions: map[int]*vulncheck.FuncNode{1: v1, 2: v2, 3: v3},
-		},
-		Vulns: []*vulncheck.Vuln{vuln1, vuln2, vuln3},
-	}
+	vuln1 := &vulncheck.Vuln{Symbol: "V1", CallSink: v1}
+	vuln2 := &vulncheck.Vuln{Symbol: "V2", CallSink: v2}
+	vuln3 := &vulncheck.Vuln{Symbol: "V3", CallSink: v3}
 
 	callStack := func(fs ...*vulncheck.FuncNode) vulncheck.CallStack {
 		var cs vulncheck.CallStack
@@ -62,7 +55,7 @@ func TestUniqueCallStack(t *testing.T) {
 		{vuln3, []vulncheck.CallStack{callStack(a, v1, v3), callStack(a, b, v3)}, callStack(a, b, v3)},
 	} {
 		t.Run(test.vuln.Symbol, func(t *testing.T) {
-			got := uniqueCallStack(test.vuln, test.css, skip, vr)
+			got := uniqueCallStack(test.vuln, test.css, skip)
 			if diff := cmp.Diff(test.want, got); diff != "" {
 				t.Fatalf("mismatch (-want, +got):\n%s", diff)
 			}

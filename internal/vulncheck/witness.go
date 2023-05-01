@@ -168,21 +168,21 @@ func CallStacks(res *Result) map[*Vuln][]CallStack {
 
 // callStacks finds representative call stacks
 // for vulnerable symbol identified with vulnSinkID.
-func callStacks(vulnSinkID int, res *Result) []CallStack {
-	if vulnSinkID == 0 {
+func callStacks(vulnSink *FuncNode, res *Result) []CallStack {
+	if vulnSink == nil {
 		return nil
 	}
 
-	entries := make(map[int]bool)
-	for _, e := range res.Calls.Entries {
+	entries := make(map[*FuncNode]bool)
+	for _, e := range res.EntryFunctions {
 		entries[e] = true
 	}
 
 	var stacks []CallStack
-	seen := make(map[int]bool)
+	seen := make(map[*FuncNode]bool)
 
 	queue := list.New()
-	queue.PushBack(&callChain{f: res.Calls.Functions[vulnSinkID]})
+	queue.PushBack(&callChain{f: vulnSink})
 
 	for queue.Len() > 0 {
 		front := queue.Front()
@@ -190,17 +190,16 @@ func callStacks(vulnSinkID int, res *Result) []CallStack {
 		queue.Remove(front)
 
 		f := c.f
-		if seen[f.ID] {
+		if seen[f] {
 			continue
 		}
-		seen[f.ID] = true
+		seen[f] = true
 
 		// Pick a single call site for each function in determinstic order.
 		// A single call site is sufficient as we visit a function only once.
-		for _, cs := range callsites(f.CallSites, res, seen) {
-			caller := res.Calls.Functions[cs.Parent]
-			nStack := &callChain{f: caller, call: cs, child: c}
-			if entries[caller.ID] {
+		for _, cs := range callsites(f.CallSites, seen) {
+			nStack := &callChain{f: cs.Parent, call: cs, child: c}
+			if entries[cs.Parent] {
 				stacks = append(stacks, nStack.CallStack())
 			}
 			queue.PushBack(nStack)
@@ -213,8 +212,8 @@ func callStacks(vulnSinkID int, res *Result) []CallStack {
 // For each such function, the smallest (posLess) call site is chosen. The
 // returned slice is sorted by caller functions (funcLess). Assumes callee
 // of each call site is the same.
-func callsites(sites []*CallSite, result *Result, visited map[int]bool) []*CallSite {
-	minCs := make(map[int]*CallSite)
+func callsites(sites []*CallSite, visited map[*FuncNode]bool) []*CallSite {
+	minCs := make(map[*FuncNode]*CallSite)
 	for _, cs := range sites {
 		if visited[cs.Parent] {
 			continue
@@ -225,14 +224,14 @@ func callsites(sites []*CallSite, result *Result, visited map[int]bool) []*CallS
 	}
 
 	var fs []*FuncNode
-	for id := range minCs {
-		fs = append(fs, result.Calls.Functions[id])
+	for _, cs := range minCs {
+		fs = append(fs, cs.Parent)
 	}
 	sort.SliceStable(fs, func(i, j int) bool { return funcLess(fs[i], fs[j]) })
 
 	var css []*CallSite
 	for _, f := range fs {
-		css = append(css, minCs[f.ID])
+		css = append(css, minCs[f])
 	}
 	return css
 }

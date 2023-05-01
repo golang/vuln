@@ -530,14 +530,14 @@ func TestCalls(t *testing.T) {
 	}
 
 	// Check that call graph entry points are present.
-	if got := len(result.Calls.Entries); got != 2 {
+	if got := len(result.EntryFunctions); got != 2 {
 		t.Errorf("want 2 call graph entry points; got %v", got)
 	}
 
 	// Check that vulnerabilities are connected to the call graph.
 	// For the test example, all vulns should have a call sink.
 	for _, v := range result.Vulns {
-		if v.CallSink == 0 {
+		if v.CallSink == nil {
 			t.Errorf("want CallSink !=0 for %v:%v; got 0", v.Symbol, v.PkgPath)
 		}
 	}
@@ -551,7 +551,7 @@ func TestCalls(t *testing.T) {
 		"golang.org/emod/e.E":        {"golang.org/bmod/bvuln.Vuln"},
 	}
 
-	if callStrMap := callGraphToStrMap(result.Calls); !reflect.DeepEqual(wantCalls, callStrMap) {
+	if callStrMap := callGraphToStrMap(result); !reflect.DeepEqual(wantCalls, callStrMap) {
 		t.Errorf("want %v call graph; got %v", wantCalls, callStrMap)
 	}
 }
@@ -715,9 +715,9 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	}
 
 	for _, v := range result.Vulns {
-		if v.Symbol == "V1" && v.CallSink == 0 {
+		if v.Symbol == "V1" && v.CallSink == nil {
 			t.Errorf("expected a call sink for V1; got none")
-		} else if v.Symbol != "V1" && v.CallSink != 0 {
+		} else if v.Symbol != "V1" && v.CallSink != nil {
 			t.Errorf("expected no call sink for %v; got %v", v.Symbol, v.CallSink)
 		}
 	}
@@ -785,7 +785,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 
 	var vuln *Vuln
 	for _, v := range result.Vulns {
-		if v.Symbol == "VulnData.Vuln1" && v.CallSink != 0 {
+		if v.Symbol == "VulnData.Vuln1" && v.CallSink != nil {
 			vuln = v
 		}
 	}
@@ -863,8 +863,13 @@ func TestRecursion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if l := len(result.Calls.Functions); l != 3 {
-		t.Errorf("want 3 functions (X, y, Vuln) in vulnerability graph; got %v", l)
+	wantCalls := map[string][]string{
+		"golang.org/entry/x.X": {"golang.org/bmod/bvuln.Vuln", "golang.org/entry/x.y"},
+		"golang.org/entry/x.y": {"golang.org/entry/x.X"},
+	}
+
+	if callStrMap := callGraphToStrMap(result); !reflect.DeepEqual(wantCalls, callStrMap) {
+		t.Errorf("want %v call graph; got %v", wantCalls, callStrMap)
 	}
 }
 

@@ -20,11 +20,8 @@ import (
 // in the call graph, package imports graph, and module requires graph of
 // the user code.
 type Result struct {
-	// Calls is a call graph whose roots are program entry functions and
-	// methods, and sinks are known vulnerable symbols. It is empty when
-	// Config.ImportsOnly is true or when no vulnerable symbols are reachable
-	// via the program call graph.
-	Calls *CallGraph
+	// EntryFunctions are a subset of Functions representing vulncheck entry points.
+	EntryFunctions []*FuncNode
 
 	// Packages contains all package nodes as a map: package node id -> package node.
 	Packages map[string]*PkgNode
@@ -75,7 +72,7 @@ type Vuln struct {
 	//
 	// When analyzing binaries, Symbol is not reachable, or Config.ImportsOnly
 	// is true, CallSink will be unavailable and set to 0.
-	CallSink int
+	CallSink *FuncNode
 
 	// ImportSink is the ID of the PkgNode in Result.Imports corresponding to
 	// PkgPath.
@@ -91,25 +88,8 @@ type Vuln struct {
 	RequireSink *ModNode
 }
 
-// CallGraph is a slice of a full program call graph whose sinks are vulnerable
-// functions and sources are entry points of user packages.
-//
-// CallGraph is directed from vulnerable functions towards program entry
-// functions (see FuncNode) for a more efficient traversal of the slice
-// related to a particular vulnerability.
-type CallGraph struct {
-	// Functions contains all call graph nodes as a map: FuncNode.ID -> FuncNode.
-	Functions map[int]*FuncNode
-
-	// Entries are IDs of a subset of Functions representing vulncheck entry points.
-	Entries []int
-}
-
 // A FuncNode describes a function in the call graph.
 type FuncNode struct {
-	// ID is the id used to identify the FuncNode in CallGraph.
-	ID int
-
 	// Name is the name of the function.
 	Name string
 
@@ -141,8 +121,8 @@ func (fn *FuncNode) Receiver() string {
 
 // A CallSite describes a function call.
 type CallSite struct {
-	// Parent is ID of the enclosing function where the call is made.
-	Parent int
+	// Parent is the enclosing function where the call is made.
+	Parent *FuncNode
 
 	// Name stands for the name of the function (variable) being called.
 	Name string
