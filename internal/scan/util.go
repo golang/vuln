@@ -22,20 +22,18 @@ import (
 // For instance, Vulns with the same OSV field are
 // merged into a single one. The same applies for
 // Modules of a Vuln, and Packages of a Module.
-func merge(vulns []*govulncheck.Vuln) []*govulncheck.Vuln {
-	var nr []*govulncheck.Vuln
+func merge(findings []*govulncheck.Finding) []*govulncheck.Finding {
+	var nr []*govulncheck.Finding
 	// merge vulns by their ID. Note that there can
 	// be several OSVs with the same ID but different
 	// pointer values
-	osvs := make(map[string]*osv.Entry)
 	vs := make(map[string][]*govulncheck.Module)
-	for _, v := range vulns {
-		osvs[v.OSV.ID] = v.OSV
-		vs[v.OSV.ID] = append(vs[v.OSV.ID], v.Modules...)
+	for _, v := range findings {
+		vs[v.OSV] = append(vs[v.OSV], v.Modules...)
 	}
 
 	for id, mods := range vs {
-		v := &govulncheck.Vuln{OSV: osvs[id], Modules: mods}
+		v := &govulncheck.Finding{OSV: id, Modules: mods}
 		nr = append(nr, v)
 	}
 
@@ -103,11 +101,11 @@ func validateModuleVersions(modules []*govulncheck.Module) {
 }
 
 // sortResults sorts Vulns, Modules, and Packages of r.
-func sortResult(vulns []*govulncheck.Vuln) {
-	sort.Slice(vulns, func(i, j int) bool {
-		return vulns[i].OSV.ID > vulns[j].OSV.ID
+func sortResult(findings []*govulncheck.Finding) {
+	sort.Slice(findings, func(i, j int) bool {
+		return findings[i].OSV > findings[j].OSV
 	})
-	for _, v := range vulns {
+	for _, v := range findings {
 		sort.Slice(v.Modules, func(i, j int) bool {
 			return v.Modules[i].Path < v.Modules[j].Path
 		})

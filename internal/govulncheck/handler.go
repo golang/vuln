@@ -7,19 +7,24 @@ package govulncheck
 import (
 	"encoding/json"
 	"io"
+
+	"golang.org/x/vuln/internal/osv"
 )
 
 // Handler handles messages to be presented in a vulnerability scan output
 // stream.
 type Handler interface {
-	// Vulnerability adds a vulnerability to be printed to the output.
-	Vulnerability(vuln *Vuln) error
-
 	// Config communicates introductory message to the user.
 	Config(config *Config) error
 
 	// Progress is called to display a progress message.
 	Progress(progress *Progress) error
+
+	// OSV is invoked for each osv Entry in the stream.
+	OSV(entry *osv.Entry) error
+
+	// Finding is called for each vulnerability finding in the stream.
+	Finding(finding *Finding) error
 }
 
 // HandleJSON reads the json from the supplied stream and hands the decoded
@@ -37,11 +42,14 @@ func HandleJSON(from io.Reader, to Handler) error {
 		if msg.Config != nil {
 			err = to.Config(msg.Config)
 		}
-		if msg.Vulnerability != nil {
-			err = to.Vulnerability(msg.Vulnerability)
-		}
 		if msg.Progress != nil {
 			err = to.Progress(msg.Progress)
+		}
+		if msg.OSV != nil {
+			err = to.OSV(msg.OSV)
+		}
+		if msg.Finding != nil {
+			err = to.Finding(msg.Finding)
 		}
 		if err != nil {
 			return err

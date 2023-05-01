@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal/client"
-	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/test"
 )
@@ -86,25 +85,19 @@ func TestRunQuery(t *testing.T) {
 
 	for _, tc := range []struct {
 		query []string
-		want  []*govulncheck.Vuln
+		want  []*osv.Entry
 	}{
 		{
 			query: []string{"stdlib@go1.18"},
-			want: []*govulncheck.Vuln{
-				{OSV: stdlib},
-			},
+			want:  []*osv.Entry{stdlib},
 		},
 		{
 			query: []string{"stdlib@1.18"},
-			want: []*govulncheck.Vuln{
-				{OSV: stdlib},
-			},
+			want:  []*osv.Entry{stdlib},
 		},
 		{
 			query: []string{"stdlib@v1.18.0"},
-			want: []*govulncheck.Vuln{
-				{OSV: stdlib},
-			},
+			want:  []*osv.Entry{stdlib},
 		},
 		{
 			query: []string{"bad.com@1.2.3"},
@@ -112,28 +105,20 @@ func TestRunQuery(t *testing.T) {
 		},
 		{
 			query: []string{"bad.com@v1.1.0"},
-			want: []*govulncheck.Vuln{
-				{OSV: e}, {OSV: e2},
-			},
+			want:  []*osv.Entry{e, e2},
 		},
 		{
 			query: []string{"unfixable.com@2.0.0"},
-			want: []*govulncheck.Vuln{
-				{OSV: e},
-			},
+			want:  []*osv.Entry{e},
 		},
 		{
 			// each entry should only show up once
 			query: []string{"bad.com@1.1.0", "unfixable.com@2.0.0"},
-			want: []*govulncheck.Vuln{
-				{OSV: e}, {OSV: e2},
-			},
+			want:  []*osv.Entry{e, e2},
 		},
 		{
 			query: []string{"stdlib@1.18", "unfixable.com@2.0.0"},
-			want: []*govulncheck.Vuln{
-				{OSV: stdlib}, {OSV: e},
-			},
+			want:  []*osv.Entry{stdlib, e},
 		},
 	} {
 		t.Run(strings.Join(tc.query, ","), func(t *testing.T) {
@@ -142,7 +127,7 @@ func TestRunQuery(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(h.VulnMessages, tc.want); diff != "" {
+			if diff := cmp.Diff(h.OSVMessages, tc.want); diff != "" {
 				t.Errorf("runQuery: unexpected diff:\n%s", diff)
 			}
 		})

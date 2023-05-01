@@ -52,7 +52,7 @@ type stackFrameSummary struct {
 	Position string
 }
 
-func topPackages(vulns []*govulncheck.Vuln) map[string]bool {
+func topPackages(vulns []*govulncheck.Finding) map[string]bool {
 	topPkgs := map[string]bool{}
 	for _, v := range vulns {
 		for _, m := range v.Modules {
@@ -68,7 +68,7 @@ func topPackages(vulns []*govulncheck.Vuln) map[string]bool {
 	return topPkgs
 }
 
-func createSummaries(vulns []*govulncheck.Vuln) summaries {
+func createSummaries(osvs []*osv.Entry, vulns []*govulncheck.Finding) summaries {
 	s := summaries{}
 	findings := merge(vulns)
 	sortResult(findings)
@@ -76,7 +76,7 @@ func createSummaries(vulns []*govulncheck.Vuln) summaries {
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
 	for _, v := range findings {
-		entry := createVulnSummary(v, topPkgs)
+		entry := createVulnSummary(osvs, v, topPkgs)
 		if entry.Affected {
 			s.Affected = append(s.Affected, entry)
 		} else {
@@ -98,13 +98,13 @@ func createSummaries(vulns []*govulncheck.Vuln) summaries {
 	return s
 }
 
-func createVulnSummary(v *govulncheck.Vuln, topPkgs map[string]bool) vulnSummary {
+func createVulnSummary(osvs []*osv.Entry, v *govulncheck.Finding, topPkgs map[string]bool) vulnSummary {
 	vInfo := vulnSummary{
 		Affected: IsCalled(v),
+		OSV:      v.OSV,
 	}
-	osv := v.OSV
+	osv := findOSV(osvs, v.OSV)
 	if osv != nil {
-		vInfo.OSV = osv.ID
 		vInfo.Details = osv.Details
 	}
 
@@ -142,6 +142,15 @@ func createVulnSummary(v *govulncheck.Vuln, topPkgs map[string]bool) vulnSummary
 		attachModule(&vInfo, tm)
 	}
 	return vInfo
+}
+
+func findOSV(osvs []*osv.Entry, id string) *osv.Entry {
+	for _, entry := range osvs {
+		if entry.ID == id {
+			return entry
+		}
+	}
+	return nil
 }
 
 func createModuleSummary(m *govulncheck.Module, path string, oe *osv.Entry) moduleSummary {

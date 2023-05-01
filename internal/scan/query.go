@@ -39,10 +39,7 @@ func runQuery(ctx context.Context, handler govulncheck.Handler, cfg *config, c *
 	for _, resp := range resps {
 		for _, entry := range resp.Entries {
 			if _, ok := ids[entry.ID]; !ok {
-				err := handler.Vulnerability(&govulncheck.Vuln{
-					OSV: entry,
-					// Modules not set in query mode.
-				})
+				err := handler.OSV(entry)
 				if err != nil {
 					return err
 				}

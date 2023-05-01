@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
@@ -41,10 +42,12 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 
 func emitBinaryResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 	modVersions := moduleVersionMap(vr.Modules)
+	osvs := map[string]*osv.Entry{}
+
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
 	// results later.
-	var vulns []*govulncheck.Vuln
+	var findings []*govulncheck.Finding
 	for _, vv := range uniqueVulns(vr.Vulns) {
 		p := &govulncheck.Package{Path: vv.PkgPath}
 		// in binary mode, there is 1 call stack containing the vulnerable
@@ -68,15 +71,19 @@ func emitBinaryResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 			Packages:     []*govulncheck.Package{p},
 		}
 
-		v := &govulncheck.Vuln{OSV: vv.OSV, Modules: []*govulncheck.Module{m}}
-		vulns = append(vulns, v)
+		v := &govulncheck.Finding{OSV: vv.OSV.ID, Modules: []*govulncheck.Module{m}}
+		findings = append(findings, v)
+		osvs[vv.OSV.ID] = vv.OSV
 	}
 
-	vulns = merge(vulns)
-	sortResult(vulns)
+	findings = merge(findings)
+	sortResult(findings)
 	// For each vulnerability, queue it to be written to the output.
-	for _, v := range vulns {
-		if err := handler.Vulnerability(v); err != nil {
+	for _, f := range findings {
+		if err := handler.OSV(osvs[f.OSV]); err != nil {
+			return err
+		}
+		if err := handler.Finding(f); err != nil {
 			return err
 		}
 	}

@@ -11,6 +11,7 @@ import (
 	"text/template"
 
 	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/osv"
 )
 
 //go:embed template
@@ -27,9 +28,10 @@ func NewTextHandler(w io.Writer, source bool) *TextHandler {
 type TextHandler struct {
 	Show []string
 
-	w      io.Writer
-	vulns  []*govulncheck.Vuln
-	source bool
+	w        io.Writer
+	osvs     []*osv.Entry
+	findings []*govulncheck.Finding
+	source   bool
 }
 
 const (
@@ -49,8 +51,8 @@ func Flush(h govulncheck.Handler) error {
 }
 
 func (h *TextHandler) Flush() error {
-	summary := createSummaries(h.vulns)
-	h.vulns = nil
+	summary := createSummaries(h.osvs, h.findings)
+	h.findings = nil
 	if err := h.runTemplate("govulncheck-summary", summary); err != nil {
 		return err
 	}
@@ -73,9 +75,15 @@ func (h *TextHandler) Progress(progress *govulncheck.Progress) error {
 	return nil
 }
 
-// Vulnerability gathers vulnerabilities to be written.
-func (h *TextHandler) Vulnerability(vuln *govulncheck.Vuln) error {
-	h.vulns = append(h.vulns, vuln)
+// OSV gathers osv entries to be written.
+func (h *TextHandler) OSV(entry *osv.Entry) error {
+	h.osvs = append(h.osvs, entry)
+	return nil
+}
+
+// Finding gathers vulnerability findings to be written.
+func (h *TextHandler) Finding(finding *govulncheck.Finding) error {
+	h.findings = append(h.findings, finding)
 	return nil
 }
 

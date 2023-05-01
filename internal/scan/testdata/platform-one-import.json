@@ -4,45 +4,48 @@
   }
 }
 {
-  "vulnerability": {
-    "osv": {
-      "id": "one-import",
-      "modified": "0001-01-01T00:00:00Z",
-      "published": "0001-01-01T00:00:00Z",
-      "details": "",
-      "affected": [
-        {
-          "package": {
-            "name": "golang.org/vmod",
-            "ecosystem": ""
-          },
-          "ranges": [
-            {
-              "type": "SEMVER",
-              "events": [
-                {
-                  "introduced": "1.2.0"
-                }
-              ]
-            }
-          ],
-          "ecosystem_specific": {
-            "imports": [
+  "osv": {
+    "id": "one-import",
+    "modified": "0001-01-01T00:00:00Z",
+    "published": "0001-01-01T00:00:00Z",
+    "details": "",
+    "affected": [
+      {
+        "package": {
+          "name": "golang.org/vmod",
+          "ecosystem": ""
+        },
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
               {
-                "goos": [
-                  "windows",
-                  "linux"
-                ],
-                "goarch": [
-                  "amd64",
-                  "wasm"
-                ]
+                "introduced": "1.2.0"
               }
             ]
           }
+        ],
+        "ecosystem_specific": {
+          "imports": [
+            {
+              "goos": [
+                "windows",
+                "linux"
+              ],
+              "goarch": [
+                "amd64",
+                "wasm"
+              ]
+            }
+          ]
         }
-      ]
-    },
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "one-import",
     "modules": [
       {
         "path": "golang.org/vmod",

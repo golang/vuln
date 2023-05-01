@@ -16,6 +16,7 @@ import (
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
@@ -80,6 +81,7 @@ func loadPackages(c *config, dir string) ([]*packages.Package, error) {
 func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 	modVersions := moduleVersionMap(vr.Modules)
 	callStacks := vulncheck.CallStacks(vr)
+	osvs := map[string]*osv.Entry{}
 
 	type key struct {
 		id  string
@@ -99,7 +101,7 @@ func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
 	// results later.
-	var vulns []*govulncheck.Vuln
+	var findings []*govulncheck.Finding
 	for _, vv := range vr.Vulns {
 		p := &govulncheck.Package{Path: vv.PkgPath}
 		m := &govulncheck.Module{
@@ -108,8 +110,7 @@ func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 			FixedVersion: fixedVersion(vv.ModPath, vv.OSV.Affected),
 			Packages:     []*govulncheck.Package{p},
 		}
-		v := &govulncheck.Vuln{OSV: vv.OSV, Modules: []*govulncheck.Module{m}}
-
+		v := &govulncheck.Finding{OSV: vv.OSV.ID, Modules: []*govulncheck.Module{m}}
 		if vv.CallSink != nil {
 			k := key{id: vv.OSV.ID, pkg: vv.PkgPath, mod: vv.ModPath}
 			vcs := uniqueCallStack(vv, callStacks[vv], vulnsPerPkg[k])
@@ -120,14 +121,18 @@ func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 				p.CallStacks = []govulncheck.CallStack{cs}
 			}
 		}
-		vulns = append(vulns, v)
+		findings = append(findings, v)
+		osvs[vv.OSV.ID] = vv.OSV
 	}
 
-	vulns = merge(vulns)
-	sortResult(vulns)
+	findings = merge(findings)
+	sortResult(findings)
 	// For each vulnerability, queue it to be written to the output.
-	for _, v := range vulns {
-		if err := handler.Vulnerability(v); err != nil {
+	for _, f := range findings {
+		if err := handler.OSV(osvs[f.OSV]); err != nil {
+			return err
+		}
+		if err := handler.Finding(f); err != nil {
 			return err
 		}
 	}

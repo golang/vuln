@@ -4,30 +4,33 @@
   }
 }
 {
-  "vulnerability": {
-    "osv": {
-      "id": "GO-0000-0001",
-      "modified": "0001-01-01T00:00:00Z",
-      "published": "0001-01-01T00:00:00Z",
-      "details": "Third-party vulnerability",
-      "affected": [
-        {
-          "package": {
-            "name": "golang.org/vmod",
-            "ecosystem": ""
-          },
-          "ecosystem_specific": {
-            "imports": [
-              {
-                "goos": [
-                  "amd"
-                ]
-              }
-            ]
-          }
+  "osv": {
+    "id": "GO-0000-0001",
+    "modified": "0001-01-01T00:00:00Z",
+    "published": "0001-01-01T00:00:00Z",
+    "details": "Third-party vulnerability",
+    "affected": [
+      {
+        "package": {
+          "name": "golang.org/vmod",
+          "ecosystem": ""
+        },
+        "ecosystem_specific": {
+          "imports": [
+            {
+              "goos": [
+                "amd"
+              ]
+            }
+          ]
         }
-      ]
-    },
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "GO-0000-0001",
     "modules": [
       {
         "path": "golang.org/vmod",
@@ -52,22 +55,25 @@
   }
 }
 {
-  "vulnerability": {
-    "osv": {
-      "id": "GO-0000-0002",
-      "modified": "0001-01-01T00:00:00Z",
-      "published": "0001-01-01T00:00:00Z",
-      "details": "Stdlib vulnerability",
-      "affected": [
-        {
-          "package": {
-            "name": "stdlib",
-            "ecosystem": ""
-          },
-          "ecosystem_specific": {}
-        }
-      ]
-    },
+  "osv": {
+    "id": "GO-0000-0002",
+    "modified": "0001-01-01T00:00:00Z",
+    "published": "0001-01-01T00:00:00Z",
+    "details": "Stdlib vulnerability",
+    "affected": [
+      {
+        "package": {
+          "name": "stdlib",
+          "ecosystem": ""
+        },
+        "ecosystem_specific": {}
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "GO-0000-0002",
     "modules": [
       {
         "path": "stdlib",

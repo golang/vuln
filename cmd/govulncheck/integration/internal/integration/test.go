@@ -32,8 +32,8 @@ func CompareNonStdVulns(out string, want map[string]bool) error {
 		if err := dec.Decode(&msg); err != nil {
 			log.Fatalf("failed to load json: %v", err)
 		}
-		if msg.Vulnerability != nil {
-			for _, m := range msg.Vulnerability.Modules {
+		if msg.Finding != nil {
+			for _, m := range msg.Finding.Modules {
 				for _, p := range m.Packages {
 					// collect only called non-std packages
 					if !isStd(p.Path) && len(p.CallStacks) > 0 {

@@ -4,7 +4,10 @@
 
 package test
 
-import "golang.org/x/vuln/internal/govulncheck"
+import (
+	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/osv"
+)
 
 // MockHandler implements govulncheck.Handler but (currently)
 // does nothing.
@@ -13,11 +16,17 @@ import "golang.org/x/vuln/internal/govulncheck"
 type MockHandler struct {
 	ConfigMessages   []*govulncheck.Config
 	ProgressMessages []*govulncheck.Progress
-	VulnMessages     []*govulncheck.Vuln
+	OSVMessages      []*osv.Entry
+	FindingMessages  []*govulncheck.Finding
 }
 
 func NewMockHandler() *MockHandler {
 	return &MockHandler{}
+}
+
+func (h *MockHandler) Config(config *govulncheck.Config) error {
+	h.ConfigMessages = append(h.ConfigMessages, config)
+	return nil
 }
 
 func (h *MockHandler) Progress(progress *govulncheck.Progress) error {
@@ -25,12 +34,12 @@ func (h *MockHandler) Progress(progress *govulncheck.Progress) error {
 	return nil
 }
 
-func (h *MockHandler) Vulnerability(vuln *govulncheck.Vuln) error {
-	h.VulnMessages = append(h.VulnMessages, vuln)
+func (h *MockHandler) OSV(entry *osv.Entry) error {
+	h.OSVMessages = append(h.OSVMessages, entry)
 	return nil
 }
 
-func (h *MockHandler) Config(config *govulncheck.Config) error {
-	h.ConfigMessages = append(h.ConfigMessages, config)
+func (h *MockHandler) Finding(finding *govulncheck.Finding) error {
+	h.FindingMessages = append(h.FindingMessages, finding)
 	return nil
 }

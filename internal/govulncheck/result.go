@@ -14,9 +14,10 @@ import (
 // Message is an entry in the output stream. It will always have exactly one
 // field filled in.
 type Message struct {
-	Config        *Config   `json:"config,omitempty"`
-	Progress      *Progress `json:"progress,omitempty"`
-	Vulnerability *Vuln     `json:"vulnerability,omitempty"`
+	Config   *Config    `json:"config,omitempty"`
+	Progress *Progress  `json:"progress,omitempty"`
+	OSV      *osv.Entry `json:"osv,omitempty"`
+	Finding  *Finding   `json:"finding,omitempty"`
 }
 
 type Config struct {
@@ -54,9 +55,9 @@ type Progress struct {
 }
 
 // Vuln represents a single OSV entry.
-type Vuln struct {
+type Finding struct {
 	// OSV contains all data from the OSV entry for this vulnerability.
-	OSV *osv.Entry `json:"osv,omitempty"`
+	OSV string `json:"osv,omitempty"`
 
 	// Modules contains all of the modules in the OSV entry where a
 	// vulnerable package is imported by the target source code or binary.

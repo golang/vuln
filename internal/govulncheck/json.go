@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 
 	"io"
+
+	"golang.org/x/vuln/internal/osv"
 )
 
 type jsonHandler struct {
@@ -21,17 +23,22 @@ func NewJSONHandler(w io.Writer) Handler {
 	return &jsonHandler{enc: enc}
 }
 
-// Config does not do anything in JSON mode.
+// Config writes config block in JSON to the underlying writer.
 func (h *jsonHandler) Config(config *Config) error {
 	return h.enc.Encode(Message{Config: config})
 }
 
-// Progress does not do anything in JSON mode.
+// Progress writes a progress message in JSON to the underlying writer.
 func (h *jsonHandler) Progress(progress *Progress) error {
 	return h.enc.Encode(Message{Progress: progress})
 }
 
-// Vulnerability gathers vulnerabilities to be written.
-func (h *jsonHandler) Vulnerability(vuln *Vuln) error {
-	return h.enc.Encode(Message{Vulnerability: vuln})
+// OSV writes an osv entry in JSON to the underlying writer.
+func (h *jsonHandler) OSV(entry *osv.Entry) error {
+	return h.enc.Encode(Message{OSV: entry})
+}
+
+// Finding writes a finding in JSON to the underlying writer.
+func (h *jsonHandler) Finding(finding *Finding) error {
+	return h.enc.Encode(Message{Finding: finding})
 }
