@@ -151,16 +151,19 @@ type ModuleResponse struct {
 // field is nil).
 func (c *Client) ByModules(ctx context.Context, reqs []*ModuleRequest) (_ []*ModuleResponse, err error) {
 	derrors.Wrap(&err, "ByModules(%v)", reqs)
-	// TODO(https://go.dev/issue/59745): Optimize this so that we only
-	// access the modules index once. Right now we re-grab the modules
-	// index with every call to byModule.
+
+	metas, err := c.moduleMetas(ctx, reqs)
+	if err != nil {
+		return nil, err
+	}
+
 	resps := make([]*ModuleResponse, len(reqs))
 	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(10)
 	for i, req := range reqs {
 		i, req := i, req
 		g.Go(func() error {
-			entries, err := c.byModule(gctx, req)
+			entries, err := c.byModule(gctx, req, metas[i])
 			if err != nil {
 				return err
 			}
@@ -179,19 +182,7 @@ func (c *Client) ByModules(ctx context.Context, reqs []*ModuleRequest) (_ []*Mod
 	return resps, nil
 }
 
-// byModule returns the OSV entries matching the ModuleRequest,
-// or (nil, nil) if there are none.
-func (c *Client) byModule(ctx context.Context, req *ModuleRequest) (_ []*osv.Entry, err error) {
-	derrors.Wrap(&err, "ByModule(%v)", req)
-
-	if req.Path == "" {
-		return nil, fmt.Errorf("module path must be set")
-	}
-
-	if req.Version != "" && !isem.Valid(req.Version) {
-		return nil, fmt.Errorf("version %s is not valid semver", req.Version)
-	}
-
+func (c *Client) moduleMetas(ctx context.Context, reqs []*ModuleRequest) (_ []*moduleMeta, err error) {
 	b, err := c.source.get(ctx, modulesEndpoint)
 	if err != nil {
 		return nil, err
@@ -202,21 +193,43 @@ func (c *Client) byModule(ctx context.Context, req *ModuleRequest) (_ []*osv.Ent
 		return nil, err
 	}
 
-	var ids []string
+	metas := make([]*moduleMeta, len(reqs))
 	for dec.More() {
 		var m moduleMeta
 		err := dec.Decode(&m)
 		if err != nil {
 			return nil, err
 		}
-		if m.Path == req.Path {
-			for _, v := range m.Vulns {
-				if v.Fixed == "" || isem.Less(req.Version, v.Fixed) {
-					ids = append(ids, v.ID)
-				}
+		for i, req := range reqs {
+			if m.Path == req.Path {
+				metas[i] = &m
 			}
-			// We found the requested module, so skip the rest.
-			break
+		}
+	}
+
+	return metas, nil
+}
+
+// byModule returns the OSV entries matching the ModuleRequest,
+// or (nil, nil) if there are none.
+func (c *Client) byModule(ctx context.Context, req *ModuleRequest, m *moduleMeta) (_ []*osv.Entry, err error) {
+	// This module isn't in the database.
+	if m == nil {
+		return nil, nil
+	}
+
+	if req.Path == "" {
+		return nil, fmt.Errorf("module path must be set")
+	}
+
+	if req.Version != "" && !isem.Valid(req.Version) {
+		return nil, fmt.Errorf("version %s is not valid semver", req.Version)
+	}
+
+	var ids []string
+	for _, v := range m.Vulns {
+		if v.Fixed == "" || isem.Less(req.Version, v.Fixed) {
+			ids = append(ids, v.ID)
 		}
 	}
 
