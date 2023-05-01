@@ -24,27 +24,27 @@ import (
 // Vulnerabilities can be called (affecting the package, because a vulnerable
 // symbol is actually exercised) or just imported by the package
 // (likely having a non-affecting outcome).
-func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client, dir string) ([]*govulncheck.Vuln, error) {
+func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client, dir string) error {
 	var pkgs []*packages.Package
 	pkgs, err := loadPackages(cfg, dir)
 	if err != nil {
 		// Try to provide a meaningful and actionable error message.
 		if !fileExists(filepath.Join(dir, "go.mod")) {
-			return nil, fmt.Errorf("govulncheck: %v", errNoGoMod)
+			return fmt.Errorf("govulncheck: %v", errNoGoMod)
 		}
 		if isGoVersionMismatchError(err) {
-			return nil, fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
+			return fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
 		}
-		return nil, err
+		return err
 	}
 	if err := handler.Progress(sourceProgressMessage(pkgs)); err != nil {
-		return nil, err
+		return err
 	}
 	vr, err := vulncheck.Source(ctx, pkgs, &cfg.Config, client)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return createSourceResult(vr), nil
+	return emitSourceResult(handler, vr)
 }
 
 // loadPackages loads the packages matching patterns at dir using build tags
@@ -77,7 +77,7 @@ func loadPackages(c *config, dir string) ([]*packages.Package, error) {
 	return pkgs, err
 }
 
-func createSourceResult(vr *vulncheck.Result) []*govulncheck.Vuln {
+func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 	modVersions := moduleVersionMap(vr.Modules)
 	callStacks := vulncheck.CallStacks(vr)
 
@@ -125,7 +125,13 @@ func createSourceResult(vr *vulncheck.Result) []*govulncheck.Vuln {
 
 	vulns = merge(vulns)
 	sortResult(vulns)
-	return vulns
+	// For each vulnerability, queue it to be written to the output.
+	for _, v := range vulns {
+		if err := handler.Vulnerability(v); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // stackFramesFromEntries creates a sequence of stack

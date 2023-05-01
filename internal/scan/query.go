@@ -15,15 +15,15 @@ import (
 )
 
 // runQuery reports vulnerabilities that apply to the queries in the config.
-func runQuery(ctx context.Context, handler govulncheck.Handler, cfg *config, c *client.Client) ([]*govulncheck.Vuln, error) {
+func runQuery(ctx context.Context, handler govulncheck.Handler, cfg *config, c *client.Client) error {
 	reqs := make([]*client.ModuleRequest, len(cfg.patterns))
 	for i, query := range cfg.patterns {
 		mod, ver, err := parseModuleQuery(query)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if err := handler.Progress(queryProgressMessage(mod, ver)); err != nil {
-			return nil, err
+			return err
 		}
 		reqs[i] = &client.ModuleRequest{
 			Path: mod, Version: ver,
@@ -32,24 +32,26 @@ func runQuery(ctx context.Context, handler govulncheck.Handler, cfg *config, c *
 
 	resps, err := c.ByModules(ctx, reqs)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var vulns []*govulncheck.Vuln
 	ids := make(map[string]bool)
 	for _, resp := range resps {
 		for _, entry := range resp.Entries {
 			if _, ok := ids[entry.ID]; !ok {
-				vulns = append(vulns, &govulncheck.Vuln{
+				err := handler.Vulnerability(&govulncheck.Vuln{
 					OSV: entry,
 					// Modules not set in query mode.
 				})
+				if err != nil {
+					return err
+				}
 				ids[entry.ID] = true
 			}
 		}
 	}
 
-	return vulns, nil
+	return nil
 }
 
 func queryProgressMessage(module, version string) *govulncheck.Progress {

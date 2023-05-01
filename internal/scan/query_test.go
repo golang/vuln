@@ -83,7 +83,6 @@ func TestRunQuery(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	h := test.NewMockHandler()
 
 	for _, tc := range []struct {
 		query []string
@@ -138,11 +137,12 @@ func TestRunQuery(t *testing.T) {
 		},
 	} {
 		t.Run(strings.Join(tc.query, ","), func(t *testing.T) {
-			got, err := runQuery(ctx, h, &config{patterns: tc.query}, c)
+			h := test.NewMockHandler()
+			err := runQuery(ctx, h, &config{patterns: tc.query}, c)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(got, tc.want); diff != "" {
+			if diff := cmp.Diff(h.VulnMessages, tc.want); diff != "" {
 				t.Errorf("runQuery: unexpected diff:\n%s", diff)
 			}
 		})

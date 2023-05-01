@@ -20,26 +20,26 @@ import (
 )
 
 // runBinary detects presence of vulnerable symbols in an executable.
-func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client) ([]*govulncheck.Vuln, error) {
+func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client) error {
 	var exe *os.File
 	exe, err := os.Open(cfg.patterns[0])
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer exe.Close()
 
 	p := &govulncheck.Progress{Message: binaryProgressMessage}
 	if err := handler.Progress(p); err != nil {
-		return nil, err
+		return err
 	}
 	vr, err := binary(ctx, exe, &cfg.Config, client)
 	if err != nil {
-		return nil, fmt.Errorf("govulncheck: %v", err)
+		return fmt.Errorf("govulncheck: %v", err)
 	}
-	return createBinaryResult(vr), nil
+	return emitBinaryResult(handler, vr)
 }
 
-func createBinaryResult(vr *vulncheck.Result) []*govulncheck.Vuln {
+func emitBinaryResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 	modVersions := moduleVersionMap(vr.Modules)
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
@@ -74,7 +74,13 @@ func createBinaryResult(vr *vulncheck.Result) []*govulncheck.Vuln {
 
 	vulns = merge(vulns)
 	sortResult(vulns)
-	return vulns
+	// For each vulnerability, queue it to be written to the output.
+	for _, v := range vulns {
+		if err := handler.Vulnerability(v); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // uniqueVulns does for binary mode what uniqueCallStack does for source mode.
