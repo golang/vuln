@@ -51,7 +51,13 @@ func Flush(h govulncheck.Handler) error {
 func (h *TextHandler) Flush() error {
 	summary := createSummaries(h.vulns)
 	h.vulns = nil
-	return h.runTemplate("govulncheck-summary", summary)
+	if err := h.runTemplate("govulncheck-summary", summary); err != nil {
+		return err
+	}
+	if len(summary.Affected) > 0 {
+		return errVulnerabilitiesFound
+	}
+	return nil
 }
 
 // Config writes text output formatted according to govulncheck-intro.tmpl.

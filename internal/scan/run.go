@@ -74,19 +74,7 @@ func doGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io
 	if err := Flush(handler); err != nil {
 		return err
 	}
-	if containsAffectedVulnerabilities(vulns) && !cfg.json {
-		return errVulnerabilitiesFound
-	}
 	return nil
-}
-
-func containsAffectedVulnerabilities(vulns []*govulncheck.Vuln) bool {
-	for _, v := range vulns {
-		if IsCalled(v) {
-			return true
-		}
-	}
-	return false
 }
 
 func prepareConfig(ctx context.Context, cfg *config, client *client.Client) {

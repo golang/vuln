@@ -45,7 +45,15 @@ func testRunHandler(t *testing.T, rawJSON []byte, handler govulncheck.Handler) {
 	if err := govulncheck.HandleJSON(bytes.NewReader(rawJSON), handler); err != nil {
 		t.Fatal(err)
 	}
-	if err := scan.Flush(handler); err != nil {
+	err := scan.Flush(handler)
+	switch e := err.(type) {
+	case nil:
+	case interface{ ExitCode() int }:
+		if e.ExitCode() != 0 && e.ExitCode() != 3 {
+			// not success or vulnerabilities found
+			t.Fatal(err)
+		}
+	default:
 		t.Fatal(err)
 	}
 }
