@@ -122,14 +122,9 @@ func sortResult(findings []*govulncheck.Finding) {
 func latestFixed(as []osv.Affected) string {
 	v := ""
 	for _, a := range as {
-		for _, r := range a.Ranges {
-			if r.Type == osv.RangeTypeSemver {
-				for _, e := range r.Events {
-					if e.Fixed != "" && (v == "" || isem.Less(v, e.Fixed)) {
-						v = e.Fixed
-					}
-				}
-			}
+		fixed := isem.LatestFixedVersion(a.Ranges)
+		if fixed != "" && (v == "" || isem.Less(v, fixed)) {
+			v = fixed
 		}
 	}
 	return v

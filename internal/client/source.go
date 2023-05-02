@@ -123,7 +123,7 @@ func newInMemorySource(entries []*osv.Entry) (*inMemorySource, error) {
 			module.Vulns = append(module.Vulns, moduleVuln{
 				ID:       entry.ID,
 				Modified: entry.Modified,
-				Fixed:    latestFixedVersion(affected.Ranges),
+				Fixed:    isem.LatestFixedVersion(affected.Ranges),
 			})
 		}
 		b, err := json.Marshal(entry)
@@ -173,28 +173,4 @@ func (db *inMemorySource) get(ctx context.Context, endpoint string) ([]byte, err
 		return nil, fmt.Errorf("no data found at endpoint %q", endpoint)
 	}
 	return b, nil
-}
-
-func latestFixedVersion(ranges []osv.Range) string {
-	var latestFixed string
-	for _, r := range ranges {
-		if r.Type == "SEMVER" {
-			for _, e := range r.Events {
-				fixed := e.Fixed
-				if fixed != "" && isem.Less(latestFixed, fixed) {
-					latestFixed = fixed
-				}
-			}
-			// If the vulnerability was re-introduced after the latest fix
-			// we found, there is no latest fix for this range.
-			for _, e := range r.Events {
-				introduced := e.Introduced
-				if introduced != "" && introduced != "0" && isem.Less(latestFixed, introduced) {
-					latestFixed = ""
-					break
-				}
-			}
-		}
-	}
-	return latestFixed
 }
