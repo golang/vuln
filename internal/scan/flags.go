@@ -135,13 +135,12 @@ func validateConfig(cfg *config) error {
 		if cfg.verbose {
 			return fmt.Errorf("the -v flag is not supported in query mode")
 		}
-		if len(cfg.patterns) != 1 {
-			return fmt.Errorf("only one query can be handled at a time in query mode")
-		}
-		// Parse the input here so that we can catch errors before
-		// outputting the Config.
-		if _, _, err := parseModuleQuery(cfg.patterns[0]); err != nil {
-			return err
+		for _, pattern := range cfg.patterns {
+			// Parse the input here so that we can catch errors before
+			// outputting the Config.
+			if _, _, err := parseModuleQuery(pattern); err != nil {
+				return err
+			}
 		}
 	}
 	if cfg.json && cfg.verbose {

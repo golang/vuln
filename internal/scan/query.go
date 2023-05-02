@@ -14,39 +14,38 @@ import (
 	isem "golang.org/x/vuln/internal/semver"
 )
 
-// runQuery reports vulnerabilities that apply to the given query.
+// runQuery reports vulnerabilities that apply to the queries in the config.
 func runQuery(ctx context.Context, handler govulncheck.Handler, cfg *config, c *client.Client) ([]*govulncheck.Vuln, error) {
-	mod, ver, err := parseModuleQuery(cfg.patterns[0])
+	reqs := make([]*client.ModuleRequest, len(cfg.patterns))
+	for i, query := range cfg.patterns {
+		mod, ver, err := parseModuleQuery(query)
+		if err != nil {
+			return nil, err
+		}
+		if err := handler.Progress(queryProgressMessage(mod, ver)); err != nil {
+			return nil, err
+		}
+		reqs[i] = &client.ModuleRequest{
+			Path: mod, Version: ver,
+		}
+	}
+
+	resps, err := c.ByModules(ctx, reqs)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handler.Progress(queryProgressMessage(mod, ver)); err != nil {
-		return nil, err
-	}
-
-	resp, err := c.ByModules(ctx, []*client.ModuleRequest{{
-		Path: mod, Version: ver,
-	}})
-	if err != nil {
-		return nil, err
-	}
-	// This will never happen unless there is a bug in ByModules,
-	// because it always returns one response per request.
-	if len(resp) != 1 {
-		return nil, fmt.Errorf("internal error: could not fetch vulnerabilities for %s@%s", mod, ver)
-	}
-
-	entries := resp[0].Entries
-	if len(entries) == 0 {
-		return nil, nil
-	}
-
-	vulns := make([]*govulncheck.Vuln, len(entries))
-	for i, entry := range entries {
-		vulns[i] = &govulncheck.Vuln{
-			OSV: entry,
-			// Modules not set in query mode.
+	var vulns []*govulncheck.Vuln
+	ids := make(map[string]bool)
+	for _, resp := range resps {
+		for _, entry := range resp.Entries {
+			if _, ok := ids[entry.ID]; !ok {
+				vulns = append(vulns, &govulncheck.Vuln{
+					OSV: entry,
+					// Modules not set in query mode.
+				})
+				ids[entry.ID] = true
+			}
 		}
 	}
 

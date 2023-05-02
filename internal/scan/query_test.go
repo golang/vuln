@@ -86,46 +86,59 @@ func TestRunQuery(t *testing.T) {
 	h := test.NewMockHandler()
 
 	for _, tc := range []struct {
-		query string
+		query []string
 		want  []*govulncheck.Vuln
 	}{
 		{
-			query: "stdlib@go1.18",
+			query: []string{"stdlib@go1.18"},
 			want: []*govulncheck.Vuln{
 				{OSV: stdlib},
 			},
 		},
 		{
-			query: "stdlib@1.18",
+			query: []string{"stdlib@1.18"},
 			want: []*govulncheck.Vuln{
 				{OSV: stdlib},
 			},
 		},
 		{
-			query: "stdlib@v1.18.0",
+			query: []string{"stdlib@v1.18.0"},
 			want: []*govulncheck.Vuln{
 				{OSV: stdlib},
 			},
 		},
 		{
-			query: "bad.com@1.2.3",
+			query: []string{"bad.com@1.2.3"},
 			want:  nil,
 		},
 		{
-			query: "bad.com@v1.1.0",
+			query: []string{"bad.com@v1.1.0"},
 			want: []*govulncheck.Vuln{
 				{OSV: e}, {OSV: e2},
 			},
 		},
 		{
-			query: "unfixable.com@2.0.0",
+			query: []string{"unfixable.com@2.0.0"},
 			want: []*govulncheck.Vuln{
 				{OSV: e},
 			},
 		},
+		{
+			// each entry should only show up once
+			query: []string{"bad.com@1.1.0", "unfixable.com@2.0.0"},
+			want: []*govulncheck.Vuln{
+				{OSV: e}, {OSV: e2},
+			},
+		},
+		{
+			query: []string{"stdlib@1.18", "unfixable.com@2.0.0"},
+			want: []*govulncheck.Vuln{
+				{OSV: stdlib}, {OSV: e},
+			},
+		},
 	} {
-		t.Run(tc.query, func(t *testing.T) {
-			got, err := runQuery(ctx, h, &config{patterns: []string{tc.query}}, c)
+		t.Run(strings.Join(tc.query, ","), func(t *testing.T) {
+			got, err := runQuery(ctx, h, &config{patterns: tc.query}, c)
 			if err != nil {
 				t.Fatal(err)
 			}
