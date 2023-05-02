@@ -12,30 +12,9 @@ import (
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
-	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/semver"
 )
-
-// Config is used for configuring vulncheck algorithms.
-type Config struct {
-	// ImportsOnly instructs vulncheck to analyze import chains only.
-	// Otherwise, call chains are analyzed too.
-	ImportsOnly bool
-
-	// Client is used for querying data from a vulnerability database.
-	Client *client.Client
-
-	// SourceGoVersion is Go version used to build Source inputs passed
-	// to vulncheck. If not provided, the current Go version at PATH
-	// is used to detect vulnerabilities in Go standard library.
-	SourceGoVersion string
-
-	// Consider only vulnerabilities that apply to this OS and architecture.
-	// An empty string means "all" (don't filter).
-	// Applies only to Source.
-	GOOS, GOARCH string
-}
 
 // Result contains information on how known vulnerabilities are reachable
 // in the call graph, package imports graph, and module requires graph of
