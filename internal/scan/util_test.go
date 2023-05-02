@@ -39,15 +39,23 @@ func TestPkgPath(t *testing.T) {
 
 func TestLatestFixed(t *testing.T) {
 	for _, test := range []struct {
-		name string
-		in   []osv.Affected
-		want string
+		name   string
+		module string
+		in     []osv.Affected
+		want   string
 	}{
-		{"empty", nil, ""},
 		{
-			"no semver",
-			[]osv.Affected{
+			name: "empty",
+			want: "",
+		},
+		{
+			name:   "no semver",
+			module: "example.com/module",
+			in: []osv.Affected{
 				{
+					Module: osv.Module{
+						Path: "example.com/module",
+					},
 					Ranges: []osv.Range{
 						{
 							Type: osv.RangeType("unspecified"),
@@ -57,12 +65,16 @@ func TestLatestFixed(t *testing.T) {
 						}},
 				},
 			},
-			"",
+			want: "",
 		},
 		{
-			"one",
-			[]osv.Affected{
+			name:   "one",
+			module: "example.com/module",
+			in: []osv.Affected{
 				{
+					Module: osv.Module{
+						Path: "example.com/module",
+					},
 					Ranges: []osv.Range{
 						{
 							Type: osv.RangeTypeSemver,
@@ -72,12 +84,16 @@ func TestLatestFixed(t *testing.T) {
 						}},
 				},
 			},
-			"v1.2.3",
+			want: "v1.2.3",
 		},
 		{
-			"several",
-			[]osv.Affected{
+			name:   "several",
+			module: "example.com/module",
+			in: []osv.Affected{
 				{
+					Module: osv.Module{
+						Path: "example.com/module",
+					},
 					Ranges: []osv.Range{
 						{
 							Type: osv.RangeTypeSemver,
@@ -88,6 +104,9 @@ func TestLatestFixed(t *testing.T) {
 						}},
 				},
 				{
+					Module: osv.Module{
+						Path: "example.com/module",
+					},
 					Ranges: []osv.Range{
 						{
 							Type: osv.RangeTypeSemver,
@@ -96,13 +115,30 @@ func TestLatestFixed(t *testing.T) {
 							},
 						}},
 				},
+				{
+					// This should be ignored.
+					Module: osv.Module{
+						Path: "example.com/anothermodule",
+					},
+					Ranges: []osv.Range{
+						{
+							Type: osv.RangeTypeSemver,
+							Events: []osv.RangeEvent{
+								{Introduced: "0", Fixed: "v1.6.0"},
+							},
+						}},
+				},
 			},
-			"v1.5.6",
+			want: "v1.5.6",
 		},
 		{
-			"no v prefix",
-			[]osv.Affected{
+			name:   "no v prefix",
+			module: "example.com/module",
+			in: []osv.Affected{
 				{
+					Module: osv.Module{
+						Path: "example.com/module",
+					},
 					Ranges: []osv.Range{
 						{
 							Type: osv.RangeTypeSemver,
@@ -112,6 +148,9 @@ func TestLatestFixed(t *testing.T) {
 						}},
 				},
 				{
+					Module: osv.Module{
+						Path: "example.com/module",
+					},
 					Ranges: []osv.Range{
 						{
 							Type: osv.RangeTypeSemver,
@@ -121,11 +160,47 @@ func TestLatestFixed(t *testing.T) {
 						}},
 				},
 			},
-			"1.18.4",
+			want: "1.18.4",
+		},
+		{
+			name:   "unfixed",
+			module: "example.com/module",
+			in: []osv.Affected{
+				{
+					Module: osv.Module{
+						Path: "example.com/module",
+					},
+					Ranges: []osv.Range{
+						{
+							Type: osv.RangeTypeSemver,
+							Events: []osv.RangeEvent{
+								{Introduced: "v1.0.0", Fixed: "v1.2.3"},
+								// Reintroduced and never fixed.
+								{Introduced: "v1.5.0"},
+							},
+						}},
+				},
+				{
+					Module: osv.Module{
+						Path: "example.com/module",
+					},
+					Ranges: []osv.Range{
+						{
+							Type: osv.RangeTypeSemver,
+							Events: []osv.RangeEvent{
+								// Even though this block has a fix,
+								// it will be overridden by the block
+								// with no fix.
+								{Introduced: "v1.3.0", Fixed: "v1.4.1"},
+							},
+						}},
+				},
+			},
+			want: "",
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got := latestFixed(test.in)
+			got := latestFixed(test.module, test.in)
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}

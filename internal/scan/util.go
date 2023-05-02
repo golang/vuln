@@ -119,11 +119,19 @@ func sortResult(findings []*govulncheck.Finding) {
 
 // latestFixed returns the latest fixed version in the list of affected ranges,
 // or the empty string if there are no fixed versions.
-func latestFixed(as []osv.Affected) string {
+func latestFixed(modulePath string, as []osv.Affected) string {
 	v := ""
 	for _, a := range as {
+		if modulePath != a.Module.Path {
+			continue
+		}
 		fixed := isem.LatestFixedVersion(a.Ranges)
-		if fixed != "" && (v == "" || isem.Less(v, fixed)) {
+		// Special case: if there is any affected block for this module
+		// with no fix, the module is considered unfixed.
+		if fixed == "" {
+			return ""
+		}
+		if isem.Less(v, fixed) {
 			v = fixed
 		}
 	}
@@ -144,7 +152,7 @@ func foundVersion(vuln *vulncheck.Vuln) string {
 }
 
 func fixedVersion(modulePath string, affected []osv.Affected) string {
-	fixed := latestFixed(affected)
+	fixed := latestFixed(modulePath, affected)
 	if fixed != "" {
 		fixed = versionString(modulePath, fixed)
 	}
