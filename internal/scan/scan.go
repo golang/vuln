@@ -20,6 +20,8 @@ type Cmd struct {
 
 	// Stdout specifies the standard output. If nil, Run connects os.Stdout.
 	Stdout io.Writer
+
+	// Stderr specifies the standard error. If nil, Run connects os.Stderr.
 	Stderr io.Writer
 
 	ctx     context.Context
