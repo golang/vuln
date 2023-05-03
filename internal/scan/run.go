@@ -18,10 +18,10 @@ import (
 	"golang.org/x/vuln/internal/govulncheck"
 )
 
-// doGovulncheck performs main govulncheck functionality and exits the
+// RunGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func doGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io.Writer, args []string) error {
+func RunGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io.Writer, args []string) error {
 	cfg, err := parseFlags(stderr, args)
 	if err != nil {
 		return err

@@ -24,9 +24,9 @@ import (
 	"unsafe"
 
 	"github.com/google/go-cmdtest"
-	"golang.org/x/vuln/internal/scan"
 	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/web"
+	"golang.org/x/vuln/scan"
 )
 
 var update = flag.Bool("update", false, "update test files with results")

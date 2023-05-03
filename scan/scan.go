@@ -9,6 +9,8 @@ import (
 	"errors"
 	"io"
 	"os"
+
+	"golang.org/x/vuln/internal/scan"
 )
 
 // Cmd represents an external govulncheck command being prepared or run,
@@ -106,5 +108,5 @@ func (c *Cmd) scan() error {
 	if err := c.ctx.Err(); err != nil {
 		return err
 	}
-	return doGovulncheck(c.ctx, c.Stdin, c.Stdout, c.Stderr, c.args)
+	return scan.RunGovulncheck(c.ctx, c.Stdin, c.Stdout, c.Stderr, c.args)
 }

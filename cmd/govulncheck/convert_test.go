@@ -13,9 +13,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/vuln/internal/scan"
 	"golang.org/x/vuln/internal/testenv"
 	"golang.org/x/vuln/internal/web"
+	"golang.org/x/vuln/scan"
 )
 
 func TestConvert(t *testing.T) {

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"golang.org/x/mod/modfile"
-	"golang.org/x/vuln/internal/scan"
+	"golang.org/x/vuln/scan"
 	"mvdan.cc/unparam/check"
 )
 
