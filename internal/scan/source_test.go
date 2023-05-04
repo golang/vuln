@@ -13,11 +13,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
-	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
@@ -194,7 +194,7 @@ func TestInits(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,4 +260,12 @@ func strStacks(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack) map[string]
 		m[v.OSV.ID] = scss
 	}
 	return m
+}
+
+func loadTestPackages(e *packagestest.Exported, patterns ...string) ([]*packages.Package, error) {
+	e.Config.Mode |= packages.NeedModule | packages.NeedName | packages.NeedFiles |
+		packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes |
+		packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps
+	graph := vulncheck.NewPackageGraph("go1.18")
+	return graph.LoadPackages(e.Config, nil, patterns)
 }

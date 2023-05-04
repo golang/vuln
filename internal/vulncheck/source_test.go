@@ -16,11 +16,9 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/packages/packagestest"
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
-	"golang.org/x/vuln/internal/test"
 )
 
 // TestImports checks for imports graph correctness. The inlined
@@ -116,7 +114,7 @@ func TestImports(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x and y as entry packages.
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,9 +129,8 @@ func TestImports(t *testing.T) {
 
 	cfg := &govulncheck.Config{
 		ImportsOnly: true,
+		GoVersion:   "go1.18",
 	}
-	os.Setenv("GOVERSION", "go1.18")
-
 	result, err := Source(context.Background(), pkgs, cfg, c)
 	if err != nil {
 		t.Fatal(err)
@@ -173,7 +170,7 @@ func TestImports(t *testing.T) {
 	}
 
 	if igStrMap := impGraphToStrMap(result); !reflect.DeepEqual(wantImports, igStrMap) {
-		t.Errorf("want %v imports graph; got %v", wantImports, igStrMap)
+		t.Errorf("want imports graph:\n  %#v\ngot:\n  %#v", wantImports, igStrMap)
 	}
 
 	// Check that the source's modules are returned.
@@ -262,7 +259,7 @@ func TestRequires(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,7 +318,6 @@ func TestRequires(t *testing.T) {
 		{Path: "golang.org/entry", Main: true},
 		{Path: "golang.org/imod1", Version: "v0.0.0"},
 		{Path: "golang.org/imod2", Version: "v0.0.0"},
-		{Path: internal.GoStdModulePath, Version: "v1.18.0"},
 	}
 	gotMods := result.Modules
 	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
@@ -503,7 +499,7 @@ func TestCalls(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x and y as entry packages.
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -605,7 +601,7 @@ func TestFiltering(t *testing.T) {
 	}
 
 	// Load x as entry package.
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -696,7 +692,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	}
 
 	// Load x as entry package.
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -760,7 +756,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -844,7 +840,7 @@ func TestRecursion(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -908,7 +904,7 @@ func TestIssue57174(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}

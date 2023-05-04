@@ -14,11 +14,9 @@ import (
 	"golang.org/x/tools/go/callgraph"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/ssa"
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
-	"golang.org/x/vuln/internal/semver"
 )
 
 // Source detects vulnerabilities in packages. The result will contain:
@@ -47,10 +45,6 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 		}
 	}
 
-	gover, err := internal.GoEnv("GOVERSION")
-	if err != nil {
-		return nil, err
-	}
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -73,7 +67,7 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 		}()
 	}
 
-	mods := extractModules(pkgs, gover)
+	mods := extractModules(pkgs)
 	mv, err := FetchVulnerabilities(ctx, client, mods)
 	if err != nil {
 		return nil, err
@@ -83,12 +77,6 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	result := &Result{
 		Packages:      make(map[string]*PkgNode),
 		ModulesByPath: make(map[string]*ModNode),
-	}
-	result.ModulesByPath[internal.GoStdModulePath] = &ModNode{
-		Module: &packages.Module{
-			Path:    internal.GoStdModulePath,
-			Version: gover,
-		},
 	}
 
 	vulnPkgModSlice(pkgs, modVulns, result)
@@ -278,10 +266,6 @@ func vulnModuleSlice(result *Result) {
 // not exist already, and returns id of the module node. The actual module
 // node is stored to result.
 func moduleNode(pkgNode *PkgNode, result *Result) *ModNode {
-	if isStdPackage(pkgNode.pkg.PkgPath) {
-		// standard library packages don't have a module.
-		return result.ModulesByPath[internal.GoStdModulePath]
-	}
 	return getModuleNode(pkgNode.pkg.Module, result)
 }
 
@@ -481,20 +465,8 @@ func addCallSinkForVuln(call *FuncNode, osv *osv.Entry, symbol, pkg string, resu
 
 // extractModules collects modules in `pkgs` up to uniqueness of
 // module path and version.
-func extractModules(pkgs []*packages.Package, goversion string) []*packages.Module {
+func extractModules(pkgs []*packages.Package) []*packages.Module {
 	modMap := map[string]*packages.Module{}
-
-	// Add "stdlib" module. Even if stdlib is not used, which
-	// is unlikely, it won't appear in packages.Modules nor
-	// other results.
-
-	// set the stdlib version for detection of vulns in the standard library
-	// TODO(https://go.dev/issue/53740): what if Go version is not in semver format?
-	modMap[internal.GoStdModulePath] = &packages.Module{
-		Path:    internal.GoStdModulePath,
-		Version: semver.GoTagToSemver(goversion),
-	}
-
 	seen := map[*packages.Package]bool{}
 	var extract func(*packages.Package, map[string]*packages.Module)
 	extract = func(pkg *packages.Package, modMap map[string]*packages.Module) {

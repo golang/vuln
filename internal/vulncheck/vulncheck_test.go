@@ -14,7 +14,6 @@ import (
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/osv"
-	"golang.org/x/vuln/internal/test"
 )
 
 func TestFilterVulns(t *testing.T) {
@@ -449,7 +448,7 @@ func TestConvert(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "entry/x"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
 	if err != nil {
 		t.Fatal(err)
 	}

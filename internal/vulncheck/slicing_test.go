@@ -13,7 +13,6 @@ import (
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/tools/go/ssa/ssautil"
-	"golang.org/x/vuln/internal/test"
 )
 
 // funcNames returns a set of function names for `funcs`.
@@ -91,7 +90,7 @@ func Do(i I, input string) {
 		},
 	})
 
-	pkgs, err := test.LoadPackages(e, path.Join(e.Temp(), "/module/slice"))
+	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "/module/slice"))
 	if err != nil {
 		t.Fatal(err)
 	}

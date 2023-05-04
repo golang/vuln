@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/packages"
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
@@ -53,29 +54,9 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 // packages contain errors, a packageError is returned containing a list of
 // the errors, along with the packages themselves.
 func loadPackages(c *config, dir string) ([]*packages.Package, error) {
-	var buildFlags []string
-	if c.tags != nil {
-		buildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(c.tags, ","))}
-	}
-
+	graph := vulncheck.NewPackageGraph(c.GoVersion)
 	cfg := &packages.Config{Dir: dir, Tests: c.test}
-	cfg.Mode |= packages.NeedName | packages.NeedImports | packages.NeedTypes |
-		packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps |
-		packages.NeedModule
-	cfg.BuildFlags = buildFlags
-
-	pkgs, err := packages.Load(cfg, c.patterns...)
-	if err != nil {
-		return nil, err
-	}
-	var perrs []packages.Error
-	packages.Visit(pkgs, nil, func(p *packages.Package) {
-		perrs = append(perrs, p.Errors...)
-	})
-	if len(perrs) > 0 {
-		err = &packageError{perrs}
-	}
-	return pkgs, err
+	return graph.LoadPackages(cfg, c.tags, c.patterns)
 }
 
 func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
@@ -217,7 +198,9 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 		// as a dependent package.
 		if !tops[path] {
 			depPkgs[path] = true
-			if p.Module != nil { // no module for stdlib
+			if p.Module != nil &&
+				p.Module.Path != internal.GoStdModulePath && // no module for stdlib
+				p.Module.Path != internal.UnknownModulePath { // no module for unknown
 				depMods[p.Module.Path] = true
 			}
 		}

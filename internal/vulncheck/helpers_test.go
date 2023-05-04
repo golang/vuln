@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	"golang.org/x/tools/go/packages"
+	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/semver"
@@ -176,4 +177,12 @@ func sortStrMap(m map[string][]string) {
 	for _, strs := range m {
 		sort.Strings(strs)
 	}
+}
+
+func loadTestPackages(e *packagestest.Exported, patterns ...string) ([]*packages.Package, error) {
+	e.Config.Mode |= packages.NeedModule | packages.NeedName | packages.NeedFiles |
+		packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes |
+		packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps
+	graph := NewPackageGraph("go1.18")
+	return graph.LoadPackages(e.Config, nil, patterns)
 }

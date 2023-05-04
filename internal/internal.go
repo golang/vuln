@@ -21,4 +21,8 @@ const (
 	// GoCmdModulePath is the internal Go module path string used
 	// when listing vulnerabilities in the go command.
 	GoCmdModulePath = "toolchain"
+
+	// UnknownModulePath is a special module path for when we cannot work out
+	// the module for a package.
+	UnknownModulePath = "unknown"
 )

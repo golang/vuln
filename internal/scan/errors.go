@@ -6,10 +6,7 @@ package scan
 
 import (
 	"errors"
-	"fmt"
 	"strings"
-
-	"golang.org/x/tools/go/packages"
 )
 
 //lint:file-ignore ST1005 Ignore staticcheck message about error formatting
@@ -58,22 +55,6 @@ type exitCodeError struct {
 
 func (e *exitCodeError) Error() string { return e.message }
 func (e *exitCodeError) ExitCode() int { return e.code }
-
-// packageError contains errors from loading a set of packages.
-type packageError struct {
-	Errors []packages.Error
-}
-
-func (e *packageError) Error() string {
-	var b strings.Builder
-	fmt.Fprintln(&b, "\nThere are errors with the provided package patterns:")
-	fmt.Fprintln(&b, "")
-	for _, e := range e.Errors {
-		fmt.Fprintln(&b, e)
-	}
-	fmt.Fprintln(&b, "\nFor details on package patterns, see https://pkg.go.dev/cmd/go#hdr-Package_lists_and_patterns.")
-	return b.String()
-}
 
 // isGoVersionMismatchError checks if err is due to mismatch between
 // the Go version used to build govulncheck and the one currently
