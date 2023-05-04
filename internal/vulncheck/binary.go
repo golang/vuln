@@ -61,7 +61,6 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, clien
 			}
 		}
 	}
-	setModules(result, mods)
 	return result, nil
 }
 
@@ -145,15 +144,9 @@ func addRequiresOnlyVulns(result *Result, graph *PackageGraph, modVulns moduleVu
 }
 
 func addVuln(result *Result, graph *PackageGraph, osv *osv.Entry, symbol string, pkgPath string) {
-	pkg := graph.GetPackage(pkgPath)
 	result.Vulns = append(result.Vulns, &Vuln{
-		OSV:    osv,
-		Symbol: symbol,
-		ImportSink: &PkgNode{
-			Module: &ModNode{
-				Module: pkg.Module,
-			},
-			Package: pkg,
-		},
+		OSV:        osv,
+		Symbol:     symbol,
+		ImportSink: &PkgNode{Package: graph.GetPackage(pkgPath)},
 	})
 }

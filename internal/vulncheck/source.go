@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"go/token"
-	"sort"
 	"sync"
 
 	"golang.org/x/tools/go/callgraph"
@@ -75,12 +74,10 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	modVulns := moduleVulnerabilities(mv)
 	modVulns = modVulns.filter(cfg.GOOS, cfg.GOARCH)
 	result := &Result{
-		Packages:      make(map[string]*PkgNode),
-		ModulesByPath: make(map[string]*ModNode),
+		Packages: make(map[string]*PkgNode),
 	}
 
 	vulnPkgModSlice(pkgs, modVulns, result)
-	setModules(result, mods)
 	// Return result immediately if in ImportsOnly mode or
 	// if there are no vulnerable packages.
 	if cfg.ImportsOnly || len(result.Packages) == 0 {
@@ -95,20 +92,6 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	vulnCallGraphSlice(entries, modVulns, cg, result)
 
 	return result, nil
-}
-
-// Set r.Modules to an adjusted list of modules.
-func setModules(r *Result, mods []*packages.Module) {
-	// Remove Dirs from modules; they aren't needed and complicate testing.
-	for _, m := range mods {
-		m.Dir = ""
-		if m.Replace != nil {
-			m.Replace.Dir = ""
-		}
-	}
-	// Sort for determinism.
-	sort.Slice(mods, func(i, j int) bool { return mods[i].Path < mods[j].Path })
-	r.Modules = append(r.Modules, mods...)
 }
 
 // vulnPkgModSlice computes the slice of pkgs imports and requires graph
@@ -127,10 +110,6 @@ func vulnPkgModSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, r
 			result.EntryPackages = append(result.EntryPackages, e)
 		}
 	}
-
-	// Populate module requires slice as an overlay
-	// of package imports slice.
-	vulnModuleSlice(result)
 }
 
 // vulnImportSlice checks if pkg has some vulnerabilities or transitively imports
@@ -141,7 +120,11 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 	if pn, ok := analyzed[pkg]; ok {
 		return pn
 	}
-	analyzed[pkg] = nil
+	pkgNode := &PkgNode{
+		Package: pkg,
+	}
+	analyzed[pkg] = pkgNode
+	result.Packages[pkg.ID] = pkgNode
 	// Recursively compute which direct dependencies lead to an import of
 	// a vulnerable package and remember the nodes of such dependencies.
 	var onSlice []*PkgNode
@@ -159,14 +142,6 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 	if len(onSlice) == 0 && len(vulns) == 0 {
 		return nil
 	}
-
-	// Module id gets populated later.
-	pkgNode := &PkgNode{
-		Package: pkg,
-	}
-	analyzed[pkg] = pkgNode
-
-	result.Packages[pkg.ID] = pkgNode
 
 	// Save node predecessor information.
 	for _, impSliceNode := range onSlice {
@@ -198,84 +173,6 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 		}
 	}
 	return pkgNode
-}
-
-// vulnModuleSlice populates result.Requires as an overlay
-// of result.Imports.
-func vulnModuleSlice(result *Result) {
-	// We first collect inverse requires by (predecessor)
-	// relation on module node ids.
-	modPredRelation := make(map[string]map[string]bool)
-	for _, pkgNode := range result.Packages {
-		// Create or get module node for pkgNode.
-		pkgNode.Module = moduleNode(pkgNode, result)
-
-		// Update the set of predecessors.
-		if _, ok := modPredRelation[pkgNode.Module.Path]; !ok {
-			modPredRelation[pkgNode.Module.Path] = make(map[string]bool)
-		}
-		predSet := modPredRelation[pkgNode.Module.Path]
-
-		for _, predPkg := range pkgNode.ImportedBy {
-			predMod := moduleNode(predPkg, result)
-			// We don't add module edges for imports
-			// of packages in the same module as that
-			// will create self-loops in Requires graphs.
-			if predMod.Path == pkgNode.Module.Path {
-				continue
-			}
-			predSet[predMod.Path] = true
-		}
-	}
-
-	// Add entry module IDs.
-	seenEntries := make(map[string]bool)
-	for _, ePkg := range result.EntryPackages {
-		entryMod := moduleNode(ePkg, result)
-		if seenEntries[entryMod.Path] {
-			continue
-		}
-		seenEntries[entryMod.Path] = true
-		result.EntryModules = append(result.EntryModules, entryMod)
-	}
-
-	// Store the predecessor requires relation to result.
-	for modPath := range modPredRelation {
-		var preds []*ModNode
-		for predPath := range modPredRelation[modPath] {
-			preds = append(preds, result.ModulesByPath[predPath])
-		}
-		modNode := result.ModulesByPath[modPath]
-		modNode.RequiredBy = preds
-	}
-
-	// And finally update Vulns with module information.
-	for _, vuln := range result.Vulns {
-		vuln.RequireSink = vuln.ImportSink.Module
-	}
-}
-
-// moduleNode creates a module node associated with pkgNode, if one does
-// not exist already, and returns id of the module node. The actual module
-// node is stored to result.
-func moduleNode(pkgNode *PkgNode, result *Result) *ModNode {
-	return getModuleNode(pkgNode.Package.Module, result)
-}
-
-func getModuleNode(mod *packages.Module, result *Result) *ModNode {
-	if mod == nil {
-		return nil
-	}
-	if n, ok := result.ModulesByPath[mod.Path]; ok {
-		return n
-	}
-	n := &ModNode{Module: mod}
-	result.ModulesByPath[n.Path] = n
-	// Create a replace module too when applicable.
-	if mod.Replace != nil {
-		n.Replace = getModuleNode(mod.Replace, result)
-	}
-	return n
 }
 
 // vulnCallGraphSlice checks if known vulnerabilities are transitively reachable from sources

@@ -17,11 +17,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/packages/packagestest"
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/internal/testenv"
@@ -164,20 +160,6 @@ func TestBinary(t *testing.T) {
 	}
 
 	compareVulns(t, wantVulns, res)
-
-	// Check that the binary's modules are returned.
-	// The list does not include the module binary itself.
-	wantMods := []*packages.Module{
-		{Path: "golang.org/amod", Version: "v1.1.3"},
-		{Path: "golang.org/bmod", Version: "v0.5.0"},
-		{Path: "golang.org/cmod", Version: "v1.1.3"},
-		{Path: internal.GoStdModulePath, Version: goversion},
-	}
-	gotMods := res.Modules
-	sort.Slice(gotMods, func(i, j int) bool { return gotMods[i].Path < gotMods[j].Path })
-	if diff := cmp.Diff(wantMods, gotMods, cmpopts.IgnoreFields(packages.Module{}, "Dir")); diff != "" {
-		t.Errorf("modules mismatch (-want, +got):\n%s", diff)
-	}
 }
 
 func getGoVersion(exe io.ReaderAt) string {
@@ -286,10 +268,10 @@ func compareVulns(t *testing.T, want []*testVuln, res *Result) {
 			t.Error("[", i, "] want", want.Symbol, ", got", got.Symbol)
 		}
 		if want.PkgPath != got.ImportSink.Package.PkgPath {
-			t.Error("[", i, "] want", want.ModPath, ", got", got.ImportSink.Module.Path)
+			t.Error("[", i, "] want", want.ModPath, ", got", got.ImportSink.Package.Module.Path)
 		}
-		if want.ModPath != got.ImportSink.Module.Path {
-			t.Error("[", i, "] want", want.ModPath, ", got", got.ImportSink.Module.Path)
+		if want.ModPath != got.ImportSink.Package.Module.Path {
+			t.Error("[", i, "] want", want.ModPath, ", got", got.ImportSink.Package.Module.Path)
 		}
 	}
 }

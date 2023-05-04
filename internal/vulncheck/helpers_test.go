@@ -74,30 +74,6 @@ func vulnsToString(vulns []*osv.Entry) string {
 	return s
 }
 
-func impGraphToStrMap(r *Result) map[string][]string {
-	m := make(map[string][]string)
-	for _, n := range r.Packages {
-		for _, pred := range n.ImportedBy {
-			m[pred.Package.PkgPath] = append(m[pred.Package.PkgPath], n.Package.PkgPath)
-		}
-	}
-
-	sortStrMap(m)
-	return m
-}
-
-func reqGraphToStrMap(r *Result) map[string][]string {
-	m := make(map[string][]string)
-	for _, n := range r.ModulesByPath {
-		for _, pred := range n.RequiredBy {
-			m[pred.Path] = append(m[pred.Path], n.Path)
-		}
-	}
-
-	sortStrMap(m)
-	return m
-}
-
 type edge struct {
 	// src and dest are ids of source and
 	// destination nodes in a callgraph edge.

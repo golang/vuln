@@ -41,7 +41,6 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 }
 
 func emitBinaryResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
-	modVersions := moduleVersionMap(vr.Modules)
 	osvs := map[string]*osv.Entry{}
 
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
@@ -65,9 +64,9 @@ func emitBinaryResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 			{Frames: []*govulncheck.StackFrame{f}},
 		}
 		m := &govulncheck.Module{
-			Path:         vv.ImportSink.Module.Path,
-			FoundVersion: foundVersion(vv.ImportSink.Module.Path, modVersions),
-			FixedVersion: fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected),
+			Path:         vv.ImportSink.Package.Module.Path,
+			FoundVersion: foundVersion(vv),
+			FixedVersion: fixedVersion(vv.ImportSink.Package.Module.Path, vv.OSV.Affected),
 			Packages:     []*govulncheck.Package{p},
 		}
 
@@ -104,14 +103,14 @@ func uniqueVulns(vulns []*vulncheck.Vuln) []*vulncheck.Vuln {
 	hasExported := make(map[key]bool)
 	for _, v := range vulns {
 		if isExported(v.Symbol) {
-			k := key{id: v.OSV.ID, pkg: v.ImportSink.Package.PkgPath, mod: v.ImportSink.Module.Path}
+			k := key{id: v.OSV.ID, pkg: v.ImportSink.Package.PkgPath, mod: v.ImportSink.Package.Module.Path}
 			hasExported[k] = true
 		}
 	}
 
 	var uniques []*vulncheck.Vuln
 	for _, v := range vulns {
-		k := key{id: v.OSV.ID, pkg: v.ImportSink.Package.PkgPath, mod: v.ImportSink.Module.Path}
+		k := key{id: v.OSV.ID, pkg: v.ImportSink.Package.PkgPath, mod: v.ImportSink.Package.Module.Path}
 		if isExported(v.Symbol) || !hasExported[k] {
 			uniques = append(uniques, v)
 		}

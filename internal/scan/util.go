@@ -130,12 +130,17 @@ func latestFixed(as []osv.Affected) string {
 	return v
 }
 
-func foundVersion(modulePath string, moduleVersions map[string]string) string {
-	var found string
-	if v := moduleVersions[modulePath]; v != "" {
-		found = versionString(modulePath, v[1:])
+func foundVersion(vuln *vulncheck.Vuln) string {
+	m := vuln.ImportSink.Package.Module
+	v := m.Version
+	for m.Replace != nil {
+		m = m.Replace
+		v = m.Version
 	}
-	return found
+	if v == "" {
+		return ""
+	}
+	return versionString(m.Path, v[1:])
 }
 
 func fixedVersion(modulePath string, affected []osv.Affected) string {
@@ -191,19 +196,6 @@ func pkgPath(fn *vulncheck.FuncNode) string {
 		s = s[:i]
 	}
 	return s
-}
-
-// moduleVersionMap builds a map from module paths to versions.
-func moduleVersionMap(mods []*packages.Module) map[string]string {
-	moduleVersions := map[string]string{}
-	for _, m := range mods {
-		v := m.Version
-		if m.Replace != nil {
-			v = m.Replace.Version
-		}
-		moduleVersions[m.Path] = v
-	}
-	return moduleVersions
 }
 
 // pkgMap creates a map from package paths to packages for all pkgs

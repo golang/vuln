@@ -29,20 +29,11 @@ type Result struct {
 	// EntryPackages are a subset of Packages representing packages of vulncheck entry points.
 	EntryPackages []*PkgNode
 
-	// ModulesByPath contains all module nodes indexed by path.
-	ModulesByPath map[string]*ModNode
-
-	// EntryModules are ModNodes of a subset of Modules representing modules of vulncheck entry points.
-	EntryModules []*ModNode
-
 	// Vulns contains information on detected vulnerabilities and their place in
 	// the above graphs. Only vulnerabilities whose symbols are reachable in Calls,
 	// or whose packages are imported in Imports, or whose modules are required in
 	// Requires, have an entry in Vulns.
 	Vulns []*Vuln
-
-	// Modules are the modules that comprise the user code.
-	Modules []*packages.Module
 }
 
 // Vuln provides information on how a vulnerability is affecting user code by
@@ -74,12 +65,6 @@ type Vuln struct {
 	// When analyzing binaries or PkgPath is not imported, ImportSink will be
 	// unavailable and set to 0.
 	ImportSink *PkgNode
-
-	// RequireSink is the ID of the ModNode in Result.Requires corresponding to
-	// ModPath.
-	//
-	// When analyzing binaries, RequireSink will be unavailable and set to 0.
-	RequireSink *ModNode
 }
 
 // A FuncNode describes a function in the call graph.
@@ -131,24 +116,8 @@ type CallSite struct {
 	Resolved bool
 }
 
-// A ModNode describes a module in the requires graph.
-type ModNode struct {
-	// embed the Module this node wraps
-	*packages.Module
-
-	// Replace is the replacement module node.
-	// A zero value means there is no replacement.
-	Replace *ModNode
-
-	// RequiredBy contains the modules requiring this module.
-	RequiredBy []*ModNode
-}
-
 // A PkgNode describes a package in the import graph.
 type PkgNode struct {
-	// Module holds ID of the corresponding module (node) in the Requires graph.
-	Module *ModNode
-
 	// ImportedBy contains packages directly importing this package.
 	ImportedBy []*PkgNode
 
