@@ -147,14 +147,13 @@ func addRequiresOnlyVulns(result *Result, graph *PackageGraph, modVulns moduleVu
 func addVuln(result *Result, graph *PackageGraph, osv *osv.Entry, symbol string, pkgPath string) {
 	pkg := graph.GetPackage(pkgPath)
 	result.Vulns = append(result.Vulns, &Vuln{
-		OSV:     osv,
-		Symbol:  symbol,
-		PkgPath: pkgPath,
+		OSV:    osv,
+		Symbol: symbol,
 		ImportSink: &PkgNode{
 			Module: &ModNode{
 				Module: pkg.Module,
 			},
-			pkg: pkg,
+			Package: pkg,
 		},
 	})
 }

@@ -94,11 +94,6 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 
 	vulnCallGraphSlice(entries, modVulns, cg, result)
 
-	// Release residual memory.
-	for _, p := range result.Packages {
-		p.pkg = nil
-	}
-
 	return result, nil
 }
 
@@ -167,7 +162,7 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 
 	// Module id gets populated later.
 	pkgNode := &PkgNode{
-		pkg: pkg,
+		Package: pkg,
 	}
 	analyzed[pkg] = pkgNode
 
@@ -182,7 +177,7 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 	for _, osv := range vulns {
 		for _, affected := range osv.Affected {
 			for _, p := range affected.EcosystemSpecific.Packages {
-				if p.Path != pkgNode.pkg.PkgPath {
+				if p.Path != pkgNode.Package.PkgPath {
 					continue
 				}
 
@@ -195,7 +190,6 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 					vuln := &Vuln{
 						OSV:        osv,
 						Symbol:     symbol,
-						PkgPath:    pkgNode.pkg.PkgPath,
 						ImportSink: pkgNode,
 					}
 					result.Vulns = append(result.Vulns, vuln)
@@ -265,7 +259,7 @@ func vulnModuleSlice(result *Result) {
 // not exist already, and returns id of the module node. The actual module
 // node is stored to result.
 func moduleNode(pkgNode *PkgNode, result *Result) *ModNode {
-	return getModuleNode(pkgNode.pkg.Module, result)
+	return getModuleNode(pkgNode.Package.Module, result)
 }
 
 func getModuleNode(mod *packages.Module, result *Result) *ModNode {
@@ -455,7 +449,7 @@ func funcNode(f *ssa.Function) *FuncNode {
 // identified with <osv, symbol, pkg>.
 func addCallSinkForVuln(call *FuncNode, osv *osv.Entry, symbol, pkg string, result *Result) {
 	for _, vuln := range result.Vulns {
-		if vuln.OSV == osv && vuln.Symbol == symbol && vuln.PkgPath == pkg {
+		if vuln.OSV == osv && vuln.Symbol == symbol && vuln.ImportSink.Package.PkgPath == pkg {
 			vuln.CallSink = call
 			return
 		}

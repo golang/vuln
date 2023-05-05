@@ -70,7 +70,7 @@ func importChains(vulnSink *PkgNode, res *Result) []ImportChain {
 	// Entry packages, needed for finalizing chains.
 	entries := make(map[string]bool)
 	for _, e := range res.EntryPackages {
-		entries[e.pkg.ID] = true
+		entries[e.Package.ID] = true
 	}
 
 	var chains []ImportChain
@@ -84,16 +84,16 @@ func importChains(vulnSink *PkgNode, res *Result) []ImportChain {
 		queue.Remove(front)
 
 		pkg := c.pkg
-		if seen[pkg.pkg.ID] {
+		if seen[pkg.Package.ID] {
 			continue
 		}
-		seen[pkg.pkg.ID] = true
+		seen[pkg.Package.ID] = true
 
 		for _, imp := range pkg.ImportedBy {
 			newC := &importChain{pkg: imp, child: c}
 			// If the next package is an entry, we have
 			// a chain to report.
-			if entries[imp.pkg.ID] {
+			if entries[imp.Package.ID] {
 				chains = append(chains, newC.ImportChain())
 			}
 			queue.PushBack(newC)

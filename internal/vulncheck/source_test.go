@@ -147,7 +147,7 @@ func TestImports(t *testing.T) {
 	// Check that vulnerabilities are connected to the imports graph.
 	for _, v := range result.Vulns {
 		if v.ImportSink == nil {
-			t.Errorf("want ImportSink !=0 for %v:%v; got %v", v.Symbol, v.PkgPath, v.ImportSink)
+			t.Errorf("want ImportSink !=0 for %v; got %v", v.Symbol, v.ImportSink)
 		}
 	}
 
@@ -287,7 +287,7 @@ func TestRequires(t *testing.T) {
 
 	// Check that vulnerabilities are connected to the requires graph.
 	if v := result.Vulns[0]; v.RequireSink == nil {
-		t.Errorf("want RequireSink !=0 for %v:%v; got %v", v.Symbol, v.PkgPath, v.RequireSink)
+		t.Errorf("want RequireSink !=0 for %v; got %v", v.Symbol, v.RequireSink)
 	}
 
 	// Check that the module entry points are collected.
@@ -534,7 +534,7 @@ func TestCalls(t *testing.T) {
 	// For the test example, all vulns should have a call sink.
 	for _, v := range result.Vulns {
 		if v.CallSink == nil {
-			t.Errorf("want CallSink !=0 for %v:%v; got 0", v.Symbol, v.PkgPath)
+			t.Errorf("want CallSink !=0 for %v; got 0", v.Symbol)
 		}
 	}
 

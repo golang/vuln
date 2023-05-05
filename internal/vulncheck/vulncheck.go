@@ -61,9 +61,6 @@ type Vuln struct {
 	// Symbol is the name of the detected vulnerable function or method.
 	Symbol string
 
-	// PkgPath is the package path of the detected Symbol.
-	PkgPath string
-
 	// CallSink is the ID of the FuncNode in Result.Calls corresponding to
 	// Symbol.
 	//
@@ -155,8 +152,8 @@ type PkgNode struct {
 	// ImportedBy contains packages directly importing this package.
 	ImportedBy []*PkgNode
 
-	// pkg is used for connecting package node to module and call graph nodes.
-	pkg *packages.Package
+	// Package is used for connecting package node to module and call graph nodes.
+	Package *packages.Package
 }
 
 // moduleVulnerabilities is an internal structure for

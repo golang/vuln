@@ -21,11 +21,11 @@ func chainsToString(chains map[*Vuln][]ImportChain) map[string][]string {
 		for _, ch := range chs {
 			var chStr []string
 			for _, imp := range ch {
-				chStr = append(chStr, imp.pkg.PkgPath)
+				chStr = append(chStr, imp.Package.PkgPath)
 			}
 			chsStr = append(chsStr, strings.Join(chStr, "->"))
 		}
-		m[v.PkgPath] = chsStr
+		m[v.ImportSink.Package.PkgPath] = chsStr
 	}
 	return m
 }
@@ -57,14 +57,14 @@ func TestImportChains(t *testing.T) {
 	//      |   interm2
 	//      |   /     |
 	//     vuln1    vuln2
-	e1 := &PkgNode{pkg: &packages.Package{ID: "1", PkgPath: "entry1"}}
-	e2 := &PkgNode{pkg: &packages.Package{ID: "2", PkgPath: "entry2"}}
-	i1 := &PkgNode{pkg: &packages.Package{ID: "3", PkgPath: "interm1"}, ImportedBy: []*PkgNode{e1}}
-	i2 := &PkgNode{pkg: &packages.Package{ID: "4", PkgPath: "interm2"}, ImportedBy: []*PkgNode{e2, i1}}
-	v1 := &PkgNode{pkg: &packages.Package{ID: "5", PkgPath: "vuln1"}, ImportedBy: []*PkgNode{i1, i2}}
-	v2 := &PkgNode{pkg: &packages.Package{ID: "6", PkgPath: "vuln2"}, ImportedBy: []*PkgNode{i2}}
-	vuln1 := &Vuln{ImportSink: v1, PkgPath: "vuln1"}
-	vuln2 := &Vuln{ImportSink: v2, PkgPath: "vuln2"}
+	e1 := &PkgNode{Package: &packages.Package{ID: "1", PkgPath: "entry1"}}
+	e2 := &PkgNode{Package: &packages.Package{ID: "2", PkgPath: "entry2"}}
+	i1 := &PkgNode{Package: &packages.Package{ID: "3", PkgPath: "interm1"}, ImportedBy: []*PkgNode{e1}}
+	i2 := &PkgNode{Package: &packages.Package{ID: "4", PkgPath: "interm2"}, ImportedBy: []*PkgNode{e2, i1}}
+	v1 := &PkgNode{Package: &packages.Package{ID: "5", PkgPath: "vuln1"}, ImportedBy: []*PkgNode{i1, i2}}
+	v2 := &PkgNode{Package: &packages.Package{ID: "6", PkgPath: "vuln2"}, ImportedBy: []*PkgNode{i2}}
+	vuln1 := &Vuln{ImportSink: v1}
+	vuln2 := &Vuln{ImportSink: v2}
 	res := &Result{
 		Packages:      map[string]*PkgNode{"1": e1, "2": e2, "3": i1, "4": i2, "5": v1, "6": v2},
 		EntryPackages: []*PkgNode{e1, e2},

@@ -78,7 +78,7 @@ func impGraphToStrMap(r *Result) map[string][]string {
 	m := make(map[string][]string)
 	for _, n := range r.Packages {
 		for _, pred := range n.ImportedBy {
-			m[pred.pkg.PkgPath] = append(m[pred.pkg.PkgPath], n.pkg.PkgPath)
+			m[pred.Package.PkgPath] = append(m[pred.Package.PkgPath], n.Package.PkgPath)
 		}
 	}
 
