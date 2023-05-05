@@ -66,7 +66,6 @@ func TestImportChains(t *testing.T) {
 	vuln1 := &Vuln{ImportSink: v1}
 	vuln2 := &Vuln{ImportSink: v2}
 	res := &Result{
-		Packages:      map[string]*PkgNode{"1": e1, "2": e2, "3": i1, "4": i2, "5": v1, "6": v2},
 		EntryPackages: []*PkgNode{e1, e2},
 		Vulns:         []*Vuln{vuln1, vuln2},
 	}

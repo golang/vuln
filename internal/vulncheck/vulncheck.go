@@ -23,9 +23,6 @@ type Result struct {
 	// EntryFunctions are a subset of Functions representing vulncheck entry points.
 	EntryFunctions []*FuncNode
 
-	// Packages contains all package nodes as a map: package node id -> package node.
-	Packages map[string]*PkgNode
-
 	// EntryPackages are a subset of Packages representing packages of vulncheck entry points.
 	EntryPackages []*PkgNode
 

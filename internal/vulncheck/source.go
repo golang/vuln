@@ -73,14 +73,12 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	}
 	modVulns := moduleVulnerabilities(mv)
 	modVulns = modVulns.filter(cfg.GOOS, cfg.GOARCH)
-	result := &Result{
-		Packages: make(map[string]*PkgNode),
-	}
+	result := &Result{}
 
 	vulnPkgModSlice(pkgs, modVulns, result)
 	// Return result immediately if in ImportsOnly mode or
 	// if there are no vulnerable packages.
-	if cfg.ImportsOnly || len(result.Packages) == 0 {
+	if cfg.ImportsOnly || len(result.EntryPackages) == 0 {
 		return result, nil
 	}
 
@@ -124,7 +122,6 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 		Package: pkg,
 	}
 	analyzed[pkg] = pkgNode
-	result.Packages[pkg.ID] = pkgNode
 	// Recursively compute which direct dependencies lead to an import of
 	// a vulnerable package and remember the nodes of such dependencies.
 	var onSlice []*PkgNode
