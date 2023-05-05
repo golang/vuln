@@ -145,12 +145,7 @@ func TestBinary(t *testing.T) {
 		wantVulns = append(wantVulns, &Vuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
 	}
 
-	diff := cmp.Diff(wantVulns, res.Vulns,
-		cmpopts.IgnoreFields(Vuln{}, "OSV"),
-		cmpopts.SortSlices(func(v1, v2 *Vuln) bool { return v1.Symbol < v2.Symbol }))
-	if diff != "" {
-		t.Errorf("vulns mismatch (-want, +got)\n%s", diff)
-	}
+	compareVulns(t, wantVulns, res)
 
 	// Test the symbols (non-import mode)
 	cfg = &govulncheck.Config{}
@@ -168,12 +163,7 @@ func TestBinary(t *testing.T) {
 		wantVulns = append(wantVulns, &Vuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
 	}
 
-	diff = cmp.Diff(wantVulns, res.Vulns,
-		cmpopts.IgnoreFields(Vuln{}, "OSV"),
-		cmpopts.SortSlices(func(v1, v2 *Vuln) bool { return v1.Symbol < v2.Symbol }))
-	if diff != "" {
-		t.Errorf("vulns mismatch (-want, +got)\n%s", diff)
-	}
+	compareVulns(t, wantVulns, res)
 
 	// Check that the binary's modules are returned.
 	// The list does not include the module binary itself.
@@ -272,12 +262,17 @@ func Vuln() {
 				t.Fatal(err)
 			}
 
-			diff := cmp.Diff(tc.want, res.Vulns,
-				cmpopts.IgnoreFields(Vuln{}, "OSV"),
-				cmpopts.SortSlices(func(v1, v2 *Vuln) bool { return v1.Symbol < v2.Symbol }))
-			if diff != "" {
-				t.Errorf("vulns mismatch (-want, +got)\n%s", diff)
-			}
+			compareVulns(t, tc.want, res)
 		})
+	}
+}
+
+func compareVulns(t *testing.T, want []*Vuln, res *Result) {
+	diff := cmp.Diff(want, res.Vulns,
+		cmpopts.IgnoreFields(Vuln{}, "OSV"),
+		cmpopts.IgnoreFields(Vuln{}, "ImportSink"),
+		cmpopts.SortSlices(func(v1, v2 *Vuln) bool { return v1.Symbol < v2.Symbol }))
+	if diff != "" {
+		t.Errorf("vulns mismatch (-want, +got)\n%s", diff)
 	}
 }
