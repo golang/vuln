@@ -65,9 +65,9 @@ func emitBinaryResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 			{Frames: []*govulncheck.StackFrame{f}},
 		}
 		m := &govulncheck.Module{
-			Path:         vv.ModPath,
-			FoundVersion: foundVersion(vv.ModPath, modVersions),
-			FixedVersion: fixedVersion(vv.ModPath, vv.OSV.Affected),
+			Path:         vv.ImportSink.Module.Path,
+			FoundVersion: foundVersion(vv.ImportSink.Module.Path, modVersions),
+			FixedVersion: fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected),
 			Packages:     []*govulncheck.Package{p},
 		}
 
@@ -104,14 +104,14 @@ func uniqueVulns(vulns []*vulncheck.Vuln) []*vulncheck.Vuln {
 	hasExported := make(map[key]bool)
 	for _, v := range vulns {
 		if isExported(v.Symbol) {
-			k := key{id: v.OSV.ID, pkg: v.PkgPath, mod: v.ModPath}
+			k := key{id: v.OSV.ID, pkg: v.PkgPath, mod: v.ImportSink.Module.Path}
 			hasExported[k] = true
 		}
 	}
 
 	var uniques []*vulncheck.Vuln
 	for _, v := range vulns {
-		k := key{id: v.OSV.ID, pkg: v.PkgPath, mod: v.ModPath}
+		k := key{id: v.OSV.ID, pkg: v.PkgPath, mod: v.ImportSink.Module.Path}
 		if isExported(v.Symbol) || !hasExported[k] {
 			uniques = append(uniques, v)
 		}

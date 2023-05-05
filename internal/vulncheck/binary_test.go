@@ -134,7 +134,7 @@ func TestBinary(t *testing.T) {
 	// In importsOnly mode, vulnerable symbols
 	// {avuln.VulnData.Vuln1, avuln.VulnData.Vuln2, bvuln.Vuln}
 	// should be detected.
-	wantVulns := []*Vuln{
+	wantVulns := []*testVuln{
 		{Symbol: "Vuln", PkgPath: "golang.org/bmod/bvuln", ModPath: "golang.org/bmod"},
 		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
 		{Symbol: "VulnData.Vuln2", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
@@ -142,7 +142,7 @@ func TestBinary(t *testing.T) {
 	if goversion != "" {
 		// If binary has recognizable Go version available,
 		// then archive/zip.OpenReader should be detected too.
-		wantVulns = append(wantVulns, &Vuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
+		wantVulns = append(wantVulns, &testVuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
 	}
 
 	compareVulns(t, wantVulns, res)
@@ -154,13 +154,13 @@ func TestBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantVulns = []*Vuln{
+	wantVulns = []*testVuln{
 		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
 	}
 	if goversion != "" {
 		// If binary has recognizable Go version available,
 		// then archive/zip.OpenReader should be detected too.
-		wantVulns = append(wantVulns, &Vuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
+		wantVulns = append(wantVulns, &testVuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
 	}
 
 	compareVulns(t, wantVulns, res)
@@ -207,10 +207,10 @@ func Vuln() {
 
 	for _, tc := range []struct {
 		gl   string
-		want []*Vuln
+		want []*testVuln
 	}{
 		{"const", nil}, // TODO(https://go.dev/issue/58509): change expectations once issue is addressed
-		{"var", []*Vuln{{Symbol: "Vuln", PkgPath: "golang.org/bmod/bvuln", ModPath: "golang.org/bmod"}}},
+		{"var", []*testVuln{{Symbol: "Vuln", PkgPath: "golang.org/bmod/bvuln", ModPath: "golang.org/bmod"}}},
 	} {
 		tc := tc
 		t.Run(tc.gl, func(t *testing.T) {
@@ -267,12 +267,29 @@ func Vuln() {
 	}
 }
 
-func compareVulns(t *testing.T, want []*Vuln, res *Result) {
-	diff := cmp.Diff(want, res.Vulns,
-		cmpopts.IgnoreFields(Vuln{}, "OSV"),
-		cmpopts.IgnoreFields(Vuln{}, "ImportSink"),
-		cmpopts.SortSlices(func(v1, v2 *Vuln) bool { return v1.Symbol < v2.Symbol }))
-	if diff != "" {
-		t.Errorf("vulns mismatch (-want, +got)\n%s", diff)
+type testVuln struct {
+	Symbol  string
+	PkgPath string
+	ModPath string
+}
+
+func compareVulns(t *testing.T, want []*testVuln, res *Result) {
+	if len(want) != len(res.Vulns) {
+		t.Error("want", len(want), "vulnerabilities, got", len(res.Vulns))
+		return
+	}
+	sort.Slice(want, func(i, j int) bool { return want[i].Symbol < want[j].Symbol })
+	sort.Slice(res.Vulns, func(i, j int) bool { return res.Vulns[i].Symbol < res.Vulns[j].Symbol })
+	for i, want := range want {
+		got := res.Vulns[i]
+		if want.Symbol != got.Symbol {
+			t.Error("[", i, "] want", want.Symbol, ", got", got.Symbol)
+		}
+		if want.PkgPath != got.ImportSink.pkg.PkgPath {
+			t.Error("[", i, "] want", want.ModPath, ", got", got.ImportSink.Module.Path)
+		}
+		if want.ModPath != got.ImportSink.Module.Path {
+			t.Error("[", i, "] want", want.ModPath, ", got", got.ImportSink.Module.Path)
+		}
 	}
 }

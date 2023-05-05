@@ -64,9 +64,6 @@ type Vuln struct {
 	// PkgPath is the package path of the detected Symbol.
 	PkgPath string
 
-	// ModPath is the module path corresponding to PkgPath.
-	ModPath string
-
 	// CallSink is the ID of the FuncNode in Result.Calls corresponding to
 	// Symbol.
 	//

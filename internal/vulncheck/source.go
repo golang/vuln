@@ -258,7 +258,6 @@ func vulnModuleSlice(result *Result) {
 	// And finally update Vulns with module information.
 	for _, vuln := range result.Vulns {
 		vuln.RequireSink = vuln.ImportSink.Module
-		vuln.ModPath = vuln.ImportSink.Module.Path
 	}
 }
 

@@ -150,7 +150,6 @@ func addVuln(result *Result, graph *PackageGraph, osv *osv.Entry, symbol string,
 		OSV:     osv,
 		Symbol:  symbol,
 		PkgPath: pkgPath,
-		ModPath: pkg.Module.Path,
 		ImportSink: &PkgNode{
 			Module: &ModNode{
 				Module: pkg.Module,
