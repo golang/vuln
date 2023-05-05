@@ -5,19 +5,43 @@
 package testenv
 
 import (
-	"bytes"
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"sync"
 	"testing"
 )
 
-// HasExec reports whether the current system can start new processes
+var origEnv = os.Environ()
+
+// NeedsExec checks that the current system can start new processes
 // using os.StartProcess or (more commonly) exec.Command.
-func HasExec() bool {
+// If not, NeedsExec calls t.Skip with an explanation.
+//
+// On some platforms NeedsExec checks for exec support by re-executing the
+// current executable, which must be a binary built by 'go test'.
+// We intentionally do not provide a HasExec function because of the risk of
+// inappropriate recursion in TestMain functions.
+func NeedsExec(t testing.TB) {
+	tryExecOnce.Do(func() {
+		tryExecErr = tryExec()
+	})
+	if tryExecErr != nil {
+		t.Helper()
+		t.Skipf("skipping test: cannot exec subprocess on %s/%s: %v", runtime.GOOS, runtime.GOARCH, tryExecErr)
+	}
+}
+
+var (
+	tryExecOnce sync.Once
+	tryExecErr  error
+)
+
+func tryExec() error {
 	switch runtime.GOOS {
 	case "aix",
 		"android",
@@ -32,103 +56,67 @@ func HasExec() bool {
 		"solaris",
 		"windows":
 		// Known OS that isn't ios or wasm; assume that exec works.
-		return true
-
-	case "ios", "js", "wasip1":
-		// ios has an exec syscall but on real iOS devices it might return a
-		// permission error. In an emulated environment (such as a Corellium host)
-		// it might succeed, so try it and find out.
-		//
-		// As of 2023-04-19 wasip1 and js don't have exec syscalls at all, but we
-		// may as well use the same path so that this branch can be tested without
-		// an ios environment.
-		fallthrough
-
+		return nil
 	default:
-		tryExecOnce.Do(func() {
-			exe, err := os.Executable()
-			if err != nil {
-				tryExecErr = err
-				return
-			}
-			if flag.Lookup("test.list") == nil {
-				// We found the executable, but we don't know how to run it in a way
-				// that should succeed without side-effects. Just forget it.
-				tryExecErr = errors.New("can't check for exec support: current process is not a test")
-				return
-			}
-			// We know that a test executable exists and can run, because we're
-			// running it now. Use it to check for overall exec support, but be sure
-			// to remove any environment variables that might trigger non-default
-			// behavior in a custom TestMain.
-			cmd := exec.Command(exe, "-test.list=^$")
-			cmd.Env = []string{}
-			if err := cmd.Run(); err != nil {
-				tryExecErr = err
-			}
-			tryExecOk = true
-		})
-		return tryExecOk
 	}
-}
 
-var (
-	tryExecOnce sync.Once
-	tryExecOk   bool
-	tryExecErr  error
-)
+	// ios has an exec syscall but on real iOS devices it might return a
+	// permission error. In an emulated environment (such as a Corellium host)
+	// it might succeed, so if we need to exec we'll just have to try it and
+	// find out.
+	//
+	// As of 2023-04-19 wasip1 and js don't have exec syscalls at all, but we
+	// may as well use the same path so that this branch can be tested without
+	// an ios environment.
 
-// NeedsExec checks that the current system can start new processes
-// using os.StartProcess or (more commonly) exec.Command.
-// If not, NeedsExec calls t.Skip with an explanation.
-func NeedsExec(t testing.TB) {
-	if !HasExec() {
-		t.Helper()
-		t.Skipf("skipping test: cannot exec subprocess on %s/%s: %v", runtime.GOOS, runtime.GOARCH, tryExecErr)
+	if flag.Lookup("test.list") == nil {
+		// This isn't a standard 'go test' binary, so we don't know how to
+		// self-exec in a way that should succeed without side effects.
+		// Just forget it.
+		return errors.New("can't probe for exec support with a non-test executable")
 	}
+
+	// We know that this is a test executable. We should be able to run it with a
+	// no-op flag to check for overall exec support.
+	exe, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("can't probe for exec support: %w", err)
+	}
+	cmd := exec.Command(exe, "-test.list=^$")
+	cmd.Env = origEnv
+	return cmd.Run()
 }
-
-func HasGoBuild() (bool, error) {
-	hasGoBuildOnce.Do(func() {
-		if !HasExec() {
-			hasGoBuildErr = tryExecErr
-			return
-		}
-
-		// Also ensure that that GOROOT includes a compiler: 'go' commands
-		// don't in general work without it, and some builders
-		// (such as android-amd64-emu) seem to lack it in the test environment.
-		cmd := exec.Command("go", "tool", "-n", "compile")
-		stderr := new(bytes.Buffer)
-		stderr.Write([]byte("\n"))
-		cmd.Stderr = stderr
-		out, err := cmd.Output()
-		if err != nil {
-			hasGoBuildErr = err
-			return
-		}
-		if _, err := exec.LookPath(string(bytes.TrimSpace(out))); err != nil {
-			hasGoBuildErr = err
-			return
-		}
-		hasGoBuild = true
-	})
-
-	return hasGoBuild, hasGoBuildErr
-}
-
-var (
-	hasGoBuildOnce sync.Once
-	hasGoBuild     bool
-	hasGoBuildErr  error
-)
 
 func NeedsGoBuild(t testing.TB) {
-	if hgb, _ := HasGoBuild(); !hgb {
+	goBuildOnce.Do(func() {
+		dir, err := os.MkdirTemp("", "testenv-*")
+		if err != nil {
+			goBuildErr = err
+			return
+		}
+		defer os.RemoveAll(dir)
+
+		mainGo := filepath.Join(dir, "main.go")
+		if err := os.WriteFile(mainGo, []byte("package main\nfunc main() {}\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("go", "build", "-o", os.DevNull, mainGo)
+		cmd.Dir = dir
+		if err := cmd.Run(); err != nil {
+			goBuildErr = fmt.Errorf("%v: %v", cmd, err)
+		}
+	})
+
+	if goBuildErr != nil {
 		t.Helper()
 		t.Skipf("skipping test: 'go build' not supported on %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
 }
+
+var (
+	goBuildOnce sync.Once
+	goBuildErr  error
+)
 
 // NeedsLocalhostNet skips t if networking does not work for ports opened
 // with "localhost".
