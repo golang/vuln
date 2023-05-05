@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"golang.org/x/mod/modfile"
+	"golang.org/x/vuln/internal/testenv"
 	"golang.org/x/vuln/scan"
 	"mvdan.cc/unparam/check"
 )
@@ -75,6 +76,8 @@ func TestDependencies(t *testing.T) {
 
 func TestGovulncheck(t *testing.T) {
 	skipIfShort(t)
+	testenv.NeedsGoBuild(t)
+
 	ctx := context.Background()
 	err := scan.Command(ctx, "./...").Run()
 	switch err := err.(type) {
@@ -94,6 +97,7 @@ func TestStaticCheck(t *testing.T) {
 }
 
 func TestUnparam(t *testing.T) {
+	testenv.NeedsGoBuild(t)
 	warns, err := check.UnusedParams(false, false, false, "./...")
 	if err != nil {
 		t.Fatalf("check.UnusedParams: %v", err)
@@ -137,6 +141,9 @@ func TestHeaders(t *testing.T) {
 }
 
 func rungo(t *testing.T, args ...string) {
+	t.Helper()
+	testenv.NeedsGoBuild(t)
+
 	cmd := exec.Command("go", args...)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		t.Log("\n" + string(output))

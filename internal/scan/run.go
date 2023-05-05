@@ -6,6 +6,7 @@ package scan
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"path"
 	"path/filepath"
@@ -32,7 +33,7 @@ func RunGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr i
 
 	client, err := client.NewClient(cfg.db, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("creating client: %w", err)
 	}
 
 	prepareConfig(ctx, cfg, client)

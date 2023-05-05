@@ -39,7 +39,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 		if isGoVersionMismatchError(err) {
 			return fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
 		}
-		return err
+		return fmt.Errorf("govulncheck: loading packages: %w", err)
 	}
 	if err := handler.Progress(sourceProgressMessage(pkgs)); err != nil {
 		return err
