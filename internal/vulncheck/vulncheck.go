@@ -24,7 +24,7 @@ type Result struct {
 	EntryFunctions []*FuncNode
 
 	// EntryPackages are a subset of Packages representing packages of vulncheck entry points.
-	EntryPackages []*PkgNode
+	EntryPackages []*packages.Package
 
 	// Vulns contains information on detected vulnerabilities and their place in
 	// the above graphs. Only vulnerabilities whose symbols are reachable in Calls,
@@ -61,7 +61,7 @@ type Vuln struct {
 	//
 	// When analyzing binaries or PkgPath is not imported, ImportSink will be
 	// unavailable and set to 0.
-	ImportSink *PkgNode
+	ImportSink *packages.Package
 }
 
 // A FuncNode describes a function in the call graph.
@@ -111,15 +111,6 @@ type CallSite struct {
 
 	// Resolved indicates if the called function can be statically resolved.
 	Resolved bool
-}
-
-// A PkgNode describes a package in the import graph.
-type PkgNode struct {
-	// ImportedBy contains packages directly importing this package.
-	ImportedBy []*PkgNode
-
-	// Package is used for connecting package node to module and call graph nodes.
-	Package *packages.Package
 }
 
 // moduleVulnerabilities is an internal structure for

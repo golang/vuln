@@ -73,10 +73,7 @@ func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 	vulnsPerPkg := make(map[key][]*vulncheck.Vuln)
 	for _, vv := range vr.Vulns {
 		if vv.CallSink != nil {
-			if vv.ImportSink.Package == nil {
-				return fmt.Errorf("package was nil: %v", vv.ImportSink.Package.Module.Path)
-			}
-			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.Package.PkgPath, mod: vv.ImportSink.Package.Module.Path}
+			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
 			vulnsPerPkg[k] = append(vulnsPerPkg[k], vv)
 		}
 	}
@@ -86,16 +83,16 @@ func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 	// results later.
 	var findings []*govulncheck.Finding
 	for _, vv := range vr.Vulns {
-		p := &govulncheck.Package{Path: vv.ImportSink.Package.PkgPath}
+		p := &govulncheck.Package{Path: vv.ImportSink.PkgPath}
 		m := &govulncheck.Module{
-			Path:         vv.ImportSink.Package.Module.Path,
+			Path:         vv.ImportSink.Module.Path,
 			FoundVersion: foundVersion(vv),
-			FixedVersion: fixedVersion(vv.ImportSink.Package.Module.Path, vv.OSV.Affected),
+			FixedVersion: fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected),
 			Packages:     []*govulncheck.Package{p},
 		}
 		v := &govulncheck.Finding{OSV: vv.OSV.ID, Modules: []*govulncheck.Module{m}}
 		if vv.CallSink != nil {
-			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.Package.PkgPath, mod: vv.ImportSink.Package.Module.Path}
+			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
 			vcs := uniqueCallStack(vv, callStacks[vv], vulnsPerPkg[k])
 			if vcs != nil {
 				cs := govulncheck.CallStack{

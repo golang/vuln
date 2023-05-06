@@ -267,11 +267,11 @@ func compareVulns(t *testing.T, want []*testVuln, res *Result) {
 		if want.Symbol != got.Symbol {
 			t.Error("[", i, "] want", want.Symbol, ", got", got.Symbol)
 		}
-		if want.PkgPath != got.ImportSink.Package.PkgPath {
-			t.Error("[", i, "] want", want.ModPath, ", got", got.ImportSink.Package.Module.Path)
+		if want.PkgPath != got.ImportSink.PkgPath {
+			t.Error("[", i, "] want", want.ModPath, ", got", got.ImportSink.Module.Path)
 		}
-		if want.ModPath != got.ImportSink.Package.Module.Path {
-			t.Error("[", i, "] want", want.ModPath, ", got", got.ImportSink.Package.Module.Path)
+		if want.ModPath != got.ImportSink.Module.Path {
+			t.Error("[", i, "] want", want.ModPath, ", got", got.ImportSink.Module.Path)
 		}
 	}
 }

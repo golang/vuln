@@ -97,15 +97,15 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 // and stores the computed slices to result.
 func vulnPkgModSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, result *Result) {
 	// analyzedPkgs contains information on packages analyzed thus far.
-	// If a package is mapped to nil, this means it has been visited
+	// If a package is mapped to false, this means it has been visited
 	// but it does not lead to a vulnerable imports. Otherwise, a
-	// visited package is mapped to Imports package node.
-	analyzedPkgs := make(map[*packages.Package]*PkgNode)
+	// visited package is mapped to true.
+	analyzedPkgs := make(map[*packages.Package]bool)
 	for _, pkg := range pkgs {
 		// Top level packages that lead to vulnerable imports are
 		// stored as result.EntryPackages graph entry points.
-		if e := vulnImportSlice(pkg, modVulns, result, analyzedPkgs); e != nil {
-			result.EntryPackages = append(result.EntryPackages, e)
+		if vulnerable := vulnImportSlice(pkg, modVulns, result, analyzedPkgs); vulnerable {
+			result.EntryPackages = append(result.EntryPackages, pkg)
 		}
 	}
 }
@@ -114,20 +114,17 @@ func vulnPkgModSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, r
 // a package with known vulnerabilities. If that is the case, populates result.Imports
 // graph with this reachability information and returns the result.Imports package
 // node for pkg. Otherwise, returns nil.
-func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, result *Result, analyzed map[*packages.Package]*PkgNode) *PkgNode {
-	if pn, ok := analyzed[pkg]; ok {
-		return pn
+func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, result *Result, analyzed map[*packages.Package]bool) bool {
+	if vulnerable, ok := analyzed[pkg]; ok {
+		return vulnerable
 	}
-	pkgNode := &PkgNode{
-		Package: pkg,
-	}
-	analyzed[pkg] = pkgNode
+	analyzed[pkg] = false
 	// Recursively compute which direct dependencies lead to an import of
 	// a vulnerable package and remember the nodes of such dependencies.
-	var onSlice []*PkgNode
+	transitiveVulnerable := false
 	for _, imp := range pkg.Imports {
-		if impNode := vulnImportSlice(imp, modVulns, result, analyzed); impNode != nil {
-			onSlice = append(onSlice, impNode)
+		if impVulnerable := vulnImportSlice(imp, modVulns, result, analyzed); impVulnerable {
+			transitiveVulnerable = true
 		}
 	}
 
@@ -136,20 +133,15 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 
 	// If pkg is not vulnerable nor it transitively leads
 	// to vulnerabilities, jump out.
-	if len(onSlice) == 0 && len(vulns) == 0 {
-		return nil
-	}
-
-	// Save node predecessor information.
-	for _, impSliceNode := range onSlice {
-		impSliceNode.ImportedBy = append(impSliceNode.ImportedBy, pkgNode)
+	if !transitiveVulnerable && len(vulns) == 0 {
+		return false
 	}
 
 	// Create Vuln entry for each symbol of known OSV entries for pkg.
 	for _, osv := range vulns {
 		for _, affected := range osv.Affected {
 			for _, p := range affected.EcosystemSpecific.Packages {
-				if p.Path != pkgNode.Package.PkgPath {
+				if p.Path != pkg.PkgPath {
 					continue
 				}
 
@@ -162,14 +154,15 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 					vuln := &Vuln{
 						OSV:        osv,
 						Symbol:     symbol,
-						ImportSink: pkgNode,
+						ImportSink: pkg,
 					}
 					result.Vulns = append(result.Vulns, vuln)
 				}
 			}
 		}
 	}
-	return pkgNode
+	analyzed[pkg] = true
+	return true
 }
 
 // vulnCallGraphSlice checks if known vulnerabilities are transitively reachable from sources
@@ -343,7 +336,7 @@ func funcNode(f *ssa.Function) *FuncNode {
 // identified with <osv, symbol, pkg>.
 func addCallSinkForVuln(call *FuncNode, osv *osv.Entry, symbol, pkg string, result *Result) {
 	for _, vuln := range result.Vulns {
-		if vuln.OSV == osv && vuln.Symbol == symbol && vuln.ImportSink.Package.PkgPath == pkg {
+		if vuln.OSV == osv && vuln.Symbol == symbol && vuln.ImportSink.PkgPath == pkg {
 			vuln.CallSink = call
 			return
 		}

@@ -139,7 +139,7 @@ func latestFixed(modulePath string, as []osv.Affected) string {
 }
 
 func foundVersion(vuln *vulncheck.Vuln) string {
-	m := vuln.ImportSink.Package.Module
+	m := vuln.ImportSink.Module
 	v := m.Version
 	for m.Replace != nil {
 		m = m.Replace

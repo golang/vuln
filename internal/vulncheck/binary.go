@@ -147,6 +147,6 @@ func addVuln(result *Result, graph *PackageGraph, osv *osv.Entry, symbol string,
 	result.Vulns = append(result.Vulns, &Vuln{
 		OSV:        osv,
 		Symbol:     symbol,
-		ImportSink: &PkgNode{Package: graph.GetPackage(pkgPath)},
+		ImportSink: graph.GetPackage(pkgPath),
 	})
 }

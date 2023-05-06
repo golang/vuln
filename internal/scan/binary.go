@@ -48,12 +48,12 @@ func emitBinaryResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 	// results later.
 	var findings []*govulncheck.Finding
 	for _, vv := range uniqueVulns(vr.Vulns) {
-		p := &govulncheck.Package{Path: vv.ImportSink.Package.PkgPath}
+		p := &govulncheck.Package{Path: vv.ImportSink.PkgPath}
 		// in binary mode, there is 1 call stack containing the vulnerable
 		// symbol.
 		f := &govulncheck.StackFrame{
 			Function: vv.Symbol,
-			Package:  vv.ImportSink.Package.PkgPath,
+			Package:  vv.ImportSink.PkgPath,
 		}
 		parts := strings.Split(vv.Symbol, ".")
 		if len(parts) != 1 {
@@ -64,9 +64,9 @@ func emitBinaryResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 			{Frames: []*govulncheck.StackFrame{f}},
 		}
 		m := &govulncheck.Module{
-			Path:         vv.ImportSink.Package.Module.Path,
+			Path:         vv.ImportSink.Module.Path,
 			FoundVersion: foundVersion(vv),
-			FixedVersion: fixedVersion(vv.ImportSink.Package.Module.Path, vv.OSV.Affected),
+			FixedVersion: fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected),
 			Packages:     []*govulncheck.Package{p},
 		}
 
@@ -103,14 +103,14 @@ func uniqueVulns(vulns []*vulncheck.Vuln) []*vulncheck.Vuln {
 	hasExported := make(map[key]bool)
 	for _, v := range vulns {
 		if isExported(v.Symbol) {
-			k := key{id: v.OSV.ID, pkg: v.ImportSink.Package.PkgPath, mod: v.ImportSink.Package.Module.Path}
+			k := key{id: v.OSV.ID, pkg: v.ImportSink.PkgPath, mod: v.ImportSink.Module.Path}
 			hasExported[k] = true
 		}
 	}
 
 	var uniques []*vulncheck.Vuln
 	for _, v := range vulns {
-		k := key{id: v.OSV.ID, pkg: v.ImportSink.Package.PkgPath, mod: v.ImportSink.Package.Module.Path}
+		k := key{id: v.OSV.ID, pkg: v.ImportSink.PkgPath, mod: v.ImportSink.Module.Path}
 		if isExported(v.Symbol) || !hasExported[k] {
 			uniques = append(uniques, v)
 		}
