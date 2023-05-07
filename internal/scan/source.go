@@ -46,7 +46,9 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	if err != nil {
 		return err
 	}
-	return emitSourceResult(handler, vr)
+	callStacks := vulncheck.CallStacks(vr)
+	filterCallStacks(callStacks)
+	return emitResult(handler, vr, callStacks)
 }
 
 // loadPackages loads the packages matching patterns at dir using build tags
@@ -59,10 +61,7 @@ func loadPackages(c *config, dir string) ([]*packages.Package, error) {
 	return graph.LoadPackages(cfg, c.tags, c.patterns)
 }
 
-func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
-	callStacks := vulncheck.CallStacks(vr)
-	osvs := map[string]*osv.Entry{}
-
+func filterCallStacks(callstacks map[*vulncheck.Vuln][]vulncheck.CallStack) {
 	type key struct {
 		id  string
 		pkg string
@@ -71,12 +70,27 @@ func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 	// Collect all called symbols for a package.
 	// Needed for creating unique call stacks.
 	vulnsPerPkg := make(map[key][]*vulncheck.Vuln)
-	for _, vv := range vr.Vulns {
+	for vv := range callstacks {
 		if vv.CallSink != nil {
 			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
 			vulnsPerPkg[k] = append(vulnsPerPkg[k], vv)
 		}
 	}
+	for vv, stacks := range callstacks {
+		var filtered []vulncheck.CallStack
+		if vv.CallSink != nil {
+			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
+			vcs := uniqueCallStack(vv, stacks, vulnsPerPkg[k])
+			if vcs != nil {
+				filtered = []vulncheck.CallStack{vcs}
+			}
+		}
+		callstacks[vv] = filtered
+	}
+}
+
+func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks map[*vulncheck.Vuln][]vulncheck.CallStack) error {
+	osvs := map[string]*osv.Entry{}
 
 	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
 	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
@@ -91,15 +105,11 @@ func emitSourceResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
 			Packages:     []*govulncheck.Package{p},
 		}
 		v := &govulncheck.Finding{OSV: vv.OSV.ID, Modules: []*govulncheck.Module{m}}
-		if vv.CallSink != nil {
-			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
-			vcs := uniqueCallStack(vv, callStacks[vv], vulnsPerPkg[k])
-			if vcs != nil {
-				cs := govulncheck.CallStack{
-					Frames: stackFramesfromEntries(vcs),
-				}
-				p.CallStacks = []govulncheck.CallStack{cs}
-			}
+		stacks := callstacks[vv]
+		for _, stack := range stacks {
+			p.CallStacks = append(p.CallStacks, govulncheck.CallStack{
+				Frames: stackFramesfromEntries(stack),
+			})
 		}
 		findings = append(findings, v)
 		osvs[vv.OSV.ID] = vv.OSV

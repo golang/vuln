@@ -16,7 +16,6 @@ import (
 
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
-	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
@@ -37,56 +36,22 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	if err != nil {
 		return fmt.Errorf("govulncheck: %v", err)
 	}
-	return emitBinaryResult(handler, vr)
+	callstacks := binaryCallstacks(vr)
+	return emitResult(handler, vr, callstacks)
 }
 
-func emitBinaryResult(handler govulncheck.Handler, vr *vulncheck.Result) error {
-	osvs := map[string]*osv.Entry{}
-
-	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
-	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
-	// results later.
-	var findings []*govulncheck.Finding
+func binaryCallstacks(vr *vulncheck.Result) map[*vulncheck.Vuln][]vulncheck.CallStack {
+	callstacks := map[*vulncheck.Vuln][]vulncheck.CallStack{}
 	for _, vv := range uniqueVulns(vr.Vulns) {
-		p := &govulncheck.Package{Path: vv.ImportSink.PkgPath}
-		// in binary mode, there is 1 call stack containing the vulnerable
-		// symbol.
-		f := &govulncheck.StackFrame{
-			Function: vv.Symbol,
-			Package:  vv.ImportSink.PkgPath,
-		}
+		f := &vulncheck.FuncNode{PkgPath: vv.ImportSink.PkgPath, Name: vv.Symbol}
 		parts := strings.Split(vv.Symbol, ".")
 		if len(parts) != 1 {
-			f.Function = parts[0]
-			f.Receiver = parts[1]
+			f.Name = parts[0]
+			f.RecvType = parts[1]
 		}
-		p.CallStacks = []govulncheck.CallStack{
-			{Frames: []*govulncheck.StackFrame{f}},
-		}
-		m := &govulncheck.Module{
-			Path:         vv.ImportSink.Module.Path,
-			FoundVersion: foundVersion(vv),
-			FixedVersion: fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected),
-			Packages:     []*govulncheck.Package{p},
-		}
-
-		v := &govulncheck.Finding{OSV: vv.OSV.ID, Modules: []*govulncheck.Module{m}}
-		findings = append(findings, v)
-		osvs[vv.OSV.ID] = vv.OSV
+		callstacks[vv] = []vulncheck.CallStack{{{Function: f}}}
 	}
-
-	findings = merge(findings)
-	sortResult(findings)
-	// For each vulnerability, queue it to be written to the output.
-	for _, f := range findings {
-		if err := handler.OSV(osvs[f.OSV]); err != nil {
-			return err
-		}
-		if err := handler.Finding(f); err != nil {
-			return err
-		}
-	}
-	return nil
+	return callstacks
 }
 
 // uniqueVulns does for binary mode what uniqueCallStack does for source mode.
