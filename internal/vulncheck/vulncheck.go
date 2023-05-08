@@ -72,9 +72,6 @@ type FuncNode struct {
 	// RecvType is the receiver object type of this function, if any.
 	RecvType string
 
-	// PkgPath is the import path of the package containing the function.
-	PkgPath string
-
 	// Package is the package the function is part of.
 	Package *packages.Package
 
@@ -87,7 +84,7 @@ type FuncNode struct {
 
 func (fn *FuncNode) String() string {
 	if fn.RecvType == "" {
-		return fmt.Sprintf("%s.%s", fn.PkgPath, fn.Name)
+		return fmt.Sprintf("%s.%s", fn.Package.PkgPath, fn.Name)
 	}
 	return fmt.Sprintf("%s.%s", fn.RecvType, fn.Name)
 }
@@ -95,7 +92,7 @@ func (fn *FuncNode) String() string {
 // Receiver returns the FuncNode's receiver, with package path removed.
 // Pointers are preserved if present.
 func (fn *FuncNode) Receiver() string {
-	return strings.Replace(fn.RecvType, fmt.Sprintf("%s.", fn.PkgPath), "", 1)
+	return strings.Replace(fn.RecvType, fmt.Sprintf("%s.", fn.Package.PkgPath), "", 1)
 }
 
 // A CallSite describes a function call.

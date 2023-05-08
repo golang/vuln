@@ -256,8 +256,8 @@ func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.E
 
 		// Populate CallSink field for each detected vuln symbol.
 		for _, osv := range vulns {
-			if vulnMatchesPackage(osv, funNode.PkgPath) {
-				addCallSinkForVuln(funNode, osv, dbFuncName(f), funNode.PkgPath, result)
+			if vulnMatchesPackage(osv, funNode.Package.PkgPath) {
+				addCallSinkForVuln(funNode, osv, dbFuncName(f), funNode.Package.PkgPath, result)
 			}
 		}
 	}
@@ -320,7 +320,6 @@ func createNode(nodes map[*ssa.Function]*FuncNode, f *ssa.Function, graph *Packa
 	}
 	fn := &FuncNode{
 		Name:     f.Name(),
-		PkgPath:  pkgPath(f),
 		Package:  graph.GetPackage(pkgPath(f)),
 		RecvType: funcRecvType(f),
 		Pos:      funcPosition(f),

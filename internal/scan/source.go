@@ -129,7 +129,6 @@ func stackFramesfromEntries(vcs vulncheck.CallStack) []*govulncheck.StackFrame {
 	for _, e := range vcs {
 		fr := &govulncheck.StackFrame{
 			Function: e.Function.Name,
-			Package:  e.Function.PkgPath,
 			Receiver: e.Function.Receiver(),
 		}
 		if e.Function.Package != nil {
@@ -360,14 +359,13 @@ func summarizeVuln(frames []*govulncheck.StackFrame, iTop int, vulnPkg string) (
 
 // updateInitPositions populates non-existing positions of init functions
 // and their respective calls in callStacks (see #51575).
-func updateInitPositions(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, pkgs []*packages.Package) {
-	pMap := pkgMap(pkgs)
+func updateInitPositions(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack) {
 	for _, css := range callStacks {
 		for _, cs := range css {
 			for i := range cs {
-				updateInitPosition(&cs[i], pMap)
+				updateInitPosition(&cs[i])
 				if i != len(cs)-1 {
-					updateInitCallPosition(&cs[i], cs[i+1], pMap)
+					updateInitCallPosition(&cs[i], cs[i+1])
 				}
 			}
 		}
@@ -382,22 +380,21 @@ func updateInitPositions(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack, p
 //
 //	P.init -> P.init#d: P.init is an implicit init. We say it calls the explicit
 //	P.init#d at the place of "package P" statement.
-func updateInitCallPosition(curr *vulncheck.StackEntry, next vulncheck.StackEntry, pkgs map[string]*packages.Package) {
+func updateInitCallPosition(curr *vulncheck.StackEntry, next vulncheck.StackEntry) {
 	call := curr.Call
 	if !isInit(next.Function) || (call.Pos != nil && call.Pos.IsValid()) {
 		// Skip non-init functions and inits whose call site position is available.
 		return
 	}
 
-	pkg := pkgs[curr.Function.PkgPath]
 	var pos token.Position
-	if curr.Function.Name == "init" && curr.Function.PkgPath == next.Function.PkgPath {
+	if curr.Function.Name == "init" && curr.Function.Package == next.Function.Package {
 		// We have implicit P.init calling P.init#d. Set the call position to
 		// be at "package P" statement position.
-		pos = packageStatementPos(pkg)
+		pos = packageStatementPos(curr.Function.Package)
 	} else {
 		// Choose the beginning of the import statement as the position.
-		pos = importStatementPos(pkg, next.Function.PkgPath)
+		pos = importStatementPos(curr.Function.Package, next.Function.Package.PkgPath)
 	}
 
 	call.Pos = &pos
@@ -440,14 +437,14 @@ func packageStatementPos(pkg *packages.Package) token.Position {
 
 // updateInitPosition updates the position of P.init function in a stack frame if one
 // is not available. The new position is the position of the "package P" statement.
-func updateInitPosition(se *vulncheck.StackEntry, pkgs map[string]*packages.Package) {
+func updateInitPosition(se *vulncheck.StackEntry) {
 	fun := se.Function
 	if !isInit(fun) || (fun.Pos != nil && fun.Pos.IsValid()) {
 		// Skip non-init functions and inits whose position is available.
 		return
 	}
 
-	pos := packageStatementPos(pkgs[fun.PkgPath])
+	pos := packageStatementPos(fun.Package)
 	fun.Pos = &pos
 }
 

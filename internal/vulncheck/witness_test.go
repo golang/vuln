@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"golang.org/x/tools/go/packages"
 )
 
 // stacksToString converts map *Vuln:stacks to Vuln.Symbol:["f1->...->fN", ...]
@@ -39,7 +41,7 @@ func TestCallStacks(t *testing.T) {
 	//     vuln1    vuln2
 	e1 := &FuncNode{Name: "entry1"}
 	e2 := &FuncNode{Name: "entry2"}
-	i1 := &FuncNode{Name: "interm1", PkgPath: "net/http", CallSites: []*CallSite{{Parent: e1, Resolved: true}}}
+	i1 := &FuncNode{Name: "interm1", Package: &packages.Package{PkgPath: "net/http"}, CallSites: []*CallSite{{Parent: e1, Resolved: true}}}
 	i2 := &FuncNode{Name: "interm2", CallSites: []*CallSite{{Parent: e2, Resolved: true}, {Parent: i1, Resolved: true}}}
 	v1 := &FuncNode{Name: "vuln1", CallSites: []*CallSite{{Parent: i1, Resolved: true}, {Parent: i2, Resolved: false}}}
 	v2 := &FuncNode{Name: "vuln2", CallSites: []*CallSite{{Parent: i2, Resolved: false}}}

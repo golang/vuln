@@ -181,7 +181,7 @@ func isStdPackage(pkg string) bool {
 func confidence(stack CallStack) int {
 	c := 0
 	for _, e := range stack {
-		if isStdPackage(e.Function.PkgPath) {
+		if e.Function.Package != nil && isStdPackage(e.Function.Package.PkgPath) {
 			c += 1
 		}
 	}

@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
@@ -192,28 +191,6 @@ func lowest(cs []*govulncheck.StackFrame, f func(e *govulncheck.StackFrame) bool
 		}
 	}
 	return -1
-}
-
-// pkgMap creates a map from package paths to packages for all pkgs
-// and their transitive imports.
-func pkgMap(pkgs []*packages.Package) map[string]*packages.Package {
-	m := make(map[string]*packages.Package)
-	var visit func(*packages.Package)
-	visit = func(p *packages.Package) {
-		if _, ok := m[p.PkgPath]; ok {
-			return
-		}
-		m[p.PkgPath] = p
-
-		for _, i := range p.Imports {
-			visit(i)
-		}
-	}
-
-	for _, p := range pkgs {
-		visit(p)
-	}
-	return m
 }
 
 func moduleVersionString(modulePath, version string) string {

@@ -207,7 +207,7 @@ func TestInits(t *testing.T) {
 	}
 
 	cs := vulncheck.CallStacks(result)
-	updateInitPositions(cs, pkgs)
+	updateInitPositions(cs)
 
 	want := map[string][][]string{
 		"A": {{
@@ -252,7 +252,7 @@ func strStacks(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack) map[string]
 					cp = fmt.Sprintf("%s:%d:%d", filepath.Base(cPos.Filename), cPos.Line, cPos.Column)
 				}
 
-				sse := fmt.Sprintf("N:%s.%s\tF:%v\tC:%v", se.Function.PkgPath, se.Function.Name, fp, cp)
+				sse := fmt.Sprintf("N:%s.%s\tF:%v\tC:%v", se.Function.Package.PkgPath, se.Function.Name, fp, cp)
 				scs = append(scs, sse)
 			}
 			scss = append(scss, scs)

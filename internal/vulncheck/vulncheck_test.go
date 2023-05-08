@@ -484,7 +484,7 @@ func TestReceiver(t *testing.T) {
 			name: "empty",
 			fn: &FuncNode{
 				RecvType: "",
-				PkgPath:  "example.com/a/pkg",
+				Package:  &packages.Package{PkgPath: "example.com/a/pkg"},
 			},
 			want: "",
 		},
@@ -492,7 +492,7 @@ func TestReceiver(t *testing.T) {
 			name: "pointer",
 			fn: &FuncNode{
 				RecvType: "*example.com/a/pkg.Atype",
-				PkgPath:  "example.com/a/pkg",
+				Package:  &packages.Package{PkgPath: "example.com/a/pkg"},
 			},
 			want: "*Atype",
 		},
@@ -500,7 +500,7 @@ func TestReceiver(t *testing.T) {
 			name: "not pointer",
 			fn: &FuncNode{
 				RecvType: "example.com/a/pkg.Atype",
-				PkgPath:  "example.com/a/pkg",
+				Package:  &packages.Package{PkgPath: "example.com/a/pkg"},
 			},
 			want: "Atype",
 		},
@@ -508,7 +508,7 @@ func TestReceiver(t *testing.T) {
 			name: "no prefix",
 			fn: &FuncNode{
 				RecvType: "Atype",
-				PkgPath:  "example.com/a/pkg",
+				Package:  &packages.Package{PkgPath: "example.com/a/pkg"},
 			},
 			want: "Atype",
 		},
