@@ -185,31 +185,15 @@ func foundVersion(vuln *vulncheck.Vuln) string {
 		m = m.Replace
 		v = m.Version
 	}
-	if v == "" {
-		return ""
-	}
-	return versionString(m.Path, v[1:])
+	return v
 }
 
 func fixedVersion(modulePath string, affected []osv.Affected) string {
 	fixed := latestFixed(modulePath, affected)
 	if fixed != "" {
-		fixed = versionString(modulePath, fixed)
+		fixed = "v" + fixed
 	}
 	return fixed
-}
-
-// versionString prepends a version string prefix (`v` or `go`
-// depending on the modulePath) to the given semver-style version string.
-func versionString(modulePath, version string) string {
-	if version == "" {
-		return ""
-	}
-	v := "v" + version
-	if modulePath == internal.GoStdModulePath || modulePath == internal.GoCmdModulePath {
-		return semverToGoTag(v)
-	}
-	return v
 }
 
 // highest returns the highest (one with the smallest index) entry in the call
@@ -234,11 +218,16 @@ func lowest(cs []*govulncheck.StackFrame, f func(e *govulncheck.StackFrame) bool
 	return -1
 }
 
-func moduleVersionString(modulePath, version string) string {
+func moduleVersionString(modulePath, pkgPath, version string) string {
 	if version == "" {
 		return ""
 	}
-	return fmt.Sprintf("%s@%s", modulePath, version)
+	path := modulePath
+	if modulePath == internal.GoStdModulePath || modulePath == internal.GoCmdModulePath {
+		version = semverToGoTag(version)
+		path = pkgPath
+	}
+	return fmt.Sprintf("%s@%s", path, version)
 }
 
 // indent returns the output of prefixing n spaces to s at every line break,

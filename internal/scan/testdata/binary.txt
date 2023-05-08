@@ -8,7 +8,7 @@ Vulnerability #1: GO-0000-0002
     Stdlib vulnerability
   More info: https://pkg.go.dev/vuln/GO-0000-0002
   Standard library
-    Found in: net/http@v0.0.1
+    Found in: net/http@go0.0.1
     Fixed in: N/A
 
 Vulnerability #2: GO-0000-0001

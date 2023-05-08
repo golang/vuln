@@ -135,7 +135,7 @@ func createVulnSummary(osvs []*osv.Entry, v *govulncheck.Finding, topPkgs map[st
 		// For third-party packages, we create a single output entry for
 		// the whole module by merging call stack info of each exercised
 		// package (in source mode).
-		tm := createModuleSummary(m, m.Path, osv)
+		tm := createModuleSummary(m, "", osv)
 		for _, p := range m.Packages {
 			addStacks(&tm, p, topPkgs)
 		}
@@ -153,14 +153,18 @@ func findOSV(osvs []*osv.Entry, id string) *osv.Entry {
 	return nil
 }
 
-func createModuleSummary(m *govulncheck.Module, path string, oe *osv.Entry) moduleSummary {
-	return moduleSummary{
+func createModuleSummary(m *govulncheck.Module, pkgPath string, oe *osv.Entry) moduleSummary {
+	ms := moduleSummary{
 		IsStd:        m.Path == internal.GoStdModulePath,
-		Module:       path,
-		FoundVersion: moduleVersionString(path, m.FoundVersion),
-		FixedVersion: moduleVersionString(path, m.FixedVersion),
+		Module:       m.Path,
 		Platforms:    platforms(m.Path, oe),
+		FoundVersion: moduleVersionString(m.Path, pkgPath, m.FoundVersion),
+		FixedVersion: moduleVersionString(m.Path, pkgPath, m.FixedVersion),
 	}
+	if ms.IsStd {
+		ms.Module = pkgPath
+	}
+	return ms
 }
 
 func attachModule(s *vulnSummary, m moduleSummary) {
