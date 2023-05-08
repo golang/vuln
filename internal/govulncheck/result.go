@@ -123,6 +123,12 @@ type CallStack struct {
 
 // StackFrame represents a call stack entry.
 type StackFrame struct {
+	// Module is the Module path.
+	Module string `json:"module,omitempty"`
+
+	// Version is the module version.
+	Version string `json:"version,omitempty"`
+
 	// Package is the import path.
 	Package string `json:"package,omitempty"`
 

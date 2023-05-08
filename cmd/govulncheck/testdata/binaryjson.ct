@@ -99,6 +99,8 @@ $ govulncheck -json -mode=binary ${vuln_binary}
               {
                 "frames": [
                   {
+                    "module": "github.com/tidwall/gjson",
+                    "version": "v1.6.5",
                     "package": "github.com/tidwall/gjson",
                     "function": "Get"
                   }
@@ -107,6 +109,8 @@ $ govulncheck -json -mode=binary ${vuln_binary}
               {
                 "frames": [
                   {
+                    "module": "github.com/tidwall/gjson",
+                    "version": "v1.6.5",
                     "package": "github.com/tidwall/gjson",
                     "function": "Result",
                     "receiver": "Get"
@@ -200,6 +204,8 @@ $ govulncheck -json -mode=binary ${vuln_binary}
               {
                 "frames": [
                   {
+                    "module": "golang.org/x/text",
+                    "version": "v0.3.0",
                     "package": "golang.org/x/text/language",
                     "function": "Parse"
                   }
@@ -290,6 +296,8 @@ $ govulncheck -json -mode=binary ${vuln_binary}
               {
                 "frames": [
                   {
+                    "module": "github.com/tidwall/gjson",
+                    "version": "v1.6.5",
                     "package": "github.com/tidwall/gjson",
                     "function": "Result",
                     "receiver": "ForEach"
