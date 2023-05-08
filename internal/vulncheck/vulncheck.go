@@ -75,6 +75,9 @@ type FuncNode struct {
 	// PkgPath is the import path of the package containing the function.
 	PkgPath string
 
+	// Package is the package the function is part of.
+	Package *packages.Package
+
 	// Position describes the position of the function in the file.
 	Pos *token.Position
 

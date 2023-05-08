@@ -43,7 +43,7 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 func binaryCallstacks(vr *vulncheck.Result) map[*vulncheck.Vuln][]vulncheck.CallStack {
 	callstacks := map[*vulncheck.Vuln][]vulncheck.CallStack{}
 	for _, vv := range uniqueVulns(vr.Vulns) {
-		f := &vulncheck.FuncNode{PkgPath: vv.ImportSink.PkgPath, Name: vv.Symbol}
+		f := &vulncheck.FuncNode{Package: vv.ImportSink, Name: vv.Symbol}
 		parts := strings.Split(vv.Symbol, ".")
 		if len(parts) != 1 {
 			f.Name = parts[0]

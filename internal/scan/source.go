@@ -140,6 +140,9 @@ func stackFramesfromEntries(vcs vulncheck.CallStack) []*govulncheck.StackFrame {
 			Package:  e.Function.PkgPath,
 			Receiver: e.Function.Receiver(),
 		}
+		if e.Function.Package != nil {
+			fr.Package = e.Function.Package.PkgPath
+		}
 		if e.Call == nil || e.Call.Pos == nil {
 			fr.Position = nil
 		} else {
