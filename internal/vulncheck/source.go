@@ -27,7 +27,7 @@ import (
 // some known vulnerabilities.
 //
 // 3) A CallGraph leading to the use of a known vulnerable function or method.
-func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client) (_ *Result, err error) {
+func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (_ *Result, err error) {
 	// buildSSA builds a whole program that assumes all packages use the same FileSet.
 	// Check all packages in pkgs are using the same FileSet.
 	// TODO(https://go.dev/issue/59729): take FileSet out of Package and
@@ -87,7 +87,7 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 		return nil, err
 	}
 
-	vulnCallGraphSlice(entries, modVulns, cg, result)
+	vulnCallGraphSlice(entries, modVulns, cg, result, graph)
 
 	return result, nil
 }
@@ -167,7 +167,7 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 
 // vulnCallGraphSlice checks if known vulnerabilities are transitively reachable from sources
 // via call graph cg. If so, populates result.Calls graph with this reachability information.
-func vulnCallGraphSlice(sources []*ssa.Function, modVulns moduleVulnerabilities, cg *callgraph.Graph, result *Result) {
+func vulnCallGraphSlice(sources []*ssa.Function, modVulns moduleVulnerabilities, cg *callgraph.Graph, result *Result, graph *PackageGraph) {
 	sinksWithVulns := vulnFuncs(cg, modVulns)
 
 	// Compute call graph backwards reachable
@@ -198,7 +198,7 @@ func vulnCallGraphSlice(sources []*ssa.Function, modVulns moduleVulnerabilities,
 
 	// Transform the resulting call graph slice into
 	// vulncheck representation and store it to result.
-	vulnCallGraph(filteredSources, filteredSinks, result)
+	vulnCallGraph(filteredSources, filteredSinks, result, graph)
 }
 
 // callGraphSlice computes a slice of callgraph beginning at starts
@@ -241,26 +241,18 @@ func callGraphSlice(starts []*callgraph.Node, forward bool) *callgraph.Graph {
 }
 
 // vulnCallGraph creates vulnerability call graph from sources -> sinks reachability info.
-func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.Entry, result *Result) {
+func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.Entry, result *Result, graph *PackageGraph) {
 	nodes := make(map[*ssa.Function]*FuncNode)
-	createNode := func(f *ssa.Function) *FuncNode {
-		if fn, ok := nodes[f]; ok {
-			return fn
-		}
-		fn := funcNode(f)
-		nodes[f] = fn
-		return fn
-	}
 
 	// First create entries and sinks and store relevant information.
 	for _, s := range sources {
-		fn := createNode(s.Func)
+		fn := createNode(nodes, s.Func, graph)
 		result.EntryFunctions = append(result.EntryFunctions, fn)
 	}
 
 	for s, vulns := range sinks {
 		f := s.Func
-		funNode := createNode(s.Func)
+		funNode := createNode(nodes, s.Func, graph)
 
 		// Populate CallSink field for each detected vuln symbol.
 		for _, osv := range vulns {
@@ -279,8 +271,8 @@ func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.E
 		visited[n] = true
 
 		for _, edge := range n.In {
-			nCallee := createNode(edge.Callee.Func)
-			nCaller := createNode(edge.Caller.Func)
+			nCallee := createNode(nodes, edge.Callee.Func, graph)
+			nCaller := createNode(nodes, edge.Caller.Func, graph)
 
 			call := edge.Site
 			cs := &CallSite{
@@ -322,14 +314,19 @@ func pkgPath(f *ssa.Function) string {
 	return ""
 }
 
-func funcNode(f *ssa.Function) *FuncNode {
-	node := &FuncNode{
+func createNode(nodes map[*ssa.Function]*FuncNode, f *ssa.Function, graph *PackageGraph) *FuncNode {
+	if fn, ok := nodes[f]; ok {
+		return fn
+	}
+	fn := &FuncNode{
 		Name:     f.Name(),
 		PkgPath:  pkgPath(f),
+		Package:  graph.GetPackage(pkgPath(f)),
 		RecvType: funcRecvType(f),
 		Pos:      funcPosition(f),
 	}
-	return node
+	nodes[f] = fn
+	return fn
 }
 
 // addCallSinkForVuln adds callID as call sink to vuln of result.Vulns

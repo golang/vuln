@@ -190,7 +190,8 @@ func TestCalls(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x and y as entry packages.
-	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y"))
+	graph := NewPackageGraph("go1.18")
+	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +205,7 @@ func TestCalls(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{}
-	result, err := Source(context.Background(), pkgs, cfg, c)
+	result, err := Source(context.Background(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,7 +293,8 @@ func TestFiltering(t *testing.T) {
 	}
 
 	// Load x as entry package.
-	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
+	graph := NewPackageGraph("go1.18")
+	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,7 +309,7 @@ func TestFiltering(t *testing.T) {
 	os.Setenv("GOOS", "linux")
 	os.Setenv("GOARCH", "amd64")
 
-	result, err := Source(context.Background(), pkgs, cfg, client)
+	result, err := Source(context.Background(), pkgs, cfg, client, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -319,7 +321,7 @@ func TestFiltering(t *testing.T) {
 	os.Setenv("GOOS", "freebsd")
 	os.Setenv("GOARCH", "arm64")
 
-	result, err = Source(context.Background(), pkgs, cfg, client)
+	result, err = Source(context.Background(), pkgs, cfg, client, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -383,7 +385,8 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	}
 
 	// Load x as entry package.
-	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
+	graph := NewPackageGraph("go1.18")
+	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -392,7 +395,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{}
-	result, err := Source(context.Background(), pkgs, cfg, client)
+	result, err := Source(context.Background(), pkgs, cfg, client, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -447,7 +450,8 @@ func TestNoSyntheticNodes(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
+	graph := NewPackageGraph("go1.18")
+	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -461,7 +465,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{}
-	result, err := Source(context.Background(), pkgs, cfg, c)
+	result, err := Source(context.Background(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -531,7 +535,8 @@ func TestRecursion(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
+	graph := NewPackageGraph("go1.18")
+	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -545,7 +550,7 @@ func TestRecursion(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{}
-	result, err := Source(context.Background(), pkgs, cfg, c)
+	result, err := Source(context.Background(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -595,7 +600,8 @@ func TestIssue57174(t *testing.T) {
 	defer e.Cleanup()
 
 	// Load x as entry package.
-	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
+	graph := NewPackageGraph("go1.18")
+	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -609,7 +615,7 @@ func TestIssue57174(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{}
-	_, err = Source(context.Background(), pkgs, cfg, c)
+	_, err = Source(context.Background(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}

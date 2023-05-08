@@ -92,6 +92,7 @@ $ govulncheck -json -C ${moddir}/multientry .
               {
                 "frames": [
                   {
+                    "module": "golang.org/multientry",
                     "package": "golang.org/multientry",
                     "function": "main",
                     "position": {
@@ -102,6 +103,7 @@ $ govulncheck -json -C ${moddir}/multientry .
                     }
                   },
                   {
+                    "module": "golang.org/multientry",
                     "package": "golang.org/multientry",
                     "function": "D",
                     "position": {
@@ -112,6 +114,7 @@ $ govulncheck -json -C ${moddir}/multientry .
                     }
                   },
                   {
+                    "module": "golang.org/multientry",
                     "package": "golang.org/multientry",
                     "function": "foobar",
                     "position": {
@@ -122,6 +125,8 @@ $ govulncheck -json -C ${moddir}/multientry .
                     }
                   },
                   {
+                    "module": "golang.org/x/text",
+                    "version": "v0.3.5",
                     "package": "golang.org/x/text/language",
                     "function": "MustParse"
                   }
@@ -130,6 +135,7 @@ $ govulncheck -json -C ${moddir}/multientry .
               {
                 "frames": [
                   {
+                    "module": "golang.org/multientry",
                     "package": "golang.org/multientry",
                     "function": "main",
                     "position": {
@@ -140,6 +146,7 @@ $ govulncheck -json -C ${moddir}/multientry .
                     }
                   },
                   {
+                    "module": "golang.org/multientry",
                     "package": "golang.org/multientry",
                     "function": "C",
                     "position": {
@@ -150,6 +157,8 @@ $ govulncheck -json -C ${moddir}/multientry .
                     }
                   },
                   {
+                    "module": "golang.org/x/text",
+                    "version": "v0.3.5",
                     "package": "golang.org/x/text/language",
                     "function": "Parse"
                   }

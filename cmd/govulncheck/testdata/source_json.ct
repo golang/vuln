@@ -100,6 +100,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
               {
                 "frames": [
                   {
+                    "module": "golang.org/vuln",
                     "package": "golang.org/vuln",
                     "function": "main",
                     "position": {
@@ -110,6 +111,8 @@ $ govulncheck -C ${moddir}/vuln -json ./...
                     }
                   },
                   {
+                    "module": "github.com/tidwall/gjson",
+                    "version": "v1.6.5",
                     "package": "github.com/tidwall/gjson",
                     "function": "Get",
                     "receiver": "Result"
@@ -203,6 +206,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
               {
                 "frames": [
                   {
+                    "module": "golang.org/vuln",
                     "package": "golang.org/vuln",
                     "function": "main",
                     "position": {
@@ -213,6 +217,8 @@ $ govulncheck -C ${moddir}/vuln -json ./...
                     }
                   },
                   {
+                    "module": "golang.org/x/text",
+                    "version": "v0.3.0",
                     "package": "golang.org/x/text/language",
                     "function": "Parse"
                   }

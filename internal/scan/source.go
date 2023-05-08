@@ -28,7 +28,9 @@ import (
 // (likely having a non-affecting outcome).
 func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client, dir string) error {
 	var pkgs []*packages.Package
-	pkgs, err := loadPackages(cfg, dir)
+	graph := vulncheck.NewPackageGraph(cfg.GoVersion)
+	pkgConfig := &packages.Config{Dir: dir, Tests: cfg.test}
+	pkgs, err := graph.LoadPackages(pkgConfig, cfg.tags, cfg.patterns)
 	if err != nil {
 		// Try to provide a meaningful and actionable error message.
 		if !fileExists(filepath.Join(dir, "go.mod")) {
@@ -42,23 +44,13 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	if err := handler.Progress(sourceProgressMessage(pkgs)); err != nil {
 		return err
 	}
-	vr, err := vulncheck.Source(ctx, pkgs, &cfg.Config, client)
+	vr, err := vulncheck.Source(ctx, pkgs, &cfg.Config, client, graph)
 	if err != nil {
 		return err
 	}
 	callStacks := vulncheck.CallStacks(vr)
 	filterCallStacks(callStacks)
 	return emitResult(handler, vr, callStacks)
-}
-
-// loadPackages loads the packages matching patterns at dir using build tags
-// provided by tagsFlag. Uses load mode needed for vulncheck analysis. If the
-// packages contain errors, a packageError is returned containing a list of
-// the errors, along with the packages themselves.
-func loadPackages(c *config, dir string) ([]*packages.Package, error) {
-	graph := vulncheck.NewPackageGraph(c.GoVersion)
-	cfg := &packages.Config{Dir: dir, Tests: c.test}
-	return graph.LoadPackages(cfg, c.tags, c.patterns)
 }
 
 func filterCallStacks(callstacks map[*vulncheck.Vuln][]vulncheck.CallStack) {
