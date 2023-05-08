@@ -83,6 +83,9 @@ func (h *TextHandler) OSV(entry *osv.Entry) error {
 
 // Finding gathers vulnerability findings to be written.
 func (h *TextHandler) Finding(finding *govulncheck.Finding) error {
+	if err := validateFindings(finding); err != nil {
+		return err
+	}
 	h.findings = append(h.findings, finding)
 	return nil
 }

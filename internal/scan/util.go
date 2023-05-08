@@ -83,6 +83,47 @@ func merge(findings []*govulncheck.Finding) []*govulncheck.Finding {
 	return nr
 }
 
+// validateFindings checks that the supplied findings all obey the protocol
+// rules.
+func validateFindings(findings ...*govulncheck.Finding) error {
+	for _, f := range findings {
+		if f.OSV == "" {
+			return fmt.Errorf("invalid finding: all findings must have an associated OSV")
+		}
+		for _, m := range f.Modules {
+			for _, p := range m.Packages {
+				for _, cs := range p.CallStacks {
+					if len(cs.Frames) < 1 {
+						return fmt.Errorf("invalid finding: all callstacks must have at least one frame")
+					}
+					lastFrame := cs.Frames[len(cs.Frames)-1]
+					if lastFrame.Module != m.Path {
+						return fmt.Errorf("invalid finding: Frame module %s does not match %s", lastFrame.Module, m.Path)
+					}
+					if lastFrame.Version != m.FoundVersion {
+						return fmt.Errorf("invalid finding: Frame version %s does not match %s", lastFrame.Version, m.FoundVersion)
+					}
+					if lastFrame.Package != p.Path {
+						return fmt.Errorf("invalid finding: Frame package %s does not match %s", lastFrame.Package, p.Path)
+					}
+					for _, frame := range cs.Frames {
+						if frame.Version != "" && frame.Module == "" {
+							return fmt.Errorf("invalid finding: if Frame.Version is set, Frame.Module must also be")
+						}
+						if frame.Package != "" && frame.Module == "" {
+							return fmt.Errorf("invalid finding: if Frame.Package is set, Frame.Module must also be")
+						}
+						if frame.Function != "" && frame.Package == "" {
+							return fmt.Errorf("invalid finding: if Frame.Function is set, Frame.Package must also be")
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // validateModuleVersions checks that all modules have
 // the same found and fixed version. If not, panics.
 func validateModuleVersions(modules []*govulncheck.Module) {

@@ -34,7 +34,7 @@ func TestPrinting(t *testing.T) {
 			got.Reset()
 			// this effectively tests that we can round trip the json
 			testRunHandler(t, rawJSON, govulncheck.NewJSONHandler(got))
-			if diff := cmp.Diff(string(rawJSON), got.String()); diff != "" {
+			if diff := cmp.Diff(strings.TrimSpace(string(rawJSON)), strings.TrimSpace(got.String())); diff != "" {
 				t.Errorf("JSON mismatch (-want, +got):\n%s", diff)
 			}
 		})
