@@ -194,18 +194,6 @@ func lowest(cs []*govulncheck.StackFrame, f func(e *govulncheck.StackFrame) bool
 	return -1
 }
 
-// pkgPath returns the package path from fn.
-func pkgPath(fn *vulncheck.FuncNode) string {
-	if fn.PkgPath != "" {
-		return fn.PkgPath
-	}
-	s := strings.TrimPrefix(fn.RecvType, "*")
-	if i := strings.LastIndexByte(s, '.'); i > 0 {
-		s = s[:i]
-	}
-	return s
-}
-
 // pkgMap creates a map from package paths to packages for all pkgs
 // and their transitive imports.
 func pkgMap(pkgs []*packages.Package) map[string]*packages.Package {

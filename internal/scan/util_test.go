@@ -9,33 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal/osv"
-	"golang.org/x/vuln/internal/vulncheck"
 )
-
-func TestPkgPath(t *testing.T) {
-	for _, test := range []struct {
-		in   vulncheck.FuncNode
-		want string
-	}{
-		{
-			vulncheck.FuncNode{PkgPath: "math", Name: "Floor"},
-			"math",
-		},
-		{
-			vulncheck.FuncNode{RecvType: "a.com/b.T", Name: "M"},
-			"a.com/b",
-		},
-		{
-			vulncheck.FuncNode{RecvType: "*a.com/b.T", Name: "M"},
-			"a.com/b",
-		},
-	} {
-		got := pkgPath(&test.in)
-		if got != test.want {
-			t.Errorf("%+v: got %q, want %q", test.in, got, test.want)
-		}
-	}
-}
 
 func TestLatestFixed(t *testing.T) {
 	for _, test := range []struct {
