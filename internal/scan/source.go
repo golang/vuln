@@ -83,36 +83,51 @@ func filterCallStacks(callstacks map[*vulncheck.Vuln][]vulncheck.CallStack) {
 
 func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks map[*vulncheck.Vuln][]vulncheck.CallStack) error {
 	osvs := map[string]*osv.Entry{}
-
-	// Create Result where each vulncheck.Vuln{OSV, ModPath, PkgPath} becomes
-	// a separate Vuln{OSV, Modules{Packages{PkgPath}}} entry. We merge the
-	// results later.
 	var findings []*govulncheck.Finding
+	// first deal with all the affected vulnerabilities
+	emitted := map[string]bool{}
 	for _, vv := range vr.Vulns {
-		p := &govulncheck.Package{Path: vv.ImportSink.PkgPath}
-		m := &govulncheck.Module{
-			Path:         vv.ImportSink.Module.Path,
-			FoundVersion: foundVersion(vv),
-			FixedVersion: fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected),
-			Packages:     []*govulncheck.Package{p},
-		}
-		v := &govulncheck.Finding{OSV: vv.OSV.ID, Modules: []*govulncheck.Module{m}}
+		osvs[vv.OSV.ID] = vv.OSV
+		fixed := fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected)
 		stacks := callstacks[vv]
 		for _, stack := range stacks {
-			p.CallStacks = append(p.CallStacks, govulncheck.CallStack{
-				Frames: stackFramesfromEntries(stack),
+			emitted[vv.OSV.ID] = true
+			findings = append(findings, &govulncheck.Finding{
+				OSV:          vv.OSV.ID,
+				FixedVersion: fixed,
+				Frames:       stackFramesfromEntries(stack),
 			})
 		}
-		findings = append(findings, v)
-		osvs[vv.OSV.ID] = vv.OSV
 	}
-
-	findings = merge(findings)
-	sortResult(findings)
+	for _, vv := range vr.Vulns {
+		if emitted[vv.OSV.ID] {
+			continue
+		}
+		stacks := callstacks[vv]
+		if len(stacks) != 0 {
+			continue
+		}
+		emitted[vv.OSV.ID] = true
+		// no callstacks, add an unafected finding
+		findings = append(findings, &govulncheck.Finding{
+			OSV:          vv.OSV.ID,
+			FixedVersion: fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected),
+			Frames: []*govulncheck.StackFrame{{
+				Module:  vv.ImportSink.Module.Path,
+				Version: vv.ImportSink.Module.Version,
+				Package: vv.ImportSink.PkgPath,
+			}},
+		})
+	}
 	// For each vulnerability, queue it to be written to the output.
+	seen := map[string]bool{}
+	sortResult(findings)
 	for _, f := range findings {
-		if err := handler.OSV(osvs[f.OSV]); err != nil {
-			return err
+		if !seen[f.OSV] {
+			seen[f.OSV] = true
+			if err := handler.OSV(osvs[f.OSV]); err != nil {
+				return err
+			}
 		}
 		if err := handler.Finding(f); err != nil {
 			return err
@@ -236,22 +251,22 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 //     "F calls W, which eventually calls V"
 //
 // If it can't find any of these functions, summarizeCallStack returns the empty string.
-func summarizeCallStack(cs govulncheck.CallStack, topPkgs map[string]bool) string {
-	if len(cs.Frames) == 0 {
+func summarizeCallStack(finding *govulncheck.Finding, topPkgs map[string]bool) string {
+	if len(finding.Frames) == 0 {
 		return ""
 	}
-	iTop, iTopEnd, topFunc, topEndFunc := summarizeTop(cs.Frames, topPkgs)
+	iTop, iTopEnd, topFunc, topEndFunc := summarizeTop(finding.Frames, topPkgs)
 	if iTop < 0 {
 		return ""
 	}
 
-	vulnPkg := cs.Frames[len(cs.Frames)-1].Package
-	iVulnStart, vulnStartFunc, vulnFunc := summarizeVuln(cs.Frames, iTopEnd, vulnPkg)
+	vulnPkg := finding.Frames[len(finding.Frames)-1].Package
+	iVulnStart, vulnStartFunc, vulnFunc := summarizeVuln(finding.Frames, iTopEnd, vulnPkg)
 	if iVulnStart < 0 {
 		return ""
 	}
 
-	topPos := posToString(cs.Frames[iTop].Position)
+	topPos := posToString(finding.Frames[iTop].Position)
 	if topPos != "" {
 		topPos += ": "
 	}
@@ -269,7 +284,7 @@ func summarizeCallStack(cs govulncheck.CallStack, topPkgs map[string]bool) strin
 	if iVulnStart != iTopEnd+1 {
 		// If there is something in between top and vuln segments of
 		// the stack, then also summarize that intermediate segment.
-		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, topFunc, FuncName(cs.Frames[iTopEnd+1]), vulnFunc)
+		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, topFunc, FuncName(finding.Frames[iTopEnd+1]), vulnFunc)
 	}
 	if vulnStartFunc != vulnFunc {
 		// The first function of the vuln segment is anonymous.

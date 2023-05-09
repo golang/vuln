@@ -31,99 +31,79 @@
 {
   "finding": {
     "osv": "GO-0000-0001",
-    "modules": [
+    "fixed_version": "v0.1.3",
+    "frames": [
       {
-        "path": "golang.org/vmod",
-        "found_version": "v0.0.1",
-        "fixed_version": "v0.1.3",
-        "packages": [
-          {
-            "path": "vmod",
-            "callstacks": [
-              {
-                "frames": [
-                  {
-                    "module": "golang.org/main",
-                    "version": "v0.0.1",
-                    "package": "main",
-                    "function": "main"
-                  },
-                  {
-                    "module": "golang.org/vmod",
-                    "version": "v0.0.1",
-                    "package": "vmod",
-                    "function": "Vuln"
-                  }
-                ]
-              },
-              {
-                "frames": [
-                  {
-                    "module": "golang.org/main",
-                    "version": "v0.0.1",
-                    "package": "main",
-                    "function": "main"
-                  },
-                  {
-                    "module": "golang.org/vmod",
-                    "version": "v0.0.1",
-                    "package": "vmod",
-                    "function": "VulnFoo"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        "module": "golang.org/main",
+        "version": "v0.0.1",
+        "package": "main",
+        "function": "main"
       },
       {
-        "path": "golang.org/vmod1",
-        "found_version": "v0.0.3",
-        "fixed_version": "v0.0.4",
-        "packages": [
-          {
-            "path": "vmod1",
-            "callstacks": [
-              {
-                "frames": [
-                  {
-                    "module": "golang.org/other",
-                    "version": "v2.0.3",
-                    "package": "other",
-                    "function": "Foo"
-                  },
-                  {
-                    "module": "golang.org/vmod1",
-                    "version": "v0.0.3",
-                    "package": "vmod1",
-                    "function": "Vuln"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "path": "vmod1",
-            "callstacks": [
-              {
-                "frames": [
-                  {
-                    "module": "golang.org/other",
-                    "version": "v2.0.3",
-                    "package": "other",
-                    "function": "Bar"
-                  },
-                  {
-                    "module": "golang.org/vmod1",
-                    "version": "v0.0.3",
-                    "package": "vmod1",
-                    "function": "VulnFoo"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        "module": "golang.org/vmod",
+        "version": "v0.0.1",
+        "package": "vmod",
+        "function": "Vuln"
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "GO-0000-0001",
+    "fixed_version": "v0.1.3",
+    "frames": [
+      {
+        "module": "golang.org/main",
+        "version": "v0.0.1",
+        "package": "main",
+        "function": "main"
+      },
+      {
+        "module": "golang.org/vmod",
+        "version": "v0.0.1",
+        "package": "vmod",
+        "function": "VulnFoo"
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "GO-0000-0001",
+    "fixed_version": "v0.0.4",
+    "frames": [
+      {
+        "module": "golang.org/other",
+        "version": "v2.0.3",
+        "package": "other",
+        "function": "Foo"
+      },
+      {
+        "module": "golang.org/vmod1",
+        "version": "v0.0.3",
+        "package": "vmod1",
+        "function": "Vuln"
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "GO-0000-0001",
+    "fixed_version": "v0.0.4",
+    "frames": [
+      {
+        "module": "golang.org/other",
+        "version": "v2.0.3",
+        "package": "other",
+        "function": "Bar"
+      },
+      {
+        "module": "golang.org/vmod1",
+        "version": "v0.0.3",
+        "package": "vmod1",
+        "function": "VulnFoo"
       }
     ]
   }

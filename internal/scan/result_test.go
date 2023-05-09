@@ -50,25 +50,26 @@ func TestVuln(t *testing.T) {
 	// p is both the module and package path, and
 	// s is the called symbol. If s is "", then
 	// there is no called symbol.
-	vuln := func(syms ...[2]string) *govulncheck.Finding {
-		v := &govulncheck.Finding{}
+	vuln := func(syms ...[2]string) []*govulncheck.Finding {
+		result := []*govulncheck.Finding{}
 		for _, sym := range syms {
-			p := &govulncheck.Package{Path: sym[0]}
-			v.Modules = append(v.Modules, &govulncheck.Module{
-				Path:     sym[0],
-				Packages: []*govulncheck.Package{p},
+			result = append(result, &govulncheck.Finding{
+				OSV:          "",
+				FixedVersion: "",
+				Frames: []*govulncheck.StackFrame{{
+					Module:   sym[0],
+					Package:  sym[0],
+					Function: sym[1],
+					Position: &govulncheck.Position{},
+				}},
 			})
-			if symbol := sym[1]; symbol != "" {
-				cs := govulncheck.CallStack{Frames: []*govulncheck.StackFrame{{Function: symbol}}}
-				p.CallStacks = []govulncheck.CallStack{cs}
-			}
 		}
-		return v
+		return result
 	}
 
 	for _, test := range []struct {
 		desc string
-		v    *govulncheck.Finding
+		v    []*govulncheck.Finding
 		want bool
 	}{
 		{"called - single module", vuln([2]string{"golang.org/p1", "Foo"}), true},

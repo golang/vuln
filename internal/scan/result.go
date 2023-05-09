@@ -20,12 +20,10 @@ var LoadMode = packages.NeedName | packages.NeedImports | packages.NeedTypes |
 
 // IsCalled reports whether the vulnerability is called, therefore
 // affecting the target source code or binary.
-func IsCalled(v *govulncheck.Finding) bool {
-	for _, m := range v.Modules {
-		for _, p := range m.Packages {
-			if len(p.CallStacks) > 0 {
-				return true
-			}
+func IsCalled(findings []*govulncheck.Finding) bool {
+	for _, f := range findings {
+		if f.Frames[len(f.Frames)-1].Function != "" {
+			return true
 		}
 	}
 	return false

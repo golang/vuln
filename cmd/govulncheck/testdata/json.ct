@@ -88,40 +88,25 @@ $ govulncheck -C ${moddir}/vuln -json .
 {
   "finding": {
     "osv": "GO-2021-0265",
-    "modules": [
+    "fixed_version": "v1.9.3",
+    "frames": [
       {
-        "path": "github.com/tidwall/gjson",
-        "found_version": "v1.6.5",
-        "fixed_version": "v1.9.3",
-        "packages": [
-          {
-            "path": "github.com/tidwall/gjson",
-            "callstacks": [
-              {
-                "frames": [
-                  {
-                    "module": "golang.org/vuln",
-                    "package": "golang.org/vuln",
-                    "function": "main",
-                    "position": {
-                      "filename": ".../vuln.go",
-                      "offset": 183,
-                      "line": 14,
-                      "column": 20
-                    }
-                  },
-                  {
-                    "module": "github.com/tidwall/gjson",
-                    "version": "v1.6.5",
-                    "package": "github.com/tidwall/gjson",
-                    "function": "Get",
-                    "receiver": "Result"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        "module": "golang.org/vuln",
+        "package": "golang.org/vuln",
+        "function": "main",
+        "position": {
+          "filename": ".../vuln.go",
+          "offset": 183,
+          "line": 14,
+          "column": 20
+        }
+      },
+      {
+        "module": "github.com/tidwall/gjson",
+        "version": "v1.6.5",
+        "package": "github.com/tidwall/gjson",
+        "function": "Get",
+        "receiver": "Result"
       }
     ]
   }
@@ -194,39 +179,24 @@ $ govulncheck -C ${moddir}/vuln -json .
 {
   "finding": {
     "osv": "GO-2021-0113",
-    "modules": [
+    "fixed_version": "v0.3.7",
+    "frames": [
       {
-        "path": "golang.org/x/text",
-        "found_version": "v0.3.0",
-        "fixed_version": "v0.3.7",
-        "packages": [
-          {
-            "path": "golang.org/x/text/language",
-            "callstacks": [
-              {
-                "frames": [
-                  {
-                    "module": "golang.org/vuln",
-                    "package": "golang.org/vuln",
-                    "function": "main",
-                    "position": {
-                      "filename": ".../vuln.go",
-                      "offset": 159,
-                      "line": 13,
-                      "column": 16
-                    }
-                  },
-                  {
-                    "module": "golang.org/x/text",
-                    "version": "v0.3.0",
-                    "package": "golang.org/x/text/language",
-                    "function": "Parse"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        "module": "golang.org/vuln",
+        "package": "golang.org/vuln",
+        "function": "main",
+        "position": {
+          "filename": ".../vuln.go",
+          "offset": 159,
+          "line": 13,
+          "column": 16
+        }
+      },
+      {
+        "module": "golang.org/x/text",
+        "version": "v0.3.0",
+        "package": "golang.org/x/text/language",
+        "function": "Parse"
       }
     ]
   }
@@ -297,16 +267,12 @@ $ govulncheck -C ${moddir}/vuln -json .
 {
   "finding": {
     "osv": "GO-2021-0054",
-    "modules": [
+    "fixed_version": "v1.6.6",
+    "frames": [
       {
-        "path": "github.com/tidwall/gjson",
-        "found_version": "v1.6.5",
-        "fixed_version": "v1.6.6",
-        "packages": [
-          {
-            "path": "github.com/tidwall/gjson"
-          }
-        ]
+        "module": "github.com/tidwall/gjson",
+        "version": "v1.6.5",
+        "package": "github.com/tidwall/gjson"
       }
     ]
   }

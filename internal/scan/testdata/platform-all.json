@@ -15,11 +15,11 @@
 {
   "finding": {
     "osv": "All",
-    "modules": [
+    "fixed_version": "v0.1.3",
+    "frames": [
       {
-        "path": "golang.org/vmod",
-        "found_version": "v0.0.1",
-        "fixed_version": "v0.1.3"
+        "module": "golang.org/vmod",
+        "version": "v0.0.1"
       }
     ]
   }

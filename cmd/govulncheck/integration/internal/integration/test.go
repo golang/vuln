@@ -33,13 +33,10 @@ func CompareNonStdVulns(out string, want map[string]bool) error {
 			log.Fatalf("failed to load json: %v", err)
 		}
 		if msg.Finding != nil {
-			for _, m := range msg.Finding.Modules {
-				for _, p := range m.Packages {
-					// collect only called non-std packages
-					if !isStd(p.Path) && len(p.CallStacks) > 0 {
-						calledVulnPkgs[p.Path] = true
-					}
-				}
+			// collect only called non-std packages
+			pkgPath := msg.Finding.Frames[len(msg.Finding.Frames)-1].Package
+			if !isStd(pkgPath) {
+				calledVulnPkgs[pkgPath] = true
 			}
 		}
 	}

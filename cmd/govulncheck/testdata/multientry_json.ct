@@ -80,93 +80,82 @@ $ govulncheck -json -C ${moddir}/multientry .
 {
   "finding": {
     "osv": "GO-2021-0113",
-    "modules": [
+    "fixed_version": "v0.3.7",
+    "frames": [
       {
-        "path": "golang.org/x/text",
-        "found_version": "v0.3.5",
-        "fixed_version": "v0.3.7",
-        "packages": [
-          {
-            "path": "golang.org/x/text/language",
-            "callstacks": [
-              {
-                "frames": [
-                  {
-                    "module": "golang.org/multientry",
-                    "package": "golang.org/multientry",
-                    "function": "main",
-                    "position": {
-                      "filename": ".../main.go",
-                      "offset": 441,
-                      "line": 26,
-                      "column": 3
-                    }
-                  },
-                  {
-                    "module": "golang.org/multientry",
-                    "package": "golang.org/multientry",
-                    "function": "D",
-                    "position": {
-                      "filename": ".../main.go",
-                      "offset": 705,
-                      "line": 48,
-                      "column": 8
-                    }
-                  },
-                  {
-                    "module": "golang.org/multientry",
-                    "package": "golang.org/multientry",
-                    "function": "foobar",
-                    "position": {
-                      "filename": ".../main.go",
-                      "offset": 1694,
-                      "line": 99,
-                      "column": 20
-                    }
-                  },
-                  {
-                    "module": "golang.org/x/text",
-                    "version": "v0.3.5",
-                    "package": "golang.org/x/text/language",
-                    "function": "MustParse"
-                  }
-                ]
-              },
-              {
-                "frames": [
-                  {
-                    "module": "golang.org/multientry",
-                    "package": "golang.org/multientry",
-                    "function": "main",
-                    "position": {
-                      "filename": ".../main.go",
-                      "offset": 340,
-                      "line": 22,
-                      "column": 3
-                    }
-                  },
-                  {
-                    "module": "golang.org/multientry",
-                    "package": "golang.org/multientry",
-                    "function": "C",
-                    "position": {
-                      "filename": ".../main.go",
-                      "offset": 679,
-                      "line": 44,
-                      "column": 23
-                    }
-                  },
-                  {
-                    "module": "golang.org/x/text",
-                    "version": "v0.3.5",
-                    "package": "golang.org/x/text/language",
-                    "function": "Parse"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        "module": "golang.org/multientry",
+        "package": "golang.org/multientry",
+        "function": "main",
+        "position": {
+          "filename": ".../main.go",
+          "offset": 441,
+          "line": 26,
+          "column": 3
+        }
+      },
+      {
+        "module": "golang.org/multientry",
+        "package": "golang.org/multientry",
+        "function": "D",
+        "position": {
+          "filename": ".../main.go",
+          "offset": 705,
+          "line": 48,
+          "column": 8
+        }
+      },
+      {
+        "module": "golang.org/multientry",
+        "package": "golang.org/multientry",
+        "function": "foobar",
+        "position": {
+          "filename": ".../main.go",
+          "offset": 1694,
+          "line": 99,
+          "column": 20
+        }
+      },
+      {
+        "module": "golang.org/x/text",
+        "version": "v0.3.5",
+        "package": "golang.org/x/text/language",
+        "function": "MustParse"
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "GO-2021-0113",
+    "fixed_version": "v0.3.7",
+    "frames": [
+      {
+        "module": "golang.org/multientry",
+        "package": "golang.org/multientry",
+        "function": "main",
+        "position": {
+          "filename": ".../main.go",
+          "offset": 340,
+          "line": 22,
+          "column": 3
+        }
+      },
+      {
+        "module": "golang.org/multientry",
+        "package": "golang.org/multientry",
+        "function": "C",
+        "position": {
+          "filename": ".../main.go",
+          "offset": 679,
+          "line": 44,
+          "column": 23
+        }
+      },
+      {
+        "module": "golang.org/x/text",
+        "version": "v0.3.5",
+        "package": "golang.org/x/text/language",
+        "function": "Parse"
       }
     ]
   }

@@ -51,6 +51,7 @@ func Flush(h govulncheck.Handler) error {
 }
 
 func (h *TextHandler) Flush() error {
+	sortResult(h.findings)
 	summary := createSummaries(h.osvs, h.findings)
 	h.findings = nil
 	if err := h.runTemplate("govulncheck-summary", summary); err != nil {

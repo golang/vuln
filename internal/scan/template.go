@@ -25,7 +25,7 @@ type summaries struct {
 type vulnSummary struct {
 	OSV      string
 	Details  string
-	Modules  []moduleSummary
+	Modules  []*moduleSummary
 	Affected bool
 }
 
@@ -55,35 +55,37 @@ type stackFrameSummary struct {
 func topPackages(vulns []*govulncheck.Finding) map[string]bool {
 	topPkgs := map[string]bool{}
 	for _, v := range vulns {
-		for _, m := range v.Modules {
-			for _, p := range m.Packages {
-				for _, c := range p.CallStacks {
-					if len(c.Frames) > 0 {
-						topPkgs[c.Frames[0].Package] = true
-					}
-				}
-			}
+		if v.Frames[0].Function != "" {
+			topPkgs[v.Frames[0].Package] = true
 		}
 	}
 	return topPkgs
 }
 
-func createSummaries(osvs []*osv.Entry, vulns []*govulncheck.Finding) summaries {
+func createSummaries(osvs []*osv.Entry, findings []*govulncheck.Finding) summaries {
 	s := summaries{}
-	findings := merge(vulns)
-	sortResult(findings)
-	topPkgs := topPackages(vulns)
+	// group findings by osv
+	grouped := map[string][]*govulncheck.Finding{}
+	var osvids []string
+	for _, f := range findings {
+		list, found := grouped[f.OSV]
+		if !found {
+			osvids = append(osvids, f.OSV)
+		}
+		grouped[f.OSV] = append(list, f)
+	}
+	topPkgs := topPackages(findings)
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
-	for _, v := range findings {
-		entry := createVulnSummary(osvs, v, topPkgs)
+	for _, osvid := range osvids {
+		list := grouped[osvid]
+		entry := createVulnSummary(osvs, osvid, list, topPkgs)
 		if entry.Affected {
 			s.Affected = append(s.Affected, entry)
 		} else {
 			s.Unaffected = append(s.Unaffected, entry)
 		}
 	}
-
 	mods := make(map[string]struct{})
 	for _, a := range s.Affected {
 		for _, m := range a.Modules {
@@ -98,49 +100,50 @@ func createSummaries(osvs []*osv.Entry, vulns []*govulncheck.Finding) summaries 
 	return s
 }
 
-func createVulnSummary(osvs []*osv.Entry, v *govulncheck.Finding, topPkgs map[string]bool) vulnSummary {
+func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.Finding, topPkgs map[string]bool) vulnSummary {
 	vInfo := vulnSummary{
-		Affected: IsCalled(v),
-		OSV:      v.OSV,
+		Affected: IsCalled(findings),
+		OSV:      osvid,
 	}
-	osv := findOSV(osvs, v.OSV)
+	osv := findOSV(osvs, osvid)
 	if osv != nil {
 		vInfo.Details = osv.Details
 	}
-
-	for _, m := range v.Modules {
-		if m.Path == internal.GoStdModulePath {
-			// For stdlib vulnerabilities, we pretend each package
-			// is effectively a module because showing "Module: stdlib"
-			// to the user is confusing. In most cases, stdlib
-			// vulnerabilities affect only one package anyhow.
-			for _, p := range m.Packages {
-				if len(p.CallStacks) == 0 {
-					// package symbols not exercised, nothing to do here
-					continue
-				}
-				tm := createModuleSummary(m, p.Path, osv)
-				addStacks(&tm, p, topPkgs)
-				attachModule(&vInfo, tm)
+	for _, f := range findings {
+		lastFrame := f.Frames[len(f.Frames)-1]
+		// find the right module summary, or create it if this is the first stack for that module
+		var ms *moduleSummary
+		for _, check := range vInfo.Modules {
+			if check.Module == lastFrame.Module {
+				ms = check
+				break
 			}
-			if len(vInfo.Modules) == 0 && len(m.Packages) > 0 {
-				p := m.Packages[0]
-				tm := createModuleSummary(m, p.Path, osv)
-				addStacks(&tm, p, topPkgs) // for binary mode, this will be ""
-				attachModule(&vInfo, tm)
+		}
+		if ms == nil {
+			ms = &moduleSummary{
+				IsStd:        lastFrame.Module == internal.GoStdModulePath,
+				Module:       lastFrame.Module,
+				FoundVersion: moduleVersionString(lastFrame.Module, lastFrame.Package, lastFrame.Version),
+				FixedVersion: moduleVersionString(lastFrame.Module, lastFrame.Package, f.FixedVersion),
+				Platforms:    platforms(lastFrame.Module, osv),
 			}
-			continue
+			vInfo.Modules = append(vInfo.Modules, ms)
 		}
-
-		// For third-party packages, we create a single output entry for
-		// the whole module by merging call stack info of each exercised
-		// package (in source mode).
-		tm := createModuleSummary(m, "", osv)
-		for _, p := range m.Packages {
-			addStacks(&tm, p, topPkgs)
-		}
-		attachModule(&vInfo, tm)
+		addStack(ms, f, topPkgs)
 	}
+	for _, ms := range vInfo.Modules {
+		// Suppress duplicate compact call stack summaries.
+		// Note that different call stacks can yield same summaries.
+		seen := map[string]struct{}{}
+		for i, css := range ms.CallStacks {
+			if _, wasSeen := seen[css.Compact]; !wasSeen {
+				seen[css.Compact] = struct{}{}
+			} else {
+				ms.CallStacks[i].Suppressed = true
+			}
+		}
+	}
+
 	return vInfo
 }
 
@@ -153,56 +156,26 @@ func findOSV(osvs []*osv.Entry, id string) *osv.Entry {
 	return nil
 }
 
-func createModuleSummary(m *govulncheck.Module, pkgPath string, oe *osv.Entry) moduleSummary {
-	ms := moduleSummary{
-		IsStd:        m.Path == internal.GoStdModulePath,
-		Module:       m.Path,
-		Platforms:    platforms(m.Path, oe),
-		FoundVersion: moduleVersionString(m.Path, pkgPath, m.FoundVersion),
-		FixedVersion: moduleVersionString(m.Path, pkgPath, m.FixedVersion),
+func addStack(m *moduleSummary, f *govulncheck.Finding, topPkgs map[string]bool) {
+	if len(f.Frames) == 1 && f.Frames[0].Function == "" {
+		return
 	}
-	if ms.IsStd {
-		ms.Module = pkgPath
+	css := callStackSummary{
+		Compact: summarizeCallStack(f, topPkgs),
 	}
-	return ms
-}
-
-func attachModule(s *vulnSummary, m moduleSummary) {
-	// Suppress duplicate compact call stack summaries.
-	// Note that different call stacks can yield same summaries.
-	seen := map[string]struct{}{}
-	for i, css := range m.CallStacks {
-		if _, wasSeen := seen[css.Compact]; !wasSeen {
-			seen[css.Compact] = struct{}{}
-		} else {
-			m.CallStacks[i].Suppressed = true
+	for _, frame := range f.Frames {
+		symbol := frame.Function
+		if frame.Receiver != "" {
+			symbol = fmt.Sprint(frame.Receiver, ".", symbol)
 		}
+		css.Frames = append(css.Frames, stackFrameSummary{
+			Symbol:   symbol,
+			Name:     FuncName(frame),
+			Position: posToString(frame.Position),
+		})
 	}
-	s.Modules = append(s.Modules, m)
-}
-
-func addStacks(m *moduleSummary, p *govulncheck.Package, topPkgs map[string]bool) {
-	for _, cs := range p.CallStacks {
-		if len(cs.Frames) == 0 {
-			continue
-		}
-		css := callStackSummary{
-			Compact: summarizeCallStack(cs, topPkgs),
-		}
-		for _, e := range cs.Frames {
-			symbol := e.Function
-			if e.Receiver != "" {
-				symbol = fmt.Sprint(e.Receiver, ".", symbol)
-			}
-			css.Frames = append(css.Frames, stackFrameSummary{
-				Symbol:   symbol,
-				Name:     FuncName(e),
-				Position: posToString(e.Position),
-			})
-		}
-		css.Symbol = css.Frames[len(css.Frames)-1].Symbol
-		m.CallStacks = append(m.CallStacks, css)
-	}
+	css.Symbol = css.Frames[len(css.Frames)-1].Symbol
+	m.CallStacks = append(m.CallStacks, css)
 }
 
 // platforms returns a string describing the GOOS, GOARCH,

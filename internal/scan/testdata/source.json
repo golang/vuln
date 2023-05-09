@@ -31,34 +31,19 @@
 {
   "finding": {
     "osv": "GO-0000-0001",
-    "modules": [
+    "fixed_version": "v0.1.3",
+    "frames": [
       {
-        "path": "golang.org/vmod",
-        "found_version": "v0.0.1",
-        "fixed_version": "v0.1.3",
-        "packages": [
-          {
-            "path": "vmod",
-            "callstacks": [
-              {
-                "frames": [
-                  {
-                    "module": "golang.org/vmod",
-                    "version": "v0.0.1",
-                    "package": "main",
-                    "function": "main"
-                  },
-                  {
-                    "module": "golang.org/vmod",
-                    "version": "v0.0.1",
-                    "package": "vmod",
-                    "function": "Vuln"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        "module": "golang.org/vmod",
+        "version": "v0.0.1",
+        "package": "main",
+        "function": "main"
+      },
+      {
+        "module": "golang.org/vmod",
+        "version": "v0.0.1",
+        "package": "vmod",
+        "function": "Vuln"
       }
     ]
   }
@@ -83,15 +68,11 @@
 {
   "finding": {
     "osv": "GO-0000-0002",
-    "modules": [
+    "frames": [
       {
-        "path": "stdlib",
-        "found_version": "v0.0.1",
-        "packages": [
-          {
-            "path": "net/http"
-          }
-        ]
+        "module": "stdlib",
+        "version": "v0.0.1",
+        "package": "net/http"
       }
     ]
   }

@@ -100,7 +100,7 @@ func TestSummarizeCallStack(t *testing.T) {
 			"t2.G calls a.H, which eventually calls v.V1",
 		},
 	} {
-		in := stringToCallStack(test.in)
+		in := stringToFinding(test.in)
 		got := summarizeCallStack(in, topPkgs)
 		if got != test.want {
 			t.Errorf("%s:\ngot  %s\nwant %s", test.in, got, test.want)
@@ -108,16 +108,16 @@ func TestSummarizeCallStack(t *testing.T) {
 	}
 }
 
-func stringToCallStack(s string) govulncheck.CallStack {
-	var cs govulncheck.CallStack
+func stringToFinding(s string) *govulncheck.Finding {
+	f := &govulncheck.Finding{}
 	for _, e := range strings.Fields(s) {
 		parts := strings.Split(e, ".")
-		cs.Frames = append(cs.Frames, &govulncheck.StackFrame{
+		f.Frames = append(f.Frames, &govulncheck.StackFrame{
 			Package:  parts[0],
 			Function: parts[1],
 		})
 	}
-	return cs
+	return f
 }
 
 // TestInits checks for correct positions of init functions
