@@ -34,7 +34,7 @@
     "fixed_version": "v0.1.3",
     "frames": [
       {
-        "module": "golang.org/vmod",
+        "module": "golang.org/app",
         "version": "v0.0.1",
         "package": "main",
         "function": "main"

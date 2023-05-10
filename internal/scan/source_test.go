@@ -63,8 +63,6 @@ func TestUniqueCallStack(t *testing.T) {
 }
 
 func TestSummarizeCallStack(t *testing.T) {
-	topPkgs := map[string]bool{"m1.p1": true, "m1.p2": true}
-
 	for _, test := range []struct {
 		in, want string
 	}{
@@ -101,7 +99,7 @@ func TestSummarizeCallStack(t *testing.T) {
 		},
 	} {
 		in := stringToFinding(test.in)
-		got := summarizeCallStack(in, topPkgs)
+		got := summarizeCallStack(in)
 		if got != test.want {
 			t.Errorf("%s:\ngot  %s\nwant %s", test.in, got, test.want)
 		}

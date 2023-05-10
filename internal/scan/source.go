@@ -239,7 +239,7 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 
 // summarizeCallStack returns a short description of the call stack.
 // It uses one of four forms, depending on what the lowest function F
-// in topPkgs calls and what is the highest function V of vulnPkg:
+// in the top module calls and what is the highest function V of vulnPkg:
 //   - If F calls V directly and F as well as V are not anonymous functions:
 //     "F calls V"
 //   - The same case as above except F calls function G in some other package:
@@ -251,11 +251,11 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 //     "F calls W, which eventually calls V"
 //
 // If it can't find any of these functions, summarizeCallStack returns the empty string.
-func summarizeCallStack(finding *govulncheck.Finding, topPkgs map[string]bool) string {
+func summarizeCallStack(finding *govulncheck.Finding) string {
 	if len(finding.Frames) == 0 {
 		return ""
 	}
-	iTop, iTopEnd, topFunc, topEndFunc := summarizeTop(finding.Frames, topPkgs)
+	iTop, iTopEnd, topFunc, topEndFunc := summarizeTop(finding.Frames)
 	if iTop < 0 {
 		return ""
 	}
@@ -302,10 +302,10 @@ func summarizeCallStack(finding *govulncheck.Finding, topPkgs map[string]bool) s
 //
 //	[p.V p.W q.Q ...]        -> (1, 1, p.W, p.W)
 //	[p.V p.W p.Z$1 q.Q ...]  -> (1, 2, p.W, p.Z)
-func summarizeTop(frames []*govulncheck.StackFrame, topPkgs map[string]bool) (iTop, iTopEnd int, topFunc, topEndFunc string) {
+func summarizeTop(frames []*govulncheck.StackFrame) (iTop, iTopEnd int, topFunc, topEndFunc string) {
+	topModule := frames[0].Module
 	iTopEnd = lowest(frames, func(e *govulncheck.StackFrame) bool {
-		_, found := topPkgs[e.Package]
-		return found
+		return e.Module == topModule
 	})
 	if iTopEnd < 0 {
 		return -1, -1, "", ""
@@ -321,8 +321,7 @@ func summarizeTop(frames []*govulncheck.StackFrame, topPkgs map[string]bool) (iT
 	topEndFunc = creatorName(topEndFunc)
 
 	iTop = lowest(frames, func(e *govulncheck.StackFrame) bool {
-		_, found := topPkgs[e.Package]
-		return found && !isAnonymousFunction(e.Function)
+		return e.Module == topModule && !isAnonymousFunction(e.Function)
 	})
 	if iTop < 0 {
 		iTop = iTopEnd

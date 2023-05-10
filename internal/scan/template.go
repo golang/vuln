@@ -52,16 +52,6 @@ type stackFrameSummary struct {
 	Position string
 }
 
-func topPackages(vulns []*govulncheck.Finding) map[string]bool {
-	topPkgs := map[string]bool{}
-	for _, v := range vulns {
-		if v.Frames[0].Function != "" {
-			topPkgs[v.Frames[0].Package] = true
-		}
-	}
-	return topPkgs
-}
-
 func createSummaries(osvs []*osv.Entry, findings []*govulncheck.Finding) summaries {
 	s := summaries{}
 	// group findings by osv
@@ -74,12 +64,11 @@ func createSummaries(osvs []*osv.Entry, findings []*govulncheck.Finding) summari
 		}
 		grouped[f.OSV] = append(list, f)
 	}
-	topPkgs := topPackages(findings)
 	// unaffected are (imported) OSVs none of
 	// which vulnerabilities are called.
 	for _, osvid := range osvids {
 		list := grouped[osvid]
-		entry := createVulnSummary(osvs, osvid, list, topPkgs)
+		entry := createVulnSummary(osvs, osvid, list)
 		if entry.Affected {
 			s.Affected = append(s.Affected, entry)
 		} else {
@@ -100,7 +89,7 @@ func createSummaries(osvs []*osv.Entry, findings []*govulncheck.Finding) summari
 	return s
 }
 
-func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.Finding, topPkgs map[string]bool) vulnSummary {
+func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.Finding) vulnSummary {
 	vInfo := vulnSummary{
 		Affected: IsCalled(findings),
 		OSV:      osvid,
@@ -129,7 +118,7 @@ func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.
 			}
 			vInfo.Modules = append(vInfo.Modules, ms)
 		}
-		addStack(ms, f, topPkgs)
+		addStack(ms, f)
 	}
 	for _, ms := range vInfo.Modules {
 		// Suppress duplicate compact call stack summaries.
@@ -156,12 +145,12 @@ func findOSV(osvs []*osv.Entry, id string) *osv.Entry {
 	return nil
 }
 
-func addStack(m *moduleSummary, f *govulncheck.Finding, topPkgs map[string]bool) {
+func addStack(m *moduleSummary, f *govulncheck.Finding) {
 	if len(f.Frames) == 1 && f.Frames[0].Function == "" {
 		return
 	}
 	css := callStackSummary{
-		Compact: summarizeCallStack(f, topPkgs),
+		Compact: summarizeCallStack(f),
 	}
 	for _, frame := range f.Frames {
 		symbol := frame.Function
