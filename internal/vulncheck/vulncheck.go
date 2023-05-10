@@ -49,15 +49,13 @@ type Vuln struct {
 	// Symbol is the name of the detected vulnerable function or method.
 	Symbol string
 
-	// CallSink is the ID of the FuncNode in Result.Calls corresponding to
-	// Symbol.
+	// CallSink is the FuncNode in Result.Calls corresponding to Symbol.
 	//
 	// When analyzing binaries, Symbol is not reachable, or Config.ImportsOnly
 	// is true, CallSink will be unavailable and set to 0.
 	CallSink *FuncNode
 
-	// ImportSink is the ID of the PkgNode in Result.Imports corresponding to
-	// PkgPath.
+	// ImportSink is the PkgNode in Result.Imports corresponding to PkgPath.
 	//
 	// When analyzing binaries or PkgPath is not imported, ImportSink will be
 	// unavailable and set to 0.
