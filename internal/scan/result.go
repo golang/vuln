@@ -22,7 +22,7 @@ var LoadMode = packages.NeedName | packages.NeedImports | packages.NeedTypes |
 // affecting the target source code or binary.
 func IsCalled(findings []*govulncheck.Finding) bool {
 	for _, f := range findings {
-		if f.Frames[len(f.Frames)-1].Function != "" {
+		if f.Trace[len(f.Trace)-1].Function != "" {
 			return true
 		}
 	}
@@ -31,7 +31,7 @@ func IsCalled(findings []*govulncheck.Finding) bool {
 
 // FuncName returns the full qualified function name from a stack frame,
 // adjusted to remove pointer annotations.
-func FuncName(frame *govulncheck.StackFrame) string {
+func FuncName(frame *govulncheck.Frame) string {
 	var strs []string
 	for _, str := range []string{frame.Package, strings.TrimPrefix(frame.Receiver, "*"), frame.Function} {
 		if str != "" {

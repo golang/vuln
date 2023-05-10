@@ -81,7 +81,7 @@ $ govulncheck -json -C ${moddir}/multientry .
   "finding": {
     "osv": "GO-2021-0113",
     "fixed_version": "v0.3.7",
-    "frames": [
+    "trace": [
       {
         "module": "golang.org/multientry",
         "package": "golang.org/multientry",
@@ -128,7 +128,7 @@ $ govulncheck -json -C ${moddir}/multientry .
   "finding": {
     "osv": "GO-2021-0113",
     "fixed_version": "v0.3.7",
-    "frames": [
+    "trace": [
       {
         "module": "golang.org/multientry",
         "package": "golang.org/multientry",

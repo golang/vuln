@@ -50,7 +50,7 @@ for details.
 {{- if $modInfo.Platforms}}
     {{template "Key" "Platforms:"}} {{template "Platforms" $modInfo.Platforms}}
 {{- end}}
-{{- template "CallStacks" $modInfo.CallStacks}}{{end}}
+{{- template "Traces" $modInfo.Traces}}{{end}}
 {{- end -}}
 {{- end -}}
 {{- end -}}{{/*Vulnerability*/}}
@@ -59,14 +59,14 @@ for details.
   {{$sep := ""}}{{range .}}{{$sep}}{{.}}{{$sep = ", "}}{{end}}
 {{- end}}{{/*Platforms*/}}
 
-{{- define "CallStacks" -}}
+{{- define "Traces" -}}
 {{- $count:=0}}{{range $entry := .}}{{if and .Compact (not .Suppressed)}}{{$count = inc $count}}{{end}}{{end}}
 {{- if $count}}
     {{template "Key" "Call stacks in your code:"}}
 {{range $entry := .}}{{if and .Compact (not .Suppressed)}}      {{.Compact}}
 {{end}}{{end}}
 {{- end -}}
-{{- end}}{{/*CallStacks*/}}
+{{- end}}{{/*Traces*/}}
 
 {{define "Key"}}{{.}}{{end}}
 {{define "Value"}}{{.}}{{end}}

@@ -16,7 +16,7 @@
   "finding": {
     "osv": "All",
     "fixed_version": "v0.1.3",
-    "frames": [
+    "trace": [
       {
         "module": "golang.org/vmod",
         "version": "v0.0.1"

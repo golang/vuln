@@ -22,10 +22,10 @@ func validateFindings(findings ...*govulncheck.Finding) error {
 		if f.OSV == "" {
 			return fmt.Errorf("invalid finding: all findings must have an associated OSV")
 		}
-		if len(f.Frames) < 1 {
+		if len(f.Trace) < 1 {
 			return fmt.Errorf("invalid finding: all callstacks must have at least one frame")
 		}
-		for _, frame := range f.Frames {
+		for _, frame := range f.Trace {
 			if frame.Version != "" && frame.Module == "" {
 				return fmt.Errorf("invalid finding: if Frame.Version is set, Frame.Module must also be")
 			}
@@ -50,8 +50,8 @@ func sortResult(findings []*govulncheck.Finding) {
 			return false
 		}
 
-		iframes := findings[i].Frames
-		jframes := findings[j].Frames
+		iframes := findings[i].Trace
+		jframes := findings[j].Trace
 		iframe := iframes[len(iframes)-1]
 		jframe := jframes[len(jframes)-1]
 		if iframe.Module < jframe.Module {
@@ -101,7 +101,7 @@ func fixedVersion(modulePath string, affected []osv.Affected) string {
 
 // highest returns the highest (one with the smallest index) entry in the call
 // stack for which f returns true.
-func highest(cs []*govulncheck.StackFrame, f func(e *govulncheck.StackFrame) bool) int {
+func highest(cs []*govulncheck.Frame, f func(e *govulncheck.Frame) bool) int {
 	for i := 0; i < len(cs); i++ {
 		if f(cs[i]) {
 			return i
@@ -112,7 +112,7 @@ func highest(cs []*govulncheck.StackFrame, f func(e *govulncheck.StackFrame) boo
 
 // lowest returns the lowest (one with the largest index) entry in the call
 // stack for which f returns true.
-func lowest(cs []*govulncheck.StackFrame, f func(e *govulncheck.StackFrame) bool) int {
+func lowest(cs []*govulncheck.Frame, f func(e *govulncheck.Frame) bool) int {
 	for i := len(cs) - 1; i >= 0; i-- {
 		if f(cs[i]) {
 			return i

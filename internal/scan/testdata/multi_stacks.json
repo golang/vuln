@@ -32,7 +32,7 @@
   "finding": {
     "osv": "GO-0000-0001",
     "fixed_version": "v0.1.3",
-    "frames": [
+    "trace": [
       {
         "module": "golang.org/main",
         "version": "v0.0.1",
@@ -52,7 +52,7 @@
   "finding": {
     "osv": "GO-0000-0001",
     "fixed_version": "v0.1.3",
-    "frames": [
+    "trace": [
       {
         "module": "golang.org/main",
         "version": "v0.0.1",
@@ -72,7 +72,7 @@
   "finding": {
     "osv": "GO-0000-0001",
     "fixed_version": "v0.0.4",
-    "frames": [
+    "trace": [
       {
         "module": "golang.org/other",
         "version": "v2.0.3",
@@ -92,7 +92,7 @@
   "finding": {
     "osv": "GO-0000-0001",
     "fixed_version": "v0.0.4",
-    "frames": [
+    "trace": [
       {
         "module": "golang.org/other",
         "version": "v2.0.3",

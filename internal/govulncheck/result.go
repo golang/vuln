@@ -66,15 +66,15 @@ type Finding struct {
 	// This is empty if a fix is not available.
 	FixedVersion string `json:"fixed_version,omitempty"`
 
-	// Frames contains an entry for each stack in the finding stack.
+	// Trace contains an entry for each stack in the finding stack.
 	//
 	// The last frame will be the vulnerable symbol.
 	// This must always have at least one entry.
-	Frames []*StackFrame `json:"frames,omitempty"`
+	Trace []*Frame `json:"trace,omitempty"`
 }
 
-// StackFrame represents an entry in a path to a finding.
-type StackFrame struct {
+// Frame represents an entry in a path to a finding.
+type Frame struct {
 	// Module is the Module path.
 	Module string `json:"module,omitempty"`
 

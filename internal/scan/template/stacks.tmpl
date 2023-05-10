@@ -2,12 +2,12 @@
 This template is a has overrides used when printing in verbose mode.
 */ -}}
 
-{{- define "CallStacks" -}}
+{{- define "Traces" -}}
 {{$count:=0}}{{range .}}{{if not .Suppressed}}{{$count = inc $count}}{{end}}{{end}}
 {{- if $count}}
     Call stacks in your code:
 {{$index := 1}}{{range .}}{{if not .Suppressed}}      #{{$index}}: for function {{.Symbol}}
-{{- range .Frames}}
+{{- range .Trace}}
         {{.Name}}{{if .Position}}
             {{.Position}}{{end}}{{end}}
 {{$index = inc 1}}{{end}}{{end}}

@@ -10,14 +10,14 @@ import (
 	"golang.org/x/vuln/internal/govulncheck"
 )
 
-func TestStackFrame(t *testing.T) {
+func TestFrame(t *testing.T) {
 	for _, test := range []struct {
-		sf       *govulncheck.StackFrame
+		sf       *govulncheck.Frame
 		wantFunc string
 		wantPos  string
 	}{
 		{
-			&govulncheck.StackFrame{
+			&govulncheck.Frame{
 				Package:  "golang.org/x/vuln/internal/vulncheck",
 				Function: "Foo",
 				Position: &govulncheck.Position{Filename: "some/path/file.go", Line: 12},
@@ -26,7 +26,7 @@ func TestStackFrame(t *testing.T) {
 			"some/path/file.go:12",
 		},
 		{
-			&govulncheck.StackFrame{
+			&govulncheck.Frame{
 				Package:  "golang.org/x/vuln/internal/vulncheck",
 				Receiver: "Bar",
 				Function: "Foo",
@@ -56,7 +56,7 @@ func TestVuln(t *testing.T) {
 			result = append(result, &govulncheck.Finding{
 				OSV:          "",
 				FixedVersion: "",
-				Frames: []*govulncheck.StackFrame{{
+				Trace: []*govulncheck.Frame{{
 					Module:   sym[0],
 					Package:  sym[0],
 					Function: sym[1],
@@ -88,22 +88,22 @@ func TestVuln(t *testing.T) {
 func TestFuncName(t *testing.T) {
 	for _, test := range []struct {
 		name  string
-		frame *govulncheck.StackFrame
+		frame *govulncheck.Frame
 		want  string
 	}{
 		{
 			"function and receiver",
-			&govulncheck.StackFrame{Receiver: "*ServeMux", Function: "Handle"},
+			&govulncheck.Frame{Receiver: "*ServeMux", Function: "Handle"},
 			"ServeMux.Handle",
 		},
 		{
 			"package and function",
-			&govulncheck.StackFrame{Package: "net/http", Function: "Get"},
+			&govulncheck.Frame{Package: "net/http", Function: "Get"},
 			"net/http.Get",
 		},
 		{
 			"package, function and receiver",
-			&govulncheck.StackFrame{Package: "net/http", Receiver: "*ServeMux", Function: "Handle"},
+			&govulncheck.Frame{Package: "net/http", Receiver: "*ServeMux", Function: "Handle"},
 			"net/http.ServeMux.Handle",
 		},
 	} {

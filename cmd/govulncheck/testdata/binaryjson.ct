@@ -88,7 +88,7 @@ $ govulncheck -json -mode=binary ${vuln_binary}
   "finding": {
     "osv": "GO-2021-0265",
     "fixed_version": "v1.9.3",
-    "frames": [
+    "trace": [
       {
         "module": "github.com/tidwall/gjson",
         "version": "v1.6.5",
@@ -102,7 +102,7 @@ $ govulncheck -json -mode=binary ${vuln_binary}
   "finding": {
     "osv": "GO-2021-0265",
     "fixed_version": "v1.9.3",
-    "frames": [
+    "trace": [
       {
         "module": "github.com/tidwall/gjson",
         "version": "v1.6.5",
@@ -182,7 +182,7 @@ $ govulncheck -json -mode=binary ${vuln_binary}
   "finding": {
     "osv": "GO-2021-0113",
     "fixed_version": "v0.3.7",
-    "frames": [
+    "trace": [
       {
         "module": "golang.org/x/text",
         "version": "v0.3.0",
@@ -259,7 +259,7 @@ $ govulncheck -json -mode=binary ${vuln_binary}
   "finding": {
     "osv": "GO-2021-0054",
     "fixed_version": "v1.6.6",
-    "frames": [
+    "trace": [
       {
         "module": "github.com/tidwall/gjson",
         "version": "v1.6.5",

@@ -35,18 +35,18 @@ type moduleSummary struct {
 	FoundVersion string
 	FixedVersion string
 	Platforms    []string
-	CallStacks   []callStackSummary
+	Traces       []traceSummary
 }
 
-type callStackSummary struct {
+type traceSummary struct {
 	Symbol  string
 	Compact string
-	Frames  []stackFrameSummary
+	Trace   []frameSummary
 	// Suppressed is true for entries who's compact form would be a repetition
 	Suppressed bool
 }
 
-type stackFrameSummary struct {
+type frameSummary struct {
 	Symbol   string
 	Name     string
 	Position string
@@ -99,7 +99,7 @@ func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.
 		vInfo.Details = osv.Details
 	}
 	for _, f := range findings {
-		lastFrame := f.Frames[len(f.Frames)-1]
+		lastFrame := f.Trace[len(f.Trace)-1]
 		// find the right module summary, or create it if this is the first stack for that module
 		var ms *moduleSummary
 		for _, check := range vInfo.Modules {
@@ -124,11 +124,11 @@ func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.
 		// Suppress duplicate compact call stack summaries.
 		// Note that different call stacks can yield same summaries.
 		seen := map[string]struct{}{}
-		for i, css := range ms.CallStacks {
+		for i, css := range ms.Traces {
 			if _, wasSeen := seen[css.Compact]; !wasSeen {
 				seen[css.Compact] = struct{}{}
 			} else {
-				ms.CallStacks[i].Suppressed = true
+				ms.Traces[i].Suppressed = true
 			}
 		}
 	}
@@ -146,25 +146,25 @@ func findOSV(osvs []*osv.Entry, id string) *osv.Entry {
 }
 
 func addStack(m *moduleSummary, f *govulncheck.Finding) {
-	if len(f.Frames) == 1 && f.Frames[0].Function == "" {
+	if len(f.Trace) == 1 && f.Trace[0].Function == "" {
 		return
 	}
-	css := callStackSummary{
-		Compact: summarizeCallStack(f),
+	css := traceSummary{
+		Compact: summarizeTrace(f),
 	}
-	for _, frame := range f.Frames {
+	for _, frame := range f.Trace {
 		symbol := frame.Function
 		if frame.Receiver != "" {
 			symbol = fmt.Sprint(frame.Receiver, ".", symbol)
 		}
-		css.Frames = append(css.Frames, stackFrameSummary{
+		css.Trace = append(css.Trace, frameSummary{
 			Symbol:   symbol,
 			Name:     FuncName(frame),
 			Position: posToString(frame.Position),
 		})
 	}
-	css.Symbol = css.Frames[len(css.Frames)-1].Symbol
-	m.CallStacks = append(m.CallStacks, css)
+	css.Symbol = css.Trace[len(css.Trace)-1].Symbol
+	m.Traces = append(m.Traces, css)
 }
 
 // platforms returns a string describing the GOOS, GOARCH,

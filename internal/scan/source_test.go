@@ -99,7 +99,7 @@ func TestSummarizeCallStack(t *testing.T) {
 		},
 	} {
 		in := stringToFinding(test.in)
-		got := summarizeCallStack(in)
+		got := summarizeTrace(in)
 		if got != test.want {
 			t.Errorf("%s:\ngot  %s\nwant %s", test.in, got, test.want)
 		}
@@ -111,7 +111,7 @@ func stringToFinding(s string) *govulncheck.Finding {
 	for _, e := range strings.Fields(s) {
 		firstDot := strings.Index(e, ".")
 		lastDot := strings.LastIndex(e, ".")
-		f.Frames = append(f.Frames, &govulncheck.StackFrame{
+		f.Trace = append(f.Trace, &govulncheck.Frame{
 			Module:   e[:firstDot],
 			Package:  e[:lastDot],
 			Function: e[lastDot+1:],
