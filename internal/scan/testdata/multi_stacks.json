@@ -34,16 +34,16 @@
     "fixed_version": "v0.1.3",
     "trace": [
       {
-        "module": "golang.org/main",
-        "version": "v0.0.1",
-        "package": "main",
-        "function": "main"
-      },
-      {
         "module": "golang.org/vmod",
         "version": "v0.0.1",
         "package": "vmod",
         "function": "Vuln"
+      },
+      {
+        "module": "golang.org/main",
+        "version": "v0.0.1",
+        "package": "main",
+        "function": "main"
       }
     ]
   }
@@ -54,16 +54,16 @@
     "fixed_version": "v0.1.3",
     "trace": [
       {
-        "module": "golang.org/main",
-        "version": "v0.0.1",
-        "package": "main",
-        "function": "main"
-      },
-      {
         "module": "golang.org/vmod",
         "version": "v0.0.1",
         "package": "vmod",
         "function": "VulnFoo"
+      },
+      {
+        "module": "golang.org/main",
+        "version": "v0.0.1",
+        "package": "main",
+        "function": "main"
       }
     ]
   }
@@ -73,17 +73,17 @@
     "osv": "GO-0000-0001",
     "fixed_version": "v0.0.4",
     "trace": [
-      {
-        "module": "golang.org/other",
-        "version": "v2.0.3",
-        "package": "other",
-        "function": "Foo"
-      },
       {
         "module": "golang.org/vmod1",
         "version": "v0.0.3",
         "package": "vmod1",
         "function": "Vuln"
+      },
+      {
+        "module": "golang.org/other",
+        "version": "v2.0.3",
+        "package": "other",
+        "function": "Foo"
       }
     ]
   }
@@ -94,16 +94,16 @@
     "fixed_version": "v0.0.4",
     "trace": [
       {
-        "module": "golang.org/other",
-        "version": "v2.0.3",
-        "package": "other",
-        "function": "Bar"
-      },
-      {
         "module": "golang.org/vmod1",
         "version": "v0.0.3",
         "package": "vmod1",
         "function": "VulnFoo"
+      },
+      {
+        "module": "golang.org/other",
+        "version": "v2.0.3",
+        "package": "other",
+        "function": "Bar"
       }
     ]
   }

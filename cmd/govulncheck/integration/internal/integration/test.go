@@ -34,7 +34,7 @@ func CompareNonStdVulns(out string, want map[string]bool) error {
 		}
 		if msg.Finding != nil {
 			// collect only called non-std packages
-			pkgPath := msg.Finding.Trace[len(msg.Finding.Trace)-1].Package
+			pkgPath := msg.Finding.Trace[0].Package
 			if !isStd(pkgPath) {
 				calledVulnPkgs[pkgPath] = true
 			}

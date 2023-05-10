@@ -50,10 +50,8 @@ func sortResult(findings []*govulncheck.Finding) {
 			return false
 		}
 
-		iframes := findings[i].Trace
-		jframes := findings[j].Trace
-		iframe := iframes[len(iframes)-1]
-		jframe := jframes[len(jframes)-1]
+		iframe := findings[i].Trace[0]
+		jframe := findings[j].Trace[0]
 		if iframe.Module < jframe.Module {
 			return true
 		}

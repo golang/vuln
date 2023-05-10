@@ -108,7 +108,9 @@ func TestSummarizeCallStack(t *testing.T) {
 
 func stringToFinding(s string) *govulncheck.Finding {
 	f := &govulncheck.Finding{}
-	for _, e := range strings.Fields(s) {
+	entries := strings.Fields(s)
+	for i := len(entries) - 1; i >= 0; i-- {
+		e := entries[i]
 		firstDot := strings.Index(e, ".")
 		lastDot := strings.LastIndex(e, ".")
 		f.Trace = append(f.Trace, &govulncheck.Frame{

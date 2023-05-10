@@ -99,7 +99,7 @@ func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.
 		vInfo.Details = osv.Details
 	}
 	for _, f := range findings {
-		lastFrame := f.Trace[len(f.Trace)-1]
+		lastFrame := f.Trace[0]
 		// find the right module summary, or create it if this is the first stack for that module
 		var ms *moduleSummary
 		for _, check := range vInfo.Modules {
@@ -152,7 +152,8 @@ func addStack(m *moduleSummary, f *govulncheck.Finding) {
 	css := traceSummary{
 		Compact: summarizeTrace(f),
 	}
-	for _, frame := range f.Trace {
+	for i := len(f.Trace) - 1; i >= 0; i-- {
+		frame := f.Trace[i]
 		symbol := frame.Function
 		if frame.Receiver != "" {
 			symbol = fmt.Sprint(frame.Receiver, ".", symbol)

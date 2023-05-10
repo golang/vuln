@@ -91,6 +91,13 @@ $ govulncheck -C ${moddir}/vuln -json ./...
     "fixed_version": "v1.9.3",
     "trace": [
       {
+        "module": "github.com/tidwall/gjson",
+        "version": "v1.6.5",
+        "package": "github.com/tidwall/gjson",
+        "function": "Get",
+        "receiver": "Result"
+      },
+      {
         "module": "golang.org/vuln",
         "package": "golang.org/vuln",
         "function": "main",
@@ -100,13 +107,6 @@ $ govulncheck -C ${moddir}/vuln -json ./...
           "line": 14,
           "column": 20
         }
-      },
-      {
-        "module": "github.com/tidwall/gjson",
-        "version": "v1.6.5",
-        "package": "github.com/tidwall/gjson",
-        "function": "Get",
-        "receiver": "Result"
       }
     ]
   }
@@ -182,6 +182,12 @@ $ govulncheck -C ${moddir}/vuln -json ./...
     "fixed_version": "v0.3.7",
     "trace": [
       {
+        "module": "golang.org/x/text",
+        "version": "v0.3.0",
+        "package": "golang.org/x/text/language",
+        "function": "Parse"
+      },
+      {
         "module": "golang.org/vuln",
         "package": "golang.org/vuln",
         "function": "main",
@@ -191,12 +197,6 @@ $ govulncheck -C ${moddir}/vuln -json ./...
           "line": 13,
           "column": 16
         }
-      },
-      {
-        "module": "golang.org/x/text",
-        "version": "v0.3.0",
-        "package": "golang.org/x/text/language",
-        "function": "Parse"
       }
     ]
   }

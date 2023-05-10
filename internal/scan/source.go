@@ -141,7 +141,8 @@ func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks ma
 // call position of the corresponding stack entry.
 func tracefromEntries(vcs vulncheck.CallStack) []*govulncheck.Frame {
 	var frames []*govulncheck.Frame
-	for _, e := range vcs {
+	for i := len(vcs) - 1; i >= 0; i-- {
+		e := vcs[i]
 		fr := &govulncheck.Frame{
 			Function: e.Function.Name,
 			Receiver: e.Function.Receiver(),
@@ -255,29 +256,29 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 	if len(finding.Trace) < 2 {
 		return ""
 	}
-	iTop := 0                            // this is the last non anonymous entry in the same module as the top
-	iTopEnd := iTop                      // this is the last entry in the same module as the top
-	iVulnStart := len(finding.Trace) - 1 // this is the first entry in the same package as the vuln
-	iVuln := iVulnStart                  // this is the first non anonymous entry in the same package as the vuln
+	iTop := len(finding.Trace) - 1 // this is the last non anonymous entry in the same module as the top
+	iTopEnd := iTop                // this is the last entry in the same module as the top
+	iVulnStart := 0                // this is the first entry in the same package as the vuln
+	iVuln := iVulnStart            // this is the first non anonymous entry in the same package as the vuln
 	topModule := finding.Trace[iTop].Module
 	vulnPkg := finding.Trace[iVuln].Package
 	// search for the points of interest in a single pass
 	for i, frame := range finding.Trace {
 		if frame.Module == topModule {
 			// frame matches top module, update top markers
-			if !isAnonymousFunction(frame.Function) {
+			if i < iTop && !isAnonymousFunction(frame.Function) {
 				iTop = i
 			}
-			iTopEnd = i
+			if i < iTopEnd {
+				iTopEnd = i
+			}
 		}
 		if frame.Package == vulnPkg {
 			// frame matches vulnerable package, update vuln markers
-			if i < iVuln && !isAnonymousFunction(frame.Function) {
+			if !isAnonymousFunction(frame.Function) {
 				iVuln = i
 			}
-			if i < iVulnStart {
-				iVulnStart = i
-			}
+			iVulnStart = i
 		}
 	}
 
@@ -299,10 +300,10 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 	case iTop != iTopEnd:
 		// The last function of the top segment is anonymous.
 		iMid = iTopEnd
-	case iVulnStart > iTop+1:
+	case iVulnStart < iTop-1:
 		// If there is something in between top and vuln segments of
 		// the stack, then also summarize that intermediate segment.
-		iMid = iTop + 1
+		iMid = iTop - 1
 	case iVulnStart != iVuln:
 		// The first function of the vuln segment is anonymous.
 		iMid = iVulnStart

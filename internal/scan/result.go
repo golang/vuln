@@ -20,7 +20,7 @@ var LoadMode = packages.NeedName | packages.NeedImports | packages.NeedTypes |
 // affecting the target source code or binary.
 func IsCalled(findings []*govulncheck.Finding) bool {
 	for _, f := range findings {
-		if f.Trace[len(f.Trace)-1].Function != "" {
+		if f.Trace[0].Function != "" {
 			return true
 		}
 	}
