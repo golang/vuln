@@ -63,41 +63,41 @@ func TestUniqueCallStack(t *testing.T) {
 }
 
 func TestSummarizeCallStack(t *testing.T) {
-	topPkgs := map[string]bool{"t1": true, "t2": true}
+	topPkgs := map[string]bool{"m1.p1": true, "m1.p2": true}
 
 	for _, test := range []struct {
 		in, want string
 	}{
-		{"a.F", ""},
-		{"t1.F", ""},
-		{"v.V", ""},
+		{"ma.a.F", ""},
+		{"m1.p1.F", ""},
+		{"mv.v.V", ""},
 		{
-			"t1.F v.V",
-			"t1.F calls v.V",
+			"m1.p1.F mv.v.V",
+			"m1.p1.F calls mv.v.V",
 		},
 		{
-			"t1.F t2.G v.V1 v.v2",
-			"t2.G calls v.V1",
+			"m1.p1.F m1.p2.G mv.v.V1 mv.v.v2",
+			"m1.p2.G calls mv.v.V1",
 		},
 		{
-			"t1.F t2.G v.V$1 v.V1",
-			"t2.G calls v.V, which eventually calls v.V1",
+			"m1.p1.F m1.p2.G mv.v.V$1 mv.v.V1",
+			"m1.p2.G calls mv.v.V, which eventually calls mv.v.V1",
 		},
 		{
-			"t1.F t2.G$1 v.V1",
-			"t1.F calls t2.G, which eventually calls v.V1",
+			"m1.p1.F m1.p2.G$1 mv.v.V1",
+			"m1.p1.F calls m1.p2.G, which eventually calls mv.v.V1",
 		},
 		{
-			"t1.F t2.G$1 v.V$1 v.V1",
-			"t1.F calls t2.G, which eventually calls v.V1",
+			"m1.p1.F m1.p2.G$1 mv.v.V$1 mv.v.V1",
+			"m1.p1.F calls m1.p2.G, which eventually calls mv.v.V1",
 		},
 		{
-			"t1.F x.Y t2.G a.H b.I c.J v.V",
-			"t2.G calls a.H, which eventually calls v.V",
+			"m1.p1.F x.Y m1.p2.G ma.a.H mb.b.I mc.c.J mv.v.V",
+			"m1.p2.G calls ma.a.H, which eventually calls mv.v.V",
 		},
 		{
-			"t1.F x.Y t2.G a.H b.I c.J v.V$1 v.V1",
-			"t2.G calls a.H, which eventually calls v.V1",
+			"m1.p1.F x.Y m1.p2.G ma.a.H mb.b.I mc.c.J mv.v.V$1 mv.v.V1",
+			"m1.p2.G calls ma.a.H, which eventually calls mv.v.V1",
 		},
 	} {
 		in := stringToFinding(test.in)
@@ -111,10 +111,12 @@ func TestSummarizeCallStack(t *testing.T) {
 func stringToFinding(s string) *govulncheck.Finding {
 	f := &govulncheck.Finding{}
 	for _, e := range strings.Fields(s) {
-		parts := strings.Split(e, ".")
+		firstDot := strings.Index(e, ".")
+		lastDot := strings.LastIndex(e, ".")
 		f.Frames = append(f.Frames, &govulncheck.StackFrame{
-			Package:  parts[0],
-			Function: parts[1],
+			Module:   e[:firstDot],
+			Package:  e[:lastDot],
+			Function: e[lastDot+1:],
 		})
 	}
 	return f
