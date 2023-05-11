@@ -63,14 +63,14 @@ var errLegacyUnsupported = fmt.Errorf("the legacy vulndb schema is no longer sup
 func newHTTPClient(uri *url.URL, opts *Options) (*Client, error) {
 	// v1 returns true if the given source likely follows the V1 schema.
 	// This is always true if the source is "https://vuln.go.dev".
-	// Otherwise, this is determined by checking if the "index/db.json.gz"
+	// Otherwise, this is determined by checking if the "index/modules.json.gz"
 	// endpoint is present.
 	v1 := func() bool {
 		source := uri.String()
 		if source == "https://vuln.go.dev" {
 			return true
 		}
-		r, err := http.Head(source + "/index/db.json.gz")
+		r, err := http.Head(source + "/index/modules.json.gz")
 		if err != nil || r.StatusCode != http.StatusOK {
 			return false
 		}
@@ -84,14 +84,14 @@ func newHTTPClient(uri *url.URL, opts *Options) (*Client, error) {
 
 func newLocalClient(uri *url.URL) (*Client, error) {
 	// v1 returns true if the given source likely follows the
-	// v1 schema. This is determined by checking if the "index/db.json"
+	// v1 schema. This is determined by checking if the "index/modules.json"
 	// endpoint is present.
 	v1 := func() bool {
 		dir, err := web.URLToFilePath(uri)
 		if err != nil {
 			return false
 		}
-		_, err = os.Stat(filepath.Join(dir, dbEndpoint+".json"))
+		_, err = os.Stat(filepath.Join(dir, modulesEndpoint+".json"))
 		return err == nil
 	}
 	if !v1() {
