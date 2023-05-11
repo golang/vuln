@@ -175,7 +175,10 @@ func testSuite(dir, vulndbDir string) (*cmdtest.TestSuite, error) {
 		//TODO: when cmd supports Env:
 		//cmd.Env = append(os.Environ(), "GOVERSION=go1.18")
 		os.Setenv("GOVERSION", "go1.18")
-		err = cmd.Run()
+		if err := cmd.Start(); err != nil {
+			return nil, err
+		}
+		err = cmd.Wait()
 		switch e := err.(type) {
 		case nil:
 		case interface{ ExitCode() int }:

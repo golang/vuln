@@ -42,14 +42,6 @@ func Command(ctx context.Context, arg ...string) *Cmd {
 	}
 }
 
-// Run starts govulncheck and waits for it to complete.
-func (c *Cmd) Run() error {
-	if err := c.Start(); err != nil {
-		return err
-	}
-	return c.Wait()
-}
-
 // Start starts the specified command but does not wait for it to complete.
 //
 // After a successful call to Start the Wait method must be called in order to

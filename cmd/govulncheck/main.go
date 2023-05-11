@@ -14,7 +14,12 @@ import (
 
 func main() {
 	ctx := context.Background()
-	err := scan.Command(ctx, os.Args[1:]...).Run()
+
+	cmd := scan.Command(ctx, os.Args[1:]...)
+	err := cmd.Start()
+	if err != nil {
+		err = cmd.Wait()
+	}
 	switch err := err.(type) {
 	case nil:
 	case interface{ ExitCode() int }:

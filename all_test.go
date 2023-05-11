@@ -79,7 +79,12 @@ func TestGovulncheck(t *testing.T) {
 	testenv.NeedsGoBuild(t)
 
 	ctx := context.Background()
-	err := scan.Command(ctx, "./...").Run()
+
+	cmd := scan.Command(ctx, "./...")
+	err := cmd.Start()
+	if err != nil {
+		err = cmd.Wait()
+	}
 	switch err := err.(type) {
 	case nil:
 	case interface{ ExitCode() int }:
