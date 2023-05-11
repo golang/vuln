@@ -1,9 +1,11 @@
 $ govulncheck -C ${moddir}/vuln -json ./...
 {
   "config": {
-    "version": govulncheck@v0.0.0-00000000000-20000101010101
-    "data_source": "testdata/vulndb-v1",
-    "last_modified": "2023-04-03T15:57:51Z",
+    "protocol_version": "v0.1.0",
+    "scanner_name": "govulncheck",
+    "scanner_version": "v0.0.0-00000000000-20000101010101",
+    "db": "testdata/vulndb-v1",
+    "db_last_modified": "2023-04-03T15:57:51Z",
     "go_version": "go1.18"
   }
 }

@@ -201,9 +201,9 @@ var (
 	goFileRegexp                 = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
 	heapGoRegexp                 = regexp.MustCompile(`heap\.go:(\d+)`)
 	progressRegexp               = regexp.MustCompile(`Scanning your code and (\d+) packages across (\d+)`)
-	govulncheckRegexp            = regexp.MustCompile(`govulncheck@v(.*) with`)
+	scannerRegexp                = regexp.MustCompile(`govulncheck@v([^ ]*) `)
 	govulncheckBinaryErrorRegexp = regexp.MustCompile(`"([^"]*") is a file`)
-	govulncheckJSONRegexp        = regexp.MustCompile(`"govulncheck@v(.*)",`)
+	scannerVersionJSONRegexp     = regexp.MustCompile(`"scanner_version": "[^"]*"`)
 	vulndbRegexp                 = regexp.MustCompile(`file:///(.*)/testdata/vulndb`)
 	gorootRegexp                 = regexp.MustCompile(`package (.*) is not in GOROOT (.*)`)
 	lastModifiedRegexp           = regexp.MustCompile(`modified (.*)\)`)
@@ -233,8 +233,8 @@ func filterProgressNumbers(data []byte) []byte {
 }
 
 func filterEnvironmentData(data []byte) []byte {
-	data = govulncheckRegexp.ReplaceAll(data, []byte("govulncheck@v0.0.0-00000000000-20000101010101 with"))
-	data = govulncheckJSONRegexp.ReplaceAll(data, []byte("govulncheck@v0.0.0-00000000000-20000101010101"))
+	data = scannerRegexp.ReplaceAll(data, []byte("govulncheck@v0.0.0-00000000000-20000101010101 "))
+	data = scannerVersionJSONRegexp.ReplaceAll(data, []byte(`"scanner_version": "v0.0.0-00000000000-20000101010101"`))
 	data = govulncheckBinaryErrorRegexp.ReplaceAll(data, []byte("govulncheck: myfile is a file"))
 	data = vulndbRegexp.ReplaceAll(data, []byte("testdata/vulndb"))
 	data = gorootRegexp.ReplaceAll(data, []byte("package foo is not in GOROOT (/tmp/foo)"))

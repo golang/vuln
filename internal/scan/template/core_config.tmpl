@@ -8,7 +8,8 @@ govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulnch
 
 Using
 {{- if .GoVersion}} {{block "Go" .GoVersion}}{{.}}{{end}} and{{end}}
-{{- if .Version}} {{block "Scanner" .Version}}{{.}}{{end}} with{{end}}
-vulnerability data from {{.DataSource}}
-{{- if .LastModified}} (last modified {{.LastModified}}){{end}}.
+{{- if .ScannerName}} {{block "Scanner" .ScannerName}}{{.}}{{end}}
+{{- if .ScannerVersion}}@{{.ScannerVersion}}{{end}} with{{end}}
+vulnerability data from {{.DB}}
+{{- if .DBLastModified}} (last modified {{.DBLastModified}}){{end}}.
 {{end}}{{/*Preamble*/}}

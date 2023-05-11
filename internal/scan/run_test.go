@@ -18,7 +18,9 @@ func TestGovulncheckVersion(t *testing.T) {
 	}
 
 	want := "v0.0.0-123456789000-20230125195754"
-	if got := scannerVersion(bi); got != want {
-		t.Errorf("got %s; want %s", got, want)
+	got := &config{}
+	scannerVersion(got, bi)
+	if got.ScannerVersion != want {
+		t.Errorf("got %s; want %s", got.ScannerVersion, want)
 	}
 }

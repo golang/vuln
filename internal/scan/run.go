@@ -71,7 +71,8 @@ func RunGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr i
 }
 
 func prepareConfig(ctx context.Context, cfg *config, client *client.Client) {
-	cfg.DataSource = cfg.db
+	cfg.ProtocolVersion = govulncheck.ProtocolVersion
+	cfg.DB = cfg.db
 	if cfg.mode == modeSource {
 		// The Go version is only relevant for source analysis, so omit it for
 		// binary mode.
@@ -80,16 +81,16 @@ func prepareConfig(ctx context.Context, cfg *config, client *client.Client) {
 		}
 	}
 	if bi, ok := debug.ReadBuildInfo(); ok {
-		cfg.Version = scannerVersion(bi)
+		scannerVersion(cfg, bi)
 	}
 	if mod, err := client.LastModifiedTime(ctx); err == nil {
-		cfg.LastModified = &mod
+		cfg.DBLastModified = &mod
 	}
 }
 
 // scannerVersion reconstructs the current version of
 // this binary used from the build info.
-func scannerVersion(bi *debug.BuildInfo) string {
+func scannerVersion(cfg *config, bi *debug.BuildInfo) {
 	var revision, at string
 	for _, s := range bi.Settings {
 		if s.Key == "vcs.revision" {
@@ -101,8 +102,7 @@ func scannerVersion(bi *debug.BuildInfo) string {
 	}
 	buf := strings.Builder{}
 	if bi.Path != "" {
-		buf.WriteString(path.Base(bi.Path))
-		buf.WriteString("@")
+		cfg.ScannerName = path.Base(bi.Path)
 	}
 	// TODO(https://go.dev/issue/29228): we manually change this after every
 	// minor revision? bi.Main.Version does not seem to work.
@@ -119,7 +119,7 @@ func scannerVersion(bi *debug.BuildInfo) string {
 			buf.WriteString(p.Format("20060102150405"))
 		}
 	}
-	return buf.String()
+	cfg.ScannerVersion = buf.String()
 }
 
 // convertJSONToText converts r, which is expected to be the JSON output of govulncheck,
