@@ -94,7 +94,15 @@ func newLocalClient(uri *url.URL) (*Client, error) {
 		return &Client{source: newLocalSource(dir)}, nil
 	}
 
-	return nil, errUnknownSchema
+	// If the DB doesn't follow the v1 schema,
+	// attempt to intepret it as a flat list of OSV files.
+	// This is currently a "hidden" feature, so don't output the
+	// specific error if this fails.
+	src, err := newHybridSource(dir)
+	if err != nil {
+		return nil, errUnknownSchema
+	}
+	return &Client{source: src}, nil
 }
 
 func toDir(uri *url.URL) (string, error) {

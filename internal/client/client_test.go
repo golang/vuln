@@ -26,6 +26,8 @@ var (
 	testLegacyVulndbFileURL = localURL(testLegacyVulndb)
 	testVulndb              = filepath.Join("testdata", "vulndb-v1")
 	testVulndbFileURL       = localURL(testVulndb)
+	testFlatVulndb          = filepath.Join("testdata", "vulndb-v1", "ID")
+	testFlatVulndbFileURL   = localURL(testFlatVulndb)
 	testIDs                 = []string{
 		"GO-2021-0159",
 		"GO-2022-0229",
@@ -115,6 +117,17 @@ func TestNewClient(t *testing.T) {
 
 	t.Run("local/v1", func(t *testing.T) {
 		src := testVulndbFileURL
+		c, err := NewClient(src, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c == nil {
+			t.Errorf("NewClient(%s) = nil, want instantiated *Client", src)
+		}
+	})
+
+	t.Run("local/flat", func(t *testing.T) {
+		src := testFlatVulndbFileURL
 		c, err := NewClient(src, nil)
 		if err != nil {
 			t.Fatal(err)
@@ -297,6 +310,15 @@ func testAllClientTypes(t *testing.T, test func(t *testing.T, c *Client)) {
 
 	t.Run("local", func(t *testing.T) {
 		fc, err := NewClient(testVulndbFileURL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		test(t, fc)
+	})
+
+	t.Run("hybrid", func(t *testing.T) {
+		fc, err := NewClient(testFlatVulndbFileURL, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

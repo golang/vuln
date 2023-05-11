@@ -5,7 +5,9 @@
 package client
 
 import (
+	"encoding/json"
 	"path"
+	"sort"
 	"time"
 )
 
@@ -53,4 +55,23 @@ type moduleVuln struct {
 	// Fixed is the latest version that introduces a fix for the
 	// vulnerability, in SemVer 2.0.0 format, with no leading "v" prefix.
 	Fixed string `json:"fixed,omitempty"`
+}
+
+// modulesIndex represents an in-memory modules index.
+type modulesIndex map[string]*moduleMeta
+
+func (m modulesIndex) MarshalJSON() ([]byte, error) {
+	modules := make([]*moduleMeta, 0, len(m))
+	for _, module := range m {
+		modules = append(modules, module)
+	}
+	sort.SliceStable(modules, func(i, j int) bool {
+		return modules[i].Path < modules[j].Path
+	})
+	for _, module := range modules {
+		sort.SliceStable(module.Vulns, func(i, j int) bool {
+			return module.Vulns[i].ID < module.Vulns[j].ID
+		})
+	}
+	return json.Marshal(modules)
 }

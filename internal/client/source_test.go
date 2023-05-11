@@ -67,4 +67,13 @@ func testAllSourceTypes(t *testing.T, test func(t *testing.T, s source)) {
 
 		test(t, ms)
 	})
+
+	t.Run("hybrid", func(t *testing.T) {
+		hs, err := newHybridSource(testFlatVulndb)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		test(t, hs)
+	})
 }
