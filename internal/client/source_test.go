@@ -6,7 +6,6 @@ package client
 
 import (
 	"context"
-	"net/url"
 	"os"
 	"testing"
 )
@@ -52,17 +51,7 @@ func testAllSourceTypes(t *testing.T, test func(t *testing.T, s source)) {
 	})
 
 	t.Run("local", func(t *testing.T) {
-		uri, err := url.Parse(testVulndbFileURL)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		fs, err := newLocalSource(uri)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		test(t, fs)
+		test(t, newLocalSource(testVulndb))
 	})
 
 	t.Run("in-memory", func(t *testing.T) {

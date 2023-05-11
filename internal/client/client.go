@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -58,50 +59,62 @@ func NewClient(source string, opts *Options) (_ *Client, err error) {
 	}
 }
 
-var errLegacyUnsupported = fmt.Errorf("the legacy vulndb schema is no longer supported; see https://go.dev/security/vuln/database#api for the new schema")
+var errUnknownSchema = errors.New("unrecognized vulndb format; see https://go.dev/security/vuln/database#api for accepted schema")
 
 func newHTTPClient(uri *url.URL, opts *Options) (*Client, error) {
-	// v1 returns true if the given source likely follows the V1 schema.
-	// This is always true if the source is "https://vuln.go.dev".
-	// Otherwise, this is determined by checking if the "index/modules.json.gz"
-	// endpoint is present.
+	source := uri.String()
+
+	// v1 returns true if the source likely follows the V1 schema.
 	v1 := func() bool {
-		source := uri.String()
-		if source == "https://vuln.go.dev" {
-			return true
-		}
-		r, err := http.Head(source + "/index/modules.json.gz")
-		if err != nil || r.StatusCode != http.StatusOK {
-			return false
-		}
-		return true
+		return source == "https://vuln.go.dev" ||
+			endpointExistsHTTP(source, "index/modules.json.gz")
 	}
-	if !v1() {
-		return nil, errLegacyUnsupported
+
+	if v1() {
+		return &Client{source: newHTTPSource(uri.String(), opts)}, nil
 	}
-	return &Client{source: newHTTPSource(uri.String(), opts)}, nil
+
+	return nil, errUnknownSchema
+}
+
+func endpointExistsHTTP(source, endpoint string) bool {
+	r, err := http.Head(source + "/" + endpoint)
+	return err == nil && r.StatusCode == http.StatusOK
 }
 
 func newLocalClient(uri *url.URL) (*Client, error) {
-	// v1 returns true if the given source likely follows the
-	// v1 schema. This is determined by checking if the "index/modules.json"
-	// endpoint is present.
-	v1 := func() bool {
-		dir, err := web.URLToFilePath(uri)
-		if err != nil {
-			return false
-		}
-		_, err = os.Stat(filepath.Join(dir, modulesEndpoint+".json"))
-		return err == nil
-	}
-	if !v1() {
-		return nil, errLegacyUnsupported
-	}
-	fs, err := newLocalSource(uri)
+	dir, err := toDir(uri)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{source: fs}, nil
+
+	// Check if the DB likely follows the v1 schema by
+	// looking for the "index/modules.json" endpoint.
+	if endpointExistsDir(dir, modulesEndpoint+".json") {
+		return &Client{source: newLocalSource(dir)}, nil
+	}
+
+	return nil, errUnknownSchema
+}
+
+func toDir(uri *url.URL) (string, error) {
+	dir, err := web.URLToFilePath(uri)
+	if err != nil {
+		return "", err
+	}
+	fi, err := os.Stat(dir)
+	if err != nil {
+		return "", err
+	}
+	if !fi.IsDir() {
+		return "", fmt.Errorf("%s is not a directory", dir)
+	}
+	return dir, nil
+}
+
+func endpointExistsDir(dir, endpoint string) bool {
+	_, err := os.Stat(filepath.Join(dir, endpoint))
+	return err == nil
 }
 
 func NewInMemoryClient(entries []*osv.Entry) (*Client, error) {

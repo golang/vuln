@@ -7,12 +7,12 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -108,9 +108,8 @@ func TestNewClient(t *testing.T) {
 		t.Cleanup(srv.Close)
 
 		_, err := NewClient(srv.URL, &Options{HTTPClient: srv.Client()})
-		wantErr := "no longer supported"
-		if err == nil || !strings.Contains(err.Error(), wantErr) {
-			t.Errorf("NewClient() = %s, want error containing %q", err, wantErr)
+		if err == nil || !errors.Is(err, errUnknownSchema) {
+			t.Errorf("NewClient() = %s, want error %s", err, errUnknownSchema)
 		}
 	})
 
@@ -128,12 +127,10 @@ func TestNewClient(t *testing.T) {
 	t.Run("local/legacy", func(t *testing.T) {
 		src := testLegacyVulndbFileURL
 		_, err := NewClient(src, nil)
-		wantErr := "no longer supported"
-		if err == nil || !strings.Contains(err.Error(), wantErr) {
-			t.Errorf("NewClient() = %s, want error containing %q", err, wantErr)
+		if err == nil || !errors.Is(err, errUnknownSchema) {
+			t.Errorf("NewClient() = %s, want error %s", err, errUnknownSchema)
 		}
 	})
-
 }
 
 func TestLastModifiedTime(t *testing.T) {

@@ -12,14 +12,12 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
-	"net/url"
 	"os"
 	"sort"
 
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/osv"
 	isem "golang.org/x/vuln/internal/semver"
-	"golang.org/x/vuln/internal/web"
 )
 
 type source interface {
@@ -72,19 +70,8 @@ func (hs *httpSource) get(ctx context.Context, endpoint string) (_ []byte, err e
 	return io.ReadAll(r)
 }
 
-func newLocalSource(u *url.URL) (*localSource, error) {
-	dir, err := web.URLToFilePath(u)
-	if err != nil {
-		return nil, err
-	}
-	fi, err := os.Stat(dir)
-	if err != nil {
-		return nil, err
-	}
-	if !fi.IsDir() {
-		return nil, fmt.Errorf("%s is not a directory", dir)
-	}
-	return &localSource{fs: os.DirFS(dir)}, nil
+func newLocalSource(dir string) *localSource {
+	return &localSource{fs: os.DirFS(dir)}
 }
 
 // localSource reads a vulnerability database from a local file system.
