@@ -100,6 +100,9 @@ func (c *Cmd) StdoutPipe() io.ReadCloser {
 //
 // Wait releases any resources associated with the Cmd.
 func (c *Cmd) Wait() error {
+	if c.done == nil {
+		return errors.New("vuln: start must be called before wait")
+	}
 	<-c.done
 	return c.err
 }
