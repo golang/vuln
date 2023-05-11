@@ -255,13 +255,13 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 	if len(finding.Trace) == 0 {
 		return ""
 	}
-	iTop, iTopEnd, topFunc, topEndFunc := summarizeTop(finding.Trace)
+	iTop, iTopEnd := summarizeTop(finding.Trace)
 	if iTop < 0 {
 		return ""
 	}
 
 	vulnPkg := finding.Trace[len(finding.Trace)-1].Package
-	iVulnStart, vulnStartFunc, vulnFunc := summarizeVuln(finding.Trace, iTopEnd, vulnPkg)
+	iVulnStart, iVuln := summarizeVuln(finding.Trace, iTopEnd, vulnPkg)
 	if iVulnStart < 0 {
 		return ""
 	}
@@ -277,20 +277,20 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 	// the top and vuln portions of the stack are each summarized with two functions,
 	// then the final summary will mention the two functions of the top segment and
 	// only one from the vuln segment.
-	if topFunc != topEndFunc {
+	if iTop != iTopEnd {
 		// The last function of the top segment is anonymous.
-		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, topFunc, topEndFunc, vulnFunc)
+		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, FuncName(finding.Trace[iTop]), FuncName(finding.Trace[iTopEnd]), FuncName(finding.Trace[iVuln]))
 	}
 	if iVulnStart != iTopEnd+1 {
 		// If there is something in between top and vuln segments of
 		// the stack, then also summarize that intermediate segment.
-		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, topFunc, FuncName(finding.Trace[iTopEnd+1]), vulnFunc)
+		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, FuncName(finding.Trace[iTop]), FuncName(finding.Trace[iTopEnd+1]), FuncName(finding.Trace[iVuln]))
 	}
-	if vulnStartFunc != vulnFunc {
+	if iVulnStart != iVuln {
 		// The first function of the vuln segment is anonymous.
-		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, topFunc, vulnStartFunc, vulnFunc)
+		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, FuncName(finding.Trace[iTop]), FuncName(finding.Trace[iVulnStart]), FuncName(finding.Trace[iVuln]))
 	}
-	return fmt.Sprintf("%s%s calls %s", topPos, topFunc, vulnFunc)
+	return fmt.Sprintf("%s%s calls %s", topPos, FuncName(finding.Trace[iTop]), FuncName(finding.Trace[iVuln]))
 }
 
 // summarizeTop returns summary information for the beginning segment
@@ -302,34 +302,27 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 //
 //	[p.V p.W q.Q ...]        -> (1, 1, p.W, p.W)
 //	[p.V p.W p.Z$1 q.Q ...]  -> (1, 2, p.W, p.Z)
-func summarizeTop(frames []*govulncheck.Frame) (iTop, iTopEnd int, topFunc, topEndFunc string) {
+func summarizeTop(frames []*govulncheck.Frame) (iTop, iTopEnd int) {
 	topModule := frames[0].Module
 	iTopEnd = lowest(frames, func(e *govulncheck.Frame) bool {
 		return e.Module == topModule
 	})
 	if iTopEnd < 0 {
-		return -1, -1, "", ""
+		return -1, -1
 	}
 
-	topEndFunc = FuncName(frames[iTopEnd])
-	if !isAnonymousFunction(topEndFunc) {
+	if !isAnonymousFunction(frames[iTopEnd].Function) {
 		iTop = iTopEnd
-		topFunc = topEndFunc
 		return
 	}
-
-	topEndFunc = creatorName(topEndFunc)
 
 	iTop = lowest(frames, func(e *govulncheck.Frame) bool {
 		return e.Module == topModule && !isAnonymousFunction(e.Function)
 	})
 	if iTop < 0 {
 		iTop = iTopEnd
-		topFunc = topEndFunc // for sanity
 		return
 	}
-
-	topFunc = FuncName(frames[iTop])
 	return
 }
 
@@ -342,32 +335,27 @@ func summarizeTop(frames []*govulncheck.Frame) (iTop, iTopEnd int, topFunc, topE
 //
 //	[x x q.Q v.V v.W]   -> (3, v.V, v.V)
 //	[x x q.Q v.V$1 v.W] -> (3, v.V, v.W)
-func summarizeVuln(frames []*govulncheck.Frame, iTop int, vulnPkg string) (iVulnStart int, vulnStartFunc, vulnFunc string) {
+func summarizeVuln(frames []*govulncheck.Frame, iTop int, vulnPkg string) (iVulnStart int, iVuln int) {
 	iVulnStart = highest(frames[iTop+1:], func(e *govulncheck.Frame) bool {
 		return e.Package == vulnPkg
 	})
 	if iVulnStart < 0 {
-		return -1, "", ""
+		return -1, -1
 	}
 	iVulnStart += iTop + 1 // adjust for slice in call to highest.
-
-	vulnStartFunc = FuncName(frames[iVulnStart])
-	if !isAnonymousFunction(vulnStartFunc) {
-		vulnFunc = vulnStartFunc
+	if !isAnonymousFunction(frames[iVulnStart].Function) {
+		iVuln = iVulnStart
 		return
 	}
 
-	vulnStartFunc = creatorName(vulnStartFunc)
-
-	iVuln := highest(frames[iVulnStart:], func(e *govulncheck.Frame) bool {
+	iVuln = highest(frames[iVulnStart:], func(e *govulncheck.Frame) bool {
 		return e.Package == vulnPkg && !isAnonymousFunction(e.Function)
 	})
 	if iVuln < 0 {
-		vulnFunc = vulnStartFunc // for sanity
+		iVuln = iVulnStart
 		return
 	}
-
-	vulnFunc = FuncName(frames[iVuln+iVulnStart])
+	iVuln += iVulnStart
 	return
 }
 

@@ -33,7 +33,8 @@ func IsCalled(findings []*govulncheck.Finding) bool {
 // adjusted to remove pointer annotations.
 func FuncName(frame *govulncheck.Frame) string {
 	var strs []string
-	for _, str := range []string{frame.Package, strings.TrimPrefix(frame.Receiver, "*"), frame.Function} {
+	funcname := creatorName(frame.Function)
+	for _, str := range []string{frame.Package, strings.TrimPrefix(frame.Receiver, "*"), funcname} {
 		if str != "" {
 			strs = append(strs, str)
 		}
