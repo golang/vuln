@@ -5,6 +5,7 @@
 package scan
 
 import (
+	"strings"
 	"testing"
 
 	"golang.org/x/vuln/internal/govulncheck"
@@ -12,35 +13,57 @@ import (
 
 func TestFrame(t *testing.T) {
 	for _, test := range []struct {
-		sf       *govulncheck.Frame
+		name     string
+		frame    *govulncheck.Frame
 		wantFunc string
 		wantPos  string
 	}{
 		{
-			&govulncheck.Frame{
+			name: "position and function",
+			frame: &govulncheck.Frame{
 				Package:  "golang.org/x/vuln/internal/vulncheck",
 				Function: "Foo",
 				Position: &govulncheck.Position{Filename: "some/path/file.go", Line: 12},
 			},
-			"golang.org/x/vuln/internal/vulncheck.Foo",
-			"some/path/file.go:12",
+			wantFunc: "golang.org/x/vuln/internal/vulncheck.Foo",
+			wantPos:  "some/path/file.go:12",
 		},
 		{
-			&govulncheck.Frame{
+			name: "receiver",
+			frame: &govulncheck.Frame{
 				Package:  "golang.org/x/vuln/internal/vulncheck",
 				Receiver: "Bar",
 				Function: "Foo",
 			},
-			"golang.org/x/vuln/internal/vulncheck.Bar.Foo",
-			"",
+			wantFunc: "golang.org/x/vuln/internal/vulncheck.Bar.Foo",
+		},
+		{
+			name:     "function and receiver",
+			frame:    &govulncheck.Frame{Receiver: "*ServeMux", Function: "Handle"},
+			wantFunc: "ServeMux.Handle",
+		},
+		{
+			name:     "package and function",
+			frame:    &govulncheck.Frame{Package: "net/http", Function: "Get"},
+			wantFunc: "net/http.Get",
+		},
+		{
+			name:     "package, function and receiver",
+			frame:    &govulncheck.Frame{Package: "net/http", Receiver: "*ServeMux", Function: "Handle"},
+			wantFunc: "net/http.ServeMux.Handle",
 		},
 	} {
-		if got := FuncName(test.sf); got != test.wantFunc {
-			t.Errorf("want %v func name; got %v", test.wantFunc, got)
-		}
-		if got := posToString(test.sf.Position); got != test.wantPos {
-			t.Errorf("want %v call position; got %v", test.wantPos, got)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			buf := &strings.Builder{}
+			addSymbolName(buf, test.frame)
+			got := buf.String()
+			if got != test.wantFunc {
+				t.Errorf("want %v func name; got %v", test.wantFunc, got)
+			}
+			if got := posToString(test.frame.Position); got != test.wantPos {
+				t.Errorf("want %v call position; got %v", test.wantPos, got)
+			}
+		})
 	}
 }
 
@@ -82,36 +105,5 @@ func TestVuln(t *testing.T) {
 		if IsCalled(test.v) != test.want {
 			t.Errorf("want called=%t for %v; got the opposite", test.want, test.desc)
 		}
-	}
-}
-
-func TestFuncName(t *testing.T) {
-	for _, test := range []struct {
-		name  string
-		frame *govulncheck.Frame
-		want  string
-	}{
-		{
-			"function and receiver",
-			&govulncheck.Frame{Receiver: "*ServeMux", Function: "Handle"},
-			"ServeMux.Handle",
-		},
-		{
-			"package and function",
-			&govulncheck.Frame{Package: "net/http", Function: "Get"},
-			"net/http.Get",
-		},
-		{
-			"package, function and receiver",
-			&govulncheck.Frame{Package: "net/http", Receiver: "*ServeMux", Function: "Handle"},
-			"net/http.ServeMux.Handle",
-		},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			got := FuncName(test.frame)
-			if got != test.want {
-				t.Errorf("got = %q; want = %q", got, test.want)
-			}
-		})
 	}
 }

@@ -157,9 +157,11 @@ func addStack(m *moduleSummary, f *govulncheck.Finding) {
 		if frame.Receiver != "" {
 			symbol = fmt.Sprint(frame.Receiver, ".", symbol)
 		}
+		buf := &strings.Builder{}
+		addSymbolName(buf, frame)
 		css.Trace = append(css.Trace, frameSummary{
 			Symbol:   symbol,
-			Name:     FuncName(frame),
+			Name:     buf.String(),
 			Position: posToString(frame.Position),
 		})
 	}

@@ -266,9 +266,11 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 		return ""
 	}
 
+	buf := &strings.Builder{}
 	topPos := posToString(finding.Trace[iTop].Position)
 	if topPos != "" {
-		topPos += ": "
+		buf.WriteString(topPos)
+		buf.WriteString(": ")
 	}
 
 	// The invariant is that the summary will always mention at most three functions
@@ -277,20 +279,45 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 	// the top and vuln portions of the stack are each summarized with two functions,
 	// then the final summary will mention the two functions of the top segment and
 	// only one from the vuln segment.
-	if iTop != iTopEnd {
+	iMid := -1
+	switch {
+	case iTop != iTopEnd:
 		// The last function of the top segment is anonymous.
-		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, FuncName(finding.Trace[iTop]), FuncName(finding.Trace[iTopEnd]), FuncName(finding.Trace[iVuln]))
-	}
-	if iVulnStart != iTopEnd+1 {
+		iMid = iTopEnd
+	case iVulnStart != iTopEnd+1:
 		// If there is something in between top and vuln segments of
 		// the stack, then also summarize that intermediate segment.
-		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, FuncName(finding.Trace[iTop]), FuncName(finding.Trace[iTopEnd+1]), FuncName(finding.Trace[iVuln]))
-	}
-	if iVulnStart != iVuln {
+		iMid = iTopEnd + 1
+	case iVulnStart != iVuln:
 		// The first function of the vuln segment is anonymous.
-		return fmt.Sprintf("%s%s calls %s, which eventually calls %s", topPos, FuncName(finding.Trace[iTop]), FuncName(finding.Trace[iVulnStart]), FuncName(finding.Trace[iVuln]))
+		iMid = iVulnStart
 	}
-	return fmt.Sprintf("%s%s calls %s", topPos, FuncName(finding.Trace[iTop]), FuncName(finding.Trace[iVuln]))
+
+	addSymbolName(buf, finding.Trace[iTop])
+	buf.WriteString(" calls ")
+	if iMid >= 0 {
+		addSymbolName(buf, finding.Trace[iMid])
+		buf.WriteString(", which eventually calls ")
+	}
+	addSymbolName(buf, finding.Trace[iVuln])
+	return buf.String()
+}
+
+func addSymbolName(buf *strings.Builder, frame *govulncheck.Frame) {
+	if frame.Package != "" {
+		buf.WriteString(frame.Package)
+		buf.WriteString(".")
+	}
+	if frame.Receiver != "" {
+		if frame.Receiver[0] == '*' {
+			buf.WriteString(frame.Receiver[1:])
+		} else {
+			buf.WriteString(frame.Receiver)
+		}
+		buf.WriteString(".")
+	}
+	funcname := strings.Split(frame.Function, "$")[0]
+	buf.WriteString(funcname)
 }
 
 // summarizeTop returns summary information for the beginning segment
@@ -455,17 +482,6 @@ func isInit(f *vulncheck.FuncNode) bool {
 	// be named "init#x" by vulncheck (more precisely, ssa), where x is a
 	// positive integer. Implicit inits are named simply "init".
 	return f.Name == "init" || strings.HasPrefix(f.Name, "init#")
-}
-
-// creatorName returns the name of the function that created
-// the anonymous function anonFuncName. Assumes anonFuncName
-// is of the form <name>$1...
-func creatorName(anonFuncName string) string {
-	vs := strings.Split(anonFuncName, "$")
-	if len(vs) == 1 {
-		return anonFuncName
-	}
-	return vs[0]
 }
 
 func isAnonymousFunction(funcName string) bool {

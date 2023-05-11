@@ -6,8 +6,6 @@
 package scan
 
 import (
-	"strings"
-
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/govulncheck"
 )
@@ -27,17 +25,4 @@ func IsCalled(findings []*govulncheck.Finding) bool {
 		}
 	}
 	return false
-}
-
-// FuncName returns the full qualified function name from a stack frame,
-// adjusted to remove pointer annotations.
-func FuncName(frame *govulncheck.Frame) string {
-	var strs []string
-	funcname := creatorName(frame.Function)
-	for _, str := range []string{frame.Package, strings.TrimPrefix(frame.Receiver, "*"), funcname} {
-		if str != "" {
-			strs = append(strs, str)
-		}
-	}
-	return strings.Join(strs, ".")
 }
