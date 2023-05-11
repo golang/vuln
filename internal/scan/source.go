@@ -252,18 +252,33 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 //
 // If it can't find any of these functions, summarizeTrace returns the empty string.
 func summarizeTrace(finding *govulncheck.Finding) string {
-	if len(finding.Trace) == 0 {
+	if len(finding.Trace) < 2 {
 		return ""
 	}
-	iTop, iTopEnd := summarizeTop(finding.Trace)
-	if iTop < 0 {
-		return ""
-	}
-
-	vulnPkg := finding.Trace[len(finding.Trace)-1].Package
-	iVulnStart, iVuln := summarizeVuln(finding.Trace, iTopEnd, vulnPkg)
-	if iVulnStart < 0 {
-		return ""
+	iTop := 0                            // this is the last non anonymous entry in the same module as the top
+	iTopEnd := iTop                      // this is the last entry in the same module as the top
+	iVulnStart := len(finding.Trace) - 1 // this is the first entry in the same package as the vuln
+	iVuln := iVulnStart                  // this is the first non anonymous entry in the same package as the vuln
+	topModule := finding.Trace[iTop].Module
+	vulnPkg := finding.Trace[iVuln].Package
+	// search for the points of interest in a single pass
+	for i, frame := range finding.Trace {
+		if frame.Module == topModule {
+			// frame matches top module, update top markers
+			if !isAnonymousFunction(frame.Function) {
+				iTop = i
+			}
+			iTopEnd = i
+		}
+		if frame.Package == vulnPkg {
+			// frame matches vulnerable package, update vuln markers
+			if i < iVuln && !isAnonymousFunction(frame.Function) {
+				iVuln = i
+			}
+			if i < iVulnStart {
+				iVulnStart = i
+			}
+		}
 	}
 
 	buf := &strings.Builder{}
@@ -284,10 +299,10 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 	case iTop != iTopEnd:
 		// The last function of the top segment is anonymous.
 		iMid = iTopEnd
-	case iVulnStart != iTopEnd+1:
+	case iVulnStart > iTop+1:
 		// If there is something in between top and vuln segments of
 		// the stack, then also summarize that intermediate segment.
-		iMid = iTopEnd + 1
+		iMid = iTop + 1
 	case iVulnStart != iVuln:
 		// The first function of the vuln segment is anonymous.
 		iMid = iVulnStart
@@ -318,72 +333,6 @@ func addSymbolName(buf *strings.Builder, frame *govulncheck.Frame) {
 	}
 	funcname := strings.Split(frame.Function, "$")[0]
 	buf.WriteString(funcname)
-}
-
-// summarizeTop returns summary information for the beginning segment
-// of call stack frames that belong to topPkgs. It returns the latest,
-// e.g., lowest function in this segment and its index in frames. If
-// that function is anonymous, then summarizeTop also returns the
-// lowest non-anonymous function and its index in frames. In that case,
-// the anonymous function is replaced by the function that created it.
-//
-//	[p.V p.W q.Q ...]        -> (1, 1, p.W, p.W)
-//	[p.V p.W p.Z$1 q.Q ...]  -> (1, 2, p.W, p.Z)
-func summarizeTop(frames []*govulncheck.Frame) (iTop, iTopEnd int) {
-	topModule := frames[0].Module
-	iTopEnd = lowest(frames, func(e *govulncheck.Frame) bool {
-		return e.Module == topModule
-	})
-	if iTopEnd < 0 {
-		return -1, -1
-	}
-
-	if !isAnonymousFunction(frames[iTopEnd].Function) {
-		iTop = iTopEnd
-		return
-	}
-
-	iTop = lowest(frames, func(e *govulncheck.Frame) bool {
-		return e.Module == topModule && !isAnonymousFunction(e.Function)
-	})
-	if iTop < 0 {
-		iTop = iTopEnd
-		return
-	}
-	return
-}
-
-// summarizeVuln returns summary information for the final segment
-// of call stack frames that belong to vulnPkg. It returns the earliest,
-// e.g., highest function in this segment and its index in frames. If
-// that function is anonymous, then summarizeVuln also returns the
-// highest non-anonymous function. In that case, the anonymous function
-// is replaced by the function that created it.
-//
-//	[x x q.Q v.V v.W]   -> (3, v.V, v.V)
-//	[x x q.Q v.V$1 v.W] -> (3, v.V, v.W)
-func summarizeVuln(frames []*govulncheck.Frame, iTop int, vulnPkg string) (iVulnStart int, iVuln int) {
-	iVulnStart = highest(frames[iTop+1:], func(e *govulncheck.Frame) bool {
-		return e.Package == vulnPkg
-	})
-	if iVulnStart < 0 {
-		return -1, -1
-	}
-	iVulnStart += iTop + 1 // adjust for slice in call to highest.
-	if !isAnonymousFunction(frames[iVulnStart].Function) {
-		iVuln = iVulnStart
-		return
-	}
-
-	iVuln = highest(frames[iVulnStart:], func(e *govulncheck.Frame) bool {
-		return e.Package == vulnPkg && !isAnonymousFunction(e.Function)
-	})
-	if iVuln < 0 {
-		iVuln = iVulnStart
-		return
-	}
-	iVuln += iVulnStart
-	return
 }
 
 // updateInitPositions populates non-existing positions of init functions

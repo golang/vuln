@@ -99,28 +99,6 @@ func fixedVersion(modulePath string, affected []osv.Affected) string {
 	return fixed
 }
 
-// highest returns the highest (one with the smallest index) entry in the call
-// stack for which f returns true.
-func highest(cs []*govulncheck.Frame, f func(e *govulncheck.Frame) bool) int {
-	for i := 0; i < len(cs); i++ {
-		if f(cs[i]) {
-			return i
-		}
-	}
-	return -1
-}
-
-// lowest returns the lowest (one with the largest index) entry in the call
-// stack for which f returns true.
-func lowest(cs []*govulncheck.Frame, f func(e *govulncheck.Frame) bool) int {
-	for i := len(cs) - 1; i >= 0; i-- {
-		if f(cs[i]) {
-			return i
-		}
-	}
-	return -1
-}
-
 func moduleVersionString(modulePath, pkgPath, version string) string {
 	if version == "" {
 		return ""
