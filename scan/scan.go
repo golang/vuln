@@ -26,11 +26,10 @@ type Cmd struct {
 	// Stderr specifies the standard error. If nil, Run connects os.Stderr.
 	Stderr io.Writer
 
-	ctx     context.Context
-	args    []string
-	closers []io.Closer
-	done    chan struct{}
-	err     error
+	ctx  context.Context
+	args []string
+	done chan struct{}
+	err  error
 }
 
 // Command returns the Cmd struct to execute govulncheck with the given
@@ -61,30 +60,10 @@ func (c *Cmd) Start() error {
 	}
 	c.done = make(chan struct{})
 	go func() {
-		defer func() {
-			for _, cl := range c.closers {
-				if err := cl.Close(); err != nil && c.err == nil {
-					c.err = err
-				}
-			}
-			c.closers = nil
-			close(c.done)
-		}()
+		defer close(c.done)
 		c.err = c.scan()
 	}()
 	return nil
-}
-
-// StdoutPipe returns a pipe that will be connected to the command's
-// standard output when the command starts.
-func (c *Cmd) StdoutPipe() io.ReadCloser {
-	if c.Stdout != nil {
-		panic("Stdout already set")
-	}
-	pr, pw := io.Pipe()
-	c.Stdout = pw
-	c.closers = append(c.closers, pw)
-	return pr
 }
 
 // Wait waits for the command to exit. The command must have been started by

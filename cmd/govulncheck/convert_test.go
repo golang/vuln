@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -37,7 +38,9 @@ func TestConvert(t *testing.T) {
 	ctx := context.Background()
 	modDir := filepath.Join(testDir, "testdata", "modules", "vuln")
 	jsonCmd := scan.Command(ctx, "-db", govulndbURI.String(), "-C", modDir, "-json", ".")
-	jsonOutput := jsonCmd.StdoutPipe()
+
+	jsonOutput, pw := io.Pipe()
+	jsonCmd.Stdout = pw
 	if err := jsonCmd.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -51,6 +54,7 @@ func TestConvert(t *testing.T) {
 	if err := jsonCmd.Wait(); err != nil {
 		t.Fatal(err)
 	}
+	pw.Close()
 	if err := convertCmd.Wait(); err != nil {
 		t.Fatal(err)
 	}
