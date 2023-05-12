@@ -82,7 +82,7 @@ func TestGovulncheck(t *testing.T) {
 
 	cmd := scan.Command(ctx, "./...")
 	err := cmd.Start()
-	if err != nil {
+	if err == nil {
 		err = cmd.Wait()
 	}
 	switch err := err.(type) {

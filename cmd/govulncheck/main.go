@@ -17,7 +17,7 @@ func main() {
 
 	cmd := scan.Command(ctx, os.Args[1:]...)
 	err := cmd.Start()
-	if err != nil {
+	if err == nil {
 		err = cmd.Wait()
 	}
 	switch err := err.(type) {
