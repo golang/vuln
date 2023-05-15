@@ -91,6 +91,16 @@ func prepareConfig(ctx context.Context, cfg *config, client *client.Client) {
 // scannerVersion reconstructs the current version of
 // this binary used from the build info.
 func scannerVersion(cfg *config, bi *debug.BuildInfo) {
+	if bi.Path != "" {
+		cfg.ScannerName = path.Base(bi.Path)
+	}
+	if bi.Main.Version != "" && bi.Main.Version != "(devel)" {
+		cfg.ScannerVersion = bi.Main.Version
+		return
+	}
+
+	// TODO(https://go.dev/issue/29228): we need to manually construct the
+	// version string when it is "(devel)" until #29228 is resolved.
 	var revision, at string
 	for _, s := range bi.Settings {
 		if s.Key == "vcs.revision" {
@@ -101,11 +111,6 @@ func scannerVersion(cfg *config, bi *debug.BuildInfo) {
 		}
 	}
 	buf := strings.Builder{}
-	if bi.Path != "" {
-		cfg.ScannerName = path.Base(bi.Path)
-	}
-	// TODO(https://go.dev/issue/29228): we manually change this after every
-	// minor revision? bi.Main.Version does not seem to work.
 	buf.WriteString("v0.0.0")
 	if revision != "" {
 		buf.WriteString("-")
