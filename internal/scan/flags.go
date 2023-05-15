@@ -43,13 +43,13 @@ func parseFlags(stderr io.Writer, args []string) (*config, error) {
 	flags.SetOutput(stderr)
 	flags.BoolVar(&cfg.json, "json", false, "output JSON")
 	flags.BoolVar(&cfg.test, "test", false, "analyze test files (only valid for source mode)")
-	flags.StringVar(&cfg.dir, "C", "", "change to dir before running govulncheck")
-	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database URL")
+	flags.StringVar(&cfg.dir, "C", "", "change to `dir` before running govulncheck")
+	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database `url`")
 	flags.StringVar(&cfg.mode, "mode", modeSource, "supports source or binary")
 	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
-	flags.Var(&showFlag, "show", "comma-separated list of text output options")
+	flags.Var(&showFlag, "show", "enable display of additional information specified by `list`")
 	flags.Usage = func() {
-		fmt.Fprint(flags.Output(), `Govulncheck is a tool for finding known vulnerabilities.
+		fmt.Fprint(flags.Output(), `Govulncheck reports known vulnerabilities in dependencies.
 
 Usage:
 

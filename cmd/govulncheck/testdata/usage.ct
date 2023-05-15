@@ -1,21 +1,21 @@
 $ govulncheck -h
-Govulncheck is a tool for finding known vulnerabilities.
+Govulncheck reports known vulnerabilities in dependencies.
 
 Usage:
 
 	govulncheck [flags] [patterns]
 	govulncheck -mode=binary [flags] [binary]
 
-  -C string
+  -C dir
     	change to dir before running govulncheck
-  -db string
-    	vulnerability database URL (default "https://vuln.go.dev")
+  -db url
+    	vulnerability database url (default "https://vuln.go.dev")
   -json
     	output JSON
   -mode string
     	supports source or binary (default "source")
-  -show value
-    	comma-separated list of text output options
+  -show list
+    	enable display of additional information specified by list
   -tags list
     	comma-separated list of build tags
   -test
@@ -26,23 +26,23 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 
 # Same output as -h, but failure.
 $ govulncheck --> FAIL 2
-Govulncheck is a tool for finding known vulnerabilities.
+Govulncheck reports known vulnerabilities in dependencies.
 
 Usage:
 
 	govulncheck [flags] [patterns]
 	govulncheck -mode=binary [flags] [binary]
 
-  -C string
+  -C dir
     	change to dir before running govulncheck
-  -db string
-    	vulnerability database URL (default "https://vuln.go.dev")
+  -db url
+    	vulnerability database url (default "https://vuln.go.dev")
   -json
     	output JSON
   -mode string
     	supports source or binary (default "source")
-  -show value
-    	comma-separated list of text output options
+  -show list
+    	enable display of additional information specified by list
   -tags list
     	comma-separated list of build tags
   -test
