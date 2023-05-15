@@ -239,47 +239,29 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 }
 
 // summarizeTrace returns a short description of the call stack.
-// It uses one of four forms, depending on what the lowest function F
-// in the top module calls and what is the highest function V of vulnPkg:
-//   - If F calls V directly and F as well as V are not anonymous functions:
-//     "F calls V"
-//   - The same case as above except F calls function G in some other package:
-//     "F calls G, which eventually calls V"
-//   - If F is an anonymous function, created by function G, and H is the
-//     lowest non-anonymous function in topPkgs:
-//     "H calls G, which eventually calls V"
-//   - If V is an anonymous function, created by function W:
-//     "F calls W, which eventually calls V"
-//
-// If it can't find any of these functions, summarizeTrace returns the empty string.
+// It prefers to show you the edge from the top module to other code, along with
+// the vulnerable symbol.
+// Where the vulnerable symbol directly called by the users code, it will only
+// show those two points.
+// If the vulnerable symbol is in the users code, it will show the entry point
+// and the vulnerable symbol.
 func summarizeTrace(finding *govulncheck.Finding) string {
 	if len(finding.Trace) < 2 {
 		return ""
 	}
-	iTop := len(finding.Trace) - 1 // this is the last non anonymous entry in the same module as the top
-	iTopEnd := iTop                // this is the last entry in the same module as the top
-	iVulnStart := 0                // this is the first entry in the same package as the vuln
-	iVuln := iVulnStart            // this is the first non anonymous entry in the same package as the vuln
+	iTop := len(finding.Trace) - 1
 	topModule := finding.Trace[iTop].Module
-	vulnPkg := finding.Trace[iVuln].Package
-	// search for the points of interest in a single pass
+	// search for the exit point of the top module
 	for i, frame := range finding.Trace {
 		if frame.Module == topModule {
-			// frame matches top module, update top markers
-			if i < iTop && !isAnonymousFunction(frame.Function) {
-				iTop = i
-			}
-			if i < iTopEnd {
-				iTopEnd = i
-			}
+			iTop = i
+			break
 		}
-		if frame.Package == vulnPkg {
-			// frame matches vulnerable package, update vuln markers
-			if !isAnonymousFunction(frame.Function) {
-				iVuln = i
-			}
-			iVulnStart = i
-		}
+	}
+
+	if iTop == 0 {
+		// all in one module, reset to the end
+		iTop = len(finding.Trace) - 1
 	}
 
 	buf := &strings.Builder{}
@@ -289,33 +271,17 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 		buf.WriteString(": ")
 	}
 
-	// The invariant is that the summary will always mention at most three functions
-	// and never mention an anonymous function. It prioritizes summarizing top of the
-	// stack as that is what the user has the most control of. For instance, if both
-	// the top and vuln portions of the stack are each summarized with two functions,
-	// then the final summary will mention the two functions of the top segment and
-	// only one from the vuln segment.
-	iMid := -1
-	switch {
-	case iTop != iTopEnd:
-		// The last function of the top segment is anonymous.
-		iMid = iTopEnd
-	case iVulnStart < iTop-1:
-		// If there is something in between top and vuln segments of
-		// the stack, then also summarize that intermediate segment.
-		iMid = iTop - 1
-	case iVulnStart != iVuln:
-		// The first function of the vuln segment is anonymous.
-		iMid = iVulnStart
-	}
-
 	addSymbolName(buf, finding.Trace[iTop])
 	buf.WriteString(" calls ")
-	if iMid >= 0 {
-		addSymbolName(buf, finding.Trace[iMid])
-		buf.WriteString(", which eventually calls ")
+	addSymbolName(buf, finding.Trace[iTop-1])
+	if iTop > 1 {
+		buf.WriteString(", which")
+		if iTop > 2 {
+			buf.WriteString(" eventually")
+		}
+		buf.WriteString(" calls ")
+		addSymbolName(buf, finding.Trace[0])
 	}
-	addSymbolName(buf, finding.Trace[iVuln])
 	return buf.String()
 }
 
@@ -432,11 +398,6 @@ func isInit(f *vulncheck.FuncNode) bool {
 	// be named "init#x" by vulncheck (more precisely, ssa), where x is a
 	// positive integer. Implicit inits are named simply "init".
 	return f.Name == "init" || strings.HasPrefix(f.Name, "init#")
-}
-
-func isAnonymousFunction(funcName string) bool {
-	// anonymous functions have $ sign in their name (naming done by ssa)
-	return strings.ContainsRune(funcName, '$')
 }
 
 // uniqueCallStack returns the first unique call stack among css, if any.

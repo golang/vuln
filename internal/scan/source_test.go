@@ -75,19 +75,19 @@ func TestSummarizeCallStack(t *testing.T) {
 		},
 		{
 			"m1.p1.F m1.p2.G mv.v.V1 mv.v.v2",
-			"m1.p2.G calls mv.v.V1",
+			"m1.p2.G calls mv.v.V1, which calls mv.v.v2",
 		},
 		{
 			"m1.p1.F m1.p2.G mv.v.V$1 mv.v.V1",
-			"m1.p2.G calls mv.v.V, which eventually calls mv.v.V1",
+			"m1.p2.G calls mv.v.V, which calls mv.v.V1",
 		},
 		{
 			"m1.p1.F m1.p2.G$1 mv.v.V1",
-			"m1.p1.F calls m1.p2.G, which eventually calls mv.v.V1",
+			"m1.p2.G calls mv.v.V1",
 		},
 		{
 			"m1.p1.F m1.p2.G$1 mv.v.V$1 mv.v.V1",
-			"m1.p1.F calls m1.p2.G, which eventually calls mv.v.V1",
+			"m1.p2.G calls mv.v.V, which calls mv.v.V1",
 		},
 		{
 			"m1.p1.F x.Y m1.p2.G ma.a.H mb.b.I mc.c.J mv.v.V",
@@ -96,6 +96,10 @@ func TestSummarizeCallStack(t *testing.T) {
 		{
 			"m1.p1.F x.Y m1.p2.G ma.a.H mb.b.I mc.c.J mv.v.V$1 mv.v.V1",
 			"m1.p2.G calls ma.a.H, which eventually calls mv.v.V1",
+		},
+		{
+			"m1.p1.F m1.p1.F$1 ma.a.H mb.b.I mv.v.V1",
+			"m1.p1.F calls ma.a.H, which eventually calls mv.v.V1",
 		},
 	} {
 		in := stringToFinding(test.in)
