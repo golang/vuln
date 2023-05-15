@@ -10,7 +10,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -59,11 +58,9 @@ func TestConvert(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := b.Bytes()
-	got = filterGoFilePaths(got)
-	got = filterProgressNumbers(got)
-	got = filterEnvironmentData(got)
-	got = filterHeapGo(got)
-	got = filterGoVersion(got)
+	for _, fix := range fixups {
+		got = fix.apply(got)
+	}
 
 	want, err := os.ReadFile("testdata/convert.txt")
 	if err != nil {
@@ -72,12 +69,4 @@ func TestConvert(t *testing.T) {
 	if diff := cmp.Diff(string(got), string(want)); diff != "" {
 		t.Fatalf("mismatch (-want, +got): %s", diff)
 	}
-}
-
-var goversionRegexp = regexp.MustCompile(`Using (.*) and govulncheck`)
-
-// TODO: add Cmd.Env and set GOVERSION to a constant. The Go version doesn't
-// matter for this test except for printing the text output.
-func filterGoVersion(data []byte) []byte {
-	return goversionRegexp.ReplaceAll(data, []byte("Using go1.18 and govulncheck"))
 }

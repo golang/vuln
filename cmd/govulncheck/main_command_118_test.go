@@ -31,6 +31,76 @@ import (
 
 var update = flag.Bool("update", false, "update test files with results")
 
+type fixup struct {
+	pattern     string
+	compiled    *regexp.Regexp
+	replace     string
+	replaceFunc func(b []byte) []byte
+}
+
+var fixups = []fixup{
+	{
+		// modifies paths to Go files by replacing their directory with "...".
+		// For example,/a/b/c.go becomes .../c.go .
+		// This makes it possible to compare govulncheck output across systems, because
+		// Go filenames include setup-specific paths.
+		pattern: `[^\s"]*\.go[\s":]`,
+		replaceFunc: func(b []byte) []byte {
+			s := string(b)
+			return []byte(fmt.Sprintf(`.../%s%c`, filepath.Base(s[:len(s)-1]), s[len(s)-1]))
+		},
+	}, {
+		// There was a one-line change in container/heap/heap.go between 1.18
+		// and 1.19 that makes the stack traces different. Ignore it.
+		pattern: `heap\.go:(\d+)`,
+		replace: `N`,
+	}, {
+		pattern: `Scanning your code and (\d+) packages across (\d+)`,
+		replace: `Scanning your code and P packages across M`,
+	}, {
+		pattern: `govulncheck@v([^ ]*) `,
+		replace: `govulncheck@v0.0.0-00000000000-20000101010101 `,
+	}, {
+		pattern: `"([^"]*") is a file`,
+		replace: `govulncheck: myfile is a file`,
+	}, {
+		pattern: `"scanner_version": "[^"]*"`,
+		replace: `"scanner_version": "v0.0.0-00000000000-20000101010101"`,
+	}, {
+		pattern: `file:///(.*)/testdata/vulndb`,
+		replace: `testdata/vulndb`,
+	}, {
+		pattern: `package (.*) is not in (GOROOT|std) (.*)`,
+		replace: `package foo is not in GOROOT (/tmp/foo)`,
+	}, {
+		pattern: `modified (.*)\)`,
+		replace: `modified 01 Jan 21 00:00 UTC)`,
+	}, {
+		pattern: `Using (go1.[\.\d]*|devel).* and`,
+		replace: `Using go1.18 and`,
+	}, {
+		pattern: `"go_version": "go[^\s"]*"`,
+		replace: `"go_version": "go1.18"`,
+	},
+}
+
+func (f *fixup) init() {
+	f.compiled = regexp.MustCompile(f.pattern)
+}
+
+func (f *fixup) apply(data []byte) []byte {
+	if f.replaceFunc != nil {
+		return f.compiled.ReplaceAllFunc(data, f.replaceFunc)
+	}
+	return f.compiled.ReplaceAll(data, []byte(f.replace))
+}
+
+func init() {
+	for i := range fixups {
+		fixups[i].init()
+	}
+}
+
 func TestCommand(t *testing.T) {
 	testDir, err := os.Getwd()
 	if err != nil {
@@ -191,57 +261,10 @@ func testSuite(dir, vulndbDir string) (*cmdtest.TestSuite, error) {
 			err = &cmdtest.ExitCodeErr{Msg: err.Error(), Code: 1}
 		}
 		out := buf.Bytes()
-		out = filterGoFilePaths(out)
-		out = filterProgressNumbers(out)
-		out = filterEnvironmentData(out)
-		out = filterHeapGo(out)
+		for _, fix := range fixups {
+			out = fix.apply(out)
+		}
 		return out, err
 	}
 	return ts, nil
-}
-
-var (
-	goFileRegexp                 = regexp.MustCompile(`[^\s"]*\.go[\s":]`)
-	heapGoRegexp                 = regexp.MustCompile(`heap\.go:(\d+)`)
-	progressRegexp               = regexp.MustCompile(`Scanning your code and (\d+) packages across (\d+)`)
-	scannerRegexp                = regexp.MustCompile(`govulncheck@v([^ ]*) `)
-	govulncheckBinaryErrorRegexp = regexp.MustCompile(`"([^"]*") is a file`)
-	scannerVersionJSONRegexp     = regexp.MustCompile(`"scanner_version": "[^"]*"`)
-	vulndbRegexp                 = regexp.MustCompile(`file:///(.*)/testdata/vulndb`)
-	gorootRegexp                 = regexp.MustCompile(`package (.*) is not in GOROOT (.*)`)
-	lastModifiedRegexp           = regexp.MustCompile(`modified (.*)\)`)
-	goVersionRegexp              = regexp.MustCompile(`Using go1.[\.\d]*`)
-	goVersionJSONRegexp          = regexp.MustCompile(`"go_version": "go[^\s"]*"`)
-)
-
-// filterGoFilePaths modifies paths to Go files by replacing their directory with "...".
-// For example,/a/b/c.go becomes .../c.go .
-// This makes it possible to compare govulncheck output across systems, because
-// Go filenames include setup-specific paths.
-func filterGoFilePaths(data []byte) []byte {
-	return goFileRegexp.ReplaceAllFunc(data, func(b []byte) []byte {
-		s := string(b)
-		return []byte(fmt.Sprintf(`.../%s%c`, filepath.Base(s[:len(s)-1]), s[len(s)-1]))
-	})
-}
-
-// There was a one-line change in container/heap/heap.go between 1.18
-// and 1.19 that makes the stack traces different. Ignore it.
-func filterHeapGo(data []byte) []byte {
-	return heapGoRegexp.ReplaceAll(data, []byte(`N`))
-}
-
-func filterProgressNumbers(data []byte) []byte {
-	return progressRegexp.ReplaceAll(data, []byte("Scanning your code and P packages across M"))
-}
-
-func filterEnvironmentData(data []byte) []byte {
-	data = scannerRegexp.ReplaceAll(data, []byte("govulncheck@v0.0.0-00000000000-20000101010101 "))
-	data = scannerVersionJSONRegexp.ReplaceAll(data, []byte(`"scanner_version": "v0.0.0-00000000000-20000101010101"`))
-	data = govulncheckBinaryErrorRegexp.ReplaceAll(data, []byte("govulncheck: myfile is a file"))
-	data = vulndbRegexp.ReplaceAll(data, []byte("testdata/vulndb"))
-	data = gorootRegexp.ReplaceAll(data, []byte("package foo is not in GOROOT (/tmp/foo)"))
-	data = goVersionRegexp.ReplaceAll(data, []byte(`Using go1.18`))
-	data = goVersionJSONRegexp.ReplaceAll(data, []byte(`"go_version": "go1.18"`))
-	return lastModifiedRegexp.ReplaceAll(data, []byte("modified 01 Jan 21 00:00 UTC)"))
 }
