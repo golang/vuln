@@ -13,7 +13,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -136,10 +135,10 @@ func TestCommand(t *testing.T) {
 		varName := filepath.Base(md) + "_binary"
 		os.Setenv(varName, binary)
 	}
-	runTestSuite(t, "testdata", govulndbURI.String(), *update)
+	runTestSuite(t, filepath.Join(testDir, "testdata"), govulndbURI.String(), *update)
 	if runtime.GOOS != "darwin" {
 		// TODO(https://go.dev/issue/59732): investigate why
-		runTestSuite(t, "testdata/strip", govulndbURI.String(), *update)
+		runTestSuite(t, filepath.Join(testDir, "testdata/strip"), govulndbURI.String(), *update)
 	}
 }
 
@@ -190,8 +189,12 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 		cmd.Stdout = buf
 		cmd.Stderr = buf
 		if inputFile != "" {
-			//TODO: use as Stdin
-			return nil, errors.New("input redirection makes no sense")
+			input, err := os.Open(filepath.Join(dir, inputFile))
+			if err != nil {
+				return nil, err
+			}
+			defer input.Close()
+			cmd.Stdin = input
 		}
 		// We set GOVERSION to always get the same results regardless of the underlying Go build system.
 		//TODO: when cmd supports Env:
