@@ -1,6 +1,6 @@
-# Test of query mode with the standard library (with a v prefix on the version).
-
-$ govulncheck -mode=query -json stdlib@v1.17.0
+#####
+# Test of query mode with the standard library.
+$ govulncheck -mode=query -json stdlib@go1.17
 {
   "config": {
     "protocol_version": "v0.1.0",
@@ -12,7 +12,7 @@ $ govulncheck -mode=query -json stdlib@v1.17.0
 }
 {
   "progress": {
-    "message": "Looking up vulnerabilities in stdlib at v1.17.0..."
+    "message": "Looking up vulnerabilities in stdlib at go1.17..."
   }
 }
 {

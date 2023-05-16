@@ -1,4 +1,0 @@
-# Test of invalid input to -mode
-
-$ govulncheck -mode=invalid ./... --> FAIL 2
-"invalid" is not a valid mode

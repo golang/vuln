@@ -1,3 +1,5 @@
+#####
+#
 $ govulncheck -C ${moddir}/vuln -json ./...
 {
   "config": {

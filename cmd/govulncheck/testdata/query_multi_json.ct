@@ -1,5 +1,5 @@
+#####
 # Test of query mode with multiple inputs.
-
 $ govulncheck -mode=query -json stdlib@go1.17 github.com/tidwall/gjson@v1.6.5
 {
   "config": {

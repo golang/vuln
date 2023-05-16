@@ -1,3 +1,4 @@
+#####
 # Test of source mode on a module with a multi-layer replace directive.
 # TODO(iancottrell): Update this test once govulncheck can robustly handle
 # replace directives.

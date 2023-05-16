@@ -1,5 +1,5 @@
+#####
 # Test of query mode for a third party module.
-
 $ govulncheck -mode=query -json github.com/tidwall/gjson@v1.6.5
 {
   "config": {

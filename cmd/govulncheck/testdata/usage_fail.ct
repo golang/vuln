@@ -1,0 +1,9 @@
+#####
+# Test of invalid input to -mode
+$ govulncheck -mode=invalid ./... --> FAIL 2
+"invalid" is not a valid mode
+
+#####
+# Test of trying to run -json with -v flag
+$ govulncheck -C ${moddir}/vuln -show=traces -json . --> FAIL 2
+the -show flag is not supported for JSON output

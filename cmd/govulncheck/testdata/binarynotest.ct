@@ -1,4 +1,0 @@
-# Test of trying to run -mode=binary with the -test flag
-
-$ govulncheck -test -mode=binary ${vuln_binary} --> FAIL 2
-the -test flag is not supported in binary mode

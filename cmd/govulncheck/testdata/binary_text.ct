@@ -1,11 +1,13 @@
-$ govulncheck -C ${moddir}/vuln ./... --> FAIL 3
+#####
+# Test basic binary scanning with text output
+$ govulncheck -mode=binary ${vuln_binary} --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
-Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with
+Using govulncheck@v0.0.0-00000000000-20000101010101 with
 vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
 
-Scanning your code and P packages across M dependent modules for known vulnerabilities...
-Your code is affected by 2 vulnerabilities from 2 modules.
+Scanning your binary for known vulnerabilities...
+Your code is affected by 3 vulnerabilities from 2 modules.
 
 Vulnerability #1: GO-2021-0265
     A maliciously crafted path can cause Get and other query
@@ -14,9 +16,6 @@ Vulnerability #1: GO-2021-0265
   Module: github.com/tidwall/gjson
     Found in: github.com/tidwall/gjson@v1.6.5
     Fixed in: github.com/tidwall/gjson@v1.9.3
-    Call stacks in your code:
-      .../vuln.go:14:20: golang.org/vuln.main calls github.com/tidwall/gjson.Result.Get
-
 
 Vulnerability #2: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted
@@ -27,17 +26,8 @@ Vulnerability #2: GO-2021-0113
   Module: golang.org/x/text
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
-    Call stacks in your code:
-      .../vuln.go:13:16: golang.org/vuln.main calls golang.org/x/text/language.Parse
 
-=== Informational ===
-
-Found 1 vulnerability in packages that you import, but there are no call
-stacks leading to the use of this vulnerability. You may not need to
-take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
-for details.
-
-Vulnerability #1: GO-2021-0054
+Vulnerability #3: GO-2021-0054
     Due to improper bounds checking, maliciously crafted JSON
     objects can cause an out-of-bounds panic. If parsing user input,
     this may be used as a denial of service vector.

@@ -1,3 +1,5 @@
+#####
+# Test souce mode with no callstacks
 $ govulncheck -C ${moddir}/informational -show=traces .
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 

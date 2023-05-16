@@ -1,3 +1,5 @@
+#####
+# Test for multiple call stacks in source mode
 $ govulncheck -json -C ${moddir}/multientry .
 {
   "config": {

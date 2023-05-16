@@ -1,3 +1,5 @@
+#####
+# Test of govulncheck help output
 $ govulncheck -h
 Govulncheck reports known vulnerabilities in dependencies.
 
@@ -23,7 +25,7 @@ Usage:
 
 For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 
-
+#####
 # Same output as -h, but failure.
 $ govulncheck --> FAIL 2
 Govulncheck reports known vulnerabilities in dependencies.
