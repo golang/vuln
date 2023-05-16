@@ -111,6 +111,10 @@ func TestCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	govulndbURI, err := web.URLFromFilePath(vulndbDir)
+	if err != nil {
+		t.Fatalf("failed to create make vulndb url: %v", err)
+	}
 
 	moduleDirs, err := filepath.Glob("testdata/modules/*")
 	if err != nil {
@@ -132,10 +136,10 @@ func TestCommand(t *testing.T) {
 		varName := filepath.Base(md) + "_binary"
 		os.Setenv(varName, binary)
 	}
-	runTestSuite(t, "testdata", vulndbDir, *update)
+	runTestSuite(t, "testdata", govulndbURI.String(), *update)
 	if runtime.GOOS != "darwin" {
 		// TODO(https://go.dev/issue/59732): investigate why
-		runTestSuite(t, "testdata/strip", vulndbDir, *update)
+		runTestSuite(t, "testdata/strip", govulndbURI.String(), *update)
 	}
 }
 
@@ -160,7 +164,7 @@ var (
 // testSuite creates a cmdtest suite from dir. It also defines
 // a govulncheck command on the suite that runs govulncheck
 // against vulnerability database available at vulndbDir.
-func runTestSuite(t *testing.T, dir string, vulndbDir string, update bool) {
+func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 	parallelLimiterInit.Do(func() {
 		limit := (runtime.GOMAXPROCS(0) + 3) / 4
 		if limit > 2 && unsafe.Sizeof(uintptr(0)) < 8 {
@@ -179,22 +183,8 @@ func runTestSuite(t *testing.T, dir string, vulndbDir string, update bool) {
 		parallelLimiter <- struct{}{}
 		defer func() { <-parallelLimiter }()
 
-		govulndbURI, err := web.URLFromFilePath(vulndbDir)
-		if err != nil {
-			t.Fatalf("failed to create GOVULNDB env var: %v", err)
-		}
+		newargs := append([]string{"-db", govulndb}, args...)
 
-		newargs := []string{"-db", govulndbURI.String()}
-		hasDir := false
-		for _, s := range args {
-			if s == "-C" {
-				hasDir = true
-			}
-		}
-		if !hasDir {
-			newargs = append(newargs, "-C", dir)
-		}
-		newargs = append(newargs, args...)
 		buf := &bytes.Buffer{}
 		cmd := scan.Command(context.Background(), newargs...)
 		cmd.Stdout = buf
@@ -210,7 +200,7 @@ func runTestSuite(t *testing.T, dir string, vulndbDir string, update bool) {
 		if err := cmd.Start(); err != nil {
 			return nil, err
 		}
-		err = cmd.Wait()
+		err := cmd.Wait()
 		switch e := err.(type) {
 		case nil:
 		case interface{ ExitCode() int }:
