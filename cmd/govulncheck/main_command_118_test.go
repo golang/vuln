@@ -111,10 +111,6 @@ func TestCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts, err := testSuite("testdata", vulndbDir)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	moduleDirs, err := filepath.Glob("testdata/modules/*")
 	if err != nil {
@@ -127,60 +123,19 @@ func TestCommand(t *testing.T) {
 		if filepath.Base(md) == "nogomod" {
 			continue
 		}
-		// Also skip stripped binary. That is tested separately
-		// in TestCommandStrip.
-		if filepath.Base(md) == "strip" {
-			continue
-		}
 
 		// Build test module binary.
-		binary, cleanup := test.GoBuild(t, md, "", false)
+		binary, cleanup := test.GoBuild(t, md, "", filepath.Base(md) == "strip")
 		t.Cleanup(cleanup)
 		// Set an environment variable to the path to the binary, so tests
 		// can refer to it.
 		varName := filepath.Base(md) + "_binary"
 		os.Setenv(varName, binary)
 	}
-	if *update {
-		ts.Run(t, true)
-	} else {
-		ts.RunParallel(t, false)
-	}
-}
-
-func TestCommandStrip(t *testing.T) {
-	if runtime.GOOS == "darwin" {
+	runTestSuite(t, "testdata", vulndbDir, *update)
+	if runtime.GOOS != "darwin" {
 		// TODO(https://go.dev/issue/59732): investigate why
-		t.Skip("binaries are not fully stripped on darwin")
-	}
-	testDir, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb-v1"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	ts, err := testSuite("testdata/strip", vulndbDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Build strip test module binary.
-	moduleDir, err := filepath.Abs("testdata/modules/strip")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	os.Setenv("moddir", filepath.Join(testDir, "testdata", "modules", "strip"))
-	strip, stripCleanup := test.GoBuild(t, moduleDir, "", true)
-	t.Cleanup(stripCleanup)
-	varName := filepath.Base(moduleDir) + "_binary"
-	os.Setenv(varName, strip)
-	if *update {
-		ts.Run(t, true)
-	} else {
-		ts.RunParallel(t, false)
+		runTestSuite(t, "testdata/strip", vulndbDir, *update)
 	}
 }
 
@@ -205,27 +160,28 @@ var (
 // testSuite creates a cmdtest suite from dir. It also defines
 // a govulncheck command on the suite that runs govulncheck
 // against vulnerability database available at vulndbDir.
-func testSuite(dir, vulndbDir string) (*cmdtest.TestSuite, error) {
+func runTestSuite(t *testing.T, dir string, vulndbDir string, update bool) {
+	parallelLimiterInit.Do(func() {
+		limit := (runtime.GOMAXPROCS(0) + 3) / 4
+		if limit > 2 && unsafe.Sizeof(uintptr(0)) < 8 {
+			limit = 2
+		}
+		parallelLimiter = make(chan struct{}, limit)
+	})
+
 	ts, err := cmdtest.Read(dir)
 	if err != nil {
-		return nil, err
+		t.Fatal(err)
 	}
 	ts.DisableLogging = true
 
 	ts.Commands["govulncheck"] = func(args []string, inputFile string) ([]byte, error) {
-		parallelLimiterInit.Do(func() {
-			limit := (runtime.GOMAXPROCS(0) + 3) / 4
-			if limit > 2 && unsafe.Sizeof(uintptr(0)) < 8 {
-				limit = 2
-			}
-			parallelLimiter = make(chan struct{}, limit)
-		})
 		parallelLimiter <- struct{}{}
 		defer func() { <-parallelLimiter }()
 
 		govulndbURI, err := web.URLFromFilePath(vulndbDir)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create GOVULNDB env var: %v", err)
+			t.Fatalf("failed to create GOVULNDB env var: %v", err)
 		}
 
 		newargs := []string{"-db", govulndbURI.String()}
@@ -272,5 +228,9 @@ func testSuite(dir, vulndbDir string) (*cmdtest.TestSuite, error) {
 		}
 		return out, err
 	}
-	return ts, nil
+	if update {
+		ts.Run(t, true)
+		return
+	}
+	ts.RunParallel(t, false)
 }
