@@ -42,8 +42,6 @@ type traceSummary struct {
 	Symbol  string
 	Compact string
 	Trace   []frameSummary
-	// Suppressed is true for entries who's compact form would be a repetition
-	Suppressed bool
 }
 
 type frameSummary struct {
@@ -90,6 +88,7 @@ func createSummaries(osvs []*osv.Entry, findings []*govulncheck.Finding) summari
 }
 
 func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.Finding) vulnSummary {
+	seen := map[string]struct{}{}
 	vInfo := vulnSummary{
 		Affected: IsCalled(findings),
 		OSV:      osvid,
@@ -118,21 +117,17 @@ func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.
 			}
 			vInfo.Modules = append(vInfo.Modules, ms)
 		}
-		addStack(ms, f)
-	}
-	for _, ms := range vInfo.Modules {
+		css := newTraceSummary(f)
+		if css.Compact == "" {
+			continue
+		}
 		// Suppress duplicate compact call stack summaries.
 		// Note that different call stacks can yield same summaries.
-		seen := map[string]struct{}{}
-		for i, css := range ms.Traces {
-			if _, wasSeen := seen[css.Compact]; !wasSeen {
-				seen[css.Compact] = struct{}{}
-			} else {
-				ms.Traces[i].Suppressed = true
-			}
+		if _, wasSeen := seen[css.Compact]; !wasSeen {
+			seen[css.Compact] = struct{}{}
+			ms.Traces = append(ms.Traces, css)
 		}
 	}
-
 	return vInfo
 }
 
@@ -145,12 +140,12 @@ func findOSV(osvs []*osv.Entry, id string) *osv.Entry {
 	return nil
 }
 
-func addStack(m *moduleSummary, f *govulncheck.Finding) {
-	if len(f.Trace) == 1 && f.Trace[0].Function == "" {
-		return
-	}
+func newTraceSummary(f *govulncheck.Finding) traceSummary {
 	css := traceSummary{
 		Compact: summarizeTrace(f),
+	}
+	if len(f.Trace) == 1 && f.Trace[0].Function == "" {
+		return css
 	}
 	for i := len(f.Trace) - 1; i >= 0; i-- {
 		frame := f.Trace[i]
@@ -167,7 +162,7 @@ func addStack(m *moduleSummary, f *govulncheck.Finding) {
 		})
 	}
 	css.Symbol = css.Trace[len(css.Trace)-1].Symbol
-	m.Traces = append(m.Traces, css)
+	return css
 }
 
 // platforms returns a string describing the GOOS, GOARCH,

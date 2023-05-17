@@ -60,10 +60,10 @@ for details.
 {{- end}}{{/*Platforms*/}}
 
 {{- define "Traces" -}}
-{{- $count:=0}}{{range $entry := .}}{{if and .Compact (not .Suppressed)}}{{$count = inc $count}}{{end}}{{end}}
+{{- $count:=0}}{{range $entry := .}}{{if .Compact}}{{$count = inc $count}}{{end}}{{end}}
 {{- if $count}}
     {{template "Key" "Call stacks in your code:"}}
-{{range $entry := .}}{{if and .Compact (not .Suppressed)}}      {{.Compact}}
+{{range $entry := .}}{{if .Compact}}      {{.Compact}}
 {{end}}{{end}}
 {{- end -}}
 {{- end}}{{/*Traces*/}}
