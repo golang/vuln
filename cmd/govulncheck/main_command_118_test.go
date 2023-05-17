@@ -221,9 +221,5 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 		}
 		return out, err
 	}
-	if update {
-		ts.Run(t, true)
-		return
-	}
-	ts.RunParallel(t, false)
+	ts.RunParallel(t, update)
 }
