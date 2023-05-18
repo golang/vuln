@@ -5,8 +5,10 @@ package scan_test
 
 import (
 	"bytes"
+	"flag"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -14,6 +16,8 @@ import (
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/scan"
 )
+
+var update = flag.Bool("update", false, "update test files with results")
 
 func TestPrinting(t *testing.T) {
 	testdata := os.DirFS("testdata")
@@ -32,11 +36,16 @@ func TestPrinting(t *testing.T) {
 			textname := strings.TrimSuffix(textfile, ".txt")
 			t.Run(textname, func(t *testing.T) {
 				wantText, _ := fs.ReadFile(testdata, textfile)
-				got := &strings.Builder{}
+				got := &bytes.Buffer{}
 				handler := scan.NewTextHandler(got)
 				handler.Show = strings.Split(textname, "_")[1:]
 				testRunHandler(t, rawJSON, handler)
 				if diff := cmp.Diff(string(wantText), got.String()); diff != "" {
+					if *update {
+						// write the output back to the file
+						os.WriteFile(filepath.Join("testdata", textfile), got.Bytes(), 0644)
+						return
+					}
 					t.Errorf("Readable mismatch (-want, +got):\n%s", diff)
 				}
 			})
