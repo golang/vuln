@@ -102,7 +102,7 @@ func (h *TextHandler) runTemplate(name string, value any) error {
 	}
 	installColorFunctions(funcs)
 	tmpl := template.New("all").Funcs(funcs)
-	_, err := tmpl.ParseFS(templateFS, "template/core*.tmpl")
+	_, err := tmpl.ParseFS(templateFS, "template/core.tmpl")
 	if err != nil {
 		return err
 	}
