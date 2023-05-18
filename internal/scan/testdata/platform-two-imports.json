@@ -46,7 +46,10 @@
           ]
         }
       }
-    ]
+    ],
+    "database_specific": {
+      "url": "https://pkg.go.dev/vuln/two-imports"
+    }
   }
 }
 {

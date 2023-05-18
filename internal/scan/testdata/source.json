@@ -25,7 +25,10 @@
           ]
         }
       }
-    ]
+    ],
+    "database_specific": {
+      "url": "https://pkg.go.dev/vuln/GO-0000-0001"
+    }
   }
 }
 {
@@ -62,7 +65,10 @@
         },
         "ecosystem_specific": {}
       }
-    ]
+    ],
+    "database_specific": {
+      "url": "https://pkg.go.dev/vuln/GO-0000-0002"
+    }
   }
 }
 {

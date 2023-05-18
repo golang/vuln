@@ -54,7 +54,7 @@ for details.
 
 {{template "Key" "Vulnerability"}} #{{$idx}}: {{block "OSV" $vulnInfo}}{{.OSV}}{{end}}
 {{block "Details" $vulnInfo.Details}}{{wrap . | indent 4}}{{end}}
-  {{template "Key" "More info:"}} https://pkg.go.dev/vuln/{{$vulnInfo.OSV}}
+  {{template "Key" "More info:"}} {{$vulnInfo.URL}}
 {{- range $modInfo := $vulnInfo.Modules}}
 {{- if $modInfo.IsStd}}
   Standard library

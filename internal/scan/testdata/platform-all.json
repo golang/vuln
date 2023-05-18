@@ -9,7 +9,10 @@
     "modified": "0001-01-01T00:00:00Z",
     "published": "0001-01-01T00:00:00Z",
     "details": "",
-    "affected": null
+    "affected": null,
+    "database_specific": {
+      "url": "https://pkg.go.dev/vuln/All"
+    }
   }
 }
 {

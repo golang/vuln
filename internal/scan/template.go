@@ -25,6 +25,7 @@ type summaries struct {
 type vulnSummary struct {
 	OSV      string
 	Details  string
+	URL      string
 	Modules  []*moduleSummary
 	Affected bool
 }
@@ -96,6 +97,9 @@ func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.
 	osv := findOSV(osvs, osvid)
 	if osv != nil {
 		vInfo.Details = osv.Details
+		if osv.DatabaseSpecific != nil {
+			vInfo.URL = osv.DatabaseSpecific.URL
+		}
 	}
 	for _, f := range findings {
 		lastFrame := f.Trace[0]
