@@ -42,7 +42,7 @@ func RunGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr i
 	case cfg.json:
 		handler = govulncheck.NewJSONHandler(stdout)
 	default:
-		th := NewTextHandler(stdout, cfg.mode == modeSource)
+		th := NewTextHandler(stdout)
 		th.Show = cfg.show
 		handler = th
 	}
@@ -130,9 +130,7 @@ func scannerVersion(cfg *config, bi *debug.BuildInfo) {
 // convertJSONToText converts r, which is expected to be the JSON output of govulncheck,
 // into the text output, and writes the output to w.
 func convertJSONToText(r io.Reader, w io.Writer) error {
-	// TODO: instead of hardcoding source=true, determine source based on the
-	// config decoded from the JSON output.
-	h := NewTextHandler(w, true)
+	h := NewTextHandler(w)
 	if err := govulncheck.HandleJSON(r, h); err != nil {
 		return err
 	}

@@ -18,11 +18,8 @@ import (
 var templateFS embed.FS
 
 // NewtextHandler returns a handler that writes govulncheck output as text.
-func NewTextHandler(w io.Writer, source bool) *TextHandler {
-	return &TextHandler{
-		w:      w,
-		source: source,
-	}
+func NewTextHandler(w io.Writer) *TextHandler {
+	return &TextHandler{w: w}
 }
 
 type TextHandler struct {
@@ -31,7 +28,6 @@ type TextHandler struct {
 	w        io.Writer
 	osvs     []*osv.Entry
 	findings []*govulncheck.Finding
-	source   bool
 }
 
 const (

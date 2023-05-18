@@ -27,7 +27,7 @@ func TestPrinting(t *testing.T) {
 			rawJSON, _ := fs.ReadFile(testdata, input)
 			wantText, _ := fs.ReadFile(testdata, name+".txt")
 			got := &strings.Builder{}
-			testRunHandler(t, rawJSON, scan.NewTextHandler(got, name != "binary"))
+			testRunHandler(t, rawJSON, scan.NewTextHandler(got))
 			if diff := cmp.Diff(string(wantText), got.String()); diff != "" {
 				t.Errorf("Readable mismatch (-want, +got):\n%s", diff)
 			}
