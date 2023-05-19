@@ -1,8 +1,8 @@
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
-Using govulncheck with
-vulnerability data from .
+Using govulncheck with vulnerability data from .
 No vulnerabilities found.
+
 
 === Informational ===
 

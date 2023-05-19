@@ -9,10 +9,10 @@ modified timestamp.
   Using
   {{- if .GoVersion}} {{block "Go" .GoVersion}}{{.}}{{end}} and{{end}}
   {{- if .ScannerName}} {{block "Scanner" .ScannerName}}{{.}}{{end}}
-  {{- if .ScannerVersion}}@{{.ScannerVersion}}{{end}} with{{end}}
-  {{- "\n" -}}
+  {{- if .ScannerVersion}}@{{.ScannerVersion}}{{end}} with {{end -}}
   vulnerability data from {{.DB}}
-  {{- if .DBLastModified}} (last modified {{.DBLastModified}}){{end}}.{{- "\n" -}}
+  {{- if .DBLastModified}} (last modified {{.DBLastModified}}){{end}}.
+  {{- "\n" -}}
 {{- end}}{{/*Preamble*/}}
 
 {{define "govulncheck-summary"}}{{/*
@@ -30,44 +30,47 @@ It consists of three sections showing:
 
 {{define "VulnCount" -}}
   {{- if eq (len .Affected) 0 -}}
-    No vulnerabilities found.{{- "\n" -}}
+    No vulnerabilities found.
   {{- else -}}
     Your code is affected by {{template "Value" (len .Affected)}}
     {{- if eq (len .Affected) 1}} vulnerability{{else}} vulnerabilities{{end}} from
     {{- if eq .AffectedModules 0}}{{else if eq .AffectedModules 1}} 1 module{{else}} {{template "Value" .AffectedModules}} modules{{end}}
     {{- if .StdlibAffected}}{{if ne .AffectedModules 0}} and{{end}} the Go standard library{{end}}.
   {{- end}}
+  {{- "\n\n" -}}
 {{- end}}{{/*VulnCount*/}}
 
 {{- define "Informational" -}}
   {{- if len .Unaffected}}
     {{- "\n" -}}
-    {{- block "InformationalTitle" .}}=== Informational ==={{end}}{{- "\n" -}}
+    {{- template "Section" "=== Informational ===" -}}
     {{- "\n" -}}
     Found {{if eq (len .Unaffected) 1}}1 vulnerability{{else}}{{len .Unaffected}} vulnerabilities{{end}} in packages that you import, but there are no call{{- "\n" -}}
     stacks leading to the use of {{if eq (len .Unaffected) 1}}this vulnerability{{else}}these vulnerabilities{{end}}. You may not need to{{- "\n" -}}
     take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck{{- "\n" -}}
-    for details.
+    for details.{{- "\n" -}}
+    {{- "\n" -}}
   {{- end -}}
 {{- end}}{{/*Informational*/}}
 
 {{- define "Vulnerability" -}}
   {{- if len . -}}
-    {{range $idx, $vulnInfo := .}}
-      {{- "\n\n" -}}
+    {{- range $idx, $vulnInfo := .}}
+      {{- if ne $idx 0}}{{- "\n" -}}{{- end -}}
       {{- template "Key" "Vulnerability"}} #{{inc $idx}}: {{block "OSV" $vulnInfo}}{{.OSV}}{{end}}{{- "\n" -}}
       {{- block "Details" $vulnInfo.Details}}{{wrap "    " . 80}}{{end}}{{- "\n" -}}
-      {{"  "}}{{- template "Key" "More info:"}} {{$vulnInfo.URL}}
-      {{- range $modInfo := $vulnInfo.Modules}}
+      {{- "  "}}{{- template "Key" "More info:"}} {{$vulnInfo.URL}}{{- "\n" -}}
+      {{- range $index, $modInfo := $vulnInfo.Modules}}
+        {{- if ne $index 0}}{{- "\n" -}}{{- end -}}
         {{- if $modInfo.IsStd -}}
-          {{- "\n" -}}{{"  "}}Standard library
+          {{- "  "}}Standard library{{- "\n" -}}
         {{- else}}
-          {{- "\n" -}}{{"  "}}{{- template "Key" "Module:"}} {{$modInfo.Module}}
+          {{- "  "}}{{- template "Key" "Module:"}} {{$modInfo.Module}}{{- "\n" -}}
         {{- end}}
-        {{- "\n" -}}{{"    "}}{{- template "Key" "Found in:"}} {{$modInfo.FoundVersion}}
-        {{- "\n" -}}{{"    "}}{{- template "Key" "Fixed in:"}} {{if $modInfo.FixedVersion}}{{$modInfo.FixedVersion}}{{else}}N/A{{end}}
+        {{- "    "}}{{- template "Key" "Found in:"}} {{$modInfo.FoundVersion}}{{- "\n" -}}
+        {{- "    "}}{{- template "Key" "Fixed in:"}} {{if $modInfo.FixedVersion}}{{$modInfo.FixedVersion}}{{else}}N/A{{end}}{{- "\n" -}}
         {{- if $modInfo.Platforms}}
-            {{- "\n" -}}{{"    "}}{{- template "Key" "Platforms:"}} {{template "Platforms" $modInfo.Platforms}}
+            {{- "    "}}{{- template "Key" "Platforms:"}} {{template "Platforms" $modInfo.Platforms}}{{- "\n" -}}
         {{- end}}
         {{- template "Traces" $modInfo.Traces}}
       {{- end}}
@@ -81,15 +84,13 @@ It consists of three sections showing:
 
 {{- define "Traces" -}}
   {{- if len .}}
-    {{- "\n" -}}
     {{- "    "}}{{- template "Key" "Call stacks in your code:"}}{{- "\n" -}}
     {{- range $entry := .}}
-      {{- if .Compact}}
-        {{- "      "}}{{.Compact}}{{- "\n" -}}
-      {{- end}}
+      {{- "      "}}{{$entry.Compact}}{{- "\n" -}}
     {{- end}}
   {{- end -}}
 {{- end}}{{/*Traces*/}}
 
+{{define "Section"}}{{.}}{{"\n"}}{{end}}
 {{define "Key"}}{{.}}{{end}}
 {{define "Value"}}{{.}}{{end}}

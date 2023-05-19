@@ -1,7 +1,6 @@
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
-Using govulncheck with
-vulnerability data from .
+Using govulncheck with vulnerability data from .
 Your code is affected by 1 vulnerability from 2 modules.
 
 Vulnerability #1: GO-0000-0001

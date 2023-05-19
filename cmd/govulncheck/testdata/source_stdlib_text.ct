@@ -3,8 +3,7 @@
 $ govulncheck -C ${moddir}/stdlib . --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
-Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with
-vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
+Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
 
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 Your code is affected by 1 vulnerability from the Go standard library.
@@ -25,8 +24,7 @@ Vulnerability #1: GO-2022-0969
 $ govulncheck -C ${moddir}/stdlib -show=traces . --> FAIL 3
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
-Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with
-vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
+Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
 
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 Your code is affected by 1 vulnerability from the Go standard library.

@@ -3,15 +3,13 @@ This template is a has overrides used when printing in verbose mode.
 */ -}}
 
 {{- define "Traces" -}}
-  {{$count:=0}}{{range .}}{{$count = inc $count}}{{end}}
-  {{- if $count}}
-    {{- "\n" -}}{{- "    "}}Call stacks in your code:{{- "\n" -}}
-    {{- range $index, $entry := .}}      #{{inc $index}}: for function {{$entry.Symbol}}
+  {{- if len .}}
+    {{- "    "}}Call stacks in your code:{{- "\n" -}}
+    {{- range $index, $entry := .}}
+      {{- "      "}}#{{inc $index}}: for function {{$entry.Symbol}}{{- "\n" -}}
       {{- range $entry.Trace}}
-        {{- "\n" -}}
-        {{- "        "}}{{- if .Position}}{{.Position}}: {{end}}{{.Name}}
+        {{- "        "}}{{- if .Position}}{{.Position}}: {{end}}{{.Name}}{{- "\n" -}}
       {{- end -}}
-      {{- "\n" -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
