@@ -38,7 +38,7 @@ func TestWrap(t *testing.T) {
 			"Able was I\nere I saw\nElba.",
 		},
 	} {
-		got := wrap(test.in, width)
+		got := wrap("", test.in, width)
 		if got != test.want {
 			t.Errorf("\ngot:\n%s\n\nwant:\n%s", got, test.want)
 		}

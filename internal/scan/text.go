@@ -31,9 +31,6 @@ type TextHandler struct {
 }
 
 const (
-	labelWidth = 16
-	lineLength = 55
-
 	detailsMessage = `For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.`
 
 	binaryProgressMessage = `Scanning your binary for known vulnerabilities...`
@@ -88,13 +85,10 @@ func (h *TextHandler) Finding(finding *govulncheck.Finding) error {
 }
 
 func (h *TextHandler) runTemplate(name string, value any) error {
-	lineWidth := 80 - labelWidth
 	funcs := template.FuncMap{
 		// used in template for counting vulnerabilities
-		"inc": func(i int) int { return i + 1 },
-		// indent reversed to support template pipelining
-		"indent": func(n int, s string) string { return indent(s, n) },
-		"wrap":   func(s string) string { return wrap(s, lineWidth) },
+		"inc":  func(i int) int { return i + 1 },
+		"wrap": wrap,
 	}
 	installColorFunctions(funcs)
 	tmpl := template.New("all").Funcs(funcs)

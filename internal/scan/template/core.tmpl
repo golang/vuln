@@ -53,7 +53,7 @@ for details.
 {{- $idx = inc $idx}}
 
 {{template "Key" "Vulnerability"}} #{{$idx}}: {{block "OSV" $vulnInfo}}{{.OSV}}{{end}}
-{{block "Details" $vulnInfo.Details}}{{wrap . | indent 4}}{{end}}
+{{block "Details" $vulnInfo.Details}}{{wrap "    " . 80}}{{end}}
   {{template "Key" "More info:"}} {{$vulnInfo.URL}}
 {{- range $modInfo := $vulnInfo.Modules}}
 {{- if $modInfo.IsStd}}

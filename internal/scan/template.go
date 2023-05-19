@@ -229,19 +229,25 @@ func posToString(p *govulncheck.Position) string {
 
 // wrap wraps s to fit in maxWidth by breaking it into lines at whitespace. If a
 // single word is longer than maxWidth, it is retained as its own line.
-func wrap(s string, maxWidth int) string {
+func wrap(indent string, s string, maxWidth int) string {
 	var b strings.Builder
 	w := 0
-
 	for _, f := range strings.Fields(s) {
 		if w > 0 && w+len(f)+1 > maxWidth {
+			// line would be too long with this word
 			b.WriteByte('\n')
 			w = 0
 		}
-		if w != 0 {
+		if w == 0 {
+			// first field on line, indent
+			b.WriteString(indent)
+			w = len(indent)
+		} else {
+			// not first word, space separate
 			b.WriteByte(' ')
 			w++
 		}
+		// now write the word
 		b.WriteString(f)
 		w += len(f)
 	}

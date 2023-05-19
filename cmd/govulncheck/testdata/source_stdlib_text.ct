@@ -10,9 +10,9 @@ Scanning your code and P packages across M dependent modules for known vulnerabi
 Your code is affected by 1 vulnerability from the Go standard library.
 
 Vulnerability #1: GO-2022-0969
-    HTTP/2 server connections can hang forever waiting for a clean
-    shutdown that was preempted by a fatal error. This condition can
-    be exploited by a malicious client to cause a denial of service.
+    HTTP/2 server connections can hang forever waiting for a clean shutdown that
+    was preempted by a fatal error. This condition can be exploited by a
+    malicious client to cause a denial of service.
   More info: https://pkg.go.dev/vuln/GO-2022-0969
   Standard library
     Found in: net/http@go1.18
@@ -32,9 +32,9 @@ Scanning your code and P packages across M dependent modules for known vulnerabi
 Your code is affected by 1 vulnerability from the Go standard library.
 
 Vulnerability #1: GO-2022-0969
-    HTTP/2 server connections can hang forever waiting for a clean
-    shutdown that was preempted by a fatal error. This condition can
-    be exploited by a malicious client to cause a denial of service.
+    HTTP/2 server connections can hang forever waiting for a clean shutdown that
+    was preempted by a fatal error. This condition can be exploited by a
+    malicious client to cause a denial of service.
   More info: https://pkg.go.dev/vuln/GO-2022-0969
   Standard library
     Found in: net/http@go1.18

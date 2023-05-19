@@ -7,7 +7,6 @@ package scan
 import (
 	"fmt"
 	"sort"
-	"strings"
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
@@ -107,21 +106,4 @@ func moduleVersionString(modulePath, pkgPath, version string) string {
 		path = pkgPath
 	}
 	return fmt.Sprintf("%s@%s", path, version)
-}
-
-// indent returns the output of prefixing n spaces to s at every line break,
-// except for empty lines. See TestIndent for examples.
-func indent(s string, n int) string {
-	b := []byte(s)
-	var result []byte
-	shouldAppend := true
-	prefix := strings.Repeat(" ", n)
-	for _, c := range b {
-		if shouldAppend && c != '\n' {
-			result = append(result, prefix...)
-		}
-		result = append(result, c)
-		shouldAppend = c == '\n'
-	}
-	return string(result)
 }

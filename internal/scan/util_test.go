@@ -7,7 +7,6 @@ package scan
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal/osv"
 )
 
@@ -177,25 +176,6 @@ func TestLatestFixed(t *testing.T) {
 			got := latestFixed(test.module, test.in)
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
-			}
-		})
-	}
-}
-
-func TestIndent(t *testing.T) {
-	for _, test := range []struct {
-		name string
-		s    string
-		n    int
-		want string
-	}{
-		{"short", "hello", 2, "  hello"},
-		{"multi", "mulit\nline\nstring", 1, " mulit\n line\n string"},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			got := indent(test.s, test.n)
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Fatalf("mismatch (-want, +got):\n%s", diff)
 			}
 		})
 	}
