@@ -19,8 +19,8 @@ Vulnerability #1: GO-2021-0113
     Found in: golang.org/x/text@v0.3.5
     Fixed in: golang.org/x/text@v0.3.7
     Call stacks in your code:
-      .../main.go:99:20: golang.org/multientry.foobar calls golang.org/x/text/language.MustParse
-      .../main.go:44:23: golang.org/multientry.C calls golang.org/x/text/language.Parse
+      .../main.go:99:20: multientry.foobar calls language.MustParse
+      .../main.go:44:23: multientry.C calls language.Parse
 
 #####
 # Test for multple call stacks in source mode with expanded traces
@@ -44,16 +44,11 @@ Vulnerability #1: GO-2021-0113
     Fixed in: golang.org/x/text@v0.3.7
     Call stacks in your code:
       #1: for function MustParse
-        golang.org/multientry.main
-            .../main.go:26:3
-        golang.org/multientry.D
-            .../main.go:48:8
-        golang.org/multientry.foobar
-            .../main.go:99:20
+        .../main.go:26:3: golang.org/multientry.main
+        .../main.go:48:8: golang.org/multientry.D
+        .../main.go:99:20: golang.org/multientry.foobar
         golang.org/x/text/language.MustParse
       #2: for function Parse
-        golang.org/multientry.main
-            .../main.go:22:3
-        golang.org/multientry.C
-            .../main.go:44:23
+        .../main.go:22:3: golang.org/multientry.main
+        .../main.go:44:23: golang.org/multientry.C
         golang.org/x/text/language.Parse

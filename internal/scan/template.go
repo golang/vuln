@@ -158,7 +158,7 @@ func newTraceSummary(f *govulncheck.Finding) traceSummary {
 			symbol = fmt.Sprint(frame.Receiver, ".", symbol)
 		}
 		buf := &strings.Builder{}
-		addSymbolName(buf, frame)
+		addSymbolName(buf, frame, false)
 		css.Trace = append(css.Trace, frameSummary{
 			Symbol:   symbol,
 			Name:     buf.String(),

@@ -19,7 +19,7 @@ Vulnerability #1: GO-2021-0113
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
     Call stacks in your code:
-      .../subdir.go:8:16: golang.org/vuln/subdir.Foo calls golang.org/x/text/language.Parse
+      .../subdir.go:8:16: subdir.Foo calls language.Parse
 
 #####
 # Test govulncheck runs on the subdirectory of a module
@@ -43,6 +43,5 @@ Vulnerability #1: GO-2021-0113
     Fixed in: golang.org/x/text@v0.3.7
     Call stacks in your code:
       #1: for function Parse
-        golang.org/vuln/subdir.Foo
-            .../subdir.go:8:16
+        .../subdir.go:8:16: golang.org/vuln/subdir.Foo
         golang.org/x/text/language.Parse

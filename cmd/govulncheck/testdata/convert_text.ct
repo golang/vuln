@@ -17,7 +17,7 @@ Vulnerability #1: GO-2021-0265
     Found in: github.com/tidwall/gjson@v1.6.5
     Fixed in: github.com/tidwall/gjson@v1.9.3
     Call stacks in your code:
-      .../vuln.go:14:20: golang.org/vuln.main calls github.com/tidwall/gjson.Result.Get
+      .../vuln.go:14:20: vuln.main calls gjson.Result.Get
 
 
 Vulnerability #2: GO-2021-0113
@@ -30,7 +30,7 @@ Vulnerability #2: GO-2021-0113
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
     Call stacks in your code:
-      .../vuln.go:13:16: golang.org/vuln.main calls golang.org/x/text/language.Parse
+      .../vuln.go:13:16: vuln.main calls language.Parse
 
 === Informational ===
 

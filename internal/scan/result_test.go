@@ -15,6 +15,7 @@ func TestFrame(t *testing.T) {
 	for _, test := range []struct {
 		name     string
 		frame    *govulncheck.Frame
+		short    bool
 		wantFunc string
 		wantPos  string
 	}{
@@ -52,10 +53,16 @@ func TestFrame(t *testing.T) {
 			frame:    &govulncheck.Frame{Package: "net/http", Receiver: "*ServeMux", Function: "Handle"},
 			wantFunc: "net/http.ServeMux.Handle",
 		},
+		{
+			name:     "short",
+			frame:    &govulncheck.Frame{Package: "net/http", Function: "Get"},
+			short:    true,
+			wantFunc: "http.Get",
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			buf := &strings.Builder{}
-			addSymbolName(buf, test.frame)
+			addSymbolName(buf, test.frame, test.short)
 			got := buf.String()
 			if got != test.wantFunc {
 				t.Errorf("want %v func name; got %v", test.wantFunc, got)

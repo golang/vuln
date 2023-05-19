@@ -9,9 +9,12 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
@@ -271,23 +274,55 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 		buf.WriteString(": ")
 	}
 
-	addSymbolName(buf, finding.Trace[iTop])
+	addSymbolName(buf, finding.Trace[iTop], true)
 	buf.WriteString(" calls ")
-	addSymbolName(buf, finding.Trace[iTop-1])
+	addSymbolName(buf, finding.Trace[iTop-1], true)
 	if iTop > 1 {
 		buf.WriteString(", which")
 		if iTop > 2 {
 			buf.WriteString(" eventually")
 		}
 		buf.WriteString(" calls ")
-		addSymbolName(buf, finding.Trace[0])
+		addSymbolName(buf, finding.Trace[0], true)
 	}
 	return buf.String()
 }
 
-func addSymbolName(buf *strings.Builder, frame *govulncheck.Frame) {
+// notIdentifier reports whether ch is an invalid identifier character.
+func notIdentifier(ch rune) bool {
+	return !('a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' ||
+		'0' <= ch && ch <= '9' ||
+		ch == '_' ||
+		ch >= utf8.RuneSelf && (unicode.IsLetter(ch) || unicode.IsDigit(ch)))
+}
+
+// importPathToAssumedName is taken from goimports, it works out the natural imported name
+// for a package.
+// This is used to get a shorter identifier in the compact stack trace
+func importPathToAssumedName(importPath string) string {
+	base := path.Base(importPath)
+	if strings.HasPrefix(base, "v") {
+		if _, err := strconv.Atoi(base[1:]); err == nil {
+			dir := path.Dir(importPath)
+			if dir != "." {
+				base = path.Base(dir)
+			}
+		}
+	}
+	base = strings.TrimPrefix(base, "go-")
+	if i := strings.IndexFunc(base, notIdentifier); i >= 0 {
+		base = base[:i]
+	}
+	return base
+}
+
+func addSymbolName(buf *strings.Builder, frame *govulncheck.Frame, short bool) {
 	if frame.Package != "" {
-		buf.WriteString(frame.Package)
+		pkg := frame.Package
+		if short {
+			pkg = importPathToAssumedName(frame.Package)
+		}
+		buf.WriteString(pkg)
 		buf.WriteString(".")
 	}
 	if frame.Receiver != "" {

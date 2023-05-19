@@ -71,35 +71,35 @@ func TestSummarizeCallStack(t *testing.T) {
 		{"mv.v.V", ""},
 		{
 			"m1.p1.F mv.v.V",
-			"m1.p1.F calls mv.v.V",
+			"p1.F calls v.V",
 		},
 		{
 			"m1.p1.F m1.p2.G mv.v.V1 mv.v.v2",
-			"m1.p2.G calls mv.v.V1, which calls mv.v.v2",
+			"p2.G calls v.V1, which calls v.v2",
 		},
 		{
 			"m1.p1.F m1.p2.G mv.v.V$1 mv.v.V1",
-			"m1.p2.G calls mv.v.V, which calls mv.v.V1",
+			"p2.G calls v.V, which calls v.V1",
 		},
 		{
 			"m1.p1.F m1.p2.G$1 mv.v.V1",
-			"m1.p2.G calls mv.v.V1",
+			"p2.G calls v.V1",
 		},
 		{
 			"m1.p1.F m1.p2.G$1 mv.v.V$1 mv.v.V1",
-			"m1.p2.G calls mv.v.V, which calls mv.v.V1",
+			"p2.G calls v.V, which calls v.V1",
 		},
 		{
-			"m1.p1.F x.Y m1.p2.G ma.a.H mb.b.I mc.c.J mv.v.V",
-			"m1.p2.G calls ma.a.H, which eventually calls mv.v.V",
+			"m1.p1.F w.x.Y m1.p2.G ma.a.H mb.b.I mc.c.J mv.v.V",
+			"p2.G calls a.H, which eventually calls v.V",
 		},
 		{
-			"m1.p1.F x.Y m1.p2.G ma.a.H mb.b.I mc.c.J mv.v.V$1 mv.v.V1",
-			"m1.p2.G calls ma.a.H, which eventually calls mv.v.V1",
+			"m1.p1.F w.x.Y m1.p2.G ma.a.H mb.b.I mc.c.J mv.v.V$1 mv.v.V1",
+			"p2.G calls a.H, which eventually calls v.V1",
 		},
 		{
 			"m1.p1.F m1.p1.F$1 ma.a.H mb.b.I mv.v.V1",
-			"m1.p1.F calls ma.a.H, which eventually calls mv.v.V1",
+			"p1.F calls a.H, which eventually calls v.V1",
 		},
 	} {
 		in := stringToFinding(test.in)
@@ -119,7 +119,7 @@ func stringToFinding(s string) *govulncheck.Finding {
 		lastDot := strings.LastIndex(e, ".")
 		f.Trace = append(f.Trace, &govulncheck.Frame{
 			Module:   e[:firstDot],
-			Package:  e[:lastDot],
+			Package:  e[:firstDot] + "/" + e[firstDot+1:lastDot],
 			Function: e[lastDot+1:],
 		})
 	}
