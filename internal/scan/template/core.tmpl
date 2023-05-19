@@ -4,15 +4,16 @@ user the environment used for vulnerability analysis, namely
 the Go version, govulncheck version, vuln dbs with their last
 modified timestamp.
 */ -}}
-govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
-
-Using
-{{- if .GoVersion}} {{block "Go" .GoVersion}}{{.}}{{end}} and{{end}}
-{{- if .ScannerName}} {{block "Scanner" .ScannerName}}{{.}}{{end}}
-{{- if .ScannerVersion}}@{{.ScannerVersion}}{{end}} with{{end}}
-vulnerability data from {{.DB}}
-{{- if .DBLastModified}} (last modified {{.DBLastModified}}){{end}}.
-{{end}}{{/*Preamble*/}}
+  govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
+  {{- "\n\n" -}}
+  Using
+  {{- if .GoVersion}} {{block "Go" .GoVersion}}{{.}}{{end}} and{{end}}
+  {{- if .ScannerName}} {{block "Scanner" .ScannerName}}{{.}}{{end}}
+  {{- if .ScannerVersion}}@{{.ScannerVersion}}{{end}} with{{end}}
+  {{- "\n" -}}
+  vulnerability data from {{.DB}}
+  {{- if .DBLastModified}} (last modified {{.DBLastModified}}){{end}}.{{- "\n" -}}
+{{- end}}{{/*Preamble*/}}
 
 {{define "govulncheck-summary"}}{{/*
 This template is a text template used to print out vulncheck output.
@@ -21,54 +22,57 @@ It consists of three sections showing:
 2) Callstacks detected for each pair of module and vulnerability.
 3) Vulnerabilities that are only imported but not called.
 */ -}}
-{{- template "VulnCount" . -}}
-{{- template "Vulnerability" .Affected -}}
-{{- template "Informational" . -}}
-{{- template "Vulnerability" .Unaffected -}}
+  {{- template "VulnCount" . -}}
+  {{- template "Vulnerability" .Affected -}}
+  {{- template "Informational" . -}}
+  {{- template "Vulnerability" .Unaffected -}}
 {{- end}}{{/*Summary*/}}
 
 {{define "VulnCount" -}}
-{{if eq (len .Affected) 0}}No vulnerabilities found.
-{{else}}Your code is affected by {{template "Value" (len .Affected)}}
-{{- if eq (len .Affected) 1}} vulnerability{{else}} vulnerabilities{{end}} from
-{{- if eq .AffectedModules 0}}{{else if eq .AffectedModules 1}} 1 module{{else}} {{template "Value" .AffectedModules}} modules{{end}}
-{{- if .StdlibAffected}}{{if ne .AffectedModules 0}} and{{end}} the Go standard library{{end}}.
-{{- end}}
+  {{- if eq (len .Affected) 0 -}}
+    No vulnerabilities found.{{- "\n" -}}
+  {{- else -}}
+    Your code is affected by {{template "Value" (len .Affected)}}
+    {{- if eq (len .Affected) 1}} vulnerability{{else}} vulnerabilities{{end}} from
+    {{- if eq .AffectedModules 0}}{{else if eq .AffectedModules 1}} 1 module{{else}} {{template "Value" .AffectedModules}} modules{{end}}
+    {{- if .StdlibAffected}}{{if ne .AffectedModules 0}} and{{end}} the Go standard library{{end}}.
+  {{- end}}
 {{- end}}{{/*VulnCount*/}}
 
 {{- define "Informational" -}}
-{{if len .Unaffected}}
-{{block "InformationalTitle" .}}=== Informational ==={{end}}
-
-Found {{if eq (len .Unaffected) 1}}1 vulnerability{{else}}{{len .Unaffected}} vulnerabilities{{end}} in packages that you import, but there are no call
-stacks leading to the use of {{if eq (len .Unaffected) 1}}this vulnerability{{else}}these vulnerabilities{{end}}. You may not need to
-take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
-for details.
-{{- end -}}
+  {{- if len .Unaffected}}
+    {{- "\n" -}}
+    {{- block "InformationalTitle" .}}=== Informational ==={{end}}{{- "\n" -}}
+    {{- "\n" -}}
+    Found {{if eq (len .Unaffected) 1}}1 vulnerability{{else}}{{len .Unaffected}} vulnerabilities{{end}} in packages that you import, but there are no call{{- "\n" -}}
+    stacks leading to the use of {{if eq (len .Unaffected) 1}}this vulnerability{{else}}these vulnerabilities{{end}}. You may not need to{{- "\n" -}}
+    take any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck{{- "\n" -}}
+    for details.
+  {{- end -}}
 {{- end}}{{/*Informational*/}}
 
 {{- define "Vulnerability" -}}
-{{- if len . -}}
-{{- $idx := 0}}{{range $vulnInfo := .}}
-{{- $idx = inc $idx}}
-
-{{template "Key" "Vulnerability"}} #{{$idx}}: {{block "OSV" $vulnInfo}}{{.OSV}}{{end}}
-{{block "Details" $vulnInfo.Details}}{{wrap "    " . 80}}{{end}}
-  {{template "Key" "More info:"}} {{$vulnInfo.URL}}
-{{- range $modInfo := $vulnInfo.Modules}}
-{{- if $modInfo.IsStd}}
-  Standard library
-{{- else}}
-  {{template "Key" "Module:"}} {{$modInfo.Module}}
-{{- end}}
-    {{template "Key" "Found in:"}} {{$modInfo.FoundVersion}}
-    {{template "Key" "Fixed in:"}} {{if $modInfo.FixedVersion}}{{$modInfo.FixedVersion}}{{else}}N/A{{end}}
-{{- if $modInfo.Platforms}}
-    {{template "Key" "Platforms:"}} {{template "Platforms" $modInfo.Platforms}}
-{{- end}}
-{{- template "Traces" $modInfo.Traces}}{{end}}
-{{- end -}}
-{{- end -}}
+  {{- if len . -}}
+    {{range $idx, $vulnInfo := .}}
+      {{- "\n\n" -}}
+      {{- template "Key" "Vulnerability"}} #{{inc $idx}}: {{block "OSV" $vulnInfo}}{{.OSV}}{{end}}{{- "\n" -}}
+      {{- block "Details" $vulnInfo.Details}}{{wrap "    " . 80}}{{end}}{{- "\n" -}}
+      {{"  "}}{{- template "Key" "More info:"}} {{$vulnInfo.URL}}
+      {{- range $modInfo := $vulnInfo.Modules}}
+        {{- if $modInfo.IsStd -}}
+          {{- "\n" -}}{{"  "}}Standard library
+        {{- else}}
+          {{- "\n" -}}{{"  "}}{{- template "Key" "Module:"}} {{$modInfo.Module}}
+        {{- end}}
+        {{- "\n" -}}{{"    "}}{{- template "Key" "Found in:"}} {{$modInfo.FoundVersion}}
+        {{- "\n" -}}{{"    "}}{{- template "Key" "Fixed in:"}} {{if $modInfo.FixedVersion}}{{$modInfo.FixedVersion}}{{else}}N/A{{end}}
+        {{- if $modInfo.Platforms}}
+            {{- "\n" -}}{{"    "}}{{- template "Key" "Platforms:"}} {{template "Platforms" $modInfo.Platforms}}
+        {{- end}}
+        {{- template "Traces" $modInfo.Traces}}
+      {{- end}}
+    {{- end -}}
+  {{- end -}}
 {{- end -}}{{/*Vulnerability*/}}
 
 {{- define "Platforms" -}}
@@ -76,12 +80,15 @@ for details.
 {{- end}}{{/*Platforms*/}}
 
 {{- define "Traces" -}}
-{{- $count:=0}}{{range $entry := .}}{{if .Compact}}{{$count = inc $count}}{{end}}{{end}}
-{{- if $count}}
-    {{template "Key" "Call stacks in your code:"}}
-{{range $entry := .}}{{if .Compact}}      {{.Compact}}
-{{end}}{{end}}
-{{- end -}}
+  {{- if len .}}
+    {{- "\n" -}}
+    {{- "    "}}{{- template "Key" "Call stacks in your code:"}}{{- "\n" -}}
+    {{- range $entry := .}}
+      {{- if .Compact}}
+        {{- "      "}}{{.Compact}}{{- "\n" -}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
 {{- end}}{{/*Traces*/}}
 
 {{define "Key"}}{{.}}{{end}}
