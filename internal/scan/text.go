@@ -64,8 +64,8 @@ func (h *TextHandler) Config(config *govulncheck.Config) error {
 
 // Progress writes progress updates during govulncheck execution..
 func (h *TextHandler) Progress(progress *govulncheck.Progress) error {
-	fmt.Fprintln(h.w)
 	fmt.Fprintln(h.w, progress.Message)
+	fmt.Fprintln(h.w)
 	return nil
 }
 

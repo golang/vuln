@@ -12,7 +12,7 @@ modified timestamp.
   {{- if .ScannerVersion}}@{{.ScannerVersion}}{{end}} with {{end -}}
   vulnerability data from {{.DB}}
   {{- if .DBLastModified}} (last modified {{.DBLastModified}}){{end}}.
-  {{- "\n" -}}
+  {{- "\n\n" -}}
 {{- end}}{{/*Preamble*/}}
 
 {{define "govulncheck-summary"}}{{/*
@@ -22,13 +22,14 @@ It consists of three sections showing:
 2) Callstacks detected for each pair of module and vulnerability.
 3) Vulnerabilities that are only imported but not called.
 */ -}}
-  {{- template "VulnCount" . -}}
   {{- template "Vulnerability" .Affected -}}
   {{- template "Informational" . -}}
   {{- template "Vulnerability" .Unaffected -}}
+  {{- template "VulnCount" . -}}
 {{- end}}{{/*Summary*/}}
 
 {{define "VulnCount" -}}
+  {{- "\n" -}}
   {{- if eq (len .Affected) 0 -}}
     No vulnerabilities found.
   {{- else -}}
@@ -37,7 +38,7 @@ It consists of three sections showing:
     {{- if eq .AffectedModules 0}}{{else if eq .AffectedModules 1}} 1 module{{else}} {{template "Value" .AffectedModules}} modules{{end}}
     {{- if .StdlibAffected}}{{if ne .AffectedModules 0}} and{{end}} the Go standard library{{end}}.
   {{- end}}
-  {{- "\n\n" -}}
+  {{- "\n" -}}
 {{- end}}{{/*VulnCount*/}}
 
 {{- define "Informational" -}}
@@ -84,12 +85,16 @@ It consists of three sections showing:
 
 {{- define "Traces" -}}
   {{- if len .}}
-    {{- "    "}}{{- template "Key" "Call stacks in your code:"}}{{- "\n" -}}
-    {{- range $entry := .}}
-      {{- "      "}}{{$entry.Compact}}{{- "\n" -}}
+    {{- "    "}}{{- template "Key" "Example traces found:"}}{{- "\n" -}}
+    {{- range $index, $entry := .}}
+      {{- "      "}}#{{inc $index}}: {{template "Trace" $entry}}{{- "\n" -}}
     {{- end}}
   {{- end -}}
 {{- end}}{{/*Traces*/}}
+
+{{- define "Trace" -}}
+  {{.Compact}}
+{{- end}}{{/*Trace*/}}
 
 {{define "Section"}}{{.}}{{"\n"}}{{end}}
 {{define "Key"}}{{.}}{{end}}

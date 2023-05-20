@@ -1,7 +1,6 @@
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Using govulncheck with vulnerability data from .
-No vulnerabilities found.
 
 
 === Informational ===
@@ -18,3 +17,5 @@ Vulnerability #1: two-imports
     Found in: golang.org/vmod@v0.0.1
     Fixed in: golang.org/vmod@v0.1.3
     Platforms: linux/amd64, windows/amd64
+
+No vulnerabilities found.

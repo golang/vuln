@@ -6,7 +6,6 @@ govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulnch
 Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
 
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
-No vulnerabilities found.
 
 
 === Informational ===
@@ -23,3 +22,5 @@ Vulnerability #1: GO-2021-0265
   Module: github.com/tidwall/gjson
     Found in: github.com/tidwall/gjson@v1.9.2
     Fixed in: github.com/tidwall/gjson@v1.9.3
+
+No vulnerabilities found.

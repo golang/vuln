@@ -1,7 +1,6 @@
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Using govulncheck with vulnerability data from .
-Your code is affected by 2 vulnerabilities from 1 module and the Go standard library.
 
 Vulnerability #1: GO-0000-0002
     Stdlib vulnerability
@@ -17,3 +16,5 @@ Vulnerability #2: GO-0000-0001
     Found in: golang.org/vmod@v0.0.1
     Fixed in: golang.org/vmod@v0.1.3
     Platforms: amd
+
+Your code is affected by 2 vulnerabilities from 1 module and the Go standard library.

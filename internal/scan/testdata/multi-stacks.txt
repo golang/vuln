@@ -1,7 +1,6 @@
 govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
 
 Using govulncheck with vulnerability data from .
-Your code is affected by 1 vulnerability from 2 modules.
 
 Vulnerability #1: GO-0000-0001
     Third-party vulnerability
@@ -10,13 +9,15 @@ Vulnerability #1: GO-0000-0001
     Found in: golang.org/vmod@v0.0.1
     Fixed in: golang.org/vmod@v0.1.3
     Platforms: amd
-    Call stacks in your code:
-      main.main calls vmod.Vuln
-      main.main calls vmod.VulnFoo
+    Example traces found:
+      #1: main.main calls vmod.Vuln
+      #2: main.main calls vmod.VulnFoo
 
   Module: golang.org/vmod1
     Found in: golang.org/vmod1@v0.0.3
     Fixed in: golang.org/vmod1@v0.0.4
-    Call stacks in your code:
-      other.Foo calls vmod1.Vuln
-      other.Bar calls vmod1.VulnFoo
+    Example traces found:
+      #1: other.Foo calls vmod1.Vuln
+      #2: other.Bar calls vmod1.VulnFoo
+
+Your code is affected by 1 vulnerability from 2 modules.

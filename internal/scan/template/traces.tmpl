@@ -2,14 +2,9 @@
 This template is a has overrides used when printing in verbose mode.
 */ -}}
 
-{{- define "Traces" -}}
-  {{- if len .}}
-    {{- "    "}}Call stacks in your code:{{- "\n" -}}
-    {{- range $index, $entry := .}}
-      {{- "      "}}#{{inc $index}}: for function {{$entry.Symbol}}{{- "\n" -}}
-      {{- range $entry.Trace}}
-        {{- "        "}}{{- if .Position}}{{.Position}}: {{end}}{{.Name}}{{- "\n" -}}
-      {{- end -}}
-    {{- end -}}
+{{- define "Trace" -}}
+  for function {{.Symbol}}
+  {{- range .Trace}}
+    {{- "\n        "}}{{- if .Position}}{{.Position}}: {{end}}{{.Name}}
   {{- end -}}
-{{- end -}}
+{{- end}}{{/*Trace*/}}
