@@ -207,7 +207,8 @@ func TestInits(t *testing.T) {
 	if len(pkgs) != 1 {
 		t.Fatal("failed to load x test package")
 	}
-	result, err := vulncheck.Source(context.Background(), pkgs, &govulncheck.Config{}, testClient, graph)
+	cfg := &govulncheck.Config{ScanLevel: "symbol"}
+	result, err := vulncheck.Source(context.Background(), pkgs, cfg, testClient, graph)
 	if err != nil {
 		t.Fatal(err)
 	}

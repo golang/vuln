@@ -51,8 +51,8 @@ type Vuln struct {
 
 	// CallSink is the FuncNode in Result.Calls corresponding to Symbol.
 	//
-	// When analyzing binaries, Symbol is not reachable, or Config.ImportsOnly
-	// is true, CallSink will be unavailable and set to 0.
+	// When analyzing binaries, Symbol is not reachable, or cfg.ScanLevel
+	// is symbol, CallSink will be unavailable and set to 0.
 	CallSink *FuncNode
 
 	// ImportSink is the PkgNode in Result.Imports corresponding to PkgPath.

@@ -48,6 +48,7 @@ func parseFlags(stderr io.Writer, args []string) (*config, error) {
 	flags.StringVar(&cfg.mode, "mode", modeSource, "supports source or binary")
 	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
 	flags.Var(&showFlag, "show", "enable display of additional information specified by `list`")
+	scanLevel := flags.String("scan-level", "symbol", "set the scanning level desired, one of module, package or symbol")
 	flags.Usage = func() {
 		fmt.Fprint(flags.Output(), `Govulncheck reports known vulnerabilities in dependencies.
 
@@ -73,6 +74,7 @@ Usage:
 	}
 	cfg.tags = tagsFlag
 	cfg.show = showFlag
+	cfg.ScanLevel = govulncheck.ScanLevel(*scanLevel)
 	if err := validateConfig(cfg); err != nil {
 		fmt.Fprintln(flags.Output(), err)
 		return nil, errUsage

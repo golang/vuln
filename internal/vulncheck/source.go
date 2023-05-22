@@ -56,7 +56,7 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 		cg       *callgraph.Graph
 		buildErr error
 	)
-	if !cfg.ImportsOnly {
+	if cfg.ScanLevel.WantSymbols() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -76,9 +76,9 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	result := &Result{}
 
 	vulnPkgModSlice(pkgs, modVulns, result)
-	// Return result immediately if in ImportsOnly mode or
+	// Return result immediately if not in symbol mode or
 	// if there are no vulnerable packages.
-	if cfg.ImportsOnly || len(result.EntryPackages) == 0 {
+	if !cfg.ScanLevel.WantSymbols() || len(result.EntryPackages) == 0 {
 		return result, nil
 	}
 

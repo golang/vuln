@@ -16,6 +16,8 @@ Usage:
     	output JSON
   -mode string
     	supports source or binary (default "source")
+  -scan-level string
+    	set the scanning level desired, one of module, package or symbol (default "symbol")
   -show list
     	enable display of additional information specified by list
   -tags list
@@ -43,6 +45,8 @@ Usage:
     	output JSON
   -mode string
     	supports source or binary (default "source")
+  -scan-level string
+    	set the scanning level desired, one of module, package or symbol (default "symbol")
   -show list
     	enable display of additional information specified by list
   -tags list

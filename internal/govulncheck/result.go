@@ -11,6 +11,11 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
+const (
+	// ProtocolVersion is the current protocol version this file implements
+	ProtocolVersion = "v0.1.0"
+)
+
 // Message is an entry in the output stream. It will always have exactly one
 // field filled in.
 type Message struct {
@@ -19,9 +24,6 @@ type Message struct {
 	OSV      *osv.Entry `json:"osv,omitempty"`
 	Finding  *Finding   `json:"finding,omitempty"`
 }
-
-// ProtocolVersion is the current protocol version this file implements
-const ProtocolVersion = "v0.1.0"
 
 type Config struct {
 	// ProtocolVersion specifies the version of the JSON protocol.
@@ -53,9 +55,9 @@ type Config struct {
 	// Consider only vulnerabilities that apply to this architecture.
 	GOARCH string `json:"goarch,omitempty"`
 
-	// ImportsOnly instructs vulncheck to analyze import chains only.
-	// Otherwise, call chains are analyzed too.
-	ImportsOnly bool `json:"imports_only,omitempty"`
+	// ScanLevel instructs vulncheck to analyze at a specific level of detail.
+	// Valid values include module, package and symbol.
+	ScanLevel ScanLevel `json:"scan_level,omitempty"`
 }
 
 type Progress struct {
@@ -137,3 +139,13 @@ type Position struct {
 	Line     int    `json:"line"`               // line number, starting at 1
 	Column   int    `json:"column"`             // column number, starting at 1 (byte count)
 }
+
+type ScanLevel string
+
+const (
+	scanLevelModule  = "module"
+	scanLevelPackage = "package"
+	scanLevelSymbol  = "symbol"
+)
+
+func (l ScanLevel) WantSymbols() bool { return l == scanLevelSymbol }

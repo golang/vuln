@@ -54,7 +54,7 @@ func Binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, clien
 		addRequiresOnlyVulns(result, graph, modVulns)
 	} else {
 		for pkg, symbols := range packageSymbols {
-			if cfg.ImportsOnly {
+			if !cfg.ScanLevel.WantSymbols() {
 				addImportsOnlyVulns(result, graph, pkg, symbols, modVulns)
 			} else {
 				addSymbolVulns(result, graph, pkg, symbols, modVulns)

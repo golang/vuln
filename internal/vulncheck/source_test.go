@@ -204,7 +204,7 @@ func TestCalls(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &govulncheck.Config{}
+	cfg := &govulncheck.Config{ScanLevel: "symbol"}
 	result, err := Source(context.Background(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
@@ -302,9 +302,7 @@ func TestFiltering(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 
-	cfg := &govulncheck.Config{
-		ImportsOnly: true,
-	}
+	cfg := &govulncheck.Config{ScanLevel: "symbol"}
 
 	os.Setenv("GOOS", "linux")
 	os.Setenv("GOARCH", "amd64")
@@ -394,7 +392,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 
-	cfg := &govulncheck.Config{}
+	cfg := &govulncheck.Config{ScanLevel: "symbol"}
 	result, err := Source(context.Background(), pkgs, cfg, client, graph)
 	if err != nil {
 		t.Fatal(err)
@@ -464,7 +462,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &govulncheck.Config{}
+	cfg := &govulncheck.Config{ScanLevel: "symbol"}
 	result, err := Source(context.Background(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
@@ -549,7 +547,7 @@ func TestRecursion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &govulncheck.Config{}
+	cfg := &govulncheck.Config{ScanLevel: "symbol"}
 	result, err := Source(context.Background(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
@@ -614,7 +612,7 @@ func TestIssue57174(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := &govulncheck.Config{}
+	cfg := &govulncheck.Config{ScanLevel: "symbol"}
 	_, err = Source(context.Background(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)

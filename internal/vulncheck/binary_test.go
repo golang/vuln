@@ -118,9 +118,7 @@ func TestBinary(t *testing.T) {
 	}
 
 	// Test imports only mode
-	cfg := &govulncheck.Config{
-		ImportsOnly: true,
-	}
+	cfg := &govulncheck.Config{ScanLevel: "package"}
 	res, err := Binary(context.Background(), bin, cfg, c)
 	if err != nil {
 		t.Fatal(err)
@@ -144,7 +142,7 @@ func TestBinary(t *testing.T) {
 	compareVulns(t, wantVulns, res)
 
 	// Test the symbols (non-import mode)
-	cfg = &govulncheck.Config{}
+	cfg.ScanLevel = "symbol"
 	res, err = Binary(context.Background(), bin, cfg, c)
 	if err != nil {
 		t.Fatal(err)
@@ -238,7 +236,7 @@ func Vuln() {
 				t.Fatal(err)
 			}
 
-			cfg := &govulncheck.Config{}
+			cfg := &govulncheck.Config{ScanLevel: "symbol"}
 			res, err := Binary(context.Background(), bin, cfg, c)
 			if err != nil {
 				t.Fatal(err)
