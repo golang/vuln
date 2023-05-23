@@ -115,11 +115,7 @@ func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks ma
 		findings = append(findings, &govulncheck.Finding{
 			OSV:          vv.OSV.ID,
 			FixedVersion: fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected),
-			Trace: []*govulncheck.Frame{{
-				Module:  vv.ImportSink.Module.Path,
-				Version: vv.ImportSink.Module.Version,
-				Package: vv.ImportSink.PkgPath,
-			}},
+			Trace:        []*govulncheck.Frame{frameFromPackage(vv.ImportSink)},
 		})
 	}
 	// For each vulnerability, queue it to be written to the output.
@@ -146,15 +142,9 @@ func tracefromEntries(vcs vulncheck.CallStack) []*govulncheck.Frame {
 	var frames []*govulncheck.Frame
 	for i := len(vcs) - 1; i >= 0; i-- {
 		e := vcs[i]
-		fr := &govulncheck.Frame{
-			Function: e.Function.Name,
-			Receiver: e.Function.Receiver(),
-		}
-		if e.Function.Package != nil {
-			fr.Module = e.Function.Package.Module.Path
-			fr.Version = e.Function.Package.Module.Version
-			fr.Package = e.Function.Package.PkgPath
-		}
+		fr := frameFromPackage(e.Function.Package)
+		fr.Function = e.Function.Name
+		fr.Receiver = e.Function.Receiver()
 		if e.Call == nil || e.Call.Pos == nil {
 			fr.Position = nil
 		} else {
@@ -168,6 +158,20 @@ func tracefromEntries(vcs vulncheck.CallStack) []*govulncheck.Frame {
 		frames = append(frames, fr)
 	}
 	return frames
+}
+
+func frameFromPackage(pkg *packages.Package) *govulncheck.Frame {
+	fr := &govulncheck.Frame{}
+	if pkg != nil {
+		fr.Module = pkg.Module.Path
+		fr.Version = pkg.Module.Version
+		fr.Package = pkg.PkgPath
+	}
+	if pkg.Module.Replace != nil {
+		fr.Module = pkg.Module.Replace.Path
+		fr.Version = pkg.Module.Replace.Version
+	}
+	return fr
 }
 
 // sourceProgressMessage returns a string of the form
