@@ -32,7 +32,11 @@ import (
 func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client, dir string) error {
 	var pkgs []*packages.Package
 	graph := vulncheck.NewPackageGraph(cfg.GoVersion)
-	pkgConfig := &packages.Config{Dir: dir, Tests: cfg.test}
+	pkgConfig := &packages.Config{
+		Dir:   dir,
+		Tests: cfg.test,
+		Env:   cfg.env,
+	}
 	pkgs, err := graph.LoadPackages(pkgConfig, cfg.tags, cfg.patterns)
 	if err != nil {
 		// Try to provide a meaningful and actionable error message.

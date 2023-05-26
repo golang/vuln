@@ -8,13 +8,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"time"
 
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 )
@@ -22,9 +22,9 @@ import (
 // RunGovulncheck performs main govulncheck functionality and exits the
 // program upon success with an appropriate exit status. Otherwise,
 // returns an error.
-func RunGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr io.Writer, args []string) error {
-	cfg, err := parseFlags(stderr, args)
-	if err != nil {
+func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Writer, stderr io.Writer, args []string) error {
+	cfg := &config{env: env}
+	if err := parseFlags(cfg, stderr, args); err != nil {
 		return err
 	}
 	if cfg.mode == modeConvert {
@@ -73,11 +73,17 @@ func RunGovulncheck(ctx context.Context, r io.Reader, stdout io.Writer, stderr i
 func prepareConfig(ctx context.Context, cfg *config, client *client.Client) {
 	cfg.ProtocolVersion = govulncheck.ProtocolVersion
 	cfg.DB = cfg.db
-	if cfg.mode == modeSource {
-		// The Go version is only relevant for source analysis, so omit it for
-		// binary mode.
-		if v, err := internal.GoEnv("GOVERSION"); err == nil {
-			cfg.GoVersion = v
+	if cfg.mode == modeSource && cfg.GoVersion == "" {
+		const goverPrefix = "GOVERSION="
+		for _, env := range cfg.env {
+			if val := strings.TrimPrefix(env, goverPrefix); val != env {
+				cfg.GoVersion = val
+			}
+		}
+		if cfg.GoVersion == "" {
+			if out, err := exec.Command("go", "env", "GOVERSION").Output(); err == nil {
+				cfg.GoVersion = string(out)
+			}
 		}
 	}
 	if bi, ok := debug.ReadBuildInfo(); ok {

@@ -26,6 +26,7 @@ type config struct {
 	tags     []string
 	test     bool
 	show     []string
+	env      []string
 }
 
 const (
@@ -35,8 +36,7 @@ const (
 	modeQuery   = "query"   // only intended for use by gopls
 )
 
-func parseFlags(stderr io.Writer, args []string) (*config, error) {
-	cfg := &config{}
+func parseFlags(cfg *config, stderr io.Writer, args []string) error {
 	var tagsFlag buildutil.TagsFlag
 	var showFlag showFlag
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
@@ -63,23 +63,23 @@ Usage:
 	}
 	if err := flags.Parse(args); err != nil {
 		if err == flag.ErrHelp {
-			return nil, errHelp
+			return errHelp
 		}
-		return nil, err
+		return err
 	}
 	cfg.patterns = flags.Args()
 	if cfg.mode != modeConvert && len(cfg.patterns) == 0 {
 		flags.Usage()
-		return nil, errUsage
+		return errUsage
 	}
 	cfg.tags = tagsFlag
 	cfg.show = showFlag
 	cfg.ScanLevel = govulncheck.ScanLevel(*scanLevel)
 	if err := validateConfig(cfg); err != nil {
 		fmt.Fprintln(flags.Output(), err)
-		return nil, errUsage
+		return errUsage
 	}
-	return cfg, nil
+	return nil
 }
 
 var supportedModes = map[string]bool{

@@ -197,9 +197,7 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 			cmd.Stdin = input
 		}
 		// We set GOVERSION to always get the same results regardless of the underlying Go build system.
-		//TODO: when cmd supports Env:
-		//cmd.Env = append(os.Environ(), "GOVERSION=go1.18")
-		os.Setenv("GOVERSION", "go1.18")
+		cmd.Env = append(os.Environ(), "GOVERSION=go1.18")
 		if err := cmd.Start(); err != nil {
 			return nil, err
 		}

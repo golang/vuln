@@ -26,6 +26,16 @@ type Cmd struct {
 	// Stderr specifies the standard error. If nil, Run connects os.Stderr.
 	Stderr io.Writer
 
+	// Env is the environment to use.
+	// If Env is nil, the current environment is used.
+	// As in os/exec's Cmd, only the last value in the slice for
+	// each environment key is used. To specify the setting of only
+	// a few variables, append to the current environment, as in:
+	//
+	//	opt.Env = append(os.Environ(), "GOOS=plan9", "GOARCH=386")
+	//
+	Env []string
+
 	ctx  context.Context
 	args []string
 	done chan struct{}
@@ -58,6 +68,9 @@ func (c *Cmd) Start() error {
 	if c.Stderr == nil {
 		c.Stderr = os.Stderr
 	}
+	if c.Env == nil {
+		c.Env = os.Environ()
+	}
 	c.done = make(chan struct{})
 	go func() {
 		defer close(c.done)
@@ -82,5 +95,5 @@ func (c *Cmd) scan() error {
 	if err := c.ctx.Err(); err != nil {
 		return err
 	}
-	return scan.RunGovulncheck(c.ctx, c.Stdin, c.Stdout, c.Stderr, c.args)
+	return scan.RunGovulncheck(c.ctx, c.Env, c.Stdin, c.Stdout, c.Stderr, c.args)
 }
