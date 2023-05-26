@@ -6,7 +6,6 @@ package vulncheck
 
 import (
 	"context"
-	"os"
 	"path"
 	"reflect"
 	"testing"
@@ -241,92 +240,6 @@ func TestCalls(t *testing.T) {
 
 	if callStrMap := callGraphToStrMap(result); !reflect.DeepEqual(wantCalls, callStrMap) {
 		t.Errorf("want %v call graph; got %v", wantCalls, callStrMap)
-	}
-}
-
-func TestFiltering(t *testing.T) {
-	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
-		{
-			Name: "golang.org/entry",
-			Files: map[string]interface{}{
-				"x/x.go": `
-			package x
-
-			import "golang.org/vmod/vuln"
-
-			func X() {
-				vuln.V()
-			}`,
-			},
-		},
-		{
-			Name: "golang.org/vmod@v1.2.3",
-			Files: map[string]interface{}{"vuln/vuln.go": `
-			package vuln
-
-			func V() {}
-			`},
-		},
-	})
-	defer e.Cleanup()
-
-	client, err := client.NewInMemoryClient(
-		[]*osv.Entry{
-			{
-				ID: "V",
-				Affected: []osv.Affected{{
-					Module: osv.Module{Path: "golang.org/vmod"},
-					Ranges: []osv.Range{{Type: osv.RangeTypeSemver, Events: []osv.RangeEvent{{Introduced: "1.2.0"}}}},
-					EcosystemSpecific: osv.EcosystemSpecific{
-						Packages: []osv.Package{{
-							Path:    "golang.org/vmod/vuln",
-							Symbols: []string{"V"},
-							GOOS:    []string{"linux"},
-							GOARCH:  []string{"amd64"},
-						}},
-					},
-				}},
-			},
-		})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Load x as entry package.
-	graph := NewPackageGraph("go1.18")
-	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(pkgs) != 1 {
-		t.Fatal("failed to load x test package")
-	}
-
-	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-
-	os.Setenv("GOOS", "linux")
-	os.Setenv("GOARCH", "amd64")
-
-	result, err := Source(context.Background(), pkgs, cfg, client, graph)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if g, w := len(result.Vulns), 1; g != w {
-		t.Errorf("got %d Vulns, want %d", g, w)
-	}
-
-	os.Setenv("GOOS", "freebsd")
-	os.Setenv("GOARCH", "arm64")
-
-	result, err = Source(context.Background(), pkgs, cfg, client, graph)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// GOOS and GOARCH no longer affect the vulns.
-	if g, w := len(result.Vulns), 1; g != w {
-		t.Errorf("got %d Vulns, want %d", g, w)
 	}
 }
 

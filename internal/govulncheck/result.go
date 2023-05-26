@@ -49,12 +49,6 @@ type Config struct {
 	// vulnerabilities.
 	GoVersion string `json:"go_version,omitempty"`
 
-	// Consider only vulnerabilities that apply to this OS.
-	GOOS string `json:"goos,omitempty"`
-
-	// Consider only vulnerabilities that apply to this architecture.
-	GOARCH string `json:"goarch,omitempty"`
-
 	// ScanLevel instructs vulncheck to analyze at a specific level of detail.
 	// Valid values include module, package and symbol.
 	ScanLevel ScanLevel `json:"scan_level,omitempty"`

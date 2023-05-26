@@ -72,7 +72,7 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 		return nil, err
 	}
 	modVulns := moduleVulnerabilities(mv)
-	modVulns = modVulns.filter(cfg.GOOS, cfg.GOARCH)
+	modVulns = modVulns.filter("", "")
 	result := &Result{}
 
 	vulnPkgModSlice(pkgs, modVulns, result)
