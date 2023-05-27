@@ -66,9 +66,9 @@ func TestSummarizeCallStack(t *testing.T) {
 	for _, test := range []struct {
 		in, want string
 	}{
-		{"ma.a.F", ""},
-		{"m1.p1.F", ""},
-		{"mv.v.V", ""},
+		{"ma.a.F", "a.F"},
+		{"m1.p1.F", "p1.F"},
+		{"mv.v.V", "v.V"},
 		{
 			"m1.p1.F mv.v.V",
 			"p1.F calls v.V",

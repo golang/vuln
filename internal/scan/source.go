@@ -257,7 +257,7 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 // If the vulnerable symbol is in the users code, it will show the entry point
 // and the vulnerable symbol.
 func summarizeTrace(finding *govulncheck.Finding) string {
-	if len(finding.Trace) < 2 {
+	if len(finding.Trace) < 1 {
 		return ""
 	}
 	iTop := len(finding.Trace) - 1
@@ -282,17 +282,19 @@ func summarizeTrace(finding *govulncheck.Finding) string {
 		buf.WriteString(": ")
 	}
 
-	addSymbolName(buf, finding.Trace[iTop], true)
-	buf.WriteString(" calls ")
-	addSymbolName(buf, finding.Trace[iTop-1], true)
+	if iTop > 0 {
+		addSymbolName(buf, finding.Trace[iTop], true)
+		buf.WriteString(" calls ")
+	}
 	if iTop > 1 {
+		addSymbolName(buf, finding.Trace[iTop-1], true)
 		buf.WriteString(", which")
 		if iTop > 2 {
 			buf.WriteString(" eventually")
 		}
 		buf.WriteString(" calls ")
-		addSymbolName(buf, finding.Trace[0], true)
 	}
+	addSymbolName(buf, finding.Trace[0], true)
 	return buf.String()
 }
 
@@ -325,6 +327,9 @@ func importPathToAssumedName(importPath string) string {
 }
 
 func addSymbolName(buf *strings.Builder, frame *govulncheck.Frame, short bool) {
+	if frame.Function == "" {
+		return
+	}
 	if frame.Package != "" {
 		pkg := frame.Package
 		if short {

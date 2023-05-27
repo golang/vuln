@@ -16,6 +16,11 @@ Vulnerability #1: GO-2021-0113
   Module: golang.org/x/text
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
+    Example traces found:
+      #1: language.MatchStrings
+      #2: language.MustParse
+      #3: language.Parse
+      #4: language.ParseAcceptLanguage
 
 Vulnerability #2: GO-2020-0015
     An attacker could provide a single byte to a UTF16 decoder instantiated with
@@ -27,5 +32,9 @@ Vulnerability #2: GO-2020-0015
   Module: golang.org/x/text
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.3
+    Example traces found:
+      #1: unicode.bomOverride.Transform
+      #2: unicode.utf16Decoder.Transform
+      #3: transform.String
 
 Your code is affected by 2 vulnerabilities from 1 module.
