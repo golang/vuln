@@ -46,8 +46,8 @@ func binaryCallstacks(vr *vulncheck.Result) map[*vulncheck.Vuln][]vulncheck.Call
 		f := &vulncheck.FuncNode{Package: vv.ImportSink, Name: vv.Symbol}
 		parts := strings.Split(vv.Symbol, ".")
 		if len(parts) != 1 {
-			f.Name = parts[0]
-			f.RecvType = parts[1]
+			f.RecvType = parts[0]
+			f.Name = parts[1]
 		}
 		callstacks[vv] = []vulncheck.CallStack{{{Function: f}}}
 	}

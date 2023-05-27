@@ -112,8 +112,8 @@ $ govulncheck -json -mode=binary ${vendored_binary}
         "module": "github.com/tidwall/gjson",
         "version": "v1.6.5",
         "package": "github.com/tidwall/gjson",
-        "function": "Result",
-        "receiver": "Get"
+        "function": "Get",
+        "receiver": "Result"
       }
     ]
   }
