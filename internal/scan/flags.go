@@ -105,9 +105,6 @@ func validateConfig(cfg *config) error {
 		if len(cfg.tags) > 0 {
 			return fmt.Errorf("the -tags flag is not supported in binary mode")
 		}
-		if len(cfg.show) > 0 {
-			return fmt.Errorf("the -show flag is not supported in binary mode")
-		}
 		if len(cfg.patterns) != 1 {
 			return fmt.Errorf("only 1 binary can be analyzed at a time")
 		}
@@ -136,9 +133,6 @@ func validateConfig(cfg *config) error {
 		}
 		if !cfg.json {
 			return fmt.Errorf("the -json flag must be set in query mode")
-		}
-		if len(cfg.show) > 0 {
-			return fmt.Errorf("the -show flag is not supported in query mode")
 		}
 		for _, pattern := range cfg.patterns {
 			// Parse the input here so that we can catch errors before
