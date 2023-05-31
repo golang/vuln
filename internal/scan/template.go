@@ -5,7 +5,6 @@
 package scan
 
 import (
-	"fmt"
 	"go/token"
 	"sort"
 	"strings"
@@ -47,7 +46,6 @@ type traceSummary struct {
 
 type frameSummary struct {
 	Symbol   string
-	Name     string
 	Position string
 }
 
@@ -153,15 +151,10 @@ func newTraceSummary(f *govulncheck.Finding) traceSummary {
 	}
 	for i := len(f.Trace) - 1; i >= 0; i-- {
 		frame := f.Trace[i]
-		symbol := frame.Function
-		if frame.Receiver != "" {
-			symbol = fmt.Sprint(frame.Receiver, ".", symbol)
-		}
 		buf := &strings.Builder{}
 		addSymbolName(buf, frame, false)
 		css.Trace = append(css.Trace, frameSummary{
-			Symbol:   symbol,
-			Name:     buf.String(),
+			Symbol:   buf.String(),
 			Position: posToString(frame.Position),
 		})
 	}

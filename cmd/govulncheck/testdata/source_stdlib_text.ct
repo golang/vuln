@@ -38,7 +38,7 @@ Vulnerability #1: GO-2022-0969
     Found in: net/http@go1.18
     Fixed in: net/http@go1.19.1
     Example traces found:
-      #1: for function ListenAndServe
+      #1: for function net/http.ListenAndServe
         .../stdlib.go:17:31: golang.org/stdlib.main
         net/http.ListenAndServe
 

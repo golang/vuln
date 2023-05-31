@@ -40,7 +40,7 @@ Vulnerability #1: GO-2021-0113
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
     Example traces found:
-      #1: for function Parse
+      #1: for function golang.org/x/text/language.Parse
         .../subdir.go:8:16: golang.org/vuln/subdir.Foo
         golang.org/x/text/language.Parse
 
