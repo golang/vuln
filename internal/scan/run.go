@@ -43,7 +43,7 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 		handler = govulncheck.NewJSONHandler(stdout)
 	default:
 		th := NewTextHandler(stdout)
-		th.Show = cfg.show
+		th.Show(cfg.show)
 		handler = th
 	}
 
