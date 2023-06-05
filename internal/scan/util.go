@@ -6,7 +6,6 @@ package scan
 
 import (
 	"fmt"
-	"sort"
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
@@ -37,34 +36,6 @@ func validateFindings(findings ...*govulncheck.Finding) error {
 		}
 	}
 	return nil
-}
-
-// sortResults sorts Vulns, Modules, and Packages of r.
-func sortResult(findings []*govulncheck.Finding) {
-	sort.Slice(findings, func(i, j int) bool {
-		if findings[i].OSV > findings[j].OSV {
-			return true
-		}
-		if findings[i].OSV < findings[j].OSV {
-			return false
-		}
-
-		iframe := findings[i].Trace[0]
-		jframe := findings[j].Trace[0]
-		if iframe.Module < jframe.Module {
-			return true
-		}
-		if iframe.Module > jframe.Module {
-			return false
-		}
-		if iframe.Package < jframe.Package {
-			return true
-		}
-		if iframe.Package > jframe.Package {
-			return false
-		}
-		return iframe.Function < jframe.Function
-	})
 }
 
 // latestFixed returns the latest fixed version in the list of affected ranges,

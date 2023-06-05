@@ -9,12 +9,9 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"unicode"
-	"unicode/utf8"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
@@ -242,107 +239,6 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 	}
 
 	return len(depPkgs), len(depMods)
-}
-
-// summarizeTrace returns a short description of the call stack.
-// It prefers to show you the edge from the top module to other code, along with
-// the vulnerable symbol.
-// Where the vulnerable symbol directly called by the users code, it will only
-// show those two points.
-// If the vulnerable symbol is in the users code, it will show the entry point
-// and the vulnerable symbol.
-func summarizeTrace(finding *govulncheck.Finding) string {
-	if len(finding.Trace) < 1 {
-		return ""
-	}
-	iTop := len(finding.Trace) - 1
-	topModule := finding.Trace[iTop].Module
-	// search for the exit point of the top module
-	for i, frame := range finding.Trace {
-		if frame.Module == topModule {
-			iTop = i
-			break
-		}
-	}
-
-	if iTop == 0 {
-		// all in one module, reset to the end
-		iTop = len(finding.Trace) - 1
-	}
-
-	buf := &strings.Builder{}
-	topPos := posToString(finding.Trace[iTop].Position)
-	if topPos != "" {
-		buf.WriteString(topPos)
-		buf.WriteString(": ")
-	}
-
-	if iTop > 0 {
-		addSymbolName(buf, finding.Trace[iTop], true)
-		buf.WriteString(" calls ")
-	}
-	if iTop > 1 {
-		addSymbolName(buf, finding.Trace[iTop-1], true)
-		buf.WriteString(", which")
-		if iTop > 2 {
-			buf.WriteString(" eventually")
-		}
-		buf.WriteString(" calls ")
-	}
-	addSymbolName(buf, finding.Trace[0], true)
-	return buf.String()
-}
-
-// notIdentifier reports whether ch is an invalid identifier character.
-func notIdentifier(ch rune) bool {
-	return !('a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' ||
-		'0' <= ch && ch <= '9' ||
-		ch == '_' ||
-		ch >= utf8.RuneSelf && (unicode.IsLetter(ch) || unicode.IsDigit(ch)))
-}
-
-// importPathToAssumedName is taken from goimports, it works out the natural imported name
-// for a package.
-// This is used to get a shorter identifier in the compact stack trace
-func importPathToAssumedName(importPath string) string {
-	base := path.Base(importPath)
-	if strings.HasPrefix(base, "v") {
-		if _, err := strconv.Atoi(base[1:]); err == nil {
-			dir := path.Dir(importPath)
-			if dir != "." {
-				base = path.Base(dir)
-			}
-		}
-	}
-	base = strings.TrimPrefix(base, "go-")
-	if i := strings.IndexFunc(base, notIdentifier); i >= 0 {
-		base = base[:i]
-	}
-	return base
-}
-
-func addSymbolName(buf *strings.Builder, frame *govulncheck.Frame, short bool) {
-	if frame.Function == "" {
-		return
-	}
-	if frame.Package != "" {
-		pkg := frame.Package
-		if short {
-			pkg = importPathToAssumedName(frame.Package)
-		}
-		buf.WriteString(pkg)
-		buf.WriteString(".")
-	}
-	if frame.Receiver != "" {
-		if frame.Receiver[0] == '*' {
-			buf.WriteString(frame.Receiver[1:])
-		} else {
-			buf.WriteString(frame.Receiver)
-		}
-		buf.WriteString(".")
-	}
-	funcname := strings.Split(frame.Function, "$")[0]
-	buf.WriteString(funcname)
 }
 
 // updateInitPositions populates non-existing positions of init functions

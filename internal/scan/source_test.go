@@ -103,7 +103,7 @@ func TestSummarizeCallStack(t *testing.T) {
 		},
 	} {
 		in := stringToFinding(test.in)
-		got := summarizeTrace(in)
+		got := compactTrace(in)
 		if got != test.want {
 			t.Errorf("%s:\ngot  %s\nwant %s", test.in, got, test.want)
 		}

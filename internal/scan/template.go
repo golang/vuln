@@ -6,8 +6,13 @@ package scan
 
 import (
 	"go/token"
+	"io"
+	"path"
 	"sort"
+	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
@@ -35,24 +40,18 @@ type moduleSummary struct {
 	FoundVersion string
 	FixedVersion string
 	Platforms    []string
-	Traces       []traceSummary
+	Traces       []*findingSummary
 }
 
-type traceSummary struct {
-	Symbol  string
+type findingSummary struct {
+	*govulncheck.Finding
 	Compact string
-	Trace   []frameSummary
 }
 
-type frameSummary struct {
-	Symbol   string
-	Position string
-}
-
-func createSummaries(osvs []*osv.Entry, findings []*govulncheck.Finding) summaries {
+func createSummaries(osvs []*osv.Entry, findings []*findingSummary) summaries {
 	s := summaries{}
 	// group findings by osv
-	grouped := map[string][]*govulncheck.Finding{}
+	grouped := map[string][]*findingSummary{}
 	var osvids []string
 	for _, f := range findings {
 		list, found := grouped[f.OSV]
@@ -86,11 +85,10 @@ func createSummaries(osvs []*osv.Entry, findings []*govulncheck.Finding) summari
 	return s
 }
 
-func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.Finding) vulnSummary {
+func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*findingSummary) vulnSummary {
 	seen := map[string]struct{}{}
 	vInfo := vulnSummary{
-		Affected: IsCalled(findings),
-		OSV:      osvid,
+		OSV: osvid,
 	}
 	osv := findOSV(osvs, osvid)
 	if osv != nil {
@@ -101,6 +99,9 @@ func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.
 	}
 	for _, f := range findings {
 		lastFrame := f.Trace[0]
+		if lastFrame.Function != "" {
+			vInfo.Affected = true
+		}
 		// find the right module summary, or create it if this is the first stack for that module
 		var ms *moduleSummary
 		for _, check := range vInfo.Modules {
@@ -119,15 +120,14 @@ func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*govulncheck.
 			}
 			vInfo.Modules = append(vInfo.Modules, ms)
 		}
-		css := newTraceSummary(f)
-		if css.Compact == "" {
+		if f.Compact == "" {
 			continue
 		}
 		// Suppress duplicate compact call stack summaries.
 		// Note that different call stacks can yield same summaries.
-		if _, wasSeen := seen[css.Compact]; !wasSeen {
-			seen[css.Compact] = struct{}{}
-			ms.Traces = append(ms.Traces, css)
+		if _, wasSeen := seen[f.Compact]; !wasSeen {
+			seen[f.Compact] = struct{}{}
+			ms.Traces = append(ms.Traces, f)
 		}
 	}
 	return vInfo
@@ -142,24 +142,11 @@ func findOSV(osvs []*osv.Entry, id string) *osv.Entry {
 	return nil
 }
 
-func newTraceSummary(f *govulncheck.Finding) traceSummary {
-	css := traceSummary{
-		Compact: summarizeTrace(f),
+func newFindingSummary(f *govulncheck.Finding) *findingSummary {
+	return &findingSummary{
+		Finding: f,
+		Compact: compactTrace(f),
 	}
-	if len(f.Trace) == 1 && f.Trace[0].Function == "" {
-		return css
-	}
-	for i := len(f.Trace) - 1; i >= 0; i-- {
-		frame := f.Trace[i]
-		buf := &strings.Builder{}
-		addSymbolName(buf, frame, false)
-		css.Trace = append(css.Trace, frameSummary{
-			Symbol:   buf.String(),
-			Position: posToString(frame.Position),
-		})
-	}
-	css.Symbol = css.Trace[len(css.Trace)-1].Symbol
-	return css
 }
 
 // platforms returns a string describing the GOOS, GOARCH,
@@ -218,4 +205,111 @@ func posToString(p *govulncheck.Position) string {
 		Line:     p.Line,
 		Column:   p.Column,
 	}.String()
+}
+
+func symbol(frame *govulncheck.Frame, short bool) string {
+	buf := &strings.Builder{}
+	addSymbolName(buf, frame, short)
+	return buf.String()
+}
+
+// compactTrace returns a short description of the call stack.
+// It prefers to show you the edge from the top module to other code, along with
+// the vulnerable symbol.
+// Where the vulnerable symbol directly called by the users code, it will only
+// show those two points.
+// If the vulnerable symbol is in the users code, it will show the entry point
+// and the vulnerable symbol.
+func compactTrace(finding *govulncheck.Finding) string {
+	if len(finding.Trace) < 1 {
+		return ""
+	}
+	iTop := len(finding.Trace) - 1
+	topModule := finding.Trace[iTop].Module
+	// search for the exit point of the top module
+	for i, frame := range finding.Trace {
+		if frame.Module == topModule {
+			iTop = i
+			break
+		}
+	}
+
+	if iTop == 0 {
+		// all in one module, reset to the end
+		iTop = len(finding.Trace) - 1
+	}
+
+	buf := &strings.Builder{}
+	topPos := posToString(finding.Trace[iTop].Position)
+	if topPos != "" {
+		buf.WriteString(topPos)
+		buf.WriteString(": ")
+	}
+
+	if iTop > 0 {
+		addSymbolName(buf, finding.Trace[iTop], true)
+		buf.WriteString(" calls ")
+	}
+	if iTop > 1 {
+		addSymbolName(buf, finding.Trace[iTop-1], true)
+		buf.WriteString(", which")
+		if iTop > 2 {
+			buf.WriteString(" eventually")
+		}
+		buf.WriteString(" calls ")
+	}
+	addSymbolName(buf, finding.Trace[0], true)
+	return buf.String()
+}
+
+// notIdentifier reports whether ch is an invalid identifier character.
+func notIdentifier(ch rune) bool {
+	return !('a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' ||
+		'0' <= ch && ch <= '9' ||
+		ch == '_' ||
+		ch >= utf8.RuneSelf && (unicode.IsLetter(ch) || unicode.IsDigit(ch)))
+}
+
+// importPathToAssumedName is taken from goimports, it works out the natural imported name
+// for a package.
+// This is used to get a shorter identifier in the compact stack trace
+func importPathToAssumedName(importPath string) string {
+	base := path.Base(importPath)
+	if strings.HasPrefix(base, "v") {
+		if _, err := strconv.Atoi(base[1:]); err == nil {
+			dir := path.Dir(importPath)
+			if dir != "." {
+				base = path.Base(dir)
+			}
+		}
+	}
+	base = strings.TrimPrefix(base, "go-")
+	if i := strings.IndexFunc(base, notIdentifier); i >= 0 {
+		base = base[:i]
+	}
+	return base
+}
+
+func addSymbolName(w io.Writer, frame *govulncheck.Frame, short bool) {
+	if frame.Function == "" {
+		return
+	}
+	if frame.Package != "" {
+		pkg := frame.Package
+		if short {
+			pkg = importPathToAssumedName(frame.Package)
+		}
+		io.WriteString(w, pkg)
+		io.WriteString(w, ".")
+	}
+	if frame.Receiver != "" {
+		if frame.Receiver[0] == '*' {
+			io.WriteString(w, frame.Receiver[1:])
+		} else {
+			io.WriteString(w, frame.Receiver)
+		}
+		io.WriteString(w, ".")
+	}
+	funcname := strings.Split(frame.Function, "$")[0]
+	io.WriteString(w, funcname)
 }

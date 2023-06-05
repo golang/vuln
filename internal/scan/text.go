@@ -7,6 +7,7 @@ package scan
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"golang.org/x/vuln/internal/govulncheck"
@@ -35,7 +36,7 @@ func NewTextHandler(w io.Writer) *TextHandler {
 type TextHandler struct {
 	w        io.Writer
 	osvs     []*osv.Entry
-	findings []*govulncheck.Finding
+	findings []*findingSummary
 
 	err error
 
@@ -68,7 +69,7 @@ func Flush(h govulncheck.Handler) error {
 }
 
 func (h *TextHandler) Flush() error {
-	sortResult(h.findings)
+	sortFindingSummaries(h.findings)
 	summary := createSummaries(h.osvs, h.findings)
 	h.findings = nil
 
@@ -133,7 +134,7 @@ func (h *TextHandler) Finding(finding *govulncheck.Finding) error {
 	if err := validateFindings(finding); err != nil {
 		return err
 	}
-	h.findings = append(h.findings, finding)
+	h.findings = append(h.findings, newFindingSummary(finding))
 	return nil
 }
 
@@ -192,7 +193,7 @@ func (h *TextHandler) vulnerabilities(vulns []vulnSummary) {
 	}
 }
 
-func (h *TextHandler) traces(traces []traceSummary) {
+func (h *TextHandler) traces(traces []*findingSummary) {
 	if len(traces) == 0 {
 		return
 	}
@@ -202,13 +203,14 @@ func (h *TextHandler) traces(traces []traceSummary) {
 		if !h.showTraces {
 			h.print(entry.Compact, "\n")
 		} else {
-			h.print("for function ", entry.Symbol, "\n")
-			for _, t := range entry.Trace {
+			h.print("for function ", symbol(entry.Trace[0], false), "\n")
+			for i := len(entry.Trace) - 1; i >= 0; i-- {
+				t := entry.Trace[i]
 				h.print("        ")
-				if t.Position != "" {
-					h.print(t.Position, ": ")
+				if t.Position != nil {
+					h.print(posToString(t.Position), ": ")
 				}
-				h.print(t.Symbol, "\n")
+				h.print(symbol(t, false), "\n")
 			}
 		}
 	}
@@ -307,4 +309,31 @@ func choose(b bool, yes, no any) any {
 		return yes
 	}
 	return no
+}
+
+func sortFindingSummaries(findings []*findingSummary) {
+	sort.Slice(findings, func(i, j int) bool {
+		if findings[i].OSV > findings[j].OSV {
+			return true
+		}
+		if findings[i].OSV < findings[j].OSV {
+			return false
+		}
+
+		iframe := findings[i].Trace[0]
+		jframe := findings[j].Trace[0]
+		if iframe.Module < jframe.Module {
+			return true
+		}
+		if iframe.Module > jframe.Module {
+			return false
+		}
+		if iframe.Package < jframe.Package {
+			return true
+		}
+		if iframe.Package > jframe.Package {
+			return false
+		}
+		return iframe.Function < jframe.Function
+	})
 }
