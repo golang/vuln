@@ -24,6 +24,7 @@ import (
 	"unsafe"
 
 	"github.com/google/go-cmdtest"
+	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/web"
 	"golang.org/x/vuln/scan"
@@ -213,7 +214,20 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 			fmt.Fprintln(buf, err)
 			err = &cmdtest.ExitCodeErr{Msg: err.Error(), Code: 1}
 		}
-		out := buf.Bytes()
+		sorted := buf
+		if err == nil && isJSONMode(args) {
+			// parse, sort and reprint the output for test stability
+			gather := test.NewMockHandler()
+			if err := govulncheck.HandleJSON(buf, gather); err != nil {
+				return nil, err
+			}
+			sorted = &bytes.Buffer{}
+			h := govulncheck.NewJSONHandler(sorted)
+			if err := gather.Write(h); err != nil {
+				return nil, err
+			}
+		}
+		out := sorted.Bytes()
 		for _, fix := range fixups {
 			out = fix.apply(out)
 		}
@@ -224,4 +238,13 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 		return
 	}
 	ts.RunParallel(t, false)
+}
+
+func isJSONMode(args []string) bool {
+	for _, arg := range args {
+		if arg == "-json" {
+			return true
+		}
+	}
+	return false
 }

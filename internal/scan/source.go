@@ -90,16 +90,16 @@ func filterCallStacks(callstacks map[*vulncheck.Vuln][]vulncheck.CallStack) {
 
 func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks map[*vulncheck.Vuln][]vulncheck.CallStack) error {
 	osvs := map[string]*osv.Entry{}
-	var findings []*govulncheck.Finding
 	// first deal with all the affected vulnerabilities
 	emitted := map[string]bool{}
+	seen := map[string]bool{}
 	for _, vv := range vr.Vulns {
 		osvs[vv.OSV.ID] = vv.OSV
 		fixed := fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected)
 		stacks := callstacks[vv]
 		for _, stack := range stacks {
 			emitted[vv.OSV.ID] = true
-			findings = append(findings, &govulncheck.Finding{
+			emitFinding(handler, osvs, seen, &govulncheck.Finding{
 				OSV:          vv.OSV.ID,
 				FixedVersion: fixed,
 				Trace:        tracefromEntries(stack),
@@ -115,28 +115,23 @@ func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks ma
 			continue
 		}
 		emitted[vv.OSV.ID] = true
-		// no callstacks, add an unafected finding
-		findings = append(findings, &govulncheck.Finding{
+		emitFinding(handler, osvs, seen, &govulncheck.Finding{
 			OSV:          vv.OSV.ID,
 			FixedVersion: fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected),
 			Trace:        []*govulncheck.Frame{frameFromPackage(vv.ImportSink)},
 		})
 	}
-	// For each vulnerability, queue it to be written to the output.
-	seen := map[string]bool{}
-	sortResult(findings)
-	for _, f := range findings {
-		if !seen[f.OSV] {
-			seen[f.OSV] = true
-			if err := handler.OSV(osvs[f.OSV]); err != nil {
-				return err
-			}
-		}
-		if err := handler.Finding(f); err != nil {
+	return nil
+}
+
+func emitFinding(handler govulncheck.Handler, osvs map[string]*osv.Entry, seen map[string]bool, finding *govulncheck.Finding) error {
+	if !seen[finding.OSV] {
+		seen[finding.OSV] = true
+		if err := handler.OSV(osvs[finding.OSV]); err != nil {
 			return err
 		}
 	}
-	return nil
+	return handler.Finding(finding)
 }
 
 // tracefromEntries creates a sequence of
