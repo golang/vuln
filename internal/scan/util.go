@@ -67,14 +67,12 @@ func fixedVersion(modulePath string, affected []osv.Affected) string {
 	return fixed
 }
 
-func moduleVersionString(modulePath, pkgPath, version string) string {
+func moduleVersionString(modulePath, version string) string {
 	if version == "" {
 		return ""
 	}
-	path := modulePath
 	if modulePath == internal.GoStdModulePath || modulePath == internal.GoCmdModulePath {
 		version = semverToGoTag(version)
-		path = pkgPath
 	}
-	return fmt.Sprintf("%s@%s", path, version)
+	return version
 }

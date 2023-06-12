@@ -184,8 +184,12 @@ func (h *TextHandler) vulnerability(index int, findings []*findingSummary) {
 		//TODO: this assumes all traces on a module are found and fixed at the same versions
 		lastFrame := module[0].Trace[0]
 		mod := lastFrame.Module
-		foundVersion := moduleVersionString(lastFrame.Module, lastFrame.Package, lastFrame.Version)
-		fixedVersion := moduleVersionString(lastFrame.Module, lastFrame.Package, module[0].FixedVersion)
+		path := lastFrame.Module
+		if path == internal.GoStdModulePath {
+			path = lastFrame.Package
+		}
+		foundVersion := moduleVersionString(lastFrame.Module, lastFrame.Version)
+		fixedVersion := moduleVersionString(lastFrame.Module, module[0].FixedVersion)
 		if !first {
 			h.print("\n")
 		}
@@ -199,10 +203,10 @@ func (h *TextHandler) vulnerability(index int, findings []*findingSummary) {
 		}
 		h.print("\n    ")
 		h.style(keyStyle, "Found in: ")
-		h.print(foundVersion, "\n    ")
+		h.print(path, "@", foundVersion, "\n    ")
 		h.style(keyStyle, "Fixed in: ")
 		if fixedVersion != "" {
-			h.print(fixedVersion)
+			h.print(path, "@", fixedVersion)
 		} else {
 			h.print("N/A")
 		}
