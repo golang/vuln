@@ -172,7 +172,11 @@ func (h *TextHandler) vulnerability(index int, findings []*findingSummary) {
 	}
 	h.print("\n")
 	h.style(detailsStyle)
-	h.wrap("    ", findings[0].OSV.Details, 80)
+	description := findings[0].OSV.Summary
+	if description == "" {
+		description = findings[0].OSV.Details
+	}
+	h.wrap("    ", description, 80)
 	h.style(defaultStyle)
 	h.print("\n")
 	h.style(keyStyle, "  More info:")
