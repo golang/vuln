@@ -19,127 +19,102 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-type summaries struct {
-	Affected        []vulnSummary `json:"affected,omitempty"`
-	Unaffected      []vulnSummary `json:"unaffected,omitempty"`
-	AffectedModules int           `json:"affected_modules,omitempty"`
-	StdlibAffected  bool          `json:"stdlib_affected,omitempty"`
-}
-
-type vulnSummary struct {
-	OSV      string
-	Details  string
-	URL      string
-	Modules  []*moduleSummary
-	Affected bool
-}
-
-type moduleSummary struct {
-	IsStd        bool
-	Module       string
-	FoundVersion string
-	FixedVersion string
-	Platforms    []string
-	Traces       []*findingSummary
-}
-
 type findingSummary struct {
 	*govulncheck.Finding
 	Compact string
+	OSV     *osv.Entry
 }
 
-func createSummaries(osvs []*osv.Entry, findings []*findingSummary) summaries {
-	s := summaries{}
-	// group findings by osv
-	grouped := map[string][]*findingSummary{}
-	var osvids []string
-	for _, f := range findings {
-		list, found := grouped[f.OSV]
-		if !found {
-			osvids = append(osvids, f.OSV)
-		}
-		grouped[f.OSV] = append(list, f)
-	}
-	// unaffected are (imported) OSVs none of
-	// which vulnerabilities are called.
-	for _, osvid := range osvids {
-		list := grouped[osvid]
-		entry := createVulnSummary(osvs, osvid, list)
-		if entry.Affected {
-			s.Affected = append(s.Affected, entry)
-		} else {
-			s.Unaffected = append(s.Unaffected, entry)
-		}
-	}
-	mods := make(map[string]struct{})
-	for _, a := range s.Affected {
-		for _, m := range a.Modules {
-			if m.IsStd {
-				s.StdlibAffected = true
-			} else {
-				mods[m.Module] = struct{}{}
-			}
-		}
-	}
-	s.AffectedModules = len(mods)
-	return s
+type summaryCounters struct {
+	VulnerabilitiesCalled int
+	ModulesCalled         int
+	StdlibCalled          bool
 }
 
-func createVulnSummary(osvs []*osv.Entry, osvid string, findings []*findingSummary) vulnSummary {
-	seen := map[string]struct{}{}
-	vInfo := vulnSummary{
-		OSV: osvid,
-	}
-	osv := findOSV(osvs, osvid)
-	if osv != nil {
-		vInfo.Details = osv.Details
-		if osv.DatabaseSpecific != nil {
-			vInfo.URL = osv.DatabaseSpecific.URL
-		}
-	}
+func fixupFindings(osvs []*osv.Entry, findings []*findingSummary) {
 	for _, f := range findings {
-		lastFrame := f.Trace[0]
-		if lastFrame.Function != "" {
-			vInfo.Affected = true
-		}
-		// find the right module summary, or create it if this is the first stack for that module
-		var ms *moduleSummary
-		for _, check := range vInfo.Modules {
-			if check.Module == lastFrame.Module {
-				ms = check
-				break
-			}
-		}
-		if ms == nil {
-			ms = &moduleSummary{
-				IsStd:        lastFrame.Module == internal.GoStdModulePath,
-				Module:       lastFrame.Module,
-				FoundVersion: moduleVersionString(lastFrame.Module, lastFrame.Package, lastFrame.Version),
-				FixedVersion: moduleVersionString(lastFrame.Module, lastFrame.Package, f.FixedVersion),
-				Platforms:    platforms(lastFrame.Module, osv),
-			}
-			vInfo.Modules = append(vInfo.Modules, ms)
-		}
-		if f.Compact == "" {
+		f.OSV = getOSV(osvs, f.Finding.OSV)
+	}
+}
+
+func groupByVuln(findings []*findingSummary) [][]*findingSummary {
+	return groupBy(findings, func(left, right *findingSummary) int {
+		return -strings.Compare(left.OSV.ID, right.OSV.ID)
+	})
+}
+
+func groupByModule(findings []*findingSummary) [][]*findingSummary {
+	return groupBy(findings, func(left, right *findingSummary) int {
+		return strings.Compare(left.Trace[0].Module, right.Trace[0].Module)
+	})
+}
+
+func groupBy(findings []*findingSummary, compare func(left, right *findingSummary) int) [][]*findingSummary {
+	switch len(findings) {
+	case 0:
+		return nil
+	case 1:
+		return [][]*findingSummary{findings}
+	}
+	sort.SliceStable(findings, func(i, j int) bool {
+		return compare(findings[i], findings[j]) < 0
+	})
+	result := [][]*findingSummary{}
+	first := 0
+	for i, next := range findings {
+		if i == first {
 			continue
 		}
-		// Suppress duplicate compact call stack summaries.
-		// Note that different call stacks can yield same summaries.
-		if _, wasSeen := seen[f.Compact]; !wasSeen {
-			seen[f.Compact] = struct{}{}
-			ms.Traces = append(ms.Traces, f)
+		if compare(findings[first], next) != 0 {
+			result = append(result, findings[first:i])
+			first = i
 		}
 	}
-	return vInfo
+	result = append(result, findings[first:])
+	return result
 }
 
-func findOSV(osvs []*osv.Entry, id string) *osv.Entry {
+func counters(findings []*findingSummary) summaryCounters {
+	vulns := map[string]struct{}{}
+	modules := map[string]struct{}{}
+	for _, f := range findings {
+		if f.Trace[0].Function == "" {
+			continue
+		}
+		id := f.OSV.ID
+		vulns[id] = struct{}{}
+		mod := f.Trace[0].Module
+		modules[mod] = struct{}{}
+	}
+	result := summaryCounters{
+		VulnerabilitiesCalled: len(vulns),
+		ModulesCalled:         len(modules),
+	}
+	if _, found := modules[internal.GoStdModulePath]; found {
+		result.StdlibCalled = true
+		result.ModulesCalled--
+	}
+	return result
+}
+
+func isCalled(findings []*findingSummary) bool {
+	for _, f := range findings {
+		if f.Trace[0].Function != "" {
+			return true
+		}
+	}
+	return false
+}
+func getOSV(osvs []*osv.Entry, id string) *osv.Entry {
 	for _, entry := range osvs {
 		if entry.ID == id {
 			return entry
 		}
 	}
-	return nil
+	return &osv.Entry{
+		ID:               id,
+		DatabaseSpecific: &osv.DatabaseSpecific{},
+	}
 }
 
 func newFindingSummary(f *govulncheck.Finding) *findingSummary {

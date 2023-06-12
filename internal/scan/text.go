@@ -7,9 +7,9 @@ package scan
 import (
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
 )
@@ -62,34 +62,23 @@ func (h *TextHandler) Show(show []string) {
 }
 
 func Flush(h govulncheck.Handler) error {
-	if th, ok := h.(*TextHandler); ok {
+	if th, ok := h.(interface{ Flush() error }); ok {
 		return th.Flush()
 	}
 	return nil
 }
 
 func (h *TextHandler) Flush() error {
-	sortFindingSummaries(h.findings)
-	summary := createSummaries(h.osvs, h.findings)
-	h.findings = nil
-
-	h.vulnerabilities(summary.Affected)
-	if len(summary.Unaffected) > 0 {
-		h.print("\n")
-		h.style(sectionStyle, "=== Informational ===\n")
-		h.print("\nFound ", len(summary.Unaffected))
-		h.print(choose(len(summary.Unaffected) == 1, ` vulnerability`, ` vulnerabilities`))
-		h.print(" in packages that you import, but there are no call\nstacks leading to the use of ")
-		h.print(choose(len(summary.Unaffected) == 1, `this vulnerability`, `these vulnerabilities`))
-		h.print(". You may not need to\ntake any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck\nfor details.\n\n")
-		h.vulnerabilities(summary.Unaffected)
+	if len(h.findings) == 0 {
+		return nil
 	}
-	h.summary(summary)
-
+	fixupFindings(h.osvs, h.findings)
+	h.byVulnerability(h.findings)
+	h.summary(h.findings)
 	if h.err != nil {
 		return h.err
 	}
-	if len(summary.Affected) > 0 {
+	if isCalled(h.findings) {
 		return errVulnerabilitiesFound
 	}
 	return nil
@@ -138,67 +127,112 @@ func (h *TextHandler) Finding(finding *govulncheck.Finding) error {
 	return nil
 }
 
-func (h *TextHandler) vulnerabilities(vulns []vulnSummary) {
-	for iv, v := range vulns {
-		if iv > 0 {
-			h.print("\n")
-		}
-		h.style(keyStyle, "Vulnerability")
-		h.print(" #", iv+1, ": ")
-		if v.Affected {
-			h.style(osvCalledStyle, v.OSV)
-		} else {
-			h.style(osvImportedStyle, v.OSV)
-		}
-		h.print("\n")
-		h.style(detailsStyle)
-		h.wrap("    ", v.Details, 80)
-		h.style(defaultStyle)
-		h.print("\n")
-		h.style(keyStyle, "  More info:")
-		h.print(" ", v.URL, "\n")
-		for im, m := range v.Modules {
-			if im > 0 {
+func (h *TextHandler) byVulnerability(findings []*findingSummary) {
+	byVuln := groupByVuln(findings)
+	called := 0
+	for _, findings := range byVuln {
+		if isCalled(findings) {
+			if called > 0 {
 				h.print("\n")
 			}
-			h.print("  ")
-			if m.IsStd {
-				h.print("Standard library")
-			} else {
-				h.style(keyStyle, "Module: ")
-				h.print(m.Module)
-			}
-			h.print("\n    ")
-			h.style(keyStyle, "Found in: ")
-			h.print(m.FoundVersion, "\n    ")
-			h.style(keyStyle, "Fixed in: ")
-			if m.FixedVersion != "" {
-				h.print(m.FixedVersion)
-			} else {
-				h.print("N/A")
-			}
-			h.print("\n")
-			if len(m.Platforms) > 0 {
-				h.style(keyStyle, "    Platforms: ")
-				for ip, p := range m.Platforms {
-					if ip > 0 {
-						h.print(", ")
-					}
-					h.print(p)
-				}
+			h.vulnerability(called, findings)
+			called++
+		}
+	}
+	unCalled := len(byVuln) - called
+	if unCalled == 0 {
+		return
+	}
+	h.print("\n")
+	h.style(sectionStyle, "=== Informational ===\n")
+	h.print("\nFound ", unCalled)
+	h.print(choose(unCalled == 1, ` vulnerability`, ` vulnerabilities`))
+	h.print(" in packages that you import, but there are no call\nstacks leading to the use of ")
+	h.print(choose(unCalled == 1, `this vulnerability`, `these vulnerabilities`))
+	h.print(". You may not need to\ntake any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck\nfor details.\n\n")
+	index := 0
+	for _, findings := range byVuln {
+		if !isCalled(findings) {
+			if index > 0 {
 				h.print("\n")
 			}
-			h.traces(m.Traces)
+			h.vulnerability(index, findings)
+			index++
 		}
 	}
 }
 
-func (h *TextHandler) traces(traces []*findingSummary) {
-	if len(traces) == 0 {
-		return
+func (h *TextHandler) vulnerability(index int, findings []*findingSummary) {
+	h.style(keyStyle, "Vulnerability")
+	h.print(" #", index+1, ": ")
+	if isCalled(findings) {
+		h.style(osvCalledStyle, findings[0].OSV.ID)
+	} else {
+		h.style(osvImportedStyle, findings[0].OSV.ID)
 	}
-	h.style(keyStyle, "    Example traces found:\n")
+	h.print("\n")
+	h.style(detailsStyle)
+	h.wrap("    ", findings[0].OSV.Details, 80)
+	h.style(defaultStyle)
+	h.print("\n")
+	h.style(keyStyle, "  More info:")
+	h.print(" ", findings[0].OSV.DatabaseSpecific.URL, "\n")
+
+	byModule := groupByModule(findings)
+	first := true
+	for _, module := range byModule {
+		//TODO: this assumes all traces on a module are found and fixed at the same versions
+		lastFrame := module[0].Trace[0]
+		mod := lastFrame.Module
+		foundVersion := moduleVersionString(lastFrame.Module, lastFrame.Package, lastFrame.Version)
+		fixedVersion := moduleVersionString(lastFrame.Module, lastFrame.Package, module[0].FixedVersion)
+		if !first {
+			h.print("\n")
+		}
+		first = false
+		h.print("  ")
+		if mod == internal.GoStdModulePath {
+			h.print("Standard library")
+		} else {
+			h.style(keyStyle, "Module: ")
+			h.print(mod)
+		}
+		h.print("\n    ")
+		h.style(keyStyle, "Found in: ")
+		h.print(foundVersion, "\n    ")
+		h.style(keyStyle, "Fixed in: ")
+		if fixedVersion != "" {
+			h.print(fixedVersion)
+		} else {
+			h.print("N/A")
+		}
+		h.print("\n")
+		platforms := platforms(mod, module[0].OSV)
+		if len(platforms) > 0 {
+			h.style(keyStyle, "    Platforms: ")
+			for ip, p := range platforms {
+				if ip > 0 {
+					h.print(", ")
+				}
+				h.print(p)
+			}
+			h.print("\n")
+		}
+		h.traces(module)
+	}
+}
+
+func (h *TextHandler) traces(traces []*findingSummary) {
+	first := true
 	for i, entry := range traces {
+		if entry.Compact == "" {
+			continue
+		}
+		if first {
+			h.style(keyStyle, "    Example traces found:\n")
+		}
+		first = false
+
 		h.print("      #", i+1, ": ")
 		if !h.showTraces {
 			h.print(entry.Compact, "\n")
@@ -216,23 +250,24 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 	}
 }
 
-func (h *TextHandler) summary(s summaries) {
+func (h *TextHandler) summary(findings []*findingSummary) {
+	counters := counters(findings)
 	h.print("\n")
-	if len(s.Affected) == 0 {
+	if counters.VulnerabilitiesCalled == 0 {
 		h.print("No vulnerabilities found.\n")
 		return
 	}
 	h.print(`Your code is affected by `)
-	h.style(valueStyle, len(s.Affected))
-	h.print(choose(len(s.Affected) == 1, ` vulnerability`, ` vulnerabilities`))
+	h.style(valueStyle, counters.VulnerabilitiesCalled)
+	h.print(choose(counters.VulnerabilitiesCalled == 1, ` vulnerability`, ` vulnerabilities`))
 	h.print(` from`)
-	if s.AffectedModules > 0 {
+	if counters.ModulesCalled > 0 {
 		h.print(` `)
-		h.style(valueStyle, s.AffectedModules)
-		h.print(choose(s.AffectedModules == 1, ` module`, ` modules`))
+		h.style(valueStyle, counters.ModulesCalled)
+		h.print(choose(counters.ModulesCalled == 1, ` module`, ` modules`))
 	}
-	if s.StdlibAffected {
-		if s.AffectedModules != 0 {
+	if counters.StdlibCalled {
+		if counters.ModulesCalled != 0 {
 			h.print(` and`)
 		}
 		h.print(` the Go standard library`)
@@ -309,31 +344,4 @@ func choose(b bool, yes, no any) any {
 		return yes
 	}
 	return no
-}
-
-func sortFindingSummaries(findings []*findingSummary) {
-	sort.Slice(findings, func(i, j int) bool {
-		if findings[i].OSV > findings[j].OSV {
-			return true
-		}
-		if findings[i].OSV < findings[j].OSV {
-			return false
-		}
-
-		iframe := findings[i].Trace[0]
-		jframe := findings[j].Trace[0]
-		if iframe.Module < jframe.Module {
-			return true
-		}
-		if iframe.Module > jframe.Module {
-			return false
-		}
-		if iframe.Package < jframe.Package {
-			return true
-		}
-		if iframe.Package > jframe.Package {
-			return false
-		}
-		return iframe.Function < jframe.Function
-	})
 }
