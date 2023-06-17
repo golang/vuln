@@ -56,7 +56,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	return emitResult(handler, vr, callStacks)
 }
 
-func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks map[*vulncheck.Vuln][]vulncheck.CallStack) error {
+func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks map[*vulncheck.Vuln]vulncheck.CallStack) error {
 	osvs := map[string]*osv.Entry{}
 	// first deal with all the affected vulnerabilities
 	emitted := map[string]bool{}
@@ -64,15 +64,16 @@ func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks ma
 	for _, vv := range vr.Vulns {
 		osvs[vv.OSV.ID] = vv.OSV
 		fixed := fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected)
-		stacks := callstacks[vv]
-		for _, stack := range stacks {
-			emitted[vv.OSV.ID] = true
-			emitFinding(handler, osvs, seen, &govulncheck.Finding{
-				OSV:          vv.OSV.ID,
-				FixedVersion: fixed,
-				Trace:        tracefromEntries(stack),
-			})
+		stack := callstacks[vv]
+		if stack == nil {
+			continue
 		}
+		emitted[vv.OSV.ID] = true
+		emitFinding(handler, osvs, seen, &govulncheck.Finding{
+			OSV:          vv.OSV.ID,
+			FixedVersion: fixed,
+			Trace:        tracefromEntries(stack),
+		})
 	}
 	for _, vv := range vr.Vulns {
 		if emitted[vv.OSV.ID] {
@@ -214,14 +215,12 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 
 // updateInitPositions populates non-existing positions of init functions
 // and their respective calls in callStacks (see #51575).
-func updateInitPositions(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack) {
-	for _, css := range callStacks {
-		for _, cs := range css {
-			for i := range cs {
-				updateInitPosition(&cs[i])
-				if i != len(cs)-1 {
-					updateInitCallPosition(&cs[i], cs[i+1])
-				}
+func updateInitPositions(callStacks map[*vulncheck.Vuln]vulncheck.CallStack) {
+	for _, cs := range callStacks {
+		for i := range cs {
+			updateInitPosition(&cs[i])
+			if i != len(cs)-1 {
+				updateInitCallPosition(&cs[i], cs[i+1])
 			}
 		}
 	}

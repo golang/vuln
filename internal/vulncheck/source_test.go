@@ -396,12 +396,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 		t.Fatal("VulnData.Vuln1 should be deemed a called vulnerability")
 	}
 
-	stacks := CallStacks(result)[vuln]
-	if len(stacks) != 1 {
-		t.Fatalf("want 1 stack for VulnData.Vuln1; got %v stacks", len(stacks))
-	}
-
-	stack := stacks[0]
+	stack := CallStacks(result)[vuln]
 	// We don't want the call stack X -> *VulnData.Vuln1 (wrapper) -> VulnData.Vuln1.
 	// We want X -> VulnData.Vuln1.
 	if len(stack) != 2 {

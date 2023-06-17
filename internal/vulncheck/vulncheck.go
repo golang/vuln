@@ -287,3 +287,15 @@ func contains(symbols []string, target string) bool {
 	}
 	return false
 }
+
+func isStdPackage(pkg string) bool {
+	if pkg == "" {
+		return false
+	}
+	// std packages do not have a "." in their path. For instance, see
+	// Contains in pkgsite/+/refs/heads/master/internal/stdlbib/stdlib.go.
+	if i := strings.IndexByte(pkg, '/'); i != -1 {
+		pkg = pkg[:i]
+	}
+	return !strings.Contains(pkg, ".")
+}

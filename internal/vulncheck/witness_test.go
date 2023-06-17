@@ -13,20 +13,16 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-// stacksToString converts map *Vuln:stacks to Vuln.Symbol:["f1->...->fN", ...]
+// stacksToString converts map *Vuln:stack to Vuln.Symbol:"f1->...->fN"
 // string representation.
-func stacksToString(stacks map[*Vuln][]CallStack) map[string][]string {
-	m := make(map[string][]string)
-	for v, sts := range stacks {
-		var stsStr []string
-		for _, st := range sts {
-			var stStr []string
-			for _, call := range st {
-				stStr = append(stStr, call.Function.Name)
-			}
-			stsStr = append(stsStr, strings.Join(stStr, "->"))
+func stacksToString(stacks map[*Vuln]CallStack) map[string]string {
+	m := make(map[string]string)
+	for v, st := range stacks {
+		var stStr []string
+		for _, call := range st {
+			stStr = append(stStr, call.Function.Name)
 		}
-		m[v.Symbol] = stsStr
+		m[v.Symbol] = strings.Join(stStr, "->")
 	}
 	return m
 }
@@ -56,9 +52,9 @@ func TestCallStacks(t *testing.T) {
 		Vulns:          []*Vuln{vuln1, vuln2},
 	}
 
-	want := map[string][]string{
-		"vuln1": {"entry1->interm1->vuln1"},
-		"vuln2": {"entry2->interm2->vuln2"},
+	want := map[string]string{
+		"vuln1": "entry1->interm1->vuln1",
+		"vuln2": "entry2->interm2->vuln2",
 	}
 
 	stacks := CallStacks(res)
@@ -92,9 +88,9 @@ func TestUniqueCallStack(t *testing.T) {
 		Vulns:          []*Vuln{vuln1, vuln2},
 	}
 
-	want := map[string][]string{
-		"vuln1": {"entry1->vuln1"},
-		"vuln2": {"entry2->interm1->interm2->vuln2"},
+	want := map[string]string{
+		"vuln1": "entry1->vuln1",
+		"vuln2": "entry2->interm1->interm2->vuln2",
 	}
 
 	stacks := CallStacks(res)

@@ -40,8 +40,8 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	return emitResult(handler, vr, callstacks)
 }
 
-func binaryCallstacks(vr *vulncheck.Result) map[*vulncheck.Vuln][]vulncheck.CallStack {
-	callstacks := map[*vulncheck.Vuln][]vulncheck.CallStack{}
+func binaryCallstacks(vr *vulncheck.Result) map[*vulncheck.Vuln]vulncheck.CallStack {
+	callstacks := map[*vulncheck.Vuln]vulncheck.CallStack{}
 	for _, vv := range uniqueVulns(vr.Vulns) {
 		f := &vulncheck.FuncNode{Package: vv.ImportSink, Name: vv.Symbol}
 		parts := strings.Split(vv.Symbol, ".")
@@ -49,7 +49,7 @@ func binaryCallstacks(vr *vulncheck.Result) map[*vulncheck.Vuln][]vulncheck.Call
 			f.RecvType = parts[0]
 			f.Name = parts[1]
 		}
-		callstacks[vv] = []vulncheck.CallStack{{{Function: f}}}
+		callstacks[vv] = vulncheck.CallStack{vulncheck.StackEntry{Function: f}}
 	}
 	return callstacks
 }

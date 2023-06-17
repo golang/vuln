@@ -174,8 +174,8 @@ func TestInits(t *testing.T) {
 	cs := vulncheck.CallStacks(result)
 	updateInitPositions(cs)
 
-	want := map[string][][]string{
-		"A": {{
+	want := map[string][]string{
+		"A": {
 			// Entry init's position is the package statement.
 			// It calls avuln.init at avuln import statement.
 			"N:golang.org/entry/x.init	F:x.go:2:4	C:x.go:5:5",
@@ -184,13 +184,13 @@ func TestInits(t *testing.T) {
 			"N:golang.org/amod/avuln.init	F:avuln.go:2:4	C:avuln.go:2:4",
 			"N:golang.org/amod/avuln.init#1	F:avuln.go:4:9	C:avuln.go:5:6",
 			"N:golang.org/amod/avuln.A	F:avuln.go:8:9	C:",
-		}},
-		"C": {{
+		},
+		"C": {
 			"N:golang.org/entry/x.init	F:x.go:2:4	C:x.go:6:5",
 			"N:golang.org/bmod/b.init	F:b.go:2:4	C:b.go:4:11",
 			"N:golang.org/cmod/cvuln.init	F:cvuln.go:2:4	C:cvuln.go:4:17",
 			"N:golang.org/cmod/cvuln.C	F:cvuln.go:6:9	C:",
-		}},
+		},
 	}
 	if diff := cmp.Diff(want, strStacks(cs)); diff != "" {
 		t.Errorf("modules mismatch (-want, +got):\n%s", diff)
@@ -201,28 +201,24 @@ func TestInits(t *testing.T) {
 // vulnerability is represented with its ID and stack entry is a string
 // "N:<package path.function name>  F:<function position> C:< call position>"
 // File paths in positions consists of only file names.
-func strStacks(callStacks map[*vulncheck.Vuln][]vulncheck.CallStack) map[string][][]string {
-	m := make(map[string][][]string)
-	for v, css := range callStacks {
-		var scss [][]string
-		for _, cs := range css {
-			var scs []string
-			for _, se := range cs {
-				fPos := se.Function.Pos
-				fp := fmt.Sprintf("%s:%d:%d", filepath.Base(fPos.Filename), fPos.Line, fPos.Column)
+func strStacks(callStacks map[*vulncheck.Vuln]vulncheck.CallStack) map[string][]string {
+	m := make(map[string][]string)
+	for v, cs := range callStacks {
+		var scs []string
+		for _, se := range cs {
+			fPos := se.Function.Pos
+			fp := fmt.Sprintf("%s:%d:%d", filepath.Base(fPos.Filename), fPos.Line, fPos.Column)
 
-				var cp string
-				if se.Call != nil && se.Call.Pos.IsValid() {
-					cPos := se.Call.Pos
-					cp = fmt.Sprintf("%s:%d:%d", filepath.Base(cPos.Filename), cPos.Line, cPos.Column)
-				}
-
-				sse := fmt.Sprintf("N:%s.%s\tF:%v\tC:%v", se.Function.Package.PkgPath, se.Function.Name, fp, cp)
-				scs = append(scs, sse)
+			var cp string
+			if se.Call != nil && se.Call.Pos.IsValid() {
+				cPos := se.Call.Pos
+				cp = fmt.Sprintf("%s:%d:%d", filepath.Base(cPos.Filename), cPos.Line, cPos.Column)
 			}
-			scss = append(scss, scs)
+
+			sse := fmt.Sprintf("N:%s.%s\tF:%v\tC:%v", se.Function.Package.PkgPath, se.Function.Name, fp, cp)
+			scs = append(scs, sse)
 		}
-		m[v.OSV.ID] = scss
+		m[v.OSV.ID] = scs
 	}
 	return m
 }

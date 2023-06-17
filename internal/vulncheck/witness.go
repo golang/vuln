@@ -39,33 +39,31 @@ type StackEntry struct {
 // function or method in res.CallGraph.Entries. During this search,
 // each function is visited at most once to avoid potential
 // exponential explosion. Hence, not all call stacks are analyzed.
-func CallStacks(res *Result) map[*Vuln][]CallStack {
+func CallStacks(res *Result) map[*Vuln]CallStack {
 	var (
 		wg sync.WaitGroup
 		mu sync.Mutex
 	)
-	stacksPerVuln := make(map[*Vuln][]CallStack)
+	stackPerVuln := make(map[*Vuln]CallStack)
 	for _, vuln := range res.Vulns {
 		vuln := vuln
 		wg.Add(1)
 		go func() {
-			cs := callStacks(vuln, res)
-			// sort call stacks by the estimated value to the user
-			sort.SliceStable(cs, func(i int, j int) bool { return stackLess(cs[i], cs[j]) })
+			cs := callStack(vuln, res)
 			mu.Lock()
-			stacksPerVuln[vuln] = cs
+			stackPerVuln[vuln] = cs
 			mu.Unlock()
 			wg.Done()
 		}()
 	}
 	wg.Wait()
-
-	filterCallStacks(stacksPerVuln)
-	return stacksPerVuln
+	return stackPerVuln
 }
 
-// callStacks finds representative call stacks for vuln.
-func callStacks(vuln *Vuln, res *Result) []CallStack {
+// callStack finds a representative call stack for vuln.
+// This is a shortest unique call stack with the least
+// number of dynamic call sites.
+func callStack(vuln *Vuln, res *Result) CallStack {
 	vulnSink := vuln.CallSink
 	if vulnSink == nil {
 		return nil
@@ -76,9 +74,16 @@ func callStacks(vuln *Vuln, res *Result) []CallStack {
 		entries[e] = true
 	}
 
-	var stacks []CallStack
 	seen := make(map[*FuncNode]bool)
 
+	// Do a BFS from the vuln sink to the entry points
+	// and find the representative call stack. This is
+	// the shortest call stack that goes through the
+	// least number of dynamic call sites. We first
+	// collect all candidate call stacks of the shortest
+	// length and then pick the best one accordingly.
+	var candidates []CallStack
+	candDepth := 0
 	queue := list.New()
 	queue.PushBack(&callChain{f: vulnSink})
 
@@ -109,17 +114,48 @@ func callStacks(vuln *Vuln, res *Result) []CallStack {
 		// A single call site is sufficient as we visit a function only once.
 		for _, cs := range callsites(f.CallSites, seen) {
 			nStack := &callChain{f: cs.Parent, call: cs, child: c}
-			if entries[cs.Parent] {
-				stacks = append(stacks, nStack.CallStack())
-			}
-
 			if !skipSymbols[cs.Parent] {
 				queue.PushBack(nStack)
+			}
+
+			if entries[cs.Parent] {
+				ns := nStack.CallStack()
+				if len(candidates) == 0 || len(ns) == candDepth {
+					// The case where we either have not identified
+					// any call stacks or just found one of the same
+					// length as the previous ones.
+					candidates = append(candidates, ns)
+					candDepth = len(ns)
+				} else {
+					// We just found a candidate call stack whose
+					// length is greater than what we previously
+					// found. We can thus safely disregard this
+					// call stack and stop searching since we won't
+					// be able to find any better candidates.
+					queue.Init() // clear the list, effectively exiting the outer loop
+				}
 			}
 		}
 	}
 
-	return stacks
+	// Sort candidate call stacks by their number of dynamic call
+	// sites and return the first one.
+	sort.SliceStable(candidates, func(i int, j int) bool {
+		s1, s2 := candidates[i], candidates[j]
+		if w1, w2 := weight(s1), weight(s2); w1 != w2 {
+			return w1 < w2
+		}
+
+		// At this point, the stableness/determinism of
+		// sorting is guaranteed by the determinism of
+		// the underlying call graph and the call stack
+		// search algorithm.
+		return true
+	})
+	if len(candidates) == 0 {
+		return nil
+	}
+	return candidates[0]
 }
 
 // callsites picks a call site from sites for each non-visited function.
@@ -177,40 +213,6 @@ func weight(stack CallStack) int {
 		}
 	}
 	return w
-}
-
-func isStdPackage(pkg string) bool {
-	if pkg == "" {
-		return false
-	}
-	// std packages do not have a "." in their path. For instance, see
-	// Contains in pkgsite/+/refs/heads/master/internal/stdlbib/stdlib.go.
-	if i := strings.IndexByte(pkg, '/'); i != -1 {
-		pkg = pkg[:i]
-	}
-	return !strings.Contains(pkg, ".")
-}
-
-// stackLess compares two call stacks in terms of their estimated
-// value to the user. Shorter stacks generally come earlier in the
-// ordering.
-//
-// Two stacks are lexicographically ordered by their length and the
-// number of dynamic call sites in the stack.
-func stackLess(s1, s2 CallStack) bool {
-	if len(s1) != len(s2) {
-		return len(s1) < len(s2)
-	}
-
-	if w1, w2 := weight(s1), weight(s2); w1 != w2 {
-		return w1 < w2
-	}
-
-	// At this point, the stableness/determinism of
-	// sorting is guaranteed by the determinism of
-	// the underlying call graph and the call stack
-	// search algorithm.
-	return true
 }
 
 // csLess compares two call sites by their locations and, if needed,
@@ -285,14 +287,4 @@ func funcLess(f1, f2 *FuncNode) bool {
 	}
 	// should happen only for inits
 	return f1.String() < f2.String()
-}
-
-func filterCallStacks(callstacks map[*Vuln][]CallStack) {
-	for vv := range callstacks {
-		if vv.CallSink != nil {
-			if len(callstacks[vv]) > 0 {
-				callstacks[vv] = callstacks[vv][0:1]
-			}
-		}
-	}
 }
