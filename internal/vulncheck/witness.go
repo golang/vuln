@@ -174,31 +174,13 @@ func isStdPackage(pkg string) bool {
 	return !strings.Contains(pkg, ".")
 }
 
-// confidence computes an approximate measure of whether the stack
-// is realizeable in practice. Currently, it equals the number of call
-// sites in stack that go through standard libraries. Such call stacks
-// have been experimentally shown to often result in false positives.
-func confidence(stack CallStack) int {
-	c := 0
-	for _, e := range stack {
-		if e.Function.Package != nil && isStdPackage(e.Function.Package.PkgPath) {
-			c += 1
-		}
-	}
-	return c
-}
-
 // stackLess compares two call stacks in terms of their estimated
-// value to the user. Shorter stacks generally come earlier in the ordering.
+// value to the user. Shorter stacks generally come earlier in the
+// ordering.
 //
-// Two stacks are lexicographically ordered by:
-// 1) their estimated level of confidence in being a real call stack,
-// 2) their length, and 3) the number of dynamic call sites in the stack.
+// Two stacks are lexicographically ordered by their length and the
+// number of dynamic call sites in the stack.
 func stackLess(s1, s2 CallStack) bool {
-	if c1, c2 := confidence(s1), confidence(s2); c1 != c2 {
-		return c1 < c2
-	}
-
 	if len(s1) != len(s2) {
 		return len(s1) < len(s2)
 	}
