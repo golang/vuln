@@ -49,7 +49,7 @@ func CallStacks(res *Result) map[*Vuln][]CallStack {
 		vuln := vuln
 		wg.Add(1)
 		go func() {
-			cs := callStacks(vuln.CallSink, res)
+			cs := callStacks(vuln, res)
 			// sort call stacks by the estimated value to the user
 			sort.SliceStable(cs, func(i int, j int) bool { return stackLess(cs[i], cs[j]) })
 			mu.Lock()
@@ -64,9 +64,9 @@ func CallStacks(res *Result) map[*Vuln][]CallStack {
 	return stacksPerVuln
 }
 
-// callStacks finds representative call stacks
-// for vulnerable symbol identified with vulnSinkID.
-func callStacks(vulnSink *FuncNode, res *Result) []CallStack {
+// callStacks finds representative call stacks for vuln.
+func callStacks(vuln *Vuln, res *Result) []CallStack {
+	vulnSink := vuln.CallSink
 	if vulnSink == nil {
 		return nil
 	}
@@ -81,6 +81,18 @@ func callStacks(vulnSink *FuncNode, res *Result) []CallStack {
 
 	queue := list.New()
 	queue.PushBack(&callChain{f: vulnSink})
+
+	// We want to avoid call stacks that go through
+	// other vulnerable symbols of the same package
+	// for the same vulnerability. In other words,
+	// we want unique call stacks.
+	skipSymbols := make(map[*FuncNode]bool)
+	for _, v := range res.Vulns {
+		if v.CallSink != nil && v != vuln &&
+			v.OSV == vuln.OSV && v.ImportSink == vuln.ImportSink {
+			skipSymbols[v.CallSink] = true
+		}
+	}
 
 	for queue.Len() > 0 {
 		front := queue.Front()
@@ -100,9 +112,13 @@ func callStacks(vulnSink *FuncNode, res *Result) []CallStack {
 			if entries[cs.Parent] {
 				stacks = append(stacks, nStack.CallStack())
 			}
-			queue.PushBack(nStack)
+
+			if !skipSymbols[cs.Parent] {
+				queue.PushBack(nStack)
+			}
 		}
 	}
+
 	return stacks
 }
 
@@ -272,49 +288,11 @@ func funcLess(f1, f2 *FuncNode) bool {
 }
 
 func filterCallStacks(callstacks map[*Vuln][]CallStack) {
-	type key struct {
-		id  string
-		pkg string
-		mod string
-	}
-	// Collect all called symbols for a package.
-	// Needed for creating unique call stacks.
-	vulnsPerPkg := make(map[key][]*Vuln)
-	for vv := range callstacks {
+	for vv, _ := range callstacks {
 		if vv.CallSink != nil {
-			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
-			vulnsPerPkg[k] = append(vulnsPerPkg[k], vv)
-		}
-	}
-	for vv, stacks := range callstacks {
-		var filtered []CallStack
-		if vv.CallSink != nil {
-			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
-			vcs := uniqueCallStack(vv, stacks, vulnsPerPkg[k])
-			if vcs != nil {
-				filtered = []CallStack{vcs}
+			if len(callstacks[vv]) > 0 {
+				callstacks[vv] = callstacks[vv][0:1]
 			}
 		}
-		callstacks[vv] = filtered
 	}
-}
-
-// uniqueCallStack returns the first unique call stack among css, if any.
-// Unique means that the call stack does not go through symbols of vg.
-func uniqueCallStack(v *Vuln, css []CallStack, vg []*Vuln) CallStack {
-	vulnFuncs := make(map[*FuncNode]bool)
-	for _, v := range vg {
-		vulnFuncs[v.CallSink] = true
-	}
-
-callstack:
-	for _, cs := range css {
-		for _, e := range cs {
-			if e.Function != v.CallSink && vulnFuncs[e.Function] {
-				continue callstack
-			}
-		}
-		return cs
-	}
-	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/osv"
 )
@@ -69,43 +68,37 @@ func TestCallStacks(t *testing.T) {
 }
 
 func TestUniqueCallStack(t *testing.T) {
-	a := &FuncNode{Name: "A"}
-	b := &FuncNode{Name: "B"}
-	v1 := &FuncNode{Name: "V1"}
-	v2 := &FuncNode{Name: "V2"}
-	v3 := &FuncNode{Name: "V3"}
+	// Call graph structure for the test program
+	//    entry1      entry2
+	//      |           |
+	//    vuln1      interm1
+	//      |           |
+	//      |        interm2
+	//      |     /
+	//    vuln2
+	o := &osv.Entry{ID: "o"}
+	e1 := &FuncNode{Name: "entry1"}
+	e2 := &FuncNode{Name: "entry2"}
+	i1 := &FuncNode{Name: "interm1", CallSites: []*CallSite{{Parent: e2}}}
+	i2 := &FuncNode{Name: "interm2", CallSites: []*CallSite{{Parent: i1}}}
+	v1 := &FuncNode{Name: "vuln1", CallSites: []*CallSite{{Parent: e1}}}
+	v2 := &FuncNode{Name: "vuln2", CallSites: []*CallSite{{Parent: v1}, {Parent: i2}}}
 
-	vuln1 := &Vuln{Symbol: "V1", CallSink: v1}
-	vuln2 := &Vuln{Symbol: "V2", CallSink: v2}
-	vuln3 := &Vuln{Symbol: "V3", CallSink: v3}
-
-	callStack := func(fs ...*FuncNode) CallStack {
-		var cs CallStack
-		for _, f := range fs {
-			cs = append(cs, StackEntry{Function: f})
-		}
-		return cs
+	vp := &packages.Package{PkgPath: "v1", Module: &packages.Module{Path: "m1"}}
+	vuln1 := &Vuln{CallSink: v1, ImportSink: vp, OSV: o, Symbol: "vuln1"}
+	vuln2 := &Vuln{CallSink: v2, ImportSink: vp, OSV: o, Symbol: "vuln2"}
+	res := &Result{
+		EntryFunctions: []*FuncNode{e1, e2},
+		Vulns:          []*Vuln{vuln1, vuln2},
 	}
 
-	// V1, V2, and V3 are vulnerable symbols
-	skip := []*Vuln{vuln1, vuln2, vuln3}
-	for _, test := range []struct {
-		vuln *Vuln
-		css  []CallStack
-		want CallStack
-	}{
-		// [A -> B -> V3 -> V1, A -> V1] ==> A -> V1 since the first stack goes through V3
-		{vuln1, []CallStack{callStack(a, b, v3, v1), callStack(a, v1)}, callStack(a, v1)},
-		// [A -> V1 -> V2] ==> nil since the only candidate call stack goes through V1
-		{vuln2, []CallStack{callStack(a, v1, v2)}, nil},
-		// [A -> V1 -> V3, A -> B -> v3] ==> A -> B -> V3 since the first stack goes through V1
-		{vuln3, []CallStack{callStack(a, v1, v3), callStack(a, b, v3)}, callStack(a, b, v3)},
-	} {
-		t.Run(test.vuln.Symbol, func(t *testing.T) {
-			got := uniqueCallStack(test.vuln, test.css, skip)
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Fatalf("mismatch (-want, +got):\n%s", diff)
-			}
-		})
+	want := map[string][]string{
+		"vuln1": {"entry1->vuln1"},
+		"vuln2": {"entry2->interm1->interm2->vuln2"},
+	}
+
+	stacks := CallStacks(res)
+	if got := stacksToString(stacks); !reflect.DeepEqual(want, got) {
+		t.Errorf("want %v; got %v", want, got)
 	}
 }
