@@ -58,8 +58,9 @@ func CallStacks(res *Result) map[*Vuln][]CallStack {
 			wg.Done()
 		}()
 	}
-
 	wg.Wait()
+
+	filterCallStacks(stacksPerVuln)
 	return stacksPerVuln
 }
 
@@ -268,4 +269,52 @@ func funcLess(f1, f2 *FuncNode) bool {
 	}
 	// should happen only for inits
 	return f1.String() < f2.String()
+}
+
+func filterCallStacks(callstacks map[*Vuln][]CallStack) {
+	type key struct {
+		id  string
+		pkg string
+		mod string
+	}
+	// Collect all called symbols for a package.
+	// Needed for creating unique call stacks.
+	vulnsPerPkg := make(map[key][]*Vuln)
+	for vv := range callstacks {
+		if vv.CallSink != nil {
+			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
+			vulnsPerPkg[k] = append(vulnsPerPkg[k], vv)
+		}
+	}
+	for vv, stacks := range callstacks {
+		var filtered []CallStack
+		if vv.CallSink != nil {
+			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
+			vcs := uniqueCallStack(vv, stacks, vulnsPerPkg[k])
+			if vcs != nil {
+				filtered = []CallStack{vcs}
+			}
+		}
+		callstacks[vv] = filtered
+	}
+}
+
+// uniqueCallStack returns the first unique call stack among css, if any.
+// Unique means that the call stack does not go through symbols of vg.
+func uniqueCallStack(v *Vuln, css []CallStack, vg []*Vuln) CallStack {
+	vulnFuncs := make(map[*FuncNode]bool)
+	for _, v := range vg {
+		vulnFuncs[v.CallSink] = true
+	}
+
+callstack:
+	for _, cs := range css {
+		for _, e := range cs {
+			if e.Function != v.CallSink && vulnFuncs[e.Function] {
+				continue callstack
+			}
+		}
+		return cs
+	}
+	return nil
 }

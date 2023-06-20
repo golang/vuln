@@ -53,36 +53,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 		return err
 	}
 	callStacks := vulncheck.CallStacks(vr)
-	filterCallStacks(callStacks)
 	return emitResult(handler, vr, callStacks)
-}
-
-func filterCallStacks(callstacks map[*vulncheck.Vuln][]vulncheck.CallStack) {
-	type key struct {
-		id  string
-		pkg string
-		mod string
-	}
-	// Collect all called symbols for a package.
-	// Needed for creating unique call stacks.
-	vulnsPerPkg := make(map[key][]*vulncheck.Vuln)
-	for vv := range callstacks {
-		if vv.CallSink != nil {
-			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
-			vulnsPerPkg[k] = append(vulnsPerPkg[k], vv)
-		}
-	}
-	for vv, stacks := range callstacks {
-		var filtered []vulncheck.CallStack
-		if vv.CallSink != nil {
-			k := key{id: vv.OSV.ID, pkg: vv.ImportSink.PkgPath, mod: vv.ImportSink.Module.Path}
-			vcs := uniqueCallStack(vv, stacks, vulnsPerPkg[k])
-			if vcs != nil {
-				filtered = []vulncheck.CallStack{vcs}
-			}
-		}
-		callstacks[vv] = filtered
-	}
 }
 
 func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks map[*vulncheck.Vuln][]vulncheck.CallStack) error {
@@ -337,24 +308,4 @@ func isInit(f *vulncheck.FuncNode) bool {
 	// be named "init#x" by vulncheck (more precisely, ssa), where x is a
 	// positive integer. Implicit inits are named simply "init".
 	return f.Name == "init" || strings.HasPrefix(f.Name, "init#")
-}
-
-// uniqueCallStack returns the first unique call stack among css, if any.
-// Unique means that the call stack does not go through symbols of vg.
-func uniqueCallStack(v *vulncheck.Vuln, css []vulncheck.CallStack, vg []*vulncheck.Vuln) vulncheck.CallStack {
-	vulnFuncs := make(map[*vulncheck.FuncNode]bool)
-	for _, v := range vg {
-		vulnFuncs[v.CallSink] = true
-	}
-
-callstack:
-	for _, cs := range css {
-		for _, e := range cs {
-			if e.Function != v.CallSink && vulnFuncs[e.Function] {
-				continue callstack
-			}
-		}
-		return cs
-	}
-	return nil
 }
