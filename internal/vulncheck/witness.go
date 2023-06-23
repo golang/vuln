@@ -288,7 +288,7 @@ func funcLess(f1, f2 *FuncNode) bool {
 }
 
 func filterCallStacks(callstacks map[*Vuln][]CallStack) {
-	for vv, _ := range callstacks {
+	for vv := range callstacks {
 		if vv.CallSink != nil {
 			if len(callstacks[vv]) > 0 {
 				callstacks[vv] = callstacks[vv][0:1]
