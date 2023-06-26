@@ -33,6 +33,11 @@ func CompareNonStdVulns(out string, want map[string]bool) error {
 			log.Fatalf("failed to load json: %v", err)
 		}
 		if msg.Finding != nil {
+			if msg.Finding.Trace[0].Function == "" {
+				// No symbol means the vulnerability is
+				// imported but not called.
+				continue
+			}
 			// collect only called non-std packages
 			pkgPath := msg.Finding.Trace[0].Package
 			if !isStd(pkgPath) {
