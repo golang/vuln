@@ -7,10 +7,14 @@ package vulncheck
 import (
 	"container/list"
 	"fmt"
+	"go/ast"
 	"go/token"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
+
+	"golang.org/x/tools/go/packages"
 )
 
 // CallStack is a call stack starting with a client
@@ -57,6 +61,8 @@ func CallStacks(res *Result) map[*Vuln]CallStack {
 		}()
 	}
 	wg.Wait()
+
+	updateInitPositions(stackPerVuln)
 	return stackPerVuln
 }
 
@@ -287,4 +293,100 @@ func funcLess(f1, f2 *FuncNode) bool {
 	}
 	// should happen only for inits
 	return f1.String() < f2.String()
+}
+
+// updateInitPositions populates non-existing positions of init functions
+// and their respective calls in callStacks (see #51575).
+func updateInitPositions(callStacks map[*Vuln]CallStack) {
+	for _, cs := range callStacks {
+		for i := range cs {
+			updateInitPosition(&cs[i])
+			if i != len(cs)-1 {
+				updateInitCallPosition(&cs[i], cs[i+1])
+			}
+		}
+	}
+}
+
+// updateInitCallPosition updates the position of a call to init in a stack frame, if
+// one already does not exist:
+//
+//	P1.init -> P2.init: position of call to P2.init is the position of "import P2"
+//	statement in P1
+//
+//	P.init -> P.init#d: P.init is an implicit init. We say it calls the explicit
+//	P.init#d at the place of "package P" statement.
+func updateInitCallPosition(curr *StackEntry, next StackEntry) {
+	call := curr.Call
+	if !isInit(next.Function) || (call.Pos != nil && call.Pos.IsValid()) {
+		// Skip non-init functions and inits whose call site position is available.
+		return
+	}
+
+	var pos token.Position
+	if curr.Function.Name == "init" && curr.Function.Package == next.Function.Package {
+		// We have implicit P.init calling P.init#d. Set the call position to
+		// be at "package P" statement position.
+		pos = packageStatementPos(curr.Function.Package)
+	} else {
+		// Choose the beginning of the import statement as the position.
+		pos = importStatementPos(curr.Function.Package, next.Function.Package.PkgPath)
+	}
+
+	call.Pos = &pos
+}
+
+func importStatementPos(pkg *packages.Package, importPath string) token.Position {
+	var importSpec *ast.ImportSpec
+spec:
+	for _, f := range pkg.Syntax {
+		for _, impSpec := range f.Imports {
+			// Import spec paths have quotation marks.
+			impSpecPath, err := strconv.Unquote(impSpec.Path.Value)
+			if err != nil {
+				panic(fmt.Sprintf("import specification: package path has no quotation marks: %v", err))
+			}
+			if impSpecPath == importPath {
+				importSpec = impSpec
+				break spec
+			}
+		}
+	}
+
+	if importSpec == nil {
+		// for sanity, in case of a wild call graph imprecision
+		return token.Position{}
+	}
+
+	// Choose the beginning of the import statement as the position.
+	return pkg.Fset.Position(importSpec.Pos())
+}
+
+func packageStatementPos(pkg *packages.Package) token.Position {
+	if len(pkg.Syntax) == 0 {
+		return token.Position{}
+	}
+	// Choose beginning of the package statement as the position. Pick
+	// the first file since it is as good as any.
+	return pkg.Fset.Position(pkg.Syntax[0].Package)
+}
+
+// updateInitPosition updates the position of P.init function in a stack frame if one
+// is not available. The new position is the position of the "package P" statement.
+func updateInitPosition(se *StackEntry) {
+	fun := se.Function
+	if !isInit(fun) || (fun.Pos != nil && fun.Pos.IsValid()) {
+		// Skip non-init functions and inits whose position is available.
+		return
+	}
+
+	pos := packageStatementPos(fun.Package)
+	fun.Pos = &pos
+}
+
+func isInit(f *FuncNode) bool {
+	// A source init function, or anonymous functions used in inits, will
+	// be named "init#x" by vulncheck (more precisely, ssa), where x is a
+	// positive integer. Implicit inits are named simply "init".
+	return f.Name == "init" || strings.HasPrefix(f.Name, "init#")
 }
