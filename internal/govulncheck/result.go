@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package result contains the JSON output structs for govulncheck.
+// Package govulncheck contains the JSON output structs for govulncheck.
 package govulncheck
 
 import (
@@ -25,9 +25,12 @@ type Message struct {
 	Finding  *Finding   `json:"finding,omitempty"`
 }
 
+// Config must occur as the first message of a stream and informs the client
+// about the information used to generate the findings.
+// The only required field is the protocol version.
 type Config struct {
 	// ProtocolVersion specifies the version of the JSON protocol.
-	ProtocolVersion string `json:"protocol_version,omitempty"`
+	ProtocolVersion string `json:"protocol_version"`
 
 	// ScannerName is the name of the tool, for example, govulncheck.
 	//
@@ -54,6 +57,10 @@ type Config struct {
 	ScanLevel ScanLevel `json:"scan_level,omitempty"`
 }
 
+// Progress messages are informational only, intended to allow users to monitor
+// the progress of a long running scan.
+// A stream must remain fully valid and able to be interpreted with all progress
+// messages removed.
 type Progress struct {
 	// A time stamp for the message.
 	Timestamp *time.Time `json:"time,omitempty"`
@@ -125,15 +132,19 @@ type Frame struct {
 	Position *Position `json:"position,omitempty"`
 }
 
-// Position is a copy of token.Position used to marshal/unmarshal
-// JSON correctly.
+// Position represents arbitrary source position.
 type Position struct {
 	Filename string `json:"filename,omitempty"` // filename, if any
-	Offset   int    `json:"offset"`             // offset, starting at 0
+	Offset   int    `json:"offset"`             // byte offset, starting at 0
 	Line     int    `json:"line"`               // line number, starting at 1
 	Column   int    `json:"column"`             // column number, starting at 1 (byte count)
 }
 
+// ScanLevel represents the detail level at which a scan occurred.
+// This can be necessary to correctly interpret the findings, for instance if
+// a scan is at symbol level and a finding does not have a symbol it means the
+// vulnerability was imported but not called. If the scan however was at
+// "package" level, that determination cannot be made.
 type ScanLevel string
 
 const (
@@ -142,4 +153,6 @@ const (
 	scanLevelSymbol  = "symbol"
 )
 
+// WantSymbols can be used to check whether the scan level is one that is able
+// to generate symbol called findings.
 func (l ScanLevel) WantSymbols() bool { return l == scanLevelSymbol }

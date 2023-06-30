@@ -1,5 +1,6 @@
 {
   "config": {
+    "protocol_version": "v0.1.0",
     "scanner_name": "govulncheck"
   }
 }
