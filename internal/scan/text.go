@@ -75,6 +75,7 @@ func (h *TextHandler) Flush() error {
 	fixupFindings(h.osvs, h.findings)
 	h.byVulnerability(h.findings)
 	h.summary(h.findings)
+	h.print("\nShare feedback at https://go.dev/s/govulncheck-feedback.\n")
 	if h.err != nil {
 		return h.err
 	}
@@ -86,7 +87,7 @@ func (h *TextHandler) Flush() error {
 
 // Config writes text output formatted according to govulncheck-intro.tmpl.
 func (h *TextHandler) Config(config *govulncheck.Config) error {
-	h.print("govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.\n\nUsing ")
+	h.print("Using ")
 	if config.GoVersion != "" {
 		h.style(goStyle, config.GoVersion)
 		h.print(` and `)

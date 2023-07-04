@@ -103,7 +103,6 @@ Govulncheck has these limitations:
 
 # Feedback
 
-Govulncheck is an experimental tool under active development. To share
-feedback, see https://go.dev/security/vuln#feedback.
+To share feedback, see https://go.dev/security/vuln#feedback.
 */
 package main

@@ -1,5 +1,3 @@
-govulncheck is an experimental tool. Share feedback at https://go.dev/s/govulncheck-feedback.
-
 Using govulncheck with vulnerability data from .
 
 
@@ -19,3 +17,5 @@ Vulnerability #1: GO-0000-0001
     Platforms: amd
 
 No vulnerabilities found.
+
+Share feedback at https://go.dev/s/govulncheck-feedback.
