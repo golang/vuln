@@ -3,7 +3,7 @@
 $ govulncheck -mode=query -json stdlib@go1.17 github.com/tidwall/gjson@v1.6.5
 {
   "config": {
-    "protocol_version": "v0.1.0",
+    "protocol_version": "v1.0.0",
     "scanner_name": "govulncheck",
     "scanner_version": "v0.0.0-00000000000-20000101010101",
     "db": "testdata/vulndb-v1",

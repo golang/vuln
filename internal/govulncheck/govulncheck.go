@@ -13,7 +13,7 @@ import (
 
 const (
 	// ProtocolVersion is the current protocol version this file implements
-	ProtocolVersion = "v0.1.0"
+	ProtocolVersion = "v1.0.0"
 )
 
 // Message is an entry in the output stream. It will always have exactly one
