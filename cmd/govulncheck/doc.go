@@ -41,6 +41,9 @@ To control which files are processed, use the -tags flag to provide a
 comma-separated list of build tags, and the -test flag to indicate that test
 files should be included.
 
+To include more detailed stack traces, pass -show=traces, this will cause it to
+print the full call stack for each entry.
+
 To run govulncheck on a compiled binary, pass it the path to the binary file
 with the -mode=binary flag:
 
@@ -50,35 +53,8 @@ Govulncheck uses the binary's symbol information to find mentions of vulnerable
 functions. Its output omits call stacks, which require source code analysis.
 
 Govulncheck exits successfully (exit code 0) if there are no vulnerabilities,
-and exits unsuccessfully if there are. It also exits successfully if -json flag
+and exits unsuccessfully if there are. It also exits successfully if the -json flag
 is provided, regardless of the number of detected vulnerabilities.
-
-# Flags
-
-A few flags control govulncheck's behavior.
-
-The -C flag causes govulncheck to change its working directory to the provided
-directory before running. Any patterns or files named on the command line are
-interpreted after changing directories.
-
-The -db flag causes govulncheck to read from the specified database, which must
-implement the specification at https://go.dev/security/vuln/database. By
-default, govulncheck fetches vulnerability data from https://vuln.go.dev.
-
-The -json flag causes govulncheck to print its output as a JSON object
-corresponding to the type [golang.org/x/vuln/internal/govulncheck.Result]. The
-exit code of govulncheck is 0 when this flag is provided.
-
-The -mode flag causes govulncheck to run source or binary analysis. By default,
-govulnchecks runs source analysis.
-
-The -tags flag accepts a comma-separated list of build tags to control which
-files should be included in loaded packages for source analysis.
-
-The -test flag causes govulncheck to include test files in the source analysis.
-
-The -v flag causes govulncheck to output more information when run on source.
-It has no effect when run on a binary.
 
 # Limitations
 
@@ -88,16 +64,13 @@ Govulncheck has these limitations:
     which may result in false positives or inaccurate call stacks in some cases.
   - Calls to functions made using package reflect are not visible to static
     analysis. Vulnerable code reachable only through those calls will not be
-    reported.
+    reported. Use of the unsafe package may result in false negatives.
   - Because Go binaries do not contain detailed call information, govulncheck
     cannot show the call graphs for detected vulnerabilities. It may also
     report false positives for code that is in the binary but unreachable.
-  - There is no support for silencing vulnerability findings.
+  - There is no support for silencing vulnerability findings. See https://go.dev/issue/61211 for
+    updates.
   - Govulncheck only reads binaries compiled with Go 1.18 and later.
-  - Govulncheck only reports vulnerabilities that apply to the current Go
-    version. For example, a standard library vulnerability that only applies for
-    Go 1.18 will not be reported if the current Go version is 1.19. See
-    https://go.dev/issue/54841 for updates to this limitation.
   - For binaries where the symbol information cannot be extracted, govulncheck
     reports vulnerabilities for all modules on which the binary depends.
 

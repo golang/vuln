@@ -52,7 +52,7 @@ type Config struct {
 	// vulnerabilities.
 	GoVersion string `json:"go_version,omitempty"`
 
-	// ScanLevel instructs vulncheck to analyze at a specific level of detail.
+	// ScanLevel instructs govulncheck to analyze at a specific level of detail.
 	// Valid values include module, package and symbol.
 	ScanLevel ScanLevel `json:"scan_level,omitempty"`
 }
@@ -154,5 +154,5 @@ const (
 )
 
 // WantSymbols can be used to check whether the scan level is one that is able
-// to generate symbol called findings.
+// to generate symbols called findings.
 func (l ScanLevel) WantSymbols() bool { return l == scanLevelSymbol }

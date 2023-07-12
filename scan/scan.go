@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package scan provides functionality for running govulncheck.
+/*
+Package scan provides functionality for running govulncheck.
+
+See [cmd/govulncheck/main.go] as a usage example.
+
+[cmd/govulncheck/main.go]: https://go.googlesource.com/vuln/+/master/cmd/govulncheck/main.go
+*/
 package scan
 
 import (
