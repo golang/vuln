@@ -82,7 +82,7 @@ func prepareConfig(ctx context.Context, cfg *config, client *client.Client) {
 		}
 		if cfg.GoVersion == "" {
 			if out, err := exec.Command("go", "env", "GOVERSION").Output(); err == nil {
-				cfg.GoVersion = string(out)
+				cfg.GoVersion = strings.TrimSpace(string(out))
 			}
 		}
 	}
