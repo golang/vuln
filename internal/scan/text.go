@@ -69,9 +69,6 @@ func Flush(h govulncheck.Handler) error {
 }
 
 func (h *TextHandler) Flush() error {
-	if len(h.findings) == 0 {
-		return nil
-	}
 	fixupFindings(h.osvs, h.findings)
 	h.byVulnerability(h.findings)
 	h.summary(h.findings)
