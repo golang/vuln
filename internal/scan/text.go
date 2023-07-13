@@ -130,9 +130,6 @@ func (h *TextHandler) byVulnerability(findings []*findingSummary) {
 	called := 0
 	for _, findings := range byVuln {
 		if isCalled(findings) {
-			if called > 0 {
-				h.print("\n")
-			}
 			h.vulnerability(called, findings)
 			called++
 		}
@@ -141,7 +138,6 @@ func (h *TextHandler) byVulnerability(findings []*findingSummary) {
 	if unCalled == 0 {
 		return
 	}
-	h.print("\n")
 	h.style(sectionStyle, "=== Informational ===\n")
 	h.print("\nFound ", unCalled)
 	h.print(choose(unCalled == 1, ` vulnerability`, ` vulnerabilities`))
@@ -151,9 +147,6 @@ func (h *TextHandler) byVulnerability(findings []*findingSummary) {
 	index := 0
 	for _, findings := range byVuln {
 		if !isCalled(findings) {
-			if index > 0 {
-				h.print("\n")
-			}
 			h.vulnerability(index, findings)
 			index++
 		}
@@ -226,6 +219,7 @@ func (h *TextHandler) vulnerability(index int, findings []*findingSummary) {
 		}
 		h.traces(module)
 	}
+	h.print("\n")
 }
 
 func (h *TextHandler) traces(traces []*findingSummary) {
@@ -258,7 +252,6 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 
 func (h *TextHandler) summary(findings []*findingSummary) {
 	counters := counters(findings)
-	h.print("\n")
 	if counters.VulnerabilitiesCalled == 0 {
 		h.print("No vulnerabilities found.\n")
 		return

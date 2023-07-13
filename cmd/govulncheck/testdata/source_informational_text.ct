@@ -5,7 +5,6 @@ Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with vulnerabilit
 
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-
 === Informational ===
 
 Found 1 vulnerability in packages that you import, but there are no call

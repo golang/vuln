@@ -1,6 +1,5 @@
 Using govulncheck with vulnerability data from .
 
-
 === Informational ===
 
 Found 1 vulnerability in packages that you import, but there are no call
