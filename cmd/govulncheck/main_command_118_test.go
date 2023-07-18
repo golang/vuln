@@ -103,6 +103,10 @@ func init() {
 }
 
 func TestCommand(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test that uses internet in short mode")
+	}
+
 	testDir, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
