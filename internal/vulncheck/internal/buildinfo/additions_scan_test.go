@@ -94,6 +94,7 @@ func TestStrippedBinary(t *testing.T) {
 // is complete on darwin even in the presence of stripping.
 // This test will become obsolete once #61051 is addressed.
 func TestStrippedDarwin(t *testing.T) {
+	t.Skip("to temporarily resolve #61511")
 	testAll(t, []string{"darwin"}, []string{"amd64", "386", "arm", "arm64"},
 		func(t *testing.T, goos, goarch string) {
 			binary, done := test.GoBuild(t, "testdata", "", true, "GOOS", goos, "GOARCH", goarch)

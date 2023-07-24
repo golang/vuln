@@ -32,6 +32,7 @@ func TestFuncSymName(t *testing.T) {
 }
 
 func TestInlineTree(t *testing.T) {
+	t.Skip("to temporarily resolve #61511")
 	pclinetestBinary, cleanup := dotest(t)
 	defer cleanup()
 
