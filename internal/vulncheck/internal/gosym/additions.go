@@ -29,7 +29,7 @@ func FuncSymName(goVersion string) string {
 	mm := sv.MajorMinor(v)
 	if mm == "v1.18" || mm == "v1.19" {
 		return funcSymNameGo119Lower
-	} else if mm == "v1.20" {
+	} else if sv.Compare(mm, "v1.20") >= 0 {
 		return funcSymNameGo120
 	} else if v == "" && strings.HasPrefix(goVersion, "devel") {
 		// We currently don't have a direct way of mapping
