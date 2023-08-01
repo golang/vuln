@@ -18,13 +18,15 @@ func TestFuncSymName(t *testing.T) {
 		v    string
 		want string
 	}{
-		{"go1.18", "go.func.*"},
-		{"go1.19", "go.func.*"},
-		{"devel go1.19", "go.func.*"},
-		{"go1.19-pre4", "go.func.*"},
-		{"go1.20", "go:func.*"},
-		{"devel bd56cb90a72e6725e", "go:func.*"},
-		{"go1.21", "go:func.*"},
+		{"go1.15", ""},
+		{"go1.18", funcSymNameGo119Lower},
+		{"go1.19", funcSymNameGo119Lower},
+		{"devel go1.19", funcSymNameGo119Lower},
+		{"go1.19-pre4", funcSymNameGo119Lower},
+		{"go1.20", funcSymNameGo120},
+		{"devel bd56cb90a72e6725e", funcSymNameGo120},
+		{"go1.21", funcSymNameGo120},
+		{"unkown version", funcSymNameGo120},
 	} {
 		if got := FuncSymName(test.v); got != test.want {
 			t.Errorf("got %s; want %s", got, test.want)
