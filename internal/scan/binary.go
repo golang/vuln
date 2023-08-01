@@ -32,7 +32,7 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	if err := handler.Progress(p); err != nil {
 		return err
 	}
-	vr, err := binary(ctx, exe, &cfg.Config, client)
+	vr, err := vulncheck.Binary(ctx, exe, &cfg.Config, client)
 	if err != nil {
 		return fmt.Errorf("govulncheck: %v", err)
 	}
