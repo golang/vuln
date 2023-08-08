@@ -27,9 +27,6 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 	if err := parseFlags(cfg, stderr, args); err != nil {
 		return err
 	}
-	if cfg.mode == modeConvert {
-		return convertJSONToText(r, stdout)
-	}
 
 	client, err := client.NewClient(cfg.db, nil)
 	if err != nil {
@@ -60,6 +57,8 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 		err = runBinary(ctx, handler, cfg, client)
 	case modeQuery:
 		err = runQuery(ctx, handler, cfg, client)
+	case modeConvert:
+		err = govulncheck.HandleJSON(r, handler)
 	}
 	if err != nil {
 		return err
@@ -131,15 +130,4 @@ func scannerVersion(cfg *config, bi *debug.BuildInfo) {
 		}
 	}
 	cfg.ScannerVersion = buf.String()
-}
-
-// convertJSONToText converts r, which is expected to be the JSON output of govulncheck,
-// into the text output, and writes the output to w.
-func convertJSONToText(r io.Reader, w io.Writer) error {
-	h := NewTextHandler(w)
-	if err := govulncheck.HandleJSON(r, h); err != nil {
-		return err
-	}
-	Flush(h)
-	return nil
 }
