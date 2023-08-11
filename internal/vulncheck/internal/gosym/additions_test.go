@@ -26,7 +26,7 @@ func TestFuncSymName(t *testing.T) {
 		{"go1.20", funcSymNameGo120},
 		{"devel bd56cb90a72e6725e", funcSymNameGo120},
 		{"go1.21", funcSymNameGo120},
-		{"unkown version", funcSymNameGo120},
+		{"unknown version", funcSymNameGo120},
 	} {
 		if got := FuncSymName(test.v); got != test.want {
 			t.Errorf("got %s; want %s", got, test.want)
