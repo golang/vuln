@@ -1,8 +1,6 @@
 #####
 # Test basic binary scanning with text output
 $ govulncheck -mode=binary ${vuln_binary} --> FAIL 3
-Using govulncheck@v0.0.0-00000000000-20000101010101 with vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
-
 Scanning your binary for known vulnerabilities...
 
 Vulnerability #1: GO-2021-0265

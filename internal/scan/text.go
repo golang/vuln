@@ -18,8 +18,6 @@ type style int
 
 const (
 	defaultStyle = style(iota)
-	goStyle
-	scannerStyle
 	osvCalledStyle
 	osvImportedStyle
 	detailsStyle
@@ -40,8 +38,9 @@ type TextHandler struct {
 
 	err error
 
-	showColor  bool
-	showTraces bool
+	showColor   bool
+	showTraces  bool
+	showVersion bool
 }
 
 const (
@@ -57,6 +56,8 @@ func (h *TextHandler) Show(show []string) {
 			h.showTraces = true
 		case "color":
 			h.showColor = true
+		case "version":
+			h.showVersion = true
 		}
 	}
 }
@@ -82,25 +83,32 @@ func (h *TextHandler) Flush() error {
 	return nil
 }
 
-// Config writes text output formatted according to govulncheck-intro.tmpl.
+// Config writes version information only if --version was set.
 func (h *TextHandler) Config(config *govulncheck.Config) error {
-	h.print("Using ")
+	if !h.showVersion {
+		return nil
+	}
 	if config.GoVersion != "" {
-		h.style(goStyle, config.GoVersion)
-		h.print(` and `)
+		h.style(keyStyle, "Go: ")
+		h.print(config.GoVersion, "\n")
 	}
 	if config.ScannerName != "" {
-		h.style(scannerStyle, config.ScannerName)
+		h.style(keyStyle, "Scanner: ")
+		h.print(config.ScannerName)
 		if config.ScannerVersion != "" {
 			h.print(`@`, config.ScannerVersion)
 		}
-		h.print(` with `)
+		h.print("\n")
 	}
-	h.print(`vulnerability data from `, config.DB)
-	if config.DBLastModified != nil {
-		h.print(` (last modified `, *config.DBLastModified, `)`)
+	if config.DB != "" {
+		h.style(keyStyle, "DB: ")
+		h.print(config.DB, "\n")
+		if config.DBLastModified != nil {
+			h.style(keyStyle, "DB updated: ")
+			h.print(*config.DBLastModified, "\n")
+		}
 	}
-	h.print(".\n\n")
+	h.print("\n")
 	return h.err
 }
 
@@ -279,10 +287,6 @@ func (h *TextHandler) style(style style, values ...any) {
 		switch style {
 		default:
 			h.print(colorReset)
-		case goStyle:
-			h.print(colorBold)
-		case scannerStyle:
-			h.print(colorBold)
 		case osvCalledStyle:
 			h.print(colorBold, fgRed)
 		case osvImportedStyle:

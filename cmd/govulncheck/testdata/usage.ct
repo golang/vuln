@@ -25,35 +25,26 @@ Usage:
     	comma-separated list of build tags
   -test
     	analyze test files (only valid for source mode)
+  -version
+    	print the version information
 
 For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 
 #####
-# Same output as -h, but failure.
-$ govulncheck --> FAIL 2
-Govulncheck reports known vulnerabilities in dependencies.
+# Not scanning anything.
+$ govulncheck
+No vulnerabilities found.
 
-Usage:
+Share feedback at https://go.dev/s/govulncheck-feedback.
 
-	govulncheck [flags] [patterns]
-	govulncheck -mode=binary [flags] [binary]
+#####
+# Reporting version without scanning anything.
+$ govulncheck -version
+Go: go1.18
+Scanner: govulncheck@v1.0.0
+DB: testdata/vulndb-v1
+DB updated: 2023-04-03 15:57:51 +0000 UTC
 
-  -C dir
-    	change to dir before running govulncheck
-  -db url
-    	vulnerability database url (default "https://vuln.go.dev")
-  -json
-    	output JSON
-  -mode string
-    	supports source or binary (default "source")
-  -scan string
-    	set the scanning level desired, one of module, package or symbol (default "symbol")
-  -show list
-    	enable display of additional information specified by the comma separated list
-    	The only supported value is 'traces'
-  -tags list
-    	comma-separated list of build tags
-  -test
-    	analyze test files (only valid for source mode)
+No vulnerabilities found.
 
-For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
+Share feedback at https://go.dev/s/govulncheck-feedback.

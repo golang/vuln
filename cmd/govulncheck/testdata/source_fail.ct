@@ -1,8 +1,6 @@
 #####
 # Test of missing go.mod error message.
 $ govulncheck -C ${moddir}/nogomod . --> FAIL 1
-Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
-
 govulncheck: no go.mod file
 
 govulncheck only works with Go modules. Try navigating to your module directory.
@@ -24,8 +22,6 @@ For details, run govulncheck -h.
 #####
 # Test of handing an invalid package pattern to source mode
 $ govulncheck -C ${moddir}/vuln blah --> FAIL 1
-Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
-
 govulncheck: loading packages: 
 There are errors with the provided package patterns:
 

@@ -1,5 +1,3 @@
-Using govulncheck with vulnerability data from .
-
 Vulnerability #1: GO-0000-0002
     Stdlib vulnerability
   More info: https://pkg.go.dev/vuln/GO-0000-0002

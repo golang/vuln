@@ -1,8 +1,6 @@
 #####
 # Test souce mode with no callstacks
 $ govulncheck -C ${moddir}/informational -show=traces .
-Using go1.18 and govulncheck@v0.0.0-00000000000-20000101010101 with vulnerability data from testdata/vulndb-v1 (last modified 01 Jan 21 00:00 UTC).
-
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
 === Informational ===

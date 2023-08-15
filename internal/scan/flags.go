@@ -39,6 +39,7 @@ const (
 func parseFlags(cfg *config, stderr io.Writer, args []string) error {
 	var tagsFlag buildutil.TagsFlag
 	var showFlag showFlag
+	var version bool
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	flags.BoolVar(&cfg.json, "json", false, "output JSON")
@@ -48,6 +49,7 @@ func parseFlags(cfg *config, stderr io.Writer, args []string) error {
 	flags.StringVar(&cfg.mode, "mode", modeSource, "supports source or binary")
 	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
 	flags.Var(&showFlag, "show", "enable display of additional information specified by the comma separated `list`\nThe only supported value is 'traces'")
+	flags.BoolVar(&version, "version", false, "print the version information")
 	scanLevel := flags.String("scan", "symbol", "set the scanning level desired, one of module, package or symbol")
 	flags.Usage = func() {
 		fmt.Fprint(flags.Output(), `Govulncheck reports known vulnerabilities in dependencies.
@@ -68,12 +70,11 @@ Usage:
 		return err
 	}
 	cfg.patterns = flags.Args()
-	if cfg.mode != modeConvert && len(cfg.patterns) == 0 {
-		flags.Usage()
-		return errUsage
-	}
 	cfg.tags = tagsFlag
 	cfg.show = showFlag
+	if version {
+		cfg.show = append(cfg.show, "version")
+	}
 	cfg.ScanLevel = govulncheck.ScanLevel(*scanLevel)
 	if err := validateConfig(cfg); err != nil {
 		fmt.Fprintln(flags.Output(), err)

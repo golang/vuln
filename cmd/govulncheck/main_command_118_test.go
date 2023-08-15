@@ -59,8 +59,8 @@ var fixups = []fixup{
 		pattern: `Scanning your code and (\d+) packages across (\d+)`,
 		replace: `Scanning your code and P packages across M`,
 	}, {
-		pattern: `govulncheck@v([^ ]*) `,
-		replace: `govulncheck@v0.0.0-00000000000-20000101010101 `,
+		pattern: `Scanner: govulncheck@v.*`,
+		replace: `Scanner: govulncheck@v1.0.0`,
 	}, {
 		pattern: `"([^"]*") is a file`,
 		replace: `govulncheck: myfile is a file`,
@@ -77,8 +77,8 @@ var fixups = []fixup{
 		pattern: `modified (.*)\)`,
 		replace: `modified 01 Jan 21 00:00 UTC)`,
 	}, {
-		pattern: `Using (go1.[\.\d]*|devel).* and`,
-		replace: `Using go1.18 and`,
+		pattern: `Go: (go1.[\.\d]*|devel).*`,
+		replace: `Go: go1.18`,
 	}, {
 		pattern: `"go_version": "go[^\s"]*"`,
 		replace: `"go_version": "go1.18"`,
