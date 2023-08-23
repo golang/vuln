@@ -69,7 +69,10 @@ type Progress struct {
 	Message string `json:"message,omitempty"`
 }
 
-// Vuln represents a single OSV entry.
+// Finding contains information on a discovered vulnerability. The same vulnerability
+// can have multiple findings. This can happen when, say, multiple symbols of the
+// same vulnerability are called or govulncheck decides to show multiple traces for
+// the same symbol.
 type Finding struct {
 	// OSV is the id of the detected vulnerability.
 	OSV string `json:"osv,omitempty"`
