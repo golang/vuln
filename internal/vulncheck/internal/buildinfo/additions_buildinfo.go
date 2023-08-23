@@ -192,7 +192,10 @@ func (x *peExe) PCLNTab() ([]byte, uint64) {
 
 // SymbolInfo is derived from cmd/internal/objfile/macho.go:symbols.
 func (x *machoExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
-	sym := x.lookupSymbol(name)
+	sym, err := x.lookupSymbol(name)
+	if err != nil {
+		return 0, 0, nil, err
+	}
 	if sym == nil {
 		return 0, 0, nil, fmt.Errorf("no symbol %q", name)
 	}
@@ -203,15 +206,26 @@ func (x *machoExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) 
 	return sym.Value, seg.Addr, seg.ReaderAt, nil
 }
 
-func (x *machoExe) lookupSymbol(name string) *macho.Symbol {
+func (x *machoExe) lookupSymbol(name string) (*macho.Symbol, error) {
+	const mustExistSymbol = "runtime.main"
 	x.symbolsOnce.Do(func() {
 		x.symbols = make(map[string]*macho.Symbol, len(x.f.Symtab.Syms))
 		for _, s := range x.f.Symtab.Syms {
 			s := s // make a copy to prevent aliasing
 			x.symbols[s.Name] = &s
 		}
+		// In the presence of stripping, the symbol table for darwin
+		// binaries will not be empty, but the program symbols will
+		// be missing.
+		if _, ok := x.symbols[mustExistSymbol]; !ok {
+			x.symbolsErr = ErrNoSymbols
+		}
 	})
-	return x.symbols[name]
+
+	if x.symbolsErr != nil {
+		return nil, x.symbolsErr
+	}
+	return x.symbols[name], nil
 }
 
 func (x *machoExe) segmentContaining(addr uint64) *macho.Segment {

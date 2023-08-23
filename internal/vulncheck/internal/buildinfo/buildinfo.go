@@ -174,6 +174,7 @@ type machoExe struct {
 
 	symbols     map[string]*macho.Symbol // Addition: symbols in the binary
 	symbolsOnce sync.Once                // Addition: for computing symbols
+	symbolsErr  error                    // Addition: error for computing symbols
 }
 
 func (x *machoExe) ReadData(addr, size uint64) ([]byte, error) {
