@@ -232,7 +232,8 @@ func (h *TextHandler) vulnerability(index int, findings []*findingSummary) {
 
 func (h *TextHandler) traces(traces []*findingSummary) {
 	first := true
-	for i, entry := range traces {
+	count := 1
+	for _, entry := range traces {
 		if entry.Compact == "" {
 			continue
 		}
@@ -241,7 +242,8 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 		}
 		first = false
 
-		h.print("      #", i+1, ": ")
+		h.print("      #", count, ": ")
+		count++
 		if !h.showTraces {
 			h.print(entry.Compact, "\n")
 		} else {
