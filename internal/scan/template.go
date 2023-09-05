@@ -97,6 +97,15 @@ func counters(findings []*findingSummary) summaryCounters {
 	return result
 }
 
+func isImported(findings []*findingSummary) bool {
+	for _, f := range findings {
+		if f.Trace[0].Package != "" {
+			return true
+		}
+	}
+	return false
+}
+
 func isCalled(findings []*findingSummary) bool {
 	for _, f := range findings {
 		if f.Trace[0].Function != "" {
