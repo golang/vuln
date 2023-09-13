@@ -45,8 +45,9 @@ type httpSource struct {
 func (hs *httpSource) get(ctx context.Context, endpoint string) (_ []byte, err error) {
 	derrors.Wrap(&err, "get(%s)", endpoint)
 
+	method := http.MethodGet
 	reqURL := fmt.Sprintf("%s/%s", hs.url, endpoint+".json.gz")
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, method, reqURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +57,7 @@ func (hs *httpSource) get(ctx context.Context, endpoint string) (_ []byte, err e
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected HTTP status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("HTTP %s %s returned unexpected status: %s", method, reqURL, resp.Status)
 	}
 
 	// Uncompress the result.
