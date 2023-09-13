@@ -136,22 +136,30 @@ func (h *TextHandler) Finding(finding *govulncheck.Finding) error {
 func (h *TextHandler) byVulnerability(findings []*findingSummary) {
 	byVuln := groupByVuln(findings)
 	called := 0
+	onlyImported := 0
 	for _, findings := range byVuln {
 		if isCalled(findings) {
 			h.vulnerability(called, findings)
 			called++
+		} else if isImported(findings) {
+			onlyImported++
 		}
 	}
-	unCalled := len(byVuln) - called
-	if unCalled == 0 {
+	onlyRequired := len(byVuln) - (called + onlyImported)
+	if onlyImported+onlyRequired == 0 {
 		return
 	}
 	h.style(sectionStyle, "=== Informational ===\n")
-	h.print("\nFound ", unCalled)
-	h.print(choose(unCalled == 1, ` vulnerability`, ` vulnerabilities`))
-	h.print(" in packages that you import, but there are no call\nstacks leading to the use of ")
-	h.print(choose(unCalled == 1, `this vulnerability`, `these vulnerabilities`))
-	h.print(". You may not need to\ntake any action. See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck\nfor details.\n\n")
+	h.print("\nFound ", onlyImported)
+	h.print(choose(onlyImported == 1, ` vulnerability`, ` vulnerabilities`))
+	h.print(" in packages that you import, but there are no\ncall stacks leading to the use of ")
+	h.print(choose(onlyImported == 1, `this vulnerability`, `these vulnerabilities`))
+	h.print(". You may not\nneed to take any action. ")
+	h.print("There ", choose(onlyRequired == 1, `is`, `are`), " also ", onlyRequired)
+	h.print(choose(onlyRequired == 1, ` vulnerability`, ` vulnerabilities`))
+	h.print(" in modules\nthat you require that")
+	h.print(choose(onlyRequired == 1, ` is `, ` are `), "neither imported nor called.\n")
+	h.print("See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.\n\n")
 	index := 0
 	for _, findings := range byVuln {
 		if !isCalled(findings) {
