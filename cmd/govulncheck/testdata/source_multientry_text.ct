@@ -16,6 +16,23 @@ Vulnerability #1: GO-2021-0113
       #1: .../main.go:99:20: multientry.foobar calls language.MustParse
       #2: .../main.go:44:23: multientry.C calls language.Parse
 
+=== Informational ===
+
+Found 0 vulnerabilities in packages that you import, but there are no
+call stacks leading to the use of these vulnerabilities. You may not
+need to take any action. There is also 1 vulnerability in modules
+that you require that is neither imported nor called.
+See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+
+Vulnerability #1: GO-2022-0969
+    HTTP/2 server connections can hang forever waiting for a clean shutdown that
+    was preempted by a fatal error. This condition can be exploited by a
+    malicious client to cause a denial of service.
+  More info: https://pkg.go.dev/vuln/GO-2022-0969
+  Standard library
+    Found in: net/http@go1.18
+    Fixed in: net/http@go1.18.6
+
 Your code is affected by 1 vulnerability from 1 module.
 
 Share feedback at https://go.dev/s/govulncheck-feedback.
@@ -44,6 +61,23 @@ Vulnerability #1: GO-2021-0113
         .../main.go:22:3: golang.org/multientry.main
         .../main.go:44:23: golang.org/multientry.C
         golang.org/x/text/language.Parse
+
+=== Informational ===
+
+Found 0 vulnerabilities in packages that you import, but there are no
+call stacks leading to the use of these vulnerabilities. You may not
+need to take any action. There is also 1 vulnerability in modules
+that you require that is neither imported nor called.
+See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+
+Vulnerability #1: GO-2022-0969
+    HTTP/2 server connections can hang forever waiting for a clean shutdown that
+    was preempted by a fatal error. This condition can be exploited by a
+    malicious client to cause a denial of service.
+  More info: https://pkg.go.dev/vuln/GO-2022-0969
+  Standard library
+    Found in: net/http@go1.18
+    Fixed in: net/http@go1.18.6
 
 Your code is affected by 1 vulnerability from 1 module.
 

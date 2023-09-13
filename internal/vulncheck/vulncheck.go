@@ -215,7 +215,7 @@ func matchesPlatformComponent(s string, ps []string) bool {
 // specific prefix of importPath, or nil if there is no matching module with
 // vulnerabilities.
 func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry {
-	isStd := isStdPackage(importPath)
+	isStd := IsStdPackage(importPath)
 	var mostSpecificMod *ModVulns
 	for _, mod := range mv {
 		md := mod
@@ -288,7 +288,7 @@ func contains(symbols []string, target string) bool {
 	return false
 }
 
-func isStdPackage(pkg string) bool {
+func IsStdPackage(pkg string) bool {
 	if pkg == "" {
 		return false
 	}

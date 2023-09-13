@@ -14,6 +14,7 @@ import (
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
+	"golang.org/x/vuln/internal/test"
 )
 
 // TestCalls checks for call graph vuln slicing correctness.
@@ -204,7 +205,7 @@ func TestCalls(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := Source(context.Background(), pkgs, cfg, c, graph)
+	result, err := Source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -306,7 +307,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := Source(context.Background(), pkgs, cfg, client, graph)
+	result, err := Source(context.Background(), test.NewMockHandler(), pkgs, cfg, client, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -376,7 +377,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := Source(context.Background(), pkgs, cfg, c, graph)
+	result, err := Source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -456,7 +457,7 @@ func TestRecursion(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := Source(context.Background(), pkgs, cfg, c, graph)
+	result, err := Source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -521,7 +522,7 @@ func TestIssue57174(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	_, err = Source(context.Background(), pkgs, cfg, c, graph)
+	_, err = Source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}

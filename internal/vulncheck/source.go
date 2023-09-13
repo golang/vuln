@@ -27,7 +27,7 @@ import (
 // some known vulnerabilities.
 //
 // 3) A CallGraph leading to the use of a known vulnerable function or method.
-func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (_ *Result, err error) {
+func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (_ *Result, err error) {
 	// buildSSA builds a whole program that assumes all packages use the same FileSet.
 	// Check all packages in pkgs are using the same FileSet.
 	// TODO(https://go.dev/issue/59729): take FileSet out of Package and
@@ -74,8 +74,14 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	modVulns := moduleVulnerabilities(mv)
 	modVulns = modVulns.filter("", "")
 	result := &Result{}
+	// instead of add to result, output using the handler
+	emitModuleFindings(modVulns, handler)
 
-	vulnPkgSlice(pkgs, modVulns, result)
+	if !cfg.ScanLevel.WantPackages() || len(modVulns) == 0 {
+		return result, nil
+	}
+
+	vulnPkgSlice(pkgs, modVulns, result, handler)
 	// Return result immediately if not in symbol mode or
 	// if there are no vulnerable packages.
 	if !cfg.ScanLevel.WantSymbols() || len(result.EntryPackages) == 0 {
@@ -95,7 +101,7 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 // vulnPkgSlice computes the slice of pkgs imports graph
 // leading to imports of vulnerable packages in modVulns
 // and stores the computed slices to result.
-func vulnPkgSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, result *Result) {
+func vulnPkgSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, result *Result, handler govulncheck.Handler) {
 	// analyzedPkgs contains information on packages analyzed thus far.
 	// If a package is mapped to false, this means it has been visited
 	// but it does not lead to a vulnerable imports. Otherwise, a
@@ -104,7 +110,7 @@ func vulnPkgSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, resu
 	for _, pkg := range pkgs {
 		// Top level packages that lead to vulnerable imports are
 		// stored as result.EntryPackages graph entry points.
-		if vulnerable := vulnImportSlice(pkg, modVulns, result, analyzedPkgs); vulnerable {
+		if vulnerable := vulnImportSlice(pkg, modVulns, result, analyzedPkgs, handler); vulnerable {
 			result.EntryPackages = append(result.EntryPackages, pkg)
 		}
 	}
@@ -114,7 +120,7 @@ func vulnPkgSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, resu
 // a package with known vulnerabilities. If that is the case, populates result.Imports
 // graph with this reachability information and returns the result.Imports package
 // node for pkg. Otherwise, returns nil.
-func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, result *Result, analyzed map[*packages.Package]bool) bool {
+func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, result *Result, analyzed map[*packages.Package]bool, handler govulncheck.Handler) bool {
 	if vulnerable, ok := analyzed[pkg]; ok {
 		return vulnerable
 	}
@@ -123,7 +129,7 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 	// a vulnerable package and remember the nodes of such dependencies.
 	transitiveVulnerable := false
 	for _, imp := range pkg.Imports {
-		if impVulnerable := vulnImportSlice(imp, modVulns, result, analyzed); impVulnerable {
+		if impVulnerable := vulnImportSlice(imp, modVulns, result, analyzed, handler); impVulnerable {
 			transitiveVulnerable = true
 		}
 	}
@@ -149,7 +155,10 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 				if len(symbols) == 0 {
 					symbols = allSymbols(pkg.Types)
 				}
-
+				emitPackageFinding(&Vuln{
+					OSV:        osv,
+					ImportSink: pkg,
+				}, handler)
 				for _, symbol := range symbols {
 					vuln := &Vuln{
 						OSV:        osv,

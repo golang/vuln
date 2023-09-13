@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
@@ -37,7 +38,54 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 		return fmt.Errorf("govulncheck: %v", err)
 	}
 	callstacks := binaryCallstacks(vr)
-	return emitResult(handler, vr, callstacks)
+	return emitBinaryResult(handler, vr, callstacks)
+}
+
+func emitBinaryResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks map[*vulncheck.Vuln]vulncheck.CallStack) error {
+	osvs := map[string]*osv.Entry{}
+	// first deal with all the affected vulnerabilities
+	emitted := map[string]bool{}
+	seen := map[string]bool{}
+	emitFinding := func(finding *govulncheck.Finding) error {
+		if !seen[finding.OSV] {
+			seen[finding.OSV] = true
+			if err := handler.OSV(osvs[finding.OSV]); err != nil {
+				return err
+			}
+		}
+		return handler.Finding(finding)
+	}
+
+	for _, vv := range vr.Vulns {
+		osvs[vv.OSV.ID] = vv.OSV
+		fixed := vulncheck.FixedVersion(vulncheck.ModPath(vv.ImportSink.Module), vulncheck.ModVersion(vv.ImportSink.Module), vv.OSV.Affected)
+		stack := callstacks[vv]
+		if stack == nil {
+			continue
+		}
+		emitted[vv.OSV.ID] = true
+		emitFinding(&govulncheck.Finding{
+			OSV:          vv.OSV.ID,
+			FixedVersion: fixed,
+			Trace:        tracefromEntries(stack),
+		})
+	}
+	for _, vv := range vr.Vulns {
+		if emitted[vv.OSV.ID] {
+			continue
+		}
+		stacks := callstacks[vv]
+		if len(stacks) != 0 {
+			continue
+		}
+		emitted[vv.OSV.ID] = true
+		emitFinding(&govulncheck.Finding{
+			OSV:          vv.OSV.ID,
+			FixedVersion: vulncheck.FixedVersion(vulncheck.ModPath(vv.ImportSink.Module), vulncheck.ModVersion(vv.ImportSink.Module), vv.OSV.Affected),
+			Trace:        []*govulncheck.Frame{frameFromPackage(vv.ImportSink)},
+		})
+	}
+	return nil
 }
 
 func binaryCallstacks(vr *vulncheck.Result) map[*vulncheck.Vuln]vulncheck.CallStack {

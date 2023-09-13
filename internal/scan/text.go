@@ -12,6 +12,7 @@ import (
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
+	"golang.org/x/vuln/internal/vulncheck"
 )
 
 type style int
@@ -141,7 +142,7 @@ func (h *TextHandler) byVulnerability(findings []*findingSummary) {
 		if isCalled(findings) {
 			h.vulnerability(called, findings)
 			called++
-		} else if isImported(findings) {
+		} else if isImported(findings) && !isStdFindings(findings) {
 			onlyImported++
 		}
 	}
@@ -357,4 +358,13 @@ func choose(b bool, yes, no any) any {
 		return yes
 	}
 	return no
+}
+
+func isStdFindings(findings []*findingSummary) bool {
+	for _, f := range findings {
+		if vulncheck.IsStdPackage(f.Trace[0].Package) {
+			return true
+		}
+	}
+	return false
 }

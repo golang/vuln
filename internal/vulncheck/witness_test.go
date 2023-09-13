@@ -19,6 +19,7 @@ import (
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
+	"golang.org/x/vuln/internal/test"
 )
 
 // stacksToString converts map *Vuln:stack to Vuln.Symbol:"f1->...->fN"
@@ -189,7 +190,7 @@ func TestInits(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := Source(context.Background(), pkgs, cfg, testClient, graph)
+	result, err := Source(context.Background(), test.NewMockHandler(), pkgs, cfg, testClient, graph)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,12 +8,12 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sort"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
-	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
@@ -47,59 +47,38 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	if err := handler.Progress(sourceProgressMessage(pkgs)); err != nil {
 		return err
 	}
-	vr, err := vulncheck.Source(ctx, pkgs, &cfg.Config, client, graph)
+	vr, err := vulncheck.Source(ctx, handler, pkgs, &cfg.Config, client, graph)
 	if err != nil {
 		return err
 	}
 	callStacks := vulncheck.CallStacks(vr)
-	return emitResult(handler, vr, callStacks)
+	return emitCalledVulns(handler, callStacks)
 }
 
-func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks map[*vulncheck.Vuln]vulncheck.CallStack) error {
-	osvs := map[string]*osv.Entry{}
-	// first deal with all the affected vulnerabilities
-	emitted := map[string]bool{}
-	seen := map[string]bool{}
-	for _, vv := range vr.Vulns {
-		osvs[vv.OSV.ID] = vv.OSV
-		fixed := fixedVersion(modPath(vv.ImportSink.Module), modVersion(vv.ImportSink.Module), vv.OSV.Affected)
-		stack := callstacks[vv]
+func emitCalledVulns(handler govulncheck.Handler, callstacks map[*vulncheck.Vuln]vulncheck.CallStack) error {
+	var vulns []*vulncheck.Vuln
+
+	for v := range callstacks {
+		vulns = append(vulns, v)
+	}
+
+	sort.SliceStable(vulns, func(i, j int) bool {
+		return vulns[i].Symbol < vulns[j].Symbol
+	})
+
+	for _, vuln := range vulns {
+		stack := callstacks[vuln]
 		if stack == nil {
 			continue
 		}
-		emitted[vv.OSV.ID] = true
-		emitFinding(handler, osvs, seen, &govulncheck.Finding{
-			OSV:          vv.OSV.ID,
+		fixed := vulncheck.FixedVersion(vulncheck.ModPath(vuln.ImportSink.Module), vulncheck.ModVersion(vuln.ImportSink.Module), vuln.OSV.Affected)
+		handler.Finding(&govulncheck.Finding{
+			OSV:          vuln.OSV.ID,
 			FixedVersion: fixed,
 			Trace:        tracefromEntries(stack),
 		})
 	}
-	for _, vv := range vr.Vulns {
-		if emitted[vv.OSV.ID] {
-			continue
-		}
-		stacks := callstacks[vv]
-		if len(stacks) != 0 {
-			continue
-		}
-		emitted[vv.OSV.ID] = true
-		emitFinding(handler, osvs, seen, &govulncheck.Finding{
-			OSV:          vv.OSV.ID,
-			FixedVersion: fixedVersion(modPath(vv.ImportSink.Module), modVersion(vv.ImportSink.Module), vv.OSV.Affected),
-			Trace:        []*govulncheck.Frame{frameFromPackage(vv.ImportSink)},
-		})
-	}
 	return nil
-}
-
-func emitFinding(handler govulncheck.Handler, osvs map[string]*osv.Entry, seen map[string]bool, finding *govulncheck.Finding) error {
-	if !seen[finding.OSV] {
-		seen[finding.OSV] = true
-		if err := handler.OSV(osvs[finding.OSV]); err != nil {
-			return err
-		}
-	}
-	return handler.Finding(finding)
 }
 
 // tracefromEntries creates a sequence of

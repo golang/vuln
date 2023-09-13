@@ -1,8 +1,8 @@
-// Copyright 2022 The Go Authors. All rights reserved.
+// Copyright 2021 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package scan
+package vulncheck
 
 import (
 	"testing"
@@ -177,7 +177,7 @@ func TestFixedVersion(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got := fixedVersion(test.module, test.version, test.in)
+			got := FixedVersion(test.module, test.version, test.in)
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
