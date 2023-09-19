@@ -11,7 +11,6 @@ import (
 	"sort"
 
 	"golang.org/x/tools/go/packages"
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/vulncheck"
@@ -33,18 +32,17 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 		Tests: cfg.test,
 		Env:   cfg.env,
 	}
-	pkgs, err := graph.LoadPackages(pkgConfig, cfg.tags, cfg.patterns)
+	mods, err := graph.LoadModules(pkgConfig)
 	if err != nil {
-		// Try to provide a meaningful and actionable error message.
-		if !fileExists(filepath.Join(dir, "go.mod")) {
-			return fmt.Errorf("govulncheck: %v", errNoGoMod)
-		}
-		if isGoVersionMismatchError(err) {
-			return fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
-		}
-		return fmt.Errorf("govulncheck: loading packages: %w", err)
+		return parseLoadError(err, dir, false)
 	}
-	if err := handler.Progress(sourceProgressMessage(pkgs)); err != nil {
+	if cfg.ScanLevel.WantPackages() {
+		pkgs, err = graph.LoadPackages(pkgConfig, cfg.tags, cfg.patterns)
+		if err != nil {
+			return parseLoadError(err, dir, true)
+		}
+	}
+	if err := handler.Progress(sourceProgressMessage(pkgs, len(mods)-1)); err != nil {
 		return err
 	}
 
@@ -133,14 +131,14 @@ func frameFromPackage(pkg *packages.Package) *govulncheck.Frame {
 // is 0, then the following message is returned
 //
 //	"No packages matching the provided pattern."
-func sourceProgressMessage(topPkgs []*packages.Package) *govulncheck.Progress {
+func sourceProgressMessage(topPkgs []*packages.Package, mods int) *govulncheck.Progress {
 	if len(topPkgs) == 0 {
 		// The package pattern is valid, but no packages are matching.
 		// Example is pkg/strace/... (see #59623).
 		return &govulncheck.Progress{Message: "No packages matching the provided pattern."}
 	}
 
-	pkgs, mods := depPkgsAndMods(topPkgs)
+	pkgs := depPkgs(topPkgs)
 
 	pkgsPhrase := fmt.Sprintf("%d package", pkgs)
 	if pkgs != 1 {
@@ -156,12 +154,10 @@ func sourceProgressMessage(topPkgs []*packages.Package) *govulncheck.Progress {
 	return &govulncheck.Progress{Message: msg}
 }
 
-// depPkgsAndMods returns the number of packages that
-// topPkgs depend on and the number of their modules.
-func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
+// depPkgs returns the number of packages that topPkgs depend on
+func depPkgs(topPkgs []*packages.Package) int {
 	tops := make(map[string]bool)
 	depPkgs := make(map[string]bool)
-	depMods := make(map[string]bool)
 
 	for _, t := range topPkgs {
 		tops[t.PkgPath] = true
@@ -185,11 +181,6 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 		// as a dependent package.
 		if !tops[path] {
 			depPkgs[path] = true
-			if p.Module != nil &&
-				p.Module.Path != internal.GoStdModulePath && // no module for stdlib
-				p.Module.Path != internal.UnknownModulePath { // no module for unknown
-				depMods[p.Module.Path] = true
-			}
 		}
 
 		for _, d := range p.Imports {
@@ -201,5 +192,22 @@ func depPkgsAndMods(topPkgs []*packages.Package) (int, int) {
 		visit(t, true)
 	}
 
-	return len(depPkgs), len(depMods)
+	return len(depPkgs)
+}
+
+// parseLoadError takes a non-nil error and tries to provide a meaningful
+// and actionable error message to surface for the end user.
+func parseLoadError(err error, dir string, pkgs bool) error {
+	if !fileExists(filepath.Join(dir, "go.mod")) {
+		return fmt.Errorf("govulncheck: %v", errNoGoMod)
+	}
+	if isGoVersionMismatchError(err) {
+		return fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
+	}
+
+	level := "modules"
+	if pkgs {
+		level = "packages"
+	}
+	return fmt.Errorf("govulncheck: loading %s: %w", level, err)
 }

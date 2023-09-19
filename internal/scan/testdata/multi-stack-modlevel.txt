@@ -1,0 +1,28 @@
+Vulnerability #1: GO-0000-0001
+    Third-party vulnerability
+  More info: https://pkg.go.dev/vuln/GO-0000-0001
+  Module: golang.org/vmod
+    Found in: golang.org/vmod@v0.0.1
+    Fixed in: golang.org/vmod@v0.1.3
+    Platforms: amd
+    Example traces found:
+      #1: main.main calls vmod.VulnFoo
+
+=== Informational ===
+
+Found 0 vulnerabilities in packages that you import, but there are no
+call stacks leading to the use of these vulnerabilities. You may not
+need to take any action. There is also 1 vulnerability in modules
+that you require that is neither imported nor called.
+See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+
+Vulnerability #1: GO-0000-0002
+    Third-party vulnerability
+  More info: https://pkg.go.dev/vuln/GO-0000-0002
+  Module: golang.org/vmod
+    Found in: golang.org/vmod@v0.0.1
+    Fixed in: golang.org/vmod@v0.1.3
+
+Your code is affected by 1 vulnerability from 1 module.
+
+Share feedback at https://go.dev/s/govulncheck-feedback.

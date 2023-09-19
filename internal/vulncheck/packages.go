@@ -36,13 +36,14 @@ func NewPackageGraph(goVersion string) *PackageGraph {
 }
 
 func (g *PackageGraph) LoadModules(cfg *packages.Config) (mods []*packages.Module, err error) {
-	cmd := exec.Command("go", "list", "-m", "-json", "all")
+	cmd := exec.Command("go", "list", "-m", "-json", "-mod=mod", "all")
 	cmd.Env = append(cmd.Env, cfg.Env...)
 	cmd.Dir = cfg.Dir
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err
 	}
+
 	dec := json.NewDecoder(bytes.NewReader(out))
 	for dec.More() {
 		var m *packages.Module

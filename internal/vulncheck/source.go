@@ -51,7 +51,10 @@ func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 		}()
 	}
 
-	mods := extractModules(pkgs)
+	var mods []*packages.Module
+	for _, m := range graph.modules {
+		mods = append(mods, m)
+	}
 	mv, err := FetchVulnerabilities(ctx, client, mods)
 	if err != nil {
 		return nil, err
@@ -331,37 +334,4 @@ func addCallSinkForVuln(call *FuncNode, osv *osv.Entry, symbol, pkg string, resu
 			return
 		}
 	}
-}
-
-// extractModules collects modules in `pkgs` up to uniqueness of
-// module path and version.
-func extractModules(pkgs []*packages.Package) []*packages.Module {
-	modMap := map[string]*packages.Module{}
-	seen := map[*packages.Package]bool{}
-	var extract func(*packages.Package, map[string]*packages.Module)
-	extract = func(pkg *packages.Package, modMap map[string]*packages.Module) {
-		if pkg == nil || seen[pkg] {
-			return
-		}
-		if pkg.Module != nil {
-			if pkg.Module.Replace != nil {
-				modMap[pkg.Module.Replace.Path] = pkg.Module
-			} else {
-				modMap[pkg.Module.Path] = pkg.Module
-			}
-		}
-		seen[pkg] = true
-		for _, imp := range pkg.Imports {
-			extract(imp, modMap)
-		}
-	}
-	for _, pkg := range pkgs {
-		extract(pkg, modMap)
-	}
-
-	modules := []*packages.Module{}
-	for _, mod := range modMap {
-		modules = append(modules, mod)
-	}
-	return modules
 }

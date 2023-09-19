@@ -1,7 +1,7 @@
 #####
 # Test govulncheck runs on the subdirectory of a module
 $ govulncheck -C ${moddir}/vuln/subdir . --> FAIL 3
-Scanning your code and P packages across M dependent module for known vulnerabilities...
+Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
 Vulnerability #1: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can
@@ -19,7 +19,7 @@ Vulnerability #1: GO-2021-0113
 
 Found 0 vulnerabilities in packages that you import, but there are no
 call stacks leading to the use of these vulnerabilities. You may not
-need to take any action. There are also 2 vulnerabilities in modules
+need to take any action. There are also 4 vulnerabilities in modules
 that you require that are neither imported nor called.
 See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
 
@@ -32,7 +32,24 @@ Vulnerability #1: GO-2022-0969
     Found in: net/http@go1.18
     Fixed in: net/http@go1.18.6
 
-Vulnerability #2: GO-2020-0015
+Vulnerability #2: GO-2021-0265
+    A maliciously crafted path can cause Get and other query functions to
+    consume excessive amounts of CPU and time.
+  More info: https://pkg.go.dev/vuln/GO-2021-0265
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.9.3
+
+Vulnerability #3: GO-2021-0054
+    Due to improper bounds checking, maliciously crafted JSON objects can cause
+    an out-of-bounds panic. If parsing user input, this may be used as a denial
+    of service vector.
+  More info: https://pkg.go.dev/vuln/GO-2021-0054
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.6.6
+
+Vulnerability #4: GO-2020-0015
     An attacker could provide a single byte to a UTF16 decoder instantiated with
     UseBOM or ExpectBOM to trigger an infinite loop if the String function on
     the Decoder is called, or the Decoder is passed to transform.String. If used
@@ -50,7 +67,7 @@ Share feedback at https://go.dev/s/govulncheck-feedback.
 #####
 # Test govulncheck runs on the subdirectory of a module
 $ govulncheck -C ${moddir}/vuln/subdir -show=traces . --> FAIL 3
-Scanning your code and P packages across M dependent module for known vulnerabilities...
+Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
 Vulnerability #1: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can
@@ -70,7 +87,7 @@ Vulnerability #1: GO-2021-0113
 
 Found 0 vulnerabilities in packages that you import, but there are no
 call stacks leading to the use of these vulnerabilities. You may not
-need to take any action. There are also 2 vulnerabilities in modules
+need to take any action. There are also 4 vulnerabilities in modules
 that you require that are neither imported nor called.
 See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
 
@@ -83,7 +100,24 @@ Vulnerability #1: GO-2022-0969
     Found in: net/http@go1.18
     Fixed in: net/http@go1.18.6
 
-Vulnerability #2: GO-2020-0015
+Vulnerability #2: GO-2021-0265
+    A maliciously crafted path can cause Get and other query functions to
+    consume excessive amounts of CPU and time.
+  More info: https://pkg.go.dev/vuln/GO-2021-0265
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.9.3
+
+Vulnerability #3: GO-2021-0054
+    Due to improper bounds checking, maliciously crafted JSON objects can cause
+    an out-of-bounds panic. If parsing user input, this may be used as a denial
+    of service vector.
+  More info: https://pkg.go.dev/vuln/GO-2021-0054
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.6.6
+
+Vulnerability #4: GO-2020-0015
     An attacker could provide a single byte to a UTF16 decoder instantiated with
     UseBOM or ExpectBOM to trigger an infinite loop if the String function on
     the Decoder is called, or the Decoder is passed to transform.String. If used

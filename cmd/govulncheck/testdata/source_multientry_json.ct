@@ -14,7 +14,7 @@ $ govulncheck -json -C ${moddir}/multientry .
 }
 {
   "progress": {
-    "message": "Scanning your code and P packages across M dependent module for known vulnerabilities..."
+    "message": "Scanning your code and P packages across M dependent modules for known vulnerabilities..."
   }
 }
 {
