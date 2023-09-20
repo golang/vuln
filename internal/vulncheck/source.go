@@ -75,7 +75,7 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	modVulns = modVulns.filter("", "")
 	result := &Result{}
 
-	vulnPkgModSlice(pkgs, modVulns, result)
+	vulnPkgSlice(pkgs, modVulns, result)
 	// Return result immediately if not in symbol mode or
 	// if there are no vulnerable packages.
 	if !cfg.ScanLevel.WantSymbols() || len(result.EntryPackages) == 0 {
@@ -92,10 +92,10 @@ func Source(ctx context.Context, pkgs []*packages.Package, cfg *govulncheck.Conf
 	return result, nil
 }
 
-// vulnPkgModSlice computes the slice of pkgs imports and requires graph
-// leading to imports/requires of vulnerable packages/modules in modVulns
+// vulnPkgSlice computes the slice of pkgs imports graph
+// leading to imports of vulnerable packages in modVulns
 // and stores the computed slices to result.
-func vulnPkgModSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, result *Result) {
+func vulnPkgSlice(pkgs []*packages.Package, modVulns moduleVulnerabilities, result *Result) {
 	// analyzedPkgs contains information on packages analyzed thus far.
 	// If a package is mapped to false, this means it has been visited
 	// but it does not lead to a vulnerable imports. Otherwise, a
