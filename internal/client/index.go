@@ -96,7 +96,7 @@ func (i *index) add(entry *osv.Entry) {
 		module.Vulns = append(module.Vulns, moduleVuln{
 			ID:       entry.ID,
 			Modified: entry.Modified,
-			Fixed:    isem.LatestFixedVersion(affected.Ranges),
+			Fixed:    isem.NonSupersededFix(affected.Ranges),
 		})
 	}
 }

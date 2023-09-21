@@ -10,7 +10,7 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-func TestLatestFixedVersion(t *testing.T) {
+func TestNonSupersededFix(t *testing.T) {
 	tests := []struct {
 		name   string
 		ranges []osv.Range
@@ -131,9 +131,9 @@ func TestLatestFixedVersion(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := LatestFixedVersion(test.ranges)
+			got := NonSupersededFix(test.ranges)
 			if got != test.want {
-				t.Errorf("LatestFixedVersion = %q, want %q", got, test.want)
+				t.Errorf("want %q; got %q", test.want, got)
 			}
 		})
 	}

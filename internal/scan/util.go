@@ -46,7 +46,7 @@ func latestFixed(modulePath string, as []osv.Affected) string {
 		if modulePath != a.Module.Path {
 			continue
 		}
-		fixed := isem.LatestFixedVersion(a.Ranges)
+		fixed := isem.NonSupersededFix(a.Ranges)
 		// Special case: if there is any affected block for this module
 		// with no fix, the module is considered unfixed.
 		if fixed == "" {
