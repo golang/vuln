@@ -62,7 +62,7 @@ func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks ma
 	seen := map[string]bool{}
 	for _, vv := range vr.Vulns {
 		osvs[vv.OSV.ID] = vv.OSV
-		fixed := fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected)
+		fixed := fixedVersion(modPath(vv.ImportSink.Module), modVersion(vv.ImportSink.Module), vv.OSV.Affected)
 		stack := callstacks[vv]
 		if stack == nil {
 			continue
@@ -85,7 +85,7 @@ func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks ma
 		emitted[vv.OSV.ID] = true
 		emitFinding(handler, osvs, seen, &govulncheck.Finding{
 			OSV:          vv.OSV.ID,
-			FixedVersion: fixedVersion(vv.ImportSink.Module.Path, vv.OSV.Affected),
+			FixedVersion: fixedVersion(modPath(vv.ImportSink.Module), modPath(vv.ImportSink.Module), vv.OSV.Affected),
 			Trace:        []*govulncheck.Frame{frameFromPackage(vv.ImportSink)},
 		})
 	}

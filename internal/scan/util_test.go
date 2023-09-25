@@ -10,20 +10,22 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-func TestLatestFixed(t *testing.T) {
+func TestFixedVersion(t *testing.T) {
 	for _, test := range []struct {
-		name   string
-		module string
-		in     []osv.Affected
-		want   string
+		name    string
+		module  string
+		version string
+		in      []osv.Affected
+		want    string
 	}{
 		{
 			name: "empty",
 			want: "",
 		},
 		{
-			name:   "no semver",
-			module: "example.com/module",
+			name:    "no semver",
+			module:  "example.com/module",
+			version: "v1.2.0",
 			in: []osv.Affected{
 				{
 					Module: osv.Module{
@@ -33,7 +35,7 @@ func TestLatestFixed(t *testing.T) {
 						{
 							Type: osv.RangeType("unspecified"),
 							Events: []osv.RangeEvent{
-								{Introduced: "v1.0.0", Fixed: "v1.2.3"},
+								{Introduced: "v1.0.0"}, {Fixed: "v1.2.3"},
 							},
 						}},
 				},
@@ -41,8 +43,9 @@ func TestLatestFixed(t *testing.T) {
 			want: "",
 		},
 		{
-			name:   "one",
-			module: "example.com/module",
+			name:    "one",
+			module:  "example.com/module",
+			version: "v1.0.1",
 			in: []osv.Affected{
 				{
 					Module: osv.Module{
@@ -52,7 +55,7 @@ func TestLatestFixed(t *testing.T) {
 						{
 							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
-								{Introduced: "v1.0.0", Fixed: "v1.2.3"},
+								{Introduced: "v1.0.0"}, {Fixed: "v1.2.3"},
 							},
 						}},
 				},
@@ -60,8 +63,9 @@ func TestLatestFixed(t *testing.T) {
 			want: "v1.2.3",
 		},
 		{
-			name:   "several",
-			module: "example.com/module",
+			name:    "several",
+			module:  "example.com/module",
+			version: "v1.2.0",
 			in: []osv.Affected{
 				{
 					Module: osv.Module{
@@ -71,8 +75,8 @@ func TestLatestFixed(t *testing.T) {
 						{
 							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
-								{Introduced: "v1.0.0", Fixed: "v1.2.3"},
-								{Introduced: "v1.5.0", Fixed: "v1.5.6"},
+								{Introduced: "v1.0.0"}, {Fixed: "v1.2.3"},
+								{Introduced: "v1.5.0"}, {Fixed: "v1.5.6"},
 							},
 						}},
 				},
@@ -84,7 +88,7 @@ func TestLatestFixed(t *testing.T) {
 						{
 							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
-								{Introduced: "v1.3.0", Fixed: "v1.4.1"},
+								{Introduced: "v1.3.0"}, {Fixed: "v1.4.1"},
 							},
 						}},
 				},
@@ -97,16 +101,17 @@ func TestLatestFixed(t *testing.T) {
 						{
 							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
-								{Introduced: "0", Fixed: "v1.6.0"},
+								{Introduced: "0"}, {Fixed: "v1.6.0"},
 							},
 						}},
 				},
 			},
-			want: "v1.5.6",
+			want: "v1.2.3",
 		},
 		{
-			name:   "no v prefix",
-			module: "example.com/module",
+			name:    "no v prefix",
+			version: "1.18.1",
+			module:  "example.com/module",
 			in: []osv.Affected{
 				{
 					Module: osv.Module{
@@ -128,15 +133,15 @@ func TestLatestFixed(t *testing.T) {
 						{
 							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
-								{Introduced: "1.18.0", Fixed: "1.18.4"},
+								{Introduced: "1.18.0"}, {Fixed: "1.18.4"},
 							},
 						}},
 				},
 			},
-			want: "1.18.4",
+			want: "v1.18.4",
 		},
 		{
-			name:   "unfixed",
+			name:   "overlapping",
 			module: "example.com/module",
 			in: []osv.Affected{
 				{
@@ -147,8 +152,10 @@ func TestLatestFixed(t *testing.T) {
 						{
 							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
-								{Introduced: "v1.0.0", Fixed: "v1.2.3"},
-								// Reintroduced and never fixed.
+								// v1.2.3 is nominally the earliest fix,
+								// but it is contained in vulnerable range
+								// for the next affected value.
+								{Introduced: "v1.0.0"}, {Fixed: "v1.2.3"},
 								{Introduced: "v1.5.0"},
 							},
 						}},
@@ -161,19 +168,16 @@ func TestLatestFixed(t *testing.T) {
 						{
 							Type: osv.RangeTypeSemver,
 							Events: []osv.RangeEvent{
-								// Even though this block has a fix,
-								// it will be overridden by the block
-								// with no fix.
-								{Introduced: "v1.3.0", Fixed: "v1.4.1"},
+								{Introduced: "v1.2.0"}, {Fixed: "v1.4.1"},
 							},
 						}},
 				},
 			},
-			want: "",
+			want: "v1.4.1",
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got := latestFixed(test.module, test.in)
+			got := fixedVersion(test.module, test.version, test.in)
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}

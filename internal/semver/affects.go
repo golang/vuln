@@ -21,7 +21,7 @@ func Affects(a []osv.Range, v string) bool {
 			continue
 		}
 		semverRangePresent = true
-		if containsSemver(r, v) {
+		if ContainsSemver(r, v) {
 			return true
 		}
 	}
@@ -32,9 +32,10 @@ func Affects(a []osv.Range, v string) bool {
 	return !semverRangePresent
 }
 
-// containsSemver checks if semver version v is in the
+// ContainsSemver checks if semver version v is in the
 // range encoded by ar. If ar is not a semver range,
-// returns false.
+// returns false. A range is interpreted as a left-closed
+// and right-open interval.
 //
 // Assumes that
 //   - exactly one of Introduced or Fixed fields is set
@@ -42,7 +43,7 @@ func Affects(a []osv.Range, v string) bool {
 //   - beginning of time is encoded with .Introduced="0"
 //   - no-fix is not an event, as opposed to being an
 //     event where Introduced="" and Fixed=""
-func containsSemver(ar osv.Range, v string) bool {
+func ContainsSemver(ar osv.Range, v string) bool {
 	if ar.Type != osv.RangeTypeSemver {
 		return false
 	}
