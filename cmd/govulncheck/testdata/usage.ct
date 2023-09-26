@@ -24,7 +24,7 @@ Usage:
   -tags list
     	comma-separated list of build tags
   -test
-    	analyze test files (only valid for source mode)
+    	analyze test files (only valid for source mode, default false)
   -version
     	print the version information
 

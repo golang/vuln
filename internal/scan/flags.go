@@ -43,7 +43,7 @@ func parseFlags(cfg *config, stderr io.Writer, args []string) error {
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	flags.BoolVar(&cfg.json, "json", false, "output JSON")
-	flags.BoolVar(&cfg.test, "test", false, "analyze test files (only valid for source mode)")
+	flags.BoolVar(&cfg.test, "test", false, "analyze test files (only valid for source mode, default false)")
 	flags.StringVar(&cfg.dir, "C", "", "change to `dir` before running govulncheck")
 	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database `url`")
 	flags.StringVar(&cfg.mode, "mode", modeSource, "supports source or binary")
