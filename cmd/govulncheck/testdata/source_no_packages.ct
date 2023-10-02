@@ -1,0 +1,8 @@
+#####
+# Test message when there are no packages matching the provided pattern (#59623).
+$ govulncheck -C ${moddir}/vuln pkg/no-govulncheck/...
+No packages matching the provided pattern.
+
+No vulnerabilities found.
+
+Share feedback at https://go.dev/s/govulncheck-feedback.

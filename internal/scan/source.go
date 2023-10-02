@@ -47,6 +47,10 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	if err := handler.Progress(sourceProgressMessage(pkgs)); err != nil {
 		return err
 	}
+
+	if len(pkgs) == 0 {
+		return nil // early exit
+	}
 	vr, err := vulncheck.Source(ctx, handler, pkgs, &cfg.Config, client, graph)
 	if err != nil {
 		return err
@@ -125,8 +129,17 @@ func frameFromPackage(pkg *packages.Package) *govulncheck.Frame {
 //	"Scanning your code and P packages across M dependent modules for known vulnerabilities..."
 //
 // P is the number of strictly dependent packages of
-// topPkgs and Y is the number of their modules.
+// topPkgs and Y is the number of their modules. If P
+// is 0, then the following message is returned
+//
+//	"No packages matching the provided pattern."
 func sourceProgressMessage(topPkgs []*packages.Package) *govulncheck.Progress {
+	if len(topPkgs) == 0 {
+		// The package pattern is valid, but no packages are matching.
+		// Example is pkg/strace/... (see #59623).
+		return &govulncheck.Progress{Message: "No packages matching the provided pattern."}
+	}
+
 	pkgs, mods := depPkgsAndMods(topPkgs)
 
 	pkgsPhrase := fmt.Sprintf("%d package", pkgs)
