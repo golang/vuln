@@ -6,8 +6,6 @@ package vulncheck
 
 import (
 	"context"
-	"fmt"
-	"go/token"
 	"sync"
 
 	"golang.org/x/tools/go/callgraph"
@@ -27,26 +25,13 @@ import (
 // some known vulnerabilities.
 //
 // 3) A CallGraph leading to the use of a known vulnerable function or method.
+//
+// Assumes that pkgs are non-empty and belong to the same program.
 func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (_ *Result, err error) {
-	// buildSSA builds a whole program that assumes all packages use the same FileSet.
-	// Check all packages in pkgs are using the same FileSet.
-	// TODO(https://go.dev/issue/59729): take FileSet out of Package and
-	// let Source take a single FileSet. That will make the enforcement
-	// clearer from the API level.
-	var fset *token.FileSet
-	for _, p := range pkgs {
-		if fset == nil {
-			fset = p.Fset
-		} else {
-			if fset != p.Fset {
-				return nil, fmt.Errorf("[]*Package must have created with the same FileSet")
-			}
-		}
-	}
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	fset := pkgs[0].Fset
 	// If we are building the callgraph, build ssa and the callgraph in parallel
 	// with fetching vulnerabilities. If the vulns set is empty, return without
 	// waiting for SSA construction or callgraph to finish.
