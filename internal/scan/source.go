@@ -85,7 +85,7 @@ func emitResult(handler govulncheck.Handler, vr *vulncheck.Result, callstacks ma
 		emitted[vv.OSV.ID] = true
 		emitFinding(handler, osvs, seen, &govulncheck.Finding{
 			OSV:          vv.OSV.ID,
-			FixedVersion: fixedVersion(modPath(vv.ImportSink.Module), modPath(vv.ImportSink.Module), vv.OSV.Affected),
+			FixedVersion: fixedVersion(modPath(vv.ImportSink.Module), modVersion(vv.ImportSink.Module), vv.OSV.Affected),
 			Trace:        []*govulncheck.Frame{frameFromPackage(vv.ImportSink)},
 		})
 	}
