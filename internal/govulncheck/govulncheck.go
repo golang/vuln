@@ -69,10 +69,14 @@ type Progress struct {
 	Message string `json:"message,omitempty"`
 }
 
-// Finding contains information on a discovered vulnerability. The same vulnerability
-// can have multiple findings. This can happen when, say, multiple symbols of the
-// same vulnerability are called or govulncheck decides to show multiple traces for
-// the same symbol.
+// Finding contains information on a discovered vulnerability. Each vulnerability
+// will likely have multiple findings in JSON mode. This is because govulncheck
+// emits findings as it does work, and therefore could emit one module level,
+// one package level, and potentially multiple symbol level findings depending
+// on scan level.
+// Multiple symbol level findings can be emitted when multiple symbols of the
+// same vuln are called or govulncheck decides to show multiple traces for the
+// same symbol.
 type Finding struct {
 	// OSV is the id of the detected vulnerability.
 	OSV string `json:"osv,omitempty"`
