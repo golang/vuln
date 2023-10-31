@@ -6,6 +6,8 @@ package scan
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
@@ -44,4 +46,14 @@ func moduleVersionString(modulePath, version string) string {
 		version = semverToGoTag(version)
 	}
 	return version
+}
+
+func gomodExists(dir string) bool {
+	cmd := exec.Command("go", "env", "GOMOD")
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	output := string(out)
+	// If module-aware mode is enabled, but there is no go.mod, GOMOD will be os.DevNull
+	// If module-aware mode is disabled, GOMOD will be the empty string.
+	return err == nil && !(output == os.DevNull || output == "")
 }

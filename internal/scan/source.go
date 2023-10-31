@@ -7,7 +7,6 @@ package scan
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/client"
@@ -27,6 +26,9 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	if len(cfg.patterns) == 0 {
 		return nil
 	}
+	if !gomodExists(dir) {
+		return errNoGoMod
+	}
 	var pkgs []*packages.Package
 	graph := vulncheck.NewPackageGraph(cfg.GoVersion)
 	pkgConfig := &packages.Config{
@@ -36,12 +38,18 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	}
 	mods, err := graph.LoadModules(pkgConfig)
 	if err != nil {
-		return parseLoadError(err, dir, false)
+		if isGoVersionMismatchError(err) {
+			return fmt.Errorf("%v\n\n%v", errGoVersionMismatch, err)
+		}
+		return fmt.Errorf("loading modules: %w", err)
 	}
 	if cfg.ScanLevel.WantPackages() {
 		pkgs, err = graph.LoadPackages(pkgConfig, cfg.tags, cfg.patterns)
 		if err != nil {
-			return parseLoadError(err, dir, true)
+			if isGoVersionMismatchError(err) {
+				return fmt.Errorf("%v\n\n%v", errGoVersionMismatch, err)
+			}
+			return fmt.Errorf("loading packages: %w", err)
 		}
 	}
 	if err := handler.Progress(sourceProgressMessage(pkgs, len(mods)-1)); err != nil {
@@ -125,21 +133,4 @@ func depPkgs(topPkgs []*packages.Package) int {
 	}
 
 	return len(depPkgs)
-}
-
-// parseLoadError takes a non-nil error and tries to provide a meaningful
-// and actionable error message to surface for the end user.
-func parseLoadError(err error, dir string, pkgs bool) error {
-	if !fileExists(filepath.Join(dir, "go.mod")) {
-		return errNoGoMod
-	}
-	if isGoVersionMismatchError(err) {
-		return fmt.Errorf("%v\n\n%v", errGoVersionMismatch, err)
-	}
-
-	level := "modules"
-	if pkgs {
-		level = "packages"
-	}
-	return fmt.Errorf("loading %s: %w", level, err)
 }
