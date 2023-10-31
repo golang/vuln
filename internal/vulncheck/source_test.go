@@ -205,7 +205,7 @@ func TestCalls(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := Source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
+	result, err := source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,7 +307,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := Source(context.Background(), test.NewMockHandler(), pkgs, cfg, client, graph)
+	result, err := source(context.Background(), test.NewMockHandler(), pkgs, cfg, client, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -377,7 +377,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := Source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
+	result, err := source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -397,7 +397,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 		t.Fatal("VulnData.Vuln1 should be deemed a called vulnerability")
 	}
 
-	stack := CallStacks(result)[vuln]
+	stack := sourceCallstacks(result)[vuln]
 	// We don't want the call stack X -> *VulnData.Vuln1 (wrapper) -> VulnData.Vuln1.
 	// We want X -> VulnData.Vuln1.
 	if len(stack) != 2 {
@@ -457,7 +457,7 @@ func TestRecursion(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := Source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
+	result, err := source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -522,7 +522,7 @@ func TestIssue57174(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	_, err = Source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
+	_, err = source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}

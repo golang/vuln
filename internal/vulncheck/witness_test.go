@@ -36,7 +36,7 @@ func stacksToString(stacks map[*Vuln]CallStack) map[string]string {
 	return m
 }
 
-func TestCallStacks(t *testing.T) {
+func TestSourceCallstacks(t *testing.T) {
 	// Call graph structure for the test program
 	//    entry1      entry2
 	//      |           |
@@ -66,13 +66,13 @@ func TestCallStacks(t *testing.T) {
 		"vuln2": "entry2->interm2->vuln2",
 	}
 
-	stacks := CallStacks(res)
+	stacks := sourceCallstacks(res)
 	if got := stacksToString(stacks); !reflect.DeepEqual(want, got) {
 		t.Errorf("want %v; got %v", want, got)
 	}
 }
 
-func TestUniqueCallStack(t *testing.T) {
+func TestSourceUniqueCallStack(t *testing.T) {
 	// Call graph structure for the test program
 	//    entry1      entry2
 	//      |           |
@@ -102,7 +102,7 @@ func TestUniqueCallStack(t *testing.T) {
 		"vuln2": "entry2->interm1->interm2->vuln2",
 	}
 
-	stacks := CallStacks(res)
+	stacks := sourceCallstacks(res)
 	if got := stacksToString(stacks); !reflect.DeepEqual(want, got) {
 		t.Errorf("want %v; got %v", want, got)
 	}
@@ -190,12 +190,12 @@ func TestInits(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := Source(context.Background(), test.NewMockHandler(), pkgs, cfg, testClient, graph)
+	result, err := source(context.Background(), test.NewMockHandler(), pkgs, cfg, testClient, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cs := CallStacks(result)
+	cs := sourceCallstacks(result)
 	want := map[string][]string{
 		"A": {
 			// Entry init's position is the package statement.
@@ -242,4 +242,25 @@ func fullStacksToString(callStacks map[*Vuln]CallStack) map[string][]string {
 		m[v.OSV.ID] = scs
 	}
 	return m
+}
+
+func TestIsExported(t *testing.T) {
+	for _, tc := range []struct {
+		symbol string
+		want   bool
+	}{
+		{"foo", false},
+		{"Foo", true},
+		{"x.foo", false},
+		{"X.foo", false},
+		{"x.Foo", true},
+		{"X.Foo", true},
+	} {
+		tc := tc
+		t.Run(tc.symbol, func(t *testing.T) {
+			if got := isExported(tc.symbol); tc.want != got {
+				t.Errorf("want %t; got %t", tc.want, got)
+			}
+		})
+	}
 }

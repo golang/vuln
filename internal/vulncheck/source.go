@@ -16,7 +16,17 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
-// Source detects vulnerabilities in packages. The result will contain:
+// Source detects vulnerabilities in pkgs and emits the findings to handler.
+func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) error {
+	vr, err := source(ctx, handler, pkgs, cfg, client, graph)
+	if err != nil {
+		return err
+	}
+	callStacks := sourceCallstacks(vr)
+	return emitCalledVulns(handler, callStacks)
+}
+
+// source detects vulnerabilities in packages. The result will contain:
 //
 // 1) An ImportGraph related to an import of a package with some known
 // vulnerabilities.
@@ -27,7 +37,7 @@ import (
 // 3) A CallGraph leading to the use of a known vulnerable function or method.
 //
 // Assumes that pkgs are non-empty and belong to the same program.
-func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (_ *Result, err error) {
+func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (_ *Result, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -63,7 +73,7 @@ func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 	modVulns = modVulns.filter("", "")
 	result := &Result{}
 	// instead of add to result, output using the handler
-	emitModuleFindings(modVulns, handler)
+	emitModuleFindings(handler, modVulns)
 
 	if !cfg.ScanLevel.WantPackages() || len(modVulns) == 0 {
 		return result, nil
@@ -143,10 +153,10 @@ func vulnImportSlice(pkg *packages.Package, modVulns moduleVulnerabilities, resu
 				if len(symbols) == 0 {
 					symbols = allSymbols(pkg.Types)
 				}
-				emitPackageFinding(&Vuln{
+				emitPackageFinding(handler, &Vuln{
 					OSV:        osv,
 					ImportSink: pkg,
-				}, handler)
+				})
 				for _, symbol := range symbols {
 					vuln := &Vuln{
 						OSV:        osv,

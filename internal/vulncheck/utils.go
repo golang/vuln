@@ -335,14 +335,14 @@ func fixNegated(fix string, affected []osv.Affected) bool {
 	return false
 }
 
-func ModPath(mod *packages.Module) string {
+func modPath(mod *packages.Module) string {
 	if mod.Replace != nil {
 		return mod.Replace.Path
 	}
 	return mod.Path
 }
 
-func ModVersion(mod *packages.Module) string {
+func modVersion(mod *packages.Module) string {
 	if mod.Replace != nil {
 		return mod.Replace.Version
 	}

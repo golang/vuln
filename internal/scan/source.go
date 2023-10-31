@@ -8,10 +8,10 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"sort"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/client"
+	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/vulncheck"
 )
@@ -21,7 +21,9 @@ import (
 // Vulnerabilities can be called (affecting the package, because a vulnerable
 // symbol is actually exercised) or just imported by the package
 // (likely having a non-affecting outcome).
-func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client, dir string) error {
+func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client, dir string) (err error) {
+	defer derrors.Wrap(&err, "govulncheck")
+
 	if len(cfg.patterns) == 0 {
 		return nil
 	}
@@ -49,77 +51,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	if len(pkgs) == 0 {
 		return nil // early exit
 	}
-	vr, err := vulncheck.Source(ctx, handler, pkgs, &cfg.Config, client, graph)
-	if err != nil {
-		return err
-	}
-	callStacks := vulncheck.CallStacks(vr)
-	return emitCalledVulns(handler, callStacks)
-}
-
-func emitCalledVulns(handler govulncheck.Handler, callstacks map[*vulncheck.Vuln]vulncheck.CallStack) error {
-	var vulns []*vulncheck.Vuln
-
-	for v := range callstacks {
-		vulns = append(vulns, v)
-	}
-
-	sort.SliceStable(vulns, func(i, j int) bool {
-		return vulns[i].Symbol < vulns[j].Symbol
-	})
-
-	for _, vuln := range vulns {
-		stack := callstacks[vuln]
-		if stack == nil {
-			continue
-		}
-		fixed := vulncheck.FixedVersion(vulncheck.ModPath(vuln.ImportSink.Module), vulncheck.ModVersion(vuln.ImportSink.Module), vuln.OSV.Affected)
-		handler.Finding(&govulncheck.Finding{
-			OSV:          vuln.OSV.ID,
-			FixedVersion: fixed,
-			Trace:        tracefromEntries(stack),
-		})
-	}
-	return nil
-}
-
-// tracefromEntries creates a sequence of
-// frames from vcs. Position of a Frame is the
-// call position of the corresponding stack entry.
-func tracefromEntries(vcs vulncheck.CallStack) []*govulncheck.Frame {
-	var frames []*govulncheck.Frame
-	for i := len(vcs) - 1; i >= 0; i-- {
-		e := vcs[i]
-		fr := frameFromPackage(e.Function.Package)
-		fr.Function = e.Function.Name
-		fr.Receiver = e.Function.Receiver()
-		if e.Call == nil || e.Call.Pos == nil {
-			fr.Position = nil
-		} else {
-			fr.Position = &govulncheck.Position{
-				Filename: e.Call.Pos.Filename,
-				Offset:   e.Call.Pos.Offset,
-				Line:     e.Call.Pos.Line,
-				Column:   e.Call.Pos.Column,
-			}
-		}
-		frames = append(frames, fr)
-	}
-	return frames
-}
-
-func frameFromPackage(pkg *packages.Package) *govulncheck.Frame {
-	fr := &govulncheck.Frame{}
-	if pkg != nil {
-		fr.Module = pkg.Module.Path
-		fr.Version = pkg.Module.Version
-		fr.Package = pkg.PkgPath
-	}
-	if pkg.Module.Replace != nil {
-		fr.Module = pkg.Module.Replace.Path
-		fr.Version = pkg.Module.Replace.Version
-	}
-	return fr
+	return vulncheck.Source(ctx, handler, pkgs, &cfg.Config, client, graph)
 }
 
 // sourceProgressMessage returns a string of the form
@@ -199,15 +131,15 @@ func depPkgs(topPkgs []*packages.Package) int {
 // and actionable error message to surface for the end user.
 func parseLoadError(err error, dir string, pkgs bool) error {
 	if !fileExists(filepath.Join(dir, "go.mod")) {
-		return fmt.Errorf("govulncheck: %v", errNoGoMod)
+		return errNoGoMod
 	}
 	if isGoVersionMismatchError(err) {
-		return fmt.Errorf("govulncheck: %v\n\n%v", errGoVersionMismatch, err)
+		return fmt.Errorf("%v\n\n%v", errGoVersionMismatch, err)
 	}
 
 	level := "modules"
 	if pkgs {
 		level = "packages"
 	}
-	return fmt.Errorf("govulncheck: loading %s: %w", level, err)
+	return fmt.Errorf("loading %s: %w", level, err)
 }

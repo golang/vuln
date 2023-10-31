@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -32,18 +33,18 @@ type StackEntry struct {
 	Call *CallSite
 }
 
-// CallStacks returns representative call stacks for each
+// sourceCallstacks returns representative call stacks for each
 // vulnerability in res. The returned call stacks are heuristically
 // ordered by how seemingly easy is to understand them: shorter
 // call stacks with less dynamic call sites appear earlier in the
 // returned slices.
 //
-// CallStacks performs a breadth-first search of res.CallGraph starting
-// at the vulnerable symbol and going up until reaching an entry
+// sourceCallstacks performs a breadth-first search of res.CallGraph
+// starting at the vulnerable symbol and going up until reaching an entry
 // function or method in res.CallGraph.Entries. During this search,
 // each function is visited at most once to avoid potential
 // exponential explosion. Hence, not all call stacks are analyzed.
-func CallStacks(res *Result) map[*Vuln]CallStack {
+func sourceCallstacks(res *Result) map[*Vuln]CallStack {
 	var (
 		wg sync.WaitGroup
 		mu sync.Mutex
@@ -53,7 +54,7 @@ func CallStacks(res *Result) map[*Vuln]CallStack {
 		vuln := vuln
 		wg.Add(1)
 		go func() {
-			cs := callStack(vuln, res)
+			cs := sourceCallstack(vuln, res)
 			mu.Lock()
 			stackPerVuln[vuln] = cs
 			mu.Unlock()
@@ -66,10 +67,10 @@ func CallStacks(res *Result) map[*Vuln]CallStack {
 	return stackPerVuln
 }
 
-// callStack finds a representative call stack for vuln.
+// sourceCallstack finds a representative call stack for vuln.
 // This is a shortest unique call stack with the least
 // number of dynamic call sites.
-func callStack(vuln *Vuln, res *Result) CallStack {
+func sourceCallstack(vuln *Vuln, res *Result) CallStack {
 	vulnSink := vuln.CallSink
 	if vulnSink == nil {
 		return nil
@@ -389,4 +390,58 @@ func isInit(f *FuncNode) bool {
 	// be named "init#x" by vulncheck (more precisely, ssa), where x is a
 	// positive integer. Implicit inits are named simply "init".
 	return f.Name == "init" || strings.HasPrefix(f.Name, "init#")
+}
+
+// binaryCallstacks computes representative call stacks for binary results.
+func binaryCallstacks(vr *Result) map[*Vuln]CallStack {
+	callstacks := map[*Vuln]CallStack{}
+	for _, vv := range uniqueVulns(vr.Vulns) {
+		f := &FuncNode{Package: vv.ImportSink, Name: vv.Symbol}
+		parts := strings.Split(vv.Symbol, ".")
+		if len(parts) != 1 {
+			f.RecvType = parts[0]
+			f.Name = parts[1]
+		}
+		callstacks[vv] = CallStack{StackEntry{Function: f}}
+	}
+	return callstacks
+}
+
+// uniqueVulns does for binary mode what sourceCallstacks does for source mode.
+// It tries not to report redundant symbols. Since there are no call stacks in
+// binary mode, the following approximate approach is used. Do not report unexported
+// symbols for a <vulnID, pkg, module> triple if there are some exported symbols.
+// Otherwise, report all unexported symbols to avoid not reporting anything.
+func uniqueVulns(vulns []*Vuln) []*Vuln {
+	type key struct {
+		id  string
+		pkg string
+		mod string
+	}
+	hasExported := make(map[key]bool)
+	for _, v := range vulns {
+		if isExported(v.Symbol) {
+			k := key{id: v.OSV.ID, pkg: v.ImportSink.PkgPath, mod: v.ImportSink.Module.Path}
+			hasExported[k] = true
+		}
+	}
+
+	var uniques []*Vuln
+	for _, v := range vulns {
+		k := key{id: v.OSV.ID, pkg: v.ImportSink.PkgPath, mod: v.ImportSink.Module.Path}
+		if isExported(v.Symbol) || !hasExported[k] {
+			uniques = append(uniques, v)
+		}
+	}
+	return uniques
+}
+
+// isExported checks if the symbol is exported. Assumes that the
+// symbol is of the form "identifier" or "identifier1.identifier2".
+func isExported(symbol string) bool {
+	parts := strings.Split(symbol, ".")
+	if len(parts) == 1 {
+		return unicode.IsUpper(rune(symbol[0]))
+	}
+	return unicode.IsUpper(rune(parts[1][0]))
 }

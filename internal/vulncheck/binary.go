@@ -20,9 +20,20 @@ import (
 	"golang.org/x/vuln/internal/vulncheck/internal/buildinfo"
 )
 
-// Binary detects presence of vulnerable symbols in exe.
+// Binary detects presence of vulnerable symbols in exe and
+// emits findings to exe.
+func Binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) error {
+	vr, err := binary(ctx, exe, cfg, client)
+	if err != nil {
+		return err
+	}
+	callstacks := binaryCallstacks(vr)
+	return emitBinaryResult(handler, vr, callstacks)
+}
+
+// binary detects presence of vulnerable symbols in exe.
 // The Calls, Imports, and Requires fields on Result will be empty.
-func Binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) (_ *Result, err error) {
+func binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) (_ *Result, err error) {
 	mods, packageSymbols, bi, err := buildinfo.ExtractPackagesAndSymbols(exe)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse provided binary: %v", err)
