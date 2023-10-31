@@ -90,9 +90,18 @@ var supportedModes = map[string]bool{
 	modeQuery:   true,
 }
 
+var supportedLevels = map[string]bool{
+	govulncheck.ScanLevelModule:  true,
+	govulncheck.ScanLevelPackage: true,
+	govulncheck.ScanLevelSymbol:  true,
+}
+
 func validateConfig(cfg *config) error {
 	if _, ok := supportedModes[cfg.mode]; !ok {
 		return fmt.Errorf("%q is not a valid mode", cfg.mode)
+	}
+	if _, ok := supportedLevels[string(cfg.ScanLevel)]; !ok {
+		return fmt.Errorf("%q is not a valid scan level", cfg.ScanLevel)
 	}
 	switch cfg.mode {
 	case modeSource:

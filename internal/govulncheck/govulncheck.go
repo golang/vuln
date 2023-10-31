@@ -155,15 +155,15 @@ type Position struct {
 type ScanLevel string
 
 const (
-	scanLevelModule  = "module"
-	scanLevelPackage = "package"
-	scanLevelSymbol  = "symbol"
+	ScanLevelModule  = "module"
+	ScanLevelPackage = "package"
+	ScanLevelSymbol  = "symbol"
 )
 
 // WantSymbols can be used to check whether the scan level is one that is able
 // to generate symbols called findings.
-func (l ScanLevel) WantSymbols() bool { return l == scanLevelSymbol }
+func (l ScanLevel) WantSymbols() bool { return l == ScanLevelSymbol }
 
 // WantPackages can be used to check whether the scan level is one that is able
 // to generate package
-func (l ScanLevel) WantPackages() bool { return l == scanLevelPackage || l == scanLevelSymbol }
+func (l ScanLevel) WantPackages() bool { return l == ScanLevelPackage || l == ScanLevelSymbol }
