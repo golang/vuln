@@ -23,7 +23,7 @@ import (
 // Binary detects presence of vulnerable symbols in exe and
 // emits findings to exe.
 func Binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) error {
-	vr, err := binary(ctx, exe, cfg, client)
+	vr, err := binary(ctx, handler, exe, cfg, client)
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func Binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, c
 
 // binary detects presence of vulnerable symbols in exe.
 // The Calls, Imports, and Requires fields on Result will be empty.
-func binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) (_ *Result, err error) {
+func binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) (_ *Result, err error) {
 	mods, packageSymbols, bi, err := buildinfo.ExtractPackagesAndSymbols(exe)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse provided binary: %v", err)
@@ -47,8 +47,11 @@ func binary(ctx context.Context, exe io.ReaderAt, cfg *govulncheck.Config, clien
 	if err != nil {
 		return nil, err
 	}
-	modVulns := moduleVulnerabilities(mv)
 
+	// Emit OSV entries immediately in their raw unfiltered form.
+	emitOSVs(handler, mv)
+
+	modVulns := moduleVulnerabilities(mv)
 	goos := findSetting("GOOS", bi)
 	goarch := findSetting("GOARCH", bi)
 	if goos == "" || goarch == "" {

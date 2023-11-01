@@ -20,6 +20,7 @@ import (
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/semver"
+	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/testenv"
 	"golang.org/x/vuln/internal/vulncheck/internal/buildinfo"
 )
@@ -119,7 +120,7 @@ func TestBinary(t *testing.T) {
 
 	// Test imports only mode
 	cfg := &govulncheck.Config{ScanLevel: "package"}
-	res, err := binary(context.Background(), bin, cfg, c)
+	res, err := binary(context.Background(), test.NewMockHandler(), bin, cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +144,7 @@ func TestBinary(t *testing.T) {
 
 	// Test the symbols (non-import mode)
 	cfg.ScanLevel = "symbol"
-	res, err = binary(context.Background(), bin, cfg, c)
+	res, err = binary(context.Background(), test.NewMockHandler(), bin, cfg, c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,7 +238,7 @@ func Vuln() {
 			}
 
 			cfg := &govulncheck.Config{ScanLevel: "symbol"}
-			res, err := binary(context.Background(), bin, cfg, c)
+			res, err := binary(context.Background(), test.NewMockHandler(), bin, cfg, c)
 			if err != nil {
 				t.Fatal(err)
 			}

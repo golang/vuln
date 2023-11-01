@@ -69,6 +69,10 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 	if err != nil {
 		return nil, err
 	}
+
+	// Emit OSV entries immediately in their raw unfiltered form.
+	emitOSVs(handler, mv)
+
 	modVulns := moduleVulnerabilities(mv)
 	modVulns = modVulns.filter("", "")
 	result := &Result{}

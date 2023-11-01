@@ -13,6 +13,17 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
+func emitOSVs(handler govulncheck.Handler, modVulns []*ModVulns) error {
+	for _, mv := range modVulns {
+		for _, v := range mv.Vulns {
+			if err := handler.OSV(v); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func emitCalledVulns(handler govulncheck.Handler, callstacks map[*Vuln]CallStack) error {
 	var vulns []*Vuln
 
@@ -30,30 +41,30 @@ func emitCalledVulns(handler govulncheck.Handler, callstacks map[*Vuln]CallStack
 			continue
 		}
 		fixed := FixedVersion(modPath(vuln.ImportSink.Module), modVersion(vuln.ImportSink.Module), vuln.OSV.Affected)
-		handler.Finding(&govulncheck.Finding{
+		if err := handler.Finding(&govulncheck.Finding{
 			OSV:          vuln.OSV.ID,
 			FixedVersion: fixed,
 			Trace:        tracefromEntries(stack),
-		})
+		}); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func emitModuleFindings(handler govulncheck.Handler, modVulns moduleVulnerabilities) map[string]*osv.Entry {
-	osvs := make(map[string]*osv.Entry)
+func emitModuleFindings(handler govulncheck.Handler, modVulns moduleVulnerabilities) error {
 	for _, vuln := range modVulns {
 		for _, osv := range vuln.Vulns {
-			if _, found := osvs[osv.ID]; !found {
-				handler.OSV(osv)
-			}
-			handler.Finding(&govulncheck.Finding{
+			if err := handler.Finding(&govulncheck.Finding{
 				OSV:          osv.ID,
 				FixedVersion: FixedVersion(modPath(vuln.Module), modVersion(vuln.Module), osv.Affected),
 				Trace:        []*govulncheck.Frame{frameFromModule(vuln.Module, osv.Affected)},
-			})
+			}); err != nil {
+				return err
+			}
 		}
 	}
-	return osvs
+	return nil
 }
 
 func emitPackageFinding(handler govulncheck.Handler, vuln *Vuln) error {
@@ -127,33 +138,22 @@ func frameFromModule(mod *packages.Module, affected []osv.Affected) *govulncheck
 }
 
 func emitBinaryResult(handler govulncheck.Handler, vr *Result, callstacks map[*Vuln]CallStack) error {
-	osvs := map[string]*osv.Entry{}
 	// first deal with all the affected vulnerabilities
 	emitted := map[string]bool{}
-	seen := map[string]bool{}
-	emitFinding := func(finding *govulncheck.Finding) error {
-		if !seen[finding.OSV] {
-			seen[finding.OSV] = true
-			if err := handler.OSV(osvs[finding.OSV]); err != nil {
-				return err
-			}
-		}
-		return handler.Finding(finding)
-	}
-
 	for _, vv := range vr.Vulns {
-		osvs[vv.OSV.ID] = vv.OSV
 		fixed := FixedVersion(modPath(vv.ImportSink.Module), modVersion(vv.ImportSink.Module), vv.OSV.Affected)
 		stack := callstacks[vv]
 		if stack == nil {
 			continue
 		}
 		emitted[vv.OSV.ID] = true
-		emitFinding(&govulncheck.Finding{
+		if err := handler.Finding(&govulncheck.Finding{
 			OSV:          vv.OSV.ID,
 			FixedVersion: fixed,
 			Trace:        tracefromEntries(stack),
-		})
+		}); err != nil {
+			return err
+		}
 	}
 	for _, vv := range vr.Vulns {
 		if emitted[vv.OSV.ID] {
@@ -164,11 +164,13 @@ func emitBinaryResult(handler govulncheck.Handler, vr *Result, callstacks map[*V
 			continue
 		}
 		emitted[vv.OSV.ID] = true
-		emitFinding(&govulncheck.Finding{
+		if err := handler.Finding(&govulncheck.Finding{
 			OSV:          vv.OSV.ID,
 			FixedVersion: FixedVersion(modPath(vv.ImportSink.Module), modVersion(vv.ImportSink.Module), vv.OSV.Affected),
 			Trace:        []*govulncheck.Frame{frameFromPackage(vv.ImportSink)},
-		})
+		}); err != nil {
+			return err
+		}
 	}
 	return nil
 }
