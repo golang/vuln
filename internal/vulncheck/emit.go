@@ -13,6 +13,7 @@ import (
 	"golang.org/x/vuln/internal/osv"
 )
 
+// emitOSVs emits all OSV vuln entries in modVulns to handler.
 func emitOSVs(handler govulncheck.Handler, modVulns []*ModVulns) error {
 	for _, mv := range modVulns {
 		for _, v := range mv.Vulns {
@@ -24,9 +25,26 @@ func emitOSVs(handler govulncheck.Handler, modVulns []*ModVulns) error {
 	return nil
 }
 
-func emitCalledVulns(handler govulncheck.Handler, callstacks map[*Vuln]CallStack) error {
-	var vulns []*Vuln
+// emitModuleFindings emits module-level findings for vulnerabilities in modVulns.
+func emitModuleFindings(handler govulncheck.Handler, modVulns moduleVulnerabilities) error {
+	for _, vuln := range modVulns {
+		for _, osv := range vuln.Vulns {
+			if err := handler.Finding(&govulncheck.Finding{
+				OSV:          osv.ID,
+				FixedVersion: FixedVersion(modPath(vuln.Module), modVersion(vuln.Module), osv.Affected),
+				Trace:        []*govulncheck.Frame{frameFromModule(vuln.Module, osv.Affected)},
+			}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
 
+// emitCallFindings emits call-level findings for vulnerabilities
+// that have a call stack in callstacks.
+func emitCallFindings(handler govulncheck.Handler, callstacks map[*Vuln]CallStack) error {
+	var vulns []*Vuln
 	for v := range callstacks {
 		vulns = append(vulns, v)
 	}
@@ -47,21 +65,6 @@ func emitCalledVulns(handler govulncheck.Handler, callstacks map[*Vuln]CallStack
 			Trace:        tracefromEntries(stack),
 		}); err != nil {
 			return err
-		}
-	}
-	return nil
-}
-
-func emitModuleFindings(handler govulncheck.Handler, modVulns moduleVulnerabilities) error {
-	for _, vuln := range modVulns {
-		for _, osv := range vuln.Vulns {
-			if err := handler.Finding(&govulncheck.Finding{
-				OSV:          osv.ID,
-				FixedVersion: FixedVersion(modPath(vuln.Module), modVersion(vuln.Module), osv.Affected),
-				Trace:        []*govulncheck.Frame{frameFromModule(vuln.Module, osv.Affected)},
-			}); err != nil {
-				return err
-			}
 		}
 	}
 	return nil

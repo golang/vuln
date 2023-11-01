@@ -27,13 +27,12 @@ func Binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, c
 	if err != nil {
 		return err
 	}
-	callstacks := binaryCallstacks(vr)
-	return emitBinaryResult(handler, vr, callstacks)
+	return emitBinaryResult(handler, vr, binaryCallstacks(vr))
 }
 
 // binary detects presence of vulnerable symbols in exe.
 // The Calls, Imports, and Requires fields on Result will be empty.
-func binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) (_ *Result, err error) {
+func binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) (*Result, error) {
 	mods, packageSymbols, bi, err := buildinfo.ExtractPackagesAndSymbols(exe)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse provided binary: %v", err)
@@ -49,7 +48,9 @@ func binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, c
 	}
 
 	// Emit OSV entries immediately in their raw unfiltered form.
-	emitOSVs(handler, mv)
+	if err := emitOSVs(handler, mv); err != nil {
+		return nil, err
+	}
 
 	modVulns := moduleVulnerabilities(mv)
 	goos := findSetting("GOOS", bi)
@@ -60,7 +61,6 @@ func binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, c
 
 	modVulns = modVulns.filter(goos, goarch)
 	result := &Result{}
-
 	if packageSymbols == nil {
 		// The binary exe is stripped. We currently cannot detect inlined
 		// symbols for stripped binaries (see #57764), so we report

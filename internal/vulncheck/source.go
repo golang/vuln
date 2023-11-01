@@ -22,11 +22,15 @@ func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 	if err != nil {
 		return err
 	}
-	callStacks := sourceCallstacks(vr)
-	return emitCalledVulns(handler, callStacks)
+
+	if cfg.ScanLevel.WantSymbols() {
+		return emitCallFindings(handler, sourceCallstacks(vr))
+	}
+	return nil
 }
 
-// source detects vulnerabilities in packages. The result will contain:
+// source detects vulnerabilities in packages. It emits findings to handler
+// and produces a Result that will contain:
 //
 // 1) An ImportGraph related to an import of a package with some known
 // vulnerabilities.
@@ -37,7 +41,7 @@ func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 // 3) A CallGraph leading to the use of a known vulnerable function or method.
 //
 // Assumes that pkgs are non-empty and belong to the same program.
-func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (_ *Result, err error) {
+func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (*Result, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -71,14 +75,17 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 	}
 
 	// Emit OSV entries immediately in their raw unfiltered form.
-	emitOSVs(handler, mv)
+	if err := emitOSVs(handler, mv); err != nil {
+		return nil, err
+	}
 
 	modVulns := moduleVulnerabilities(mv)
 	modVulns = modVulns.filter("", "")
-	result := &Result{}
-	// instead of add to result, output using the handler
-	emitModuleFindings(handler, modVulns)
+	if err := emitModuleFindings(handler, modVulns); err != nil {
+		return nil, err
+	}
 
+	result := &Result{}
 	if !cfg.ScanLevel.WantPackages() || len(modVulns) == 0 {
 		return result, nil
 	}
@@ -96,7 +103,6 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 	}
 
 	vulnCallGraphSlice(entries, modVulns, cg, result, graph)
-
 	return result, nil
 }
 
