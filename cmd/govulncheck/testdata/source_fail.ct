@@ -1,6 +1,6 @@
 #####
 # Test of missing go.mod error message.
-$ govulncheck -C ${moddir}/nogomod . --> FAIL 1
+$ govulncheck -C ${moddir}/{nomoddir} . --> FAIL 1
 govulncheck: no go.mod file
 
 govulncheck only works with Go modules. Try navigating to your module directory.

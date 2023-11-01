@@ -129,6 +129,19 @@ func TestCommand(t *testing.T) {
 	for _, md := range moduleDirs {
 		// Skip nogomod module. It has intended build issues.
 		if filepath.Base(md) == "nogomod" {
+			noModDir, err := filepath.Abs(t.TempDir())
+			if err != nil {
+				t.Fatal(err)
+			}
+			os.Setenv("nomoddir", noModDir)
+			b, err := os.ReadFile(filepath.Join(md, "vuln.go"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.WriteFile(filepath.Join(noModDir, "vuln.go"), b, 0644)
+			if err != nil {
+				t.Fatal(err)
+			}
 			continue
 		}
 
