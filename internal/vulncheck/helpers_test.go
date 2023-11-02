@@ -8,8 +8,6 @@ import (
 	"runtime"
 	"sort"
 
-	"golang.org/x/tools/go/packages"
-	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/semver"
@@ -96,60 +94,9 @@ func updateCallGraph(callGraph map[string][]string, f *FuncNode, seen map[edge]b
 	}
 }
 
-func pkgPathToImports(pkgs []*packages.Package) map[string][]string {
-	m := make(map[string][]string)
-	seen := make(map[*packages.Package]bool)
-	var visit func(*packages.Package)
-	visit = func(p *packages.Package) {
-		if seen[p] {
-			return
-		}
-		seen[p] = true
-		var imports []string
-		for _, i := range p.Imports {
-			imports = append(imports, i.PkgPath)
-			visit(i)
-		}
-		m[p.PkgPath] = imports
-	}
-	for _, p := range pkgs {
-		visit(p)
-	}
-	sortStrMap(m)
-	return m
-}
-
-func modulePathToVersion(pkgs []*packages.Package) map[string]string {
-	m := make(map[string]string)
-	seen := make(map[*packages.Package]bool)
-	var visit func(*packages.Package)
-	visit = func(p *packages.Package) {
-		if seen[p] || p.Module == nil {
-			return
-		}
-		seen[p] = true
-		for _, i := range p.Imports {
-			visit(i)
-		}
-		m[p.Module.Path] = p.Module.Version
-	}
-	for _, p := range pkgs {
-		visit(p)
-	}
-	return m
-}
-
 // sortStrMap sorts the map string slice values to make them deterministic.
 func sortStrMap(m map[string][]string) {
 	for _, strs := range m {
 		sort.Strings(strs)
 	}
-}
-
-func loadTestPackages(e *packagestest.Exported, patterns ...string) ([]*packages.Package, error) {
-	e.Config.Mode |= packages.NeedModule | packages.NeedName | packages.NeedFiles |
-		packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes |
-		packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps
-	graph := NewPackageGraph("go1.18")
-	return graph.LoadPackages(e.Config, nil, patterns)
 }

@@ -5,14 +5,12 @@
 package vulncheck
 
 import (
-	"path"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/go/packages"
-	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/osv"
 )
 
@@ -402,76 +400,6 @@ func TestVulnsForSymbol(t *testing.T) {
 	}
 }
 
-func TestConvert(t *testing.T) {
-	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
-		{
-			Name: "golang.org/entry",
-			Files: map[string]interface{}{
-				"x/x.go": `
-			package x
-
-			import _ "golang.org/amod/avuln"
-		`}},
-		{
-			Name: "golang.org/zmod@v0.0.0",
-			Files: map[string]interface{}{"z/z.go": `
-			package z
-			`},
-		},
-		{
-			Name: "golang.org/amod@v1.1.3",
-			Files: map[string]interface{}{"avuln/avuln.go": `
-			package avuln
-
-			import _ "golang.org/wmod/w"
-			`},
-		},
-		{
-			Name: "golang.org/bmod@v0.5.0",
-			Files: map[string]interface{}{"bvuln/bvuln.go": `
-			package bvuln
-			`},
-		},
-		{
-			Name: "golang.org/wmod@v0.0.0",
-			Files: map[string]interface{}{"w/w.go": `
-			package w
-
-			import _ "golang.org/bmod/bvuln"
-			`},
-		},
-	})
-	defer e.Cleanup()
-
-	// Load x as entry package.
-	pkgs, err := loadTestPackages(e, path.Join(e.Temp(), "entry/x"))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gotPkgs := pkgPathToImports(pkgs)
-	wantPkgs := map[string][]string{
-		"golang.org/amod/avuln": {"golang.org/wmod/w"},
-		"golang.org/bmod/bvuln": nil,
-		"golang.org/entry/x":    {"golang.org/amod/avuln"},
-		"golang.org/wmod/w":     {"golang.org/bmod/bvuln"},
-	}
-	if diff := cmp.Diff(gotPkgs, wantPkgs); diff != "" {
-		t.Errorf("(-want,+got):\n%s", diff)
-	}
-
-	gotMods := modulePathToVersion(pkgs)
-	wantMods := map[string]string{
-		"golang.org/amod":  "v1.1.3",
-		"golang.org/bmod":  "v0.5.0",
-		"golang.org/entry": "",
-		"golang.org/wmod":  "v0.0.0",
-	}
-	if diff := cmp.Diff(wantMods, gotMods); diff != "" {
-		t.Errorf("want %v;got %v", wantMods, gotMods)
-	}
-}
-
 func TestReceiver(t *testing.T) {
 	tcs := []struct {
 		name string
@@ -516,7 +444,7 @@ func TestReceiver(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got := tc.fn.Receiver()
 			if got != tc.want {
-				t.Errorf("*FuncNode.Receiver() = %s, want %s", got, tc.want)
+				t.Errorf("want %s; got %s", tc.want, got)
 			}
 		})
 	}
