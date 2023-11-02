@@ -34,6 +34,7 @@ func main() {
 		"golang.org/x/net/http2":                                  true,
 		"golang.org/x/net/http2/hpack":                            true,
 		"golang.org/x/text/encoding/unicode":                      true,
+		"google.golang.org/grpc":                                  true,
 	}
 	if err := integration.CompareNonStdVulns(out, want); err != nil {
 		log.Fatal(err)

@@ -23,8 +23,10 @@ func main() {
 	}
 	out := os.Args[1]
 	want := map[string]bool{
-		"golang.org/x/net/http2":       true,
-		"golang.org/x/net/http2/hpack": true,
+		"golang.org/x/net/http2":                    true,
+		"golang.org/x/net/http2/hpack":              true,
+		"google.golang.org/grpc":                    true,
+		"google.golang.org/grpc/internal/transport": true,
 	}
 
 	if err := integration.CompareNonStdVulns(out, want); err != nil {
