@@ -18,7 +18,7 @@ import (
 
 func TestFilterVulns(t *testing.T) {
 	past := time.Now().Add(-3 * time.Hour)
-	mv := moduleVulnerabilities{
+	mv := []*ModVulns{
 		{
 			Module: &packages.Module{
 				Path:    "example.mod/a",
@@ -137,7 +137,7 @@ func TestFilterVulns(t *testing.T) {
 		},
 	}
 
-	expected := moduleVulnerabilities{
+	want := affectingVulns{
 		{
 			Module: &packages.Module{
 				Path:    "example.mod/a",
@@ -205,20 +205,16 @@ func TestFilterVulns(t *testing.T) {
 		},
 	}
 
-	filtered := mv.filter("linux", "amd64")
-	if diff := diffModuleVulnerabilities(expected, filtered); diff != "" {
-		t.Fatalf("Filter returned unexpected results (-want,+got):\n%s", diff)
+	got := affectingVulnerabilities(mv, "linux", "amd64")
+	if diff := cmp.Diff(want, got, cmp.Exporter(func(t reflect.Type) bool {
+		return reflect.TypeOf(affectingVulns{}) == t || reflect.TypeOf(ModVulns{}) == t
+	})); diff != "" {
+		t.Errorf("(-want,+got):\n%s", diff)
 	}
 }
 
-func diffModuleVulnerabilities(a, b moduleVulnerabilities) string {
-	return cmp.Diff(a, b, cmp.Exporter(func(t reflect.Type) bool {
-		return reflect.TypeOf(moduleVulnerabilities{}) == t || reflect.TypeOf(ModVulns{}) == t
-	}))
-}
-
 func TestVulnsForPackage(t *testing.T) {
-	mv := moduleVulnerabilities{
+	aff := affectingVulns{
 		{
 			Module: &packages.Module{
 				Path:    "example.mod/a",
@@ -269,8 +265,8 @@ func TestVulnsForPackage(t *testing.T) {
 		},
 	}
 
-	filtered := mv.vulnsForPackage("example.mod/a/b/c")
-	expected := []*osv.Entry{
+	got := aff.ForPackage("example.mod/a/b/c")
+	want := []*osv.Entry{
 		{ID: "b", Affected: []osv.Affected{{
 			Module: osv.Module{Path: "example.mod/a/b"},
 			EcosystemSpecific: osv.EcosystemSpecific{
@@ -281,13 +277,13 @@ func TestVulnsForPackage(t *testing.T) {
 		}}},
 	}
 
-	if !reflect.DeepEqual(filtered, expected) {
-		t.Fatalf("VulnsForPackage returned unexpected results, got:\n%s\nwant:\n%s", vulnsToString(filtered), vulnsToString(expected))
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("(-want,+got):\n%s", diff)
 	}
 }
 
 func TestVulnsForPackageReplaced(t *testing.T) {
-	mv := moduleVulnerabilities{
+	aff := affectingVulns{
 		{
 			Module: &packages.Module{
 				Path:    "example.mod/a",
@@ -325,8 +321,8 @@ func TestVulnsForPackageReplaced(t *testing.T) {
 		},
 	}
 
-	filtered := mv.vulnsForPackage("example.mod/a/b/c")
-	expected := []*osv.Entry{
+	got := aff.ForPackage("example.mod/a/b/c")
+	want := []*osv.Entry{
 		{ID: "c", Affected: []osv.Affected{{
 			Module: osv.Module{Path: "example.mod/b"},
 			EcosystemSpecific: osv.EcosystemSpecific{
@@ -337,13 +333,13 @@ func TestVulnsForPackageReplaced(t *testing.T) {
 		}}},
 	}
 
-	if !reflect.DeepEqual(filtered, expected) {
-		t.Fatalf("VulnsForPackage returned unexpected results, got:\n%s\nwant:\n%s", vulnsToString(filtered), vulnsToString(expected))
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("(-want,+got):\n%s", diff)
 	}
 }
 
 func TestVulnsForSymbol(t *testing.T) {
-	mv := moduleVulnerabilities{
+	aff := affectingVulns{
 		{
 			Module: &packages.Module{
 				Path:    "example.mod/a",
@@ -388,8 +384,8 @@ func TestVulnsForSymbol(t *testing.T) {
 		},
 	}
 
-	filtered := mv.vulnsForSymbol("example.mod/a/b/c", "a")
-	expected := []*osv.Entry{
+	got := aff.ForSymbol("example.mod/a/b/c", "a")
+	want := []*osv.Entry{
 		{ID: "b", Affected: []osv.Affected{{
 			Module: osv.Module{Path: "example.mod/a/b"},
 			EcosystemSpecific: osv.EcosystemSpecific{
@@ -401,8 +397,8 @@ func TestVulnsForSymbol(t *testing.T) {
 		}}},
 	}
 
-	if !reflect.DeepEqual(filtered, expected) {
-		t.Fatalf("VulnsForPackage returned unexpected results, got:\n%s\nwant:\n%s", vulnsToString(filtered), vulnsToString(expected))
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("(-want,+got):\n%s", diff)
 	}
 }
 
@@ -453,24 +449,26 @@ func TestConvert(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	gotPkgs := pkgPathToImports(pkgs)
 	wantPkgs := map[string][]string{
 		"golang.org/amod/avuln": {"golang.org/wmod/w"},
 		"golang.org/bmod/bvuln": nil,
 		"golang.org/entry/x":    {"golang.org/amod/avuln"},
 		"golang.org/wmod/w":     {"golang.org/bmod/bvuln"},
 	}
-	if got := pkgPathToImports(pkgs); !reflect.DeepEqual(got, wantPkgs) {
-		t.Errorf("want %v;got %v", wantPkgs, got)
+	if diff := cmp.Diff(gotPkgs, wantPkgs); diff != "" {
+		t.Errorf("(-want,+got):\n%s", diff)
 	}
 
+	gotMods := modulePathToVersion(pkgs)
 	wantMods := map[string]string{
 		"golang.org/amod":  "v1.1.3",
 		"golang.org/bmod":  "v0.5.0",
 		"golang.org/entry": "",
 		"golang.org/wmod":  "v0.0.0",
 	}
-	if got := modulePathToVersion(pkgs); !reflect.DeepEqual(got, wantMods) {
-		t.Errorf("want %v;got %v", wantMods, got)
+	if diff := cmp.Diff(wantMods, gotMods); diff != "" {
+		t.Errorf("want %v;got %v", wantMods, gotMods)
 	}
 }
 

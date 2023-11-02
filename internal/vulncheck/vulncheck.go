@@ -111,10 +111,10 @@ type CallSite struct {
 	Resolved bool
 }
 
-// moduleVulnerabilities is an internal structure for
-// holding and querying vulnerabilities provided by a
-// vulnerability database client.
-type moduleVulnerabilities []*ModVulns
+// affectingVulns is an internal structure for querying
+// vulnerabilities that apply to the current program
+// and platform under consideration.
+type affectingVulns []*ModVulns
 
 // ModVulns groups vulnerabilities per module.
 type ModVulns struct {
@@ -122,10 +122,10 @@ type ModVulns struct {
 	Vulns  []*osv.Entry
 }
 
-func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
+func affectingVulnerabilities(vulns []*ModVulns, os, arch string) affectingVulns {
 	now := time.Now()
-	var filteredMod moduleVulnerabilities
-	for _, mod := range mv {
+	var filtered affectingVulns
+	for _, mod := range vulns {
 		module := mod.Module
 		modVersion := module.Version
 		if module.Replace != nil {
@@ -183,12 +183,12 @@ func (mv moduleVulnerabilities) filter(os, arch string) moduleVulnerabilities {
 			newV.Affected = filteredAffected
 			filteredVulns = append(filteredVulns, &newV)
 		}
-		filteredMod = append(filteredMod, &ModVulns{
+		filtered = append(filtered, &ModVulns{
 			Module: module,
 			Vulns:  filteredVulns,
 		})
 	}
-	return filteredMod
+	return filtered
 }
 
 func matchesPlatform(os, arch string, e osv.Package) bool {
@@ -211,13 +211,13 @@ func matchesPlatformComponent(s string, ps []string) bool {
 	return false
 }
 
-// vulnsForPackage returns the vulnerabilities for the module which is the most
+// ForPackage returns the vulnerabilities for the module which is the most
 // specific prefix of importPath, or nil if there is no matching module with
 // vulnerabilities.
-func (mv moduleVulnerabilities) vulnsForPackage(importPath string) []*osv.Entry {
+func (aff affectingVulns) ForPackage(importPath string) []*osv.Entry {
 	isStd := IsStdPackage(importPath)
 	var mostSpecificMod *ModVulns
-	for _, mod := range mv {
+	for _, mod := range aff {
 		md := mod
 		if isStd && mod.Module.Path == internal.GoStdModulePath {
 			// standard library packages do not have an associated module,
@@ -253,9 +253,9 @@ Vuln:
 	return packageVulns
 }
 
-// vulnsForSymbol returns vulnerabilities for `symbol` in `mv.VulnsForPackage(importPath)`.
-func (mv moduleVulnerabilities) vulnsForSymbol(importPath, symbol string) []*osv.Entry {
-	vulns := mv.vulnsForPackage(importPath)
+// ForSymbol returns vulnerabilities for symbol in aff.ForPackage(importPath).
+func (aff affectingVulns) ForSymbol(importPath, symbol string) []*osv.Entry {
+	vulns := aff.ForPackage(importPath)
 	if vulns == nil {
 		return nil
 	}

@@ -52,26 +52,25 @@ func binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, c
 		return nil, err
 	}
 
-	modVulns := moduleVulnerabilities(mv)
 	goos := findSetting("GOOS", bi)
 	goarch := findSetting("GOARCH", bi)
 	if goos == "" || goarch == "" {
 		fmt.Printf("warning: failed to extract build system specification GOOS: %s GOARCH: %s\n", goos, goarch)
 	}
+	affVulns := affectingVulnerabilities(mv, goos, goarch)
 
-	modVulns = modVulns.filter(goos, goarch)
 	result := &Result{}
 	if packageSymbols == nil {
 		// The binary exe is stripped. We currently cannot detect inlined
 		// symbols for stripped binaries (see #57764), so we report
 		// vulnerabilities at the go.mod-level precision.
-		addRequiresOnlyVulns(result, graph, modVulns)
+		addRequiresOnlyVulns(result, graph, affVulns)
 	} else {
 		for pkg, symbols := range packageSymbols {
 			if !cfg.ScanLevel.WantSymbols() {
-				addImportsOnlyVulns(result, graph, pkg, symbols, modVulns)
+				addImportsOnlyVulns(result, graph, pkg, symbols, affVulns)
 			} else {
-				addSymbolVulns(result, graph, pkg, symbols, modVulns)
+				addSymbolVulns(result, graph, pkg, symbols, affVulns)
 			}
 		}
 	}
@@ -80,8 +79,8 @@ func binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, c
 
 // addImportsOnlyVulns adds Vuln entries to result in imports only mode, i.e., for each vulnerable symbol
 // of pkg.
-func addImportsOnlyVulns(result *Result, graph *PackageGraph, pkg string, symbols []string, modVulns moduleVulnerabilities) {
-	for _, osv := range modVulns.vulnsForPackage(pkg) {
+func addImportsOnlyVulns(result *Result, graph *PackageGraph, pkg string, symbols []string, affVulns affectingVulns) {
+	for _, osv := range affVulns.ForPackage(pkg) {
 		for _, affected := range osv.Affected {
 			for _, p := range affected.EcosystemSpecific.Packages {
 				if p.Path != pkg {
@@ -107,9 +106,9 @@ func addImportsOnlyVulns(result *Result, graph *PackageGraph, pkg string, symbol
 }
 
 // addSymbolVulns adds Vuln entries to result for every symbol of pkg in the binary that is vulnerable.
-func addSymbolVulns(result *Result, graph *PackageGraph, pkg string, symbols []string, modVulns moduleVulnerabilities) {
+func addSymbolVulns(result *Result, graph *PackageGraph, pkg string, symbols []string, affVulns affectingVulns) {
 	for _, symbol := range symbols {
-		for _, osv := range modVulns.vulnsForSymbol(pkg, symbol) {
+		for _, osv := range affVulns.ForSymbol(pkg, symbol) {
 			addVuln(result, graph, osv, symbol, pkg)
 		}
 	}
@@ -126,10 +125,10 @@ func findSetting(setting string, bi *debug.BuildInfo) string {
 	return ""
 }
 
-// addRequiresOnlyVulns adds to result all vulnerabilities in modVulns.
+// addRequiresOnlyVulns adds to result all vulnerabilities in affVulns.
 // Used when the binary under analysis is stripped.
-func addRequiresOnlyVulns(result *Result, graph *PackageGraph, modVulns moduleVulnerabilities) {
-	for _, mv := range modVulns {
+func addRequiresOnlyVulns(result *Result, graph *PackageGraph, affVulns affectingVulns) {
+	for _, mv := range affVulns {
 		for _, osv := range mv.Vulns {
 			for _, affected := range osv.Affected {
 				for _, p := range affected.EcosystemSpecific.Packages {

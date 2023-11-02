@@ -5,7 +5,6 @@
 package vulncheck
 
 import (
-	"fmt"
 	"runtime"
 	"sort"
 
@@ -64,14 +63,6 @@ func newTestClient() (*client.Client, error) {
 					},
 				}},
 			}})
-}
-
-func vulnsToString(vulns []*osv.Entry) string {
-	var s string
-	for _, v := range vulns {
-		s += fmt.Sprintf("\t%v\n", v)
-	}
-	return s
 }
 
 type edge struct {

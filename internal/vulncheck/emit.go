@@ -26,8 +26,8 @@ func emitOSVs(handler govulncheck.Handler, modVulns []*ModVulns) error {
 }
 
 // emitModuleFindings emits module-level findings for vulnerabilities in modVulns.
-func emitModuleFindings(handler govulncheck.Handler, modVulns moduleVulnerabilities) error {
-	for _, vuln := range modVulns {
+func emitModuleFindings(handler govulncheck.Handler, affVulns affectingVulns) error {
+	for _, vuln := range affVulns {
 		for _, osv := range vuln.Vulns {
 			if err := handler.Finding(&govulncheck.Finding{
 				OSV:          osv.ID,
