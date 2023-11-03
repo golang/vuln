@@ -81,7 +81,13 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 		return result, nil
 	}
 
-	importedVulnSymbols(pkgs, affVulns, result, handler)
+	importedVulnSymbols(pkgs, affVulns, result)
+	// Emit information on imported vulnerable packages now as
+	// call graph computation might take a while.
+	if err := emitPackageFindings(handler, result.Vulns); err != nil {
+		return nil, err
+	}
+
 	// Return result immediately if not in symbol mode or
 	// if there are no vulnerabilities imported.
 	if !cfg.ScanLevel.WantSymbols() || len(result.Vulns) == 0 {
@@ -98,7 +104,7 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 }
 
 // importedVulnSymbols detects imported vulnerable symbols.
-func importedVulnSymbols(pkgs []*packages.Package, affVulns affectingVulns, result *Result, handler govulncheck.Handler) {
+func importedVulnSymbols(pkgs []*packages.Package, affVulns affectingVulns, result *Result) {
 	analyzed := make(map[*packages.Package]bool) // skip analyzing the same package multiple times
 	var vulnImports func(pkg *packages.Package)
 	vulnImports = func(pkg *packages.Package) {
@@ -119,10 +125,6 @@ func importedVulnSymbols(pkgs []*packages.Package, affVulns affectingVulns, resu
 					if len(symbols) == 0 {
 						symbols = allSymbols(pkg.Types)
 					}
-					emitPackageFinding(handler, &Vuln{
-						OSV:     osv,
-						Package: pkg,
-					})
 					for _, symbol := range symbols {
 						vuln := &Vuln{
 							OSV:     osv,

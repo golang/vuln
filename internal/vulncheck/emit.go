@@ -41,6 +41,33 @@ func emitModuleFindings(handler govulncheck.Handler, affVulns affectingVulns) er
 	return nil
 }
 
+// emitPackageFinding emits package-level findings fod vulnerabilities in vulns.
+//
+// It does not emit imported symbols. Only the package information is emitted.
+func emitPackageFindings(handler govulncheck.Handler, vulns []*Vuln) error {
+	emitted := make(map[Vuln]bool)
+	for _, vuln := range vulns {
+		v := Vuln{
+			Package: vuln.Package,
+			OSV:     vuln.OSV,
+		}
+		if emitted[v] {
+			// do not emit the same finding all over again
+			continue
+		}
+		emitted[v] = true
+
+		if err := handler.Finding(&govulncheck.Finding{
+			OSV:          v.OSV.ID,
+			FixedVersion: FixedVersion(modPath(v.Package.Module), modVersion(v.Package.Module), v.OSV.Affected),
+			Trace:        []*govulncheck.Frame{frameFromPackage(v.Package)},
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // emitCallFindings emits call-level findings for vulnerabilities
 // that have a call stack in callstacks.
 func emitCallFindings(handler govulncheck.Handler, callstacks map[*Vuln]CallStack) error {
@@ -68,14 +95,6 @@ func emitCallFindings(handler govulncheck.Handler, callstacks map[*Vuln]CallStac
 		}
 	}
 	return nil
-}
-
-func emitPackageFinding(handler govulncheck.Handler, vuln *Vuln) error {
-	return handler.Finding(&govulncheck.Finding{
-		OSV:          vuln.OSV.ID,
-		FixedVersion: FixedVersion(modPath(vuln.Package.Module), modVersion(vuln.Package.Module), vuln.OSV.Affected),
-		Trace:        []*govulncheck.Frame{frameFromPackage(vuln.Package)},
-	})
 }
 
 // tracefromEntries creates a sequence of
