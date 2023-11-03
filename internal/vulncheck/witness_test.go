@@ -54,8 +54,8 @@ func TestSourceCallstacks(t *testing.T) {
 	v2 := &FuncNode{Name: "vuln2", CallSites: []*CallSite{{Parent: i2, Resolved: false}}}
 
 	vp := &packages.Package{PkgPath: "v1", Module: &packages.Module{Path: "m1"}}
-	vuln1 := &Vuln{CallSink: v1, ImportSink: vp, OSV: o, Symbol: "vuln1"}
-	vuln2 := &Vuln{CallSink: v2, ImportSink: vp, OSV: o, Symbol: "vuln2"}
+	vuln1 := &Vuln{CallSink: v1, Package: vp, OSV: o, Symbol: "vuln1"}
+	vuln2 := &Vuln{CallSink: v2, Package: vp, OSV: o, Symbol: "vuln2"}
 	res := &Result{
 		EntryFunctions: []*FuncNode{e1, e2},
 		Vulns:          []*Vuln{vuln1, vuln2},
@@ -90,8 +90,8 @@ func TestSourceUniqueCallStack(t *testing.T) {
 	v2 := &FuncNode{Name: "vuln2", CallSites: []*CallSite{{Parent: v1}, {Parent: i2}}}
 
 	vp := &packages.Package{PkgPath: "v1", Module: &packages.Module{Path: "m1"}}
-	vuln1 := &Vuln{CallSink: v1, ImportSink: vp, OSV: o, Symbol: "vuln1"}
-	vuln2 := &Vuln{CallSink: v2, ImportSink: vp, OSV: o, Symbol: "vuln2"}
+	vuln1 := &Vuln{CallSink: v1, Package: vp, OSV: o, Symbol: "vuln1"}
+	vuln2 := &Vuln{CallSink: v2, Package: vp, OSV: o, Symbol: "vuln2"}
 	res := &Result{
 		EntryFunctions: []*FuncNode{e1, e2},
 		Vulns:          []*Vuln{vuln1, vuln2},

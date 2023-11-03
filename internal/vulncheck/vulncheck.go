@@ -16,31 +16,25 @@ import (
 	"golang.org/x/vuln/internal/semver"
 )
 
-// Result contains information on how known vulnerabilities are reachable
-// in the call graph, package imports graph, and module requires graph of
-// the user code.
+// Result contains information on detected vulnerabilities.
+// For call graph analysis, it provides information on reachability
+// of vulnerable symbols through entry points of the program.
 type Result struct {
 	// EntryFunctions are a subset of Functions representing vulncheck entry points.
 	EntryFunctions []*FuncNode
 
-	// EntryPackages are a subset of Packages representing packages of vulncheck entry points.
-	EntryPackages []*packages.Package
-
-	// Vulns contains information on detected vulnerabilities and their place in
-	// the above graphs. Only vulnerabilities whose symbols are reachable in Calls,
-	// or whose packages are imported in Imports, or whose modules are required in
-	// Requires, have an entry in Vulns.
+	// Vulns contains information on detected vulnerabilities.
 	Vulns []*Vuln
 }
 
-// Vuln provides information on how a vulnerability is affecting user code by
-// connecting it to the Result.{Calls,Imports,Requires} graphs. Vulnerabilities
-// detected in Go binaries do not appear in the Result graphs.
+// Vuln provides information on a detected vulnerability. For call
+// graph mode, Vuln will also contain the information on how the
+// vulnerability is reachable in the user call graph.
 type Vuln struct {
 	// OSV contains information on the detected vulnerability in the shared
 	// vulnerability format.
 	//
-	// OSV, Symbol, PkgPath, and ModPath identify a vulnerability.
+	// OSV, Symbol, and Package identify a vulnerability.
 	//
 	// Note that *osv.Entry may describe multiple symbols from multiple
 	// packages.
@@ -49,17 +43,17 @@ type Vuln struct {
 	// Symbol is the name of the detected vulnerable function or method.
 	Symbol string
 
-	// CallSink is the FuncNode in Result.Calls corresponding to Symbol.
+	// CallSink is the FuncNode corresponding to Symbol.
 	//
 	// When analyzing binaries, Symbol is not reachable, or cfg.ScanLevel
-	// is symbol, CallSink will be unavailable and set to 0.
+	// is symbol, CallSink will be unavailable and set to nil.
 	CallSink *FuncNode
 
-	// ImportSink is the PkgNode in Result.Imports corresponding to PkgPath.
+	// Package of Symbol.
 	//
-	// When analyzing binaries or PkgPath is not imported, ImportSink will be
-	// unavailable and set to 0.
-	ImportSink *packages.Package
+	// When the package of symbol is not imported, Package will be
+	// unavailable and set to nil.
+	Package *packages.Package
 }
 
 // A FuncNode describes a function in the call graph.

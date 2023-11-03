@@ -58,7 +58,7 @@ func emitCallFindings(handler govulncheck.Handler, callstacks map[*Vuln]CallStac
 		if stack == nil {
 			continue
 		}
-		fixed := FixedVersion(modPath(vuln.ImportSink.Module), modVersion(vuln.ImportSink.Module), vuln.OSV.Affected)
+		fixed := FixedVersion(modPath(vuln.Package.Module), modVersion(vuln.Package.Module), vuln.OSV.Affected)
 		if err := handler.Finding(&govulncheck.Finding{
 			OSV:          vuln.OSV.ID,
 			FixedVersion: fixed,
@@ -73,8 +73,8 @@ func emitCallFindings(handler govulncheck.Handler, callstacks map[*Vuln]CallStac
 func emitPackageFinding(handler govulncheck.Handler, vuln *Vuln) error {
 	return handler.Finding(&govulncheck.Finding{
 		OSV:          vuln.OSV.ID,
-		FixedVersion: FixedVersion(modPath(vuln.ImportSink.Module), modVersion(vuln.ImportSink.Module), vuln.OSV.Affected),
-		Trace:        []*govulncheck.Frame{frameFromPackage(vuln.ImportSink)},
+		FixedVersion: FixedVersion(modPath(vuln.Package.Module), modVersion(vuln.Package.Module), vuln.OSV.Affected),
+		Trace:        []*govulncheck.Frame{frameFromPackage(vuln.Package)},
 	})
 }
 
@@ -144,7 +144,7 @@ func emitBinaryResult(handler govulncheck.Handler, vr *Result, callstacks map[*V
 	// first deal with all the affected vulnerabilities
 	emitted := map[string]bool{}
 	for _, vv := range vr.Vulns {
-		fixed := FixedVersion(modPath(vv.ImportSink.Module), modVersion(vv.ImportSink.Module), vv.OSV.Affected)
+		fixed := FixedVersion(modPath(vv.Package.Module), modVersion(vv.Package.Module), vv.OSV.Affected)
 		stack := callstacks[vv]
 		if stack == nil {
 			continue
@@ -169,8 +169,8 @@ func emitBinaryResult(handler govulncheck.Handler, vr *Result, callstacks map[*V
 		emitted[vv.OSV.ID] = true
 		if err := handler.Finding(&govulncheck.Finding{
 			OSV:          vv.OSV.ID,
-			FixedVersion: FixedVersion(modPath(vv.ImportSink.Module), modVersion(vv.ImportSink.Module), vv.OSV.Affected),
-			Trace:        []*govulncheck.Frame{frameFromPackage(vv.ImportSink)},
+			FixedVersion: FixedVersion(modPath(vv.Package.Module), modVersion(vv.Package.Module), vv.OSV.Affected),
+			Trace:        []*govulncheck.Frame{frameFromPackage(vv.Package)},
 		}); err != nil {
 			return err
 		}

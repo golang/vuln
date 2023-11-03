@@ -158,8 +158,8 @@ func addRequiresOnlyVulns(result *Result, graph *PackageGraph, affVulns affectin
 
 func addVuln(result *Result, graph *PackageGraph, osv *osv.Entry, symbol string, pkgPath string) {
 	result.Vulns = append(result.Vulns, &Vuln{
-		OSV:        osv,
-		Symbol:     symbol,
-		ImportSink: graph.GetPackage(pkgPath),
+		OSV:     osv,
+		Symbol:  symbol,
+		Package: graph.GetPackage(pkgPath),
 	})
 }

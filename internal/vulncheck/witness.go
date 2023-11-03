@@ -101,7 +101,7 @@ func sourceCallstack(vuln *Vuln, res *Result) CallStack {
 	skipSymbols := make(map[*FuncNode]bool)
 	for _, v := range res.Vulns {
 		if v.CallSink != nil && v != vuln &&
-			v.OSV == vuln.OSV && v.ImportSink == vuln.ImportSink {
+			v.OSV == vuln.OSV && v.Package == vuln.Package {
 			skipSymbols[v.CallSink] = true
 		}
 	}
@@ -396,7 +396,7 @@ func isInit(f *FuncNode) bool {
 func binaryCallstacks(vr *Result) map[*Vuln]CallStack {
 	callstacks := map[*Vuln]CallStack{}
 	for _, vv := range uniqueVulns(vr.Vulns) {
-		f := &FuncNode{Package: vv.ImportSink, Name: vv.Symbol}
+		f := &FuncNode{Package: vv.Package, Name: vv.Symbol}
 		parts := strings.Split(vv.Symbol, ".")
 		if len(parts) != 1 {
 			f.RecvType = parts[0]
@@ -421,14 +421,14 @@ func uniqueVulns(vulns []*Vuln) []*Vuln {
 	hasExported := make(map[key]bool)
 	for _, v := range vulns {
 		if isExported(v.Symbol) {
-			k := key{id: v.OSV.ID, pkg: v.ImportSink.PkgPath, mod: v.ImportSink.Module.Path}
+			k := key{id: v.OSV.ID, pkg: v.Package.PkgPath, mod: v.Package.Module.Path}
 			hasExported[k] = true
 		}
 	}
 
 	var uniques []*Vuln
 	for _, v := range vulns {
-		k := key{id: v.OSV.ID, pkg: v.ImportSink.PkgPath, mod: v.ImportSink.Module.Path}
+		k := key{id: v.OSV.ID, pkg: v.Package.PkgPath, mod: v.Package.Module.Path}
 		if isExported(v.Symbol) || !hasExported[k] {
 			uniques = append(uniques, v)
 		}

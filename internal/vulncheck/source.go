@@ -30,15 +30,7 @@ func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 }
 
 // source detects vulnerabilities in packages. It emits findings to handler
-// and produces a Result that will contain:
-//
-// 1) An ImportGraph related to an import of a package with some known
-// vulnerabilities.
-//
-// 2) A RequireGraph related to a require of a module with a package that has
-// some known vulnerabilities.
-//
-// 3) A CallGraph leading to the use of a known vulnerable function or method.
+// and produces a Result that contains info on detected vulnerabilities.
 //
 // Assumes that pkgs are non-empty and belong to the same program.
 func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (*Result, error) {
@@ -89,10 +81,10 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 		return result, nil
 	}
 
-	vulnPkgSlice(pkgs, affVulns, result, handler)
+	importedVulnSymbols(pkgs, affVulns, result, handler)
 	// Return result immediately if not in symbol mode or
-	// if there are no vulnerable packages.
-	if !cfg.ScanLevel.WantSymbols() || len(result.EntryPackages) == 0 {
+	// if there are no vulnerabilities imported.
+	if !cfg.ScanLevel.WantSymbols() || len(result.Vulns) == 0 {
 		return result, nil
 	}
 
@@ -101,89 +93,66 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 		return nil, err
 	}
 
-	vulnCallGraphSlice(entries, affVulns, cg, result, graph)
+	calledVulnSymbols(entries, affVulns, cg, result, graph)
 	return result, nil
 }
 
-// vulnPkgSlice computes the slice of pkgs imports graph
-// leading to imports of vulnerable packages in affVulns
-// and stores the computed slices to result.
-func vulnPkgSlice(pkgs []*packages.Package, affVulns affectingVulns, result *Result, handler govulncheck.Handler) {
-	// analyzedPkgs contains information on packages analyzed thus far.
-	// If a package is mapped to false, this means it has been visited
-	// but it does not lead to a vulnerable imports. Otherwise, a
-	// visited package is mapped to true.
-	analyzedPkgs := make(map[*packages.Package]bool)
-	for _, pkg := range pkgs {
-		// Top level packages that lead to vulnerable imports are
-		// stored as result.EntryPackages graph entry points.
-		if vulnerable := vulnImportSlice(pkg, affVulns, result, analyzedPkgs, handler); vulnerable {
-			result.EntryPackages = append(result.EntryPackages, pkg)
+// importedVulnSymbols detects imported vulnerable symbols.
+func importedVulnSymbols(pkgs []*packages.Package, affVulns affectingVulns, result *Result, handler govulncheck.Handler) {
+	analyzed := make(map[*packages.Package]bool) // skip analyzing the same package multiple times
+	var vulnImports func(pkg *packages.Package)
+	vulnImports = func(pkg *packages.Package) {
+		if analyzed[pkg] {
+			return
 		}
-	}
-}
 
-// vulnImportSlice checks if pkg has some vulnerabilities or transitively imports
-// a package with known vulnerabilities. If that is the case, populates result.Imports
-// graph with this reachability information and returns the result.Imports package
-// node for pkg. Otherwise, returns nil.
-func vulnImportSlice(pkg *packages.Package, affVulns affectingVulns, result *Result, analyzed map[*packages.Package]bool, handler govulncheck.Handler) bool {
-	if vulnerable, ok := analyzed[pkg]; ok {
-		return vulnerable
-	}
-	analyzed[pkg] = false
-	// Recursively compute which direct dependencies lead to an import of
-	// a vulnerable package and remember the nodes of such dependencies.
-	transitiveVulnerable := false
-	for _, imp := range pkg.Imports {
-		if impVulnerable := vulnImportSlice(imp, affVulns, result, analyzed, handler); impVulnerable {
-			transitiveVulnerable = true
-		}
-	}
-
-	// Check if pkg has known vulnerabilities.
-	vulns := affVulns.ForPackage(pkg.PkgPath)
-
-	// If pkg is not vulnerable nor it transitively leads
-	// to vulnerabilities, jump out.
-	if !transitiveVulnerable && len(vulns) == 0 {
-		return false
-	}
-
-	// Create Vuln entry for each symbol of known OSV entries for pkg.
-	for _, osv := range vulns {
-		for _, affected := range osv.Affected {
-			for _, p := range affected.EcosystemSpecific.Packages {
-				if p.Path != pkg.PkgPath {
-					continue
-				}
-
-				symbols := p.Symbols
-				if len(symbols) == 0 {
-					symbols = allSymbols(pkg.Types)
-				}
-				emitPackageFinding(handler, &Vuln{
-					OSV:        osv,
-					ImportSink: pkg,
-				})
-				for _, symbol := range symbols {
-					vuln := &Vuln{
-						OSV:        osv,
-						Symbol:     symbol,
-						ImportSink: pkg,
+		vulns := affVulns.ForPackage(pkg.PkgPath)
+		// Create Vuln entry for each symbol of known OSV entries for pkg.
+		for _, osv := range vulns {
+			for _, affected := range osv.Affected {
+				for _, p := range affected.EcosystemSpecific.Packages {
+					if p.Path != pkg.PkgPath {
+						continue
 					}
-					result.Vulns = append(result.Vulns, vuln)
+
+					symbols := p.Symbols
+					if len(symbols) == 0 {
+						symbols = allSymbols(pkg.Types)
+					}
+					emitPackageFinding(handler, &Vuln{
+						OSV:     osv,
+						Package: pkg,
+					})
+					for _, symbol := range symbols {
+						vuln := &Vuln{
+							OSV:     osv,
+							Symbol:  symbol,
+							Package: pkg,
+						}
+						result.Vulns = append(result.Vulns, vuln)
+					}
 				}
 			}
 		}
+
+		analyzed[pkg] = true
+		for _, imp := range pkg.Imports {
+			vulnImports(imp)
+		}
 	}
-	analyzed[pkg] = true
-	return true
+
+	for _, pkg := range pkgs {
+		vulnImports(pkg)
+	}
 }
 
-// vulnCallGraphSlice checks if known vulnerabilities are transitively reachable from sources
-// via call graph cg. If so, populates result.Calls graph with this reachability information.
-func vulnCallGraphSlice(sources []*ssa.Function, affVulns affectingVulns, cg *callgraph.Graph, result *Result, graph *PackageGraph) {
+// calledVulnSymbols checks if imported vuln symbols are transitively reachable from sources
+// via call graph cg.
+//
+// If so, a slice of call graph is computed related to the reachable vulnerabilities. Each
+// reachable Vuln has attached FuncNode that can be upward traversed to entry points saved
+// to result.EntryFunctions.
+func calledVulnSymbols(sources []*ssa.Function, affVulns affectingVulns, cg *callgraph.Graph, result *Result, graph *PackageGraph) {
 	sinksWithVulns := vulnFuncs(cg, affVulns)
 
 	// Compute call graph backwards reachable
@@ -348,7 +317,7 @@ func createNode(nodes map[*ssa.Function]*FuncNode, f *ssa.Function, graph *Packa
 // identified with <osv, symbol, pkg>.
 func addCallSinkForVuln(call *FuncNode, osv *osv.Entry, symbol, pkg string, result *Result) {
 	for _, vuln := range result.Vulns {
-		if vuln.OSV == osv && vuln.Symbol == symbol && vuln.ImportSink.PkgPath == pkg {
+		if vuln.OSV == osv && vuln.Symbol == symbol && vuln.Package.PkgPath == pkg {
 			vuln.CallSink = call
 			return
 		}
