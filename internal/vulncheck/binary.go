@@ -12,7 +12,9 @@ import (
 	"fmt"
 	"io"
 	"runtime/debug"
+	"sort"
 
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
@@ -23,24 +25,50 @@ import (
 // Binary detects presence of vulnerable symbols in exe and
 // emits findings to exe.
 func Binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) error {
-	vr, err := binary(ctx, handler, exe, cfg, client)
+	bin, err := createBin(exe)
+	if err != nil {
+		return err
+	}
+
+	vr, err := binary(ctx, handler, bin, cfg, client)
 	if err != nil {
 		return err
 	}
 	return emitBinaryResult(handler, vr, binaryCallstacks(vr))
 }
 
-// binary detects presence of vulnerable symbols in exe.
-// The Calls, Imports, and Requires fields on Result will be empty.
-func binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) (*Result, error) {
+// bin is an abstraction of Go binary containing
+// minimal information needed by govulncheck.
+type bin struct {
+	Modules    []*packages.Module `json:"modules,omitempty"`
+	PkgSymbols []buildinfo.Symbol `json:"pkgSymbols,omitempty"`
+	GoVersion  string             `json:"goVersion,omitempty"`
+	GOOS       string             `json:"goos,omitempty"`
+	GOARCH     string             `json:"goarch,omitempty"`
+}
+
+func createBin(exe io.ReaderAt) (*bin, error) {
 	mods, packageSymbols, bi, err := buildinfo.ExtractPackagesAndSymbols(exe)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse provided binary: %v", err)
 	}
 
-	graph := NewPackageGraph(bi.GoVersion)
-	graph.AddModules(mods...)
-	mods = append(mods, graph.GetModule(internal.GoStdModulePath))
+	return &bin{
+		Modules:    mods,
+		PkgSymbols: packageSymbols,
+		GoVersion:  bi.GoVersion,
+		GOOS:       findSetting("GOOS", bi),
+		GOARCH:     findSetting("GOARCH", bi),
+	}, nil
+}
+
+// binary detects presence of vulnerable symbols in bin.
+// It does not compute call graphs so the corresponding
+// info in Result will be empty.
+func binary(ctx context.Context, handler govulncheck.Handler, bin *bin, cfg *govulncheck.Config, client *client.Client) (*Result, error) {
+	graph := NewPackageGraph(bin.GoVersion)
+	graph.AddModules(bin.Modules...)
+	mods := append(bin.Modules, graph.GetModule(internal.GoStdModulePath))
 
 	mv, err := FetchVulnerabilities(ctx, client, mods)
 	if err != nil {
@@ -52,21 +80,27 @@ func binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, c
 		return nil, err
 	}
 
-	goos := findSetting("GOOS", bi)
-	goarch := findSetting("GOARCH", bi)
-	if goos == "" || goarch == "" {
-		fmt.Printf("warning: failed to extract build system specification GOOS: %s GOARCH: %s\n", goos, goarch)
+	if bin.GOOS == "" || bin.GOARCH == "" {
+		fmt.Printf("warning: failed to extract build system specification GOOS: %s GOARCH: %s\n", bin.GOOS, bin.GOARCH)
 	}
-	affVulns := affectingVulnerabilities(mv, goos, goarch)
+	affVulns := affectingVulnerabilities(mv, bin.GOOS, bin.GOARCH)
 
 	result := &Result{}
-	if packageSymbols == nil {
+	if len(bin.PkgSymbols) == 0 {
 		// The binary exe is stripped. We currently cannot detect inlined
 		// symbols for stripped binaries (see #57764), so we report
 		// vulnerabilities at the go.mod-level precision.
 		addRequiresOnlyVulns(result, graph, affVulns)
 	} else {
-		for pkg, symbols := range packageSymbols {
+		// Group symbols per package to avoid querying vulns all over again.
+		pkgSymbols := make(map[string][]string)
+		for _, sym := range bin.PkgSymbols {
+			pkgSymbols[sym.Pkg] = append(pkgSymbols[sym.Pkg], sym.Name)
+		}
+
+		for pkg, symbols := range pkgSymbols {
+			// sort symbols for deterministic results
+			sort.SliceStable(symbols, func(i, j int) bool { return symbols[i] < symbols[j] })
 			if !cfg.ScanLevel.WantSymbols() {
 				addImportsOnlyVulns(result, graph, pkg, symbols, affVulns)
 			} else {

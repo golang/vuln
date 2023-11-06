@@ -10,7 +10,6 @@ package vulncheck
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,7 +21,6 @@ import (
 	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/testenv"
-	"golang.org/x/vuln/internal/vulncheck/internal/buildinfo"
 )
 
 // TODO: we build binary programatically, so what if the underlying tool chain changes?
@@ -107,11 +105,15 @@ func TestBinary(t *testing.T) {
 		t.Fatalf("failed to build the binary %v %v", err, string(out))
 	}
 
-	bin, err := os.Open(filepath.Join(e.Config.Dir, "entry"))
+	exe, err := os.Open(filepath.Join(e.Config.Dir, "entry"))
 	if err != nil {
-		t.Fatalf("failed to access the binary %v", err)
+		t.Fatal(err)
 	}
-	defer bin.Close()
+	defer exe.Close()
+	bin, err := createBin(exe)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	c, err := newTestClient()
 	if err != nil {
@@ -125,7 +127,7 @@ func TestBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	goversion := getGoVersion(bin)
+	goversion := goVersion(bin)
 	// In importsOnly mode, vulnerable symbols
 	// {avuln.VulnData.Vuln1, avuln.VulnData.Vuln2, bvuln.Vuln}
 	// should be detected.
@@ -161,9 +163,8 @@ func TestBinary(t *testing.T) {
 	compareVulns(t, wantVulns, res)
 }
 
-func getGoVersion(exe io.ReaderAt) string {
-	_, _, bi, _ := buildinfo.ExtractPackagesAndSymbols(exe)
-	return semver.GoTagToSemver(bi.GoVersion)
+func goVersion(bin *bin) string {
+	return semver.GoTagToSemver(bin.GoVersion)
 }
 
 // Test58509 is supposed to test issue #58509 where a whole
@@ -226,11 +227,15 @@ func Vuln() {
 				t.Fatalf("failed to build the binary %v %v", err, string(out))
 			}
 
-			bin, err := os.Open(filepath.Join(e.Config.Dir, "entry"))
+			exe, err := os.Open(filepath.Join(e.Config.Dir, "entry"))
 			if err != nil {
-				t.Fatalf("failed to access the binary %v", err)
+				t.Fatal(err)
 			}
-			defer bin.Close()
+			defer exe.Close()
+			bin, err := createBin(exe)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			c, err := newTestClient()
 			if err != nil {

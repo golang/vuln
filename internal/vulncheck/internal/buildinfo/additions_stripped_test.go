@@ -59,10 +59,16 @@ func TestStrippedDarwin(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := syms["main"]
-			want := []string{"f", "g", "main"}
-			if !cmp.Equal(got, want) {
-				t.Errorf("\ngot  %q\nwant %q", got, want)
+
+			got := mainSortedSymbols(syms)
+			want := []Symbol{
+				{"main", "f"},
+				{"main", "g"},
+				{"main", "main"},
+			}
+
+			if diff := cmp.Diff(want, got); diff != "" {
+				t.Errorf("(-want,+got):%s", diff)
 			}
 		})
 }

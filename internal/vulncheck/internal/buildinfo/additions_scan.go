@@ -17,7 +17,6 @@ import (
 	"io"
 	"net/url"
 	"runtime/debug"
-	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -41,12 +40,17 @@ func debugModulesToPackagesModules(debugModules []*debug.Module) []*packages.Mod
 	return packagesModules
 }
 
+type Symbol struct {
+	Pkg  string `json:"pkg,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+
 // ExtractPackagesAndSymbols extracts symbols, packages, modules from
 // bin as well as bin's metadata.
 //
 // If the symbol table is not available, such as in the case of stripped
 // binaries, returns module and binary info but without the symbol info.
-func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string][]string, *debug.BuildInfo, error) {
+func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, []Symbol, *debug.BuildInfo, error) {
 	bi, err := buildinfo.Read(bin)
 	if err != nil {
 		return nil, nil, nil, err
@@ -87,11 +91,7 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 		return nil, nil, nil, err
 	}
 
-	type pkgSymbol struct {
-		pkg string
-		sym string
-	}
-	pkgSyms := make(map[pkgSymbol]bool)
+	pkgSyms := make(map[Symbol]bool)
 	for _, f := range tab.Funcs {
 		if f.Func == nil {
 			continue
@@ -100,7 +100,7 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		pkgSyms[pkgSymbol{pkgName, symName}] = true
+		pkgSyms[Symbol{pkgName, symName}] = true
 
 		// Collect symbols that were inlined in f.
 		it, err := lineTab.InlineTree(&f, value, base, r)
@@ -112,20 +112,16 @@ func ExtractPackagesAndSymbols(bin io.ReaderAt) ([]*packages.Module, map[string]
 			if err != nil {
 				return nil, nil, nil, err
 			}
-			pkgSyms[pkgSymbol{pkgName, symName}] = true
+			pkgSyms[Symbol{pkgName, symName}] = true
 		}
 	}
 
-	packageSymbols := make(map[string][]string)
-	for p := range pkgSyms {
-		packageSymbols[p.pkg] = append(packageSymbols[p.pkg], p.sym)
-	}
-	// Sort symbols per pkg for deterministic results.
-	for _, syms := range packageSymbols {
-		sort.Strings(syms)
+	var syms []Symbol
+	for ps := range pkgSyms {
+		syms = append(syms, ps)
 	}
 
-	return debugModulesToPackagesModules(bi.Deps), packageSymbols, bi, nil
+	return debugModulesToPackagesModules(bi.Deps), syms, bi, nil
 }
 
 func parseName(s *gosym.Sym) (pkg, sym string, err error) {

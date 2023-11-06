@@ -9,6 +9,7 @@ package buildinfo
 
 import (
 	"os"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -56,10 +57,29 @@ func TestExtractPackagesAndSymbols(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := syms["main"]
-			want := []string{"f", "g", "main"}
-			if !cmp.Equal(got, want) {
-				t.Errorf("\ngot  %q\nwant %q", got, want)
+
+			got := mainSortedSymbols(syms)
+			want := []Symbol{
+				{"main", "f"},
+				{"main", "g"},
+				{"main", "main"},
+			}
+
+			if diff := cmp.Diff(want, got); diff != "" {
+				t.Errorf("(-want,+got):%s", diff)
 			}
 		})
+}
+
+// mainSortedSymbols gets symbols for "main" package and
+// sorts them for testing purposes.
+func mainSortedSymbols(syms []Symbol) []Symbol {
+	var s []Symbol
+	for _, ps := range syms {
+		if ps.Pkg == "main" {
+			s = append(s, ps)
+		}
+	}
+	sort.SliceStable(s, func(i, j int) bool { return s[i].Pkg+"."+s[i].Name < s[j].Pkg+"."+s[j].Name })
+	return s
 }
