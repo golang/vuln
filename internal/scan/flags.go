@@ -5,7 +5,6 @@
 package scan
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -164,20 +163,6 @@ func isFile(path string) bool {
 		return false
 	}
 	return !s.IsDir()
-}
-
-// fileExists checks if file path exists. Returns true
-// if the file exists or it cannot prove that it does
-// not exist. Otherwise, returns false.
-func fileExists(path string) bool {
-	if _, err := os.Stat(path); err == nil {
-		return true
-	} else if errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-	// Conservatively return true if os.Stat fails
-	// for some other reason.
-	return true
 }
 
 type showFlag []string
