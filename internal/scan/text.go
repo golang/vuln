@@ -353,7 +353,7 @@ func (h *TextHandler) wrap(indent string, s string, maxWidth int) {
 	}
 }
 
-func choose(b bool, yes, no any) any {
+func choose[t any](b bool, yes, no t) t {
 	if b {
 		return yes
 	}
