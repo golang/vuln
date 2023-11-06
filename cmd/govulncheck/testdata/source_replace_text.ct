@@ -18,10 +18,8 @@ Vulnerability #1: GO-2021-0113
 
 === Informational ===
 
-Found 0 vulnerabilities in packages that you import, but there are no
-call stacks leading to the use of these vulnerabilities. You may not
-need to take any action. There are also 2 vulnerabilities in modules
-that you require that are neither imported nor called.
+There are 2 vulnerabilities in modules that you require that are
+neither imported nor called. You may not need to take any action.
 See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
 
 Vulnerability #1: GO-2022-0969
