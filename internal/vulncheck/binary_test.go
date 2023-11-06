@@ -9,110 +9,33 @@ package vulncheck
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"sort"
 	"testing"
 
-	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/tools/go/packages"
+	"golang.org/x/vuln/internal/buildinfo"
 	"golang.org/x/vuln/internal/govulncheck"
-	"golang.org/x/vuln/internal/semver"
 	"golang.org/x/vuln/internal/test"
-	"golang.org/x/vuln/internal/testenv"
 )
 
-// TODO: we build binary programatically, so what if the underlying tool chain changes?
 func TestBinary(t *testing.T) {
-	testenv.NeedsGoBuild(t)
-
-	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
-		{
-			Name: "golang.org/entry",
-			Files: map[string]interface{}{
-				"main.go": `
-			package main
-
-			import (
-				"archive/zip"
-				"golang.org/cmod/c"
-				"golang.org/bmod/bvuln"
-			)
-
-			func main() {
-				c.C()
-				bvuln.NoVuln() // no vuln use
-
-				_, err := zip.OpenReader("file.zip")
-				print(err)
-			}
-			`,
-			}},
-		{
-			Name: "golang.org/cmod@v1.1.3",
-			Files: map[string]interface{}{"c/c.go": `
-			package c
-
-			import (
-				"golang.org/amod/avuln"
-			)
-
-			func C() {
-				v := avuln.VulnData{}
-				v.Vuln1() // vuln use
-			}
-			`},
+	bin := &Bin{
+		Modules: []*packages.Module{
+			{Path: "golang.org/entry"},
+			{Path: "golang.org/cmod", Version: "v1.1.3"},
+			{Path: "golang.org/amod", Version: "v1.1.3"},
+			{Path: "golang.org/bmod", Version: "v0.5.0"},
 		},
-		{
-			Name: "golang.org/amod@v1.1.3",
-			Files: map[string]interface{}{"avuln/avuln.go": `
-			package avuln
-
-			type VulnData struct {}
-
-			func (v VulnData) Vuln1() {
-				print("vuln1")
-			}
-
-			func (v VulnData) Vuln2() {
-				print("vuln2")
-			}
-			`},
+		GoVersion: "go1.20",
+		GOOS:      "linux",
+		GOARCH:    "amd64",
+		PkgSymbols: []buildinfo.Symbol{
+			{Pkg: "golang.org/entry", Name: "main"},
+			{Pkg: "golang.org/cmod/c", Name: "C"},
+			{Pkg: "golang.org/amod/avuln", Name: "VulnData.Vuln1"}, // assume linker skips VulnData.Vuln2
+			{Pkg: "golang.org/bmod/bvuln", Name: "NoVuln"},         // assume linker skips NoVuln
+			{Pkg: "archive/zip", Name: "OpenReader"},
 		},
-		{
-			Name: "golang.org/bmod@v0.5.0",
-			Files: map[string]interface{}{"bvuln/bvuln.go": `
-			package bvuln
-
-			func Vuln() {
-				print("vuln")
-			}
-
-			func NoVuln() {
-				print("novuln")
-			}
-			`},
-		},
-	})
-	defer e.Cleanup()
-
-	cmd := exec.Command("go", "build", "-o", "entry")
-	cmd.Dir = e.Config.Dir
-	cmd.Env = e.Config.Env
-	out, err := cmd.CombinedOutput()
-	if err != nil || len(out) > 0 {
-		t.Fatalf("failed to build the binary %v %v", err, string(out))
-	}
-
-	exe, err := os.Open(filepath.Join(e.Config.Dir, "entry"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer exe.Close()
-	bin, err := createBin(exe)
-	if err != nil {
-		t.Fatal(err)
 	}
 
 	c, err := newTestClient()
@@ -127,24 +50,17 @@ func TestBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	goversion := goVersion(bin)
-	// In importsOnly mode, vulnerable symbols
-	// {avuln.VulnData.Vuln1, avuln.VulnData.Vuln2, bvuln.Vuln}
-	// should be detected.
+	// With package scan level, all test vulnerable symbols should be detected.
 	wantVulns := []*testVuln{
 		{Symbol: "Vuln", PkgPath: "golang.org/bmod/bvuln", ModPath: "golang.org/bmod"},
 		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
 		{Symbol: "VulnData.Vuln2", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
-	}
-	if goversion != "" {
-		// If binary has recognizable Go version available,
-		// then archive/zip.OpenReader should be detected too.
-		wantVulns = append(wantVulns, &testVuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
+		{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"},
 	}
 
 	compareVulns(t, wantVulns, res)
 
-	// Test the symbols (non-import mode)
+	// Test the symbols.
 	cfg.ScanLevel = "symbol"
 	res, err = binary(context.Background(), test.NewMockHandler(), bin, cfg, c)
 	if err != nil {
@@ -153,104 +69,10 @@ func TestBinary(t *testing.T) {
 
 	wantVulns = []*testVuln{
 		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
-	}
-	if goversion != "" {
-		// If binary has recognizable Go version available,
-		// then archive/zip.OpenReader should be detected too.
-		wantVulns = append(wantVulns, &testVuln{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"})
+		{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"},
 	}
 
 	compareVulns(t, wantVulns, res)
-}
-
-func goVersion(bin *bin) string {
-	return semver.GoTagToSemver(bin.GoVersion)
-}
-
-// Test58509 is supposed to test issue #58509 where a whole
-// vulnerable function is deleted from the binary so we
-// cannot detect its presence.
-//
-// Note: the issue is still not addressed and the test
-// expectations are set to fail once it gets addressed.
-func Test58509(t *testing.T) {
-	testenv.NeedsGoBuild(t)
-
-	vulnLib := `package bvuln
-
-%s debug = true
-
-func Vuln() {
-	if debug {
-		return
-	}
-	print("vuln")
-}`
-
-	for _, tc := range []struct {
-		gl   string
-		want []*testVuln
-	}{
-		{"const", nil}, // TODO(https://go.dev/issue/58509): change expectations once issue is addressed
-		{"var", []*testVuln{{Symbol: "Vuln", PkgPath: "golang.org/bmod/bvuln", ModPath: "golang.org/bmod"}}},
-	} {
-		tc := tc
-		t.Run(tc.gl, func(t *testing.T) {
-			e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
-				{
-					Name: "golang.org/entry",
-					Files: map[string]interface{}{
-						"main.go": `
-			package main
-
-			import (
-				"golang.org/bmod/bvuln"
-			)
-
-			func main() {
-				bvuln.Vuln()
-			}
-			`,
-					}},
-				{
-					Name:  "golang.org/bmod@v0.5.0",
-					Files: map[string]interface{}{"bvuln/bvuln.go": fmt.Sprintf(vulnLib, tc.gl)},
-				},
-			})
-			defer e.Cleanup()
-
-			cmd := exec.Command("go", "build", "-o", "entry")
-			cmd.Dir = e.Config.Dir
-			cmd.Env = e.Config.Env
-			out, err := cmd.CombinedOutput()
-			if err != nil || len(out) > 0 {
-				t.Fatalf("failed to build the binary %v %v", err, string(out))
-			}
-
-			exe, err := os.Open(filepath.Join(e.Config.Dir, "entry"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer exe.Close()
-			bin, err := createBin(exe)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			c, err := newTestClient()
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			cfg := &govulncheck.Config{ScanLevel: "symbol"}
-			res, err := binary(context.Background(), test.NewMockHandler(), bin, cfg, c)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			compareVulns(t, tc.want, res)
-		})
-	}
 }
 
 type testVuln struct {

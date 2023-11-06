@@ -60,7 +60,7 @@ func TestStrippedDarwin(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			got := mainSortedSymbols(syms)
+			got := sortedSymbols("main", syms)
 			want := []Symbol{
 				{"main", "f"},
 				{"main", "g"},

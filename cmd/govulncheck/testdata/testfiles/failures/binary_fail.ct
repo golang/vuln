@@ -6,8 +6,6 @@ $ govulncheck -mode=binary notafile --> FAIL 2
 #####
 # Test of passing a non-binary file to -mode=binary
 $ govulncheck -mode=binary ${moddir}/vuln/go.mod --> FAIL 1
-Scanning your binary for known vulnerabilities...
-
 govulncheck: could not parse provided binary: unrecognized file format
 
 #####

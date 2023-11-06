@@ -9,8 +9,12 @@ package scan
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"os"
+	"runtime/debug"
 
+	"golang.org/x/vuln/internal/buildinfo"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/derrors"
 	"golang.org/x/vuln/internal/govulncheck"
@@ -27,9 +31,39 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	}
 	defer exe.Close()
 
+	bin, err := createBin(exe)
+	if err != nil {
+		return err
+	}
+
 	p := &govulncheck.Progress{Message: binaryProgressMessage}
 	if err := handler.Progress(p); err != nil {
 		return err
 	}
-	return vulncheck.Binary(ctx, handler, exe, &cfg.Config, client)
+	return vulncheck.Binary(ctx, handler, bin, &cfg.Config, client)
+}
+
+func createBin(exe io.ReaderAt) (*vulncheck.Bin, error) {
+	mods, packageSymbols, bi, err := buildinfo.ExtractPackagesAndSymbols(exe)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse provided binary: %v", err)
+	}
+	return &vulncheck.Bin{
+		Modules:    mods,
+		PkgSymbols: packageSymbols,
+		GoVersion:  bi.GoVersion,
+		GOOS:       findSetting("GOOS", bi),
+		GOARCH:     findSetting("GOARCH", bi),
+	}, nil
+}
+
+// findSetting returns value of setting from bi if present.
+// Otherwise, returns "".
+func findSetting(setting string, bi *debug.BuildInfo) string {
+	for _, s := range bi.Settings {
+		if s.Key == setting {
+			return s.Value
+		}
+	}
+	return ""
 }

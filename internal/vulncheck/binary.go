@@ -10,36 +10,19 @@ package vulncheck
 import (
 	"context"
 	"fmt"
-	"io"
-	"runtime/debug"
 	"sort"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
+	"golang.org/x/vuln/internal/buildinfo"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
-	"golang.org/x/vuln/internal/vulncheck/internal/buildinfo"
 )
 
-// Binary detects presence of vulnerable symbols in exe and
-// emits findings to exe.
-func Binary(ctx context.Context, handler govulncheck.Handler, exe io.ReaderAt, cfg *govulncheck.Config, client *client.Client) error {
-	bin, err := createBin(exe)
-	if err != nil {
-		return err
-	}
-
-	vr, err := binary(ctx, handler, bin, cfg, client)
-	if err != nil {
-		return err
-	}
-	return emitBinaryResult(handler, vr, binaryCallstacks(vr))
-}
-
-// bin is an abstraction of Go binary containing
+// Bin is an abstraction of Go binary containing
 // minimal information needed by govulncheck.
-type bin struct {
+type Bin struct {
 	Modules    []*packages.Module `json:"modules,omitempty"`
 	PkgSymbols []buildinfo.Symbol `json:"pkgSymbols,omitempty"`
 	GoVersion  string             `json:"goVersion,omitempty"`
@@ -47,25 +30,20 @@ type bin struct {
 	GOARCH     string             `json:"goarch,omitempty"`
 }
 
-func createBin(exe io.ReaderAt) (*bin, error) {
-	mods, packageSymbols, bi, err := buildinfo.ExtractPackagesAndSymbols(exe)
+// Binary detects presence of vulnerable symbols in bin and
+// emits findings to handler.
+func Binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *govulncheck.Config, client *client.Client) error {
+	vr, err := binary(ctx, handler, bin, cfg, client)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse provided binary: %v", err)
+		return err
 	}
-
-	return &bin{
-		Modules:    mods,
-		PkgSymbols: packageSymbols,
-		GoVersion:  bi.GoVersion,
-		GOOS:       findSetting("GOOS", bi),
-		GOARCH:     findSetting("GOARCH", bi),
-	}, nil
+	return emitBinaryResult(handler, vr, binaryCallstacks(vr))
 }
 
 // binary detects presence of vulnerable symbols in bin.
 // It does not compute call graphs so the corresponding
 // info in Result will be empty.
-func binary(ctx context.Context, handler govulncheck.Handler, bin *bin, cfg *govulncheck.Config, client *client.Client) (*Result, error) {
+func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *govulncheck.Config, client *client.Client) (*Result, error) {
 	graph := NewPackageGraph(bin.GoVersion)
 	graph.AddModules(bin.Modules...)
 	mods := append(bin.Modules, graph.GetModule(internal.GoStdModulePath))
@@ -146,17 +124,6 @@ func addSymbolVulns(result *Result, graph *PackageGraph, pkg string, symbols []s
 			addVuln(result, graph, osv, symbol, pkg)
 		}
 	}
-}
-
-// findSetting returns value of setting from bi if present.
-// Otherwise, returns "".
-func findSetting(setting string, bi *debug.BuildInfo) string {
-	for _, s := range bi.Settings {
-		if s.Key == setting {
-			return s.Value
-		}
-	}
-	return ""
 }
 
 // addRequiresOnlyVulns adds to result all vulnerabilities in affVulns.

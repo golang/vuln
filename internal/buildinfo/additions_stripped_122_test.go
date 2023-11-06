@@ -31,7 +31,7 @@ func TestStrippedBinary(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if syms != nil {
+			if len(syms) != 0 {
 				t.Errorf("want empty symbol table; got %v symbols", len(syms))
 			}
 		})
