@@ -153,10 +153,10 @@ func TestCommand(t *testing.T) {
 		varName := filepath.Base(md) + "_binary"
 		os.Setenv(varName, binary)
 	}
-	runTestSuite(t, filepath.Join(testDir, "testdata"), govulndbURI.String(), *update)
+	runTestSuite(t, filepath.Join(testDir, "testdata", "testfiles"), govulndbURI.String(), *update)
 	if runtime.GOOS != "darwin" {
 		// Binaries are not stripped on darwin with go1.21 and earlier. See #61051.
-		runTestSuite(t, filepath.Join(testDir, "testdata/strip"), govulndbURI.String(), *update)
+		runTestSuite(t, filepath.Join(testDir, "testdata", "strip"), govulndbURI.String(), *update)
 	}
 }
 
@@ -190,7 +190,7 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 		parallelLimiter = make(chan struct{}, limit)
 	})
 
-	ts, err := cmdtest.Read(dir)
+	ts, err := cmdtest.Read(filepath.Join(dir, "*"))
 	if err != nil {
 		t.Fatal(err)
 	}
