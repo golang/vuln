@@ -1,0 +1,46 @@
+#####
+# Test binary mode using the extracted binary blob.
+$ govulncheck -mode=binary ${testdir}/extract/vuln.blob --> FAIL 3
+Scanning your binary for known vulnerabilities...
+
+Vulnerability #1: GO-2021-0265
+    A maliciously crafted path can cause Get and other query functions to
+    consume excessive amounts of CPU and time.
+  More info: https://pkg.go.dev/vuln/GO-2021-0265
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.9.3
+    Example traces found:
+      #1: gjson.Get
+      #2: gjson.Result.Get
+
+Vulnerability #2: GO-2021-0113
+    Due to improper index calculation, an incorrectly formatted language tag can
+    cause Parse to panic via an out of bounds read. If Parse is used to process
+    untrusted user inputs, this may be used as a vector for a denial of service
+    attack.
+  More info: https://pkg.go.dev/vuln/GO-2021-0113
+  Module: golang.org/x/text
+    Found in: golang.org/x/text@v0.3.0
+    Fixed in: golang.org/x/text@v0.3.7
+    Example traces found:
+      #1: language.Parse
+
+Vulnerability #3: GO-2021-0054
+    Due to improper bounds checking, maliciously crafted JSON objects can cause
+    an out-of-bounds panic. If parsing user input, this may be used as a denial
+    of service vector.
+  More info: https://pkg.go.dev/vuln/GO-2021-0054
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.6.6
+    Example traces found:
+      #1: gjson.Result.ForEach
+
+Your code is affected by 3 vulnerabilities from 2 modules.
+
+Share feedback at https://go.dev/s/govulncheck-feedback.
+
+# Test extract mode. Due to the size of the blob even for smallest programs, we
+# directly compare its output to a target vuln_blob.json file.
+$ govulncheck-cmp -mode=extract ${moddir}/vuln/vuln_dont_run_me ${testdir}/extract/vuln.blob

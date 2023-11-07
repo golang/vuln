@@ -24,6 +24,7 @@ import (
 	"unsafe"
 
 	"github.com/google/go-cmdtest"
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/test"
 	"golang.org/x/vuln/internal/web"
@@ -153,7 +154,10 @@ func TestCommand(t *testing.T) {
 		varName := filepath.Base(md) + "_binary"
 		os.Setenv(varName, binary)
 	}
-	runTestSuite(t, filepath.Join(testDir, "testdata", "testfiles"), govulndbURI.String(), *update)
+	testFilesDir := filepath.Join(testDir, "testdata", "testfiles")
+	os.Setenv("testdir", testFilesDir)
+
+	runTestSuite(t, testFilesDir, govulndbURI.String(), *update)
 	if runtime.GOOS != "darwin" {
 		// Binaries are not stripped on darwin with go1.21 and earlier. See #61051.
 		runTestSuite(t, filepath.Join(testDir, "testdata", "strip"), govulndbURI.String(), *update)
@@ -196,7 +200,7 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 	}
 	ts.DisableLogging = true
 
-	ts.Commands["govulncheck"] = func(args []string, inputFile string) ([]byte, error) {
+	govulncheckCmd := func(args []string, inputFile string) ([]byte, error) {
 		parallelLimiter <- struct{}{}
 		defer func() { <-parallelLimiter }()
 
@@ -250,6 +254,37 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 		}
 		return out, err
 	}
+	ts.Commands["govulncheck"] = govulncheckCmd
+
+	// govulncheck-cmp is like govulncheck except that the last argument is a file
+	// whose contents are compared to the output of govulncheck. This command does
+	// not output anything.
+	ts.Commands["govulncheck-cmp"] = func(args []string, inputFile string) ([]byte, error) {
+		l := len(args)
+		if l == 0 {
+			return nil, nil
+		}
+		cmpArg := args[l-1]
+		gArgs := args[:l-1]
+
+		out, err := govulncheckCmd(gArgs, inputFile)
+		if err != nil {
+			return nil, &cmdtest.ExitCodeErr{Msg: err.Error(), Code: 1}
+		}
+		got := string(out)
+
+		file, err := os.ReadFile(cmpArg)
+		if err != nil {
+			return nil, &cmdtest.ExitCodeErr{Msg: err.Error(), Code: 1}
+		}
+		want := string(file)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			return nil, &cmdtest.ExitCodeErr{Msg: "govulncheck output not matching the file contents:\n" + diff, Code: 1}
+		}
+		return nil, nil
+	}
+
 	if update {
 		ts.Run(t, true)
 		return

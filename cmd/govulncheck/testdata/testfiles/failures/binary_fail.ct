@@ -4,9 +4,54 @@ $ govulncheck -mode=binary notafile --> FAIL 2
 "notafile" is not a file
 
 #####
-# Test of passing a non-binary file to -mode=binary
+# Test of passing a non-binary and non-blob file to -mode=binary
 $ govulncheck -mode=binary ${moddir}/vuln/go.mod --> FAIL 1
-govulncheck: could not parse provided binary: unrecognized file format
+govulncheck: unrecognized binary format
+
+#####
+# Test of passing a blob with invalid header id
+$ govulncheck -mode=binary ${testdir}/failures/invalid_header_name.blob --> FAIL 1
+govulncheck: unrecognized binary format
+
+#####
+# Test of passing a blob with invalid header version
+$ govulncheck -mode=binary ${testdir}/failures/invalid_header_version.blob --> FAIL 1
+govulncheck: unrecognized binary format
+
+#####
+# Test of passing a blob with no header
+$ govulncheck -mode=binary ${testdir}/failures/no_header.blob --> FAIL 1
+govulncheck: unrecognized binary format
+
+#####
+# Test of passing a blob with invalid header, i.e., no header
+$ govulncheck -mode=binary ${testdir}/failures/no_header.blob --> FAIL 1
+govulncheck: unrecognized binary format
+
+#####
+# Test of passing a blob with no body
+$ govulncheck -mode=binary ${testdir}/failures/no_body.blob --> FAIL 1
+govulncheck: unrecognized binary format
+
+#####
+# Test of passing an empty blob/file
+$ govulncheck -mode=binary ${testdir}/failures/empty.blob --> FAIL 1
+govulncheck: unrecognized binary format
+
+#####
+# Test of passing an empty blob message
+$ govulncheck -mode=binary ${testdir}/failures/empty_message.blob --> FAIL 1
+govulncheck: unrecognized binary format
+
+#####
+# Test of passing blob message with multiple headers
+$ govulncheck -mode=binary ${testdir}/failures/multi_header.blob --> FAIL 1
+govulncheck: unrecognized binary format
+
+#####
+# Test of passing blob message with something after the body
+$ govulncheck -mode=binary ${testdir}/failures/multi_header.blob --> FAIL 1
+govulncheck: unrecognized binary format
 
 #####
 # Test of trying to analyze multiple binaries

@@ -1,0 +1,4 @@
+#####
+# Test extraction of an unsupported file format
+$ govulncheck -mode=extract ${moddir}/vuln/go.mod --> FAIL 1
+govulncheck: unrecognized binary format

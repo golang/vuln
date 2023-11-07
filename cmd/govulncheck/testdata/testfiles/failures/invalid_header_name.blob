@@ -1,0 +1,1 @@
+{"name":"invalid-name","version":"0.1.0"}{"modules":[{"Path":"github.com/tidwall/gjson","Version":"v1.6.5","Replace":null,"Time":null,"Main":false,"Indirect":false,"Dir":"","GoMod":"","GoVersion":"","Error":null}]}

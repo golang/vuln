@@ -9,7 +9,8 @@ package scan
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"runtime/debug"
@@ -21,17 +22,11 @@ import (
 	"golang.org/x/vuln/internal/vulncheck"
 )
 
-// runBinary detects presence of vulnerable symbols in an executable.
+// runBinary detects presence of vulnerable symbols in an executable or its minimal blob representation.
 func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client) (err error) {
 	defer derrors.Wrap(&err, "govulncheck")
 
-	exe, err := os.Open(cfg.patterns[0])
-	if err != nil {
-		return err
-	}
-	defer exe.Close()
-
-	bin, err := createBin(exe)
+	bin, err := createBin(cfg.patterns[0])
 	if err != nil {
 		return err
 	}
@@ -43,18 +38,57 @@ func runBinary(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	return vulncheck.Binary(ctx, handler, bin, &cfg.Config, client)
 }
 
-func createBin(exe io.ReaderAt) (*vulncheck.Bin, error) {
-	mods, packageSymbols, bi, err := buildinfo.ExtractPackagesAndSymbols(exe)
+func createBin(path string) (*vulncheck.Bin, error) {
+	f, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse provided binary: %v", err)
+		return nil, err
 	}
-	return &vulncheck.Bin{
-		Modules:    mods,
-		PkgSymbols: packageSymbols,
-		GoVersion:  bi.GoVersion,
-		GOOS:       findSetting("GOOS", bi),
-		GOARCH:     findSetting("GOARCH", bi),
-	}, nil
+	defer f.Close()
+
+	// First check if the path points to a Go binary. Otherwise, blob
+	// parsing might json decode a Go binary which takes time.
+	//
+	// TODO(#64716): use fingerprinting to make this precise, clean, and fast.
+	mods, packageSymbols, bi, err := buildinfo.ExtractPackagesAndSymbols(f)
+	if err == nil {
+		return &vulncheck.Bin{
+			Modules:    mods,
+			PkgSymbols: packageSymbols,
+			GoVersion:  bi.GoVersion,
+			GOOS:       findSetting("GOOS", bi),
+			GOARCH:     findSetting("GOARCH", bi),
+		}, nil
+	}
+
+	// Otherwise, see if the path points to a valid blob.
+	bin := parseBlob(f)
+	if bin != nil {
+		return bin, nil
+	}
+
+	return nil, errors.New("unrecognized binary format")
+}
+
+// parseBlob extracts vulncheck.Bin from a valid blob. If it
+// cannot recognize a valid blob, returns nil.
+func parseBlob(from io.Reader) *vulncheck.Bin {
+	dec := json.NewDecoder(from)
+
+	var h header
+	if err := dec.Decode(&h); err != nil {
+		return nil // no header
+	} else if h.Name != extractModeID || h.Version != extractModeVersion {
+		return nil // invalid header
+	}
+
+	var b vulncheck.Bin
+	if err := dec.Decode(&b); err != nil {
+		return nil // no body
+	}
+	if dec.More() {
+		return nil // we want just header and body, nothing else
+	}
+	return &b
 }
 
 // findSetting returns value of setting from bi if present.

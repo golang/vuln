@@ -52,6 +52,11 @@ with the -mode=binary flag:
 Govulncheck uses the binary's symbol information to find mentions of vulnerable
 functions. Its output omits call stacks, which require source code analysis.
 
+Govulncheck also supports -mode=extract on a Go binary for extraction of minimal
+information needed to analyze the binary. This will produce a blob, typically much
+smaller than the binary, that can also be passed to govulncheck as an argument with
+-mode=binary. The users should not rely on the contents or representation of the blob.
+
 Govulncheck exits successfully (exit code 0) if there are no vulnerabilities,
 and exits unsuccessfully if there are. It also exits successfully if the -json flag
 is provided, regardless of the number of detected vulnerabilities.
