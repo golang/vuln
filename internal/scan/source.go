@@ -52,11 +52,11 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 			return fmt.Errorf("loading packages: %w", err)
 		}
 	}
-	if err := handler.Progress(sourceProgressMessage(pkgs, len(mods)-1)); err != nil {
+	if err := handler.Progress(sourceProgressMessage(pkgs, len(mods)-1, cfg.ScanLevel)); err != nil {
 		return err
 	}
 
-	if len(pkgs) == 0 {
+	if cfg.ScanLevel.WantPackages() && len(pkgs) == 0 {
 		return nil // early exit
 	}
 	return vulncheck.Source(ctx, handler, pkgs, &cfg.Config, client, graph)
@@ -71,26 +71,21 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 // is 0, then the following message is returned
 //
 //	"No packages matching the provided pattern."
-func sourceProgressMessage(topPkgs []*packages.Package, mods int) *govulncheck.Progress {
-	if len(topPkgs) == 0 {
-		// The package pattern is valid, but no packages are matching.
-		// Example is pkg/strace/... (see #59623).
-		return &govulncheck.Progress{Message: "No packages matching the provided pattern."}
+func sourceProgressMessage(topPkgs []*packages.Package, mods int, mode govulncheck.ScanLevel) *govulncheck.Progress {
+	var pkgsPhrase, modsPhrase string
+
+	if mode.WantPackages() {
+		if len(topPkgs) == 0 {
+			// The package pattern is valid, but no packages are matching.
+			// Example is pkg/strace/... (see #59623).
+			return &govulncheck.Progress{Message: "No packages matching the provided pattern."}
+		}
+		pkgs := depPkgs(topPkgs)
+		pkgsPhrase = fmt.Sprintf(" and %d package%s", pkgs, choose(pkgs != 1, "s", ""))
 	}
+	modsPhrase = fmt.Sprintf(" %d dependent module%s", mods, choose(mods != 1, "s", ""))
 
-	pkgs := depPkgs(topPkgs)
-
-	pkgsPhrase := fmt.Sprintf("%d package", pkgs)
-	if pkgs != 1 {
-		pkgsPhrase += "s"
-	}
-
-	modsPhrase := fmt.Sprintf("%d dependent module", mods)
-	if mods != 1 {
-		modsPhrase += "s"
-	}
-
-	msg := fmt.Sprintf("Scanning your code and %s across %s for known vulnerabilities...", pkgsPhrase, modsPhrase)
+	msg := fmt.Sprintf("Scanning your code%s across%s for known vulnerabilities...", pkgsPhrase, modsPhrase)
 	return &govulncheck.Progress{Message: msg}
 }
 

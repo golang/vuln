@@ -37,7 +37,6 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	fset := pkgs[0].Fset
 	// If we are building the callgraph, build ssa and the callgraph in parallel
 	// with fetching vulnerabilities. If the vulns set is empty, return without
 	// waiting for SSA construction or callgraph to finish.
@@ -48,6 +47,7 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 		buildErr error
 	)
 	if cfg.ScanLevel.WantSymbols() {
+		fset := pkgs[0].Fset
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
