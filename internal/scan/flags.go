@@ -107,6 +107,9 @@ func validateConfig(cfg *config) error {
 		if len(cfg.patterns) == 1 && isFile(cfg.patterns[0]) {
 			return fmt.Errorf("%q is a file.\n\n%v", cfg.patterns[0], errNoBinaryFlag)
 		}
+		if cfg.ScanLevel == govulncheck.ScanLevelModule && len(cfg.patterns) != 0 {
+			return fmt.Errorf("patterns are not accepted for module only scanning")
+		}
 	case modeBinary:
 		if cfg.test {
 			return fmt.Errorf("the -test flag is not supported in binary mode")

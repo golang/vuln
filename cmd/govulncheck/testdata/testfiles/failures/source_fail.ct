@@ -28,3 +28,8 @@ There are errors with the provided package patterns:
 -: package foo is not in GOROOT (/tmp/foo)
 
 For details on package patterns, see https://pkg.go.dev/cmd/go#hdr-Package_lists_and_patterns.
+
+#####
+# Test of handing a package pattern to scan level module
+$ govulncheck -scan module -C ${moddir}/vuln pattern --> FAIL 2
+patterns are not accepted for module only scanning
