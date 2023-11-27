@@ -9,6 +9,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"io/fs"
 	"os"
@@ -78,21 +79,28 @@ func TestGovulncheck(t *testing.T) {
 	skipIfShort(t)
 	testenv.NeedsGoBuild(t)
 
+	var o string
+	out := bytes.NewBufferString(o)
 	ctx := context.Background()
 
 	cmd := scan.Command(ctx, "./...")
+	cmd.Stdout = out
+	cmd.Stderr = out
 	err := cmd.Start()
 	if err == nil {
 		err = cmd.Wait()
 	}
+
+	t.Logf("govulncheck finished with std out/err:\n%s", out.String())
 	switch err := err.(type) {
 	case nil:
+		t.Log("govulncheck: no vulnerabilities detected")
 	case interface{ ExitCode() int }:
 		if err.ExitCode() != 0 {
-			t.Error("govulncheck found problems")
+			t.Errorf("govulncheck ./... failed with exit code: %d", err.ExitCode())
 		}
 	default:
-		t.Error(err)
+		t.Errorf("unrecognized govulncheck command error: %v", err)
 	}
 }
 
