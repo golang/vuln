@@ -159,17 +159,32 @@ func (h *TextHandler) byVulnerability(findings []*findingSummary) {
 	if onlyImported > 0 {
 		informational.WriteString("Found " + fmt.Sprint(onlyImported))
 		informational.WriteString(choose(onlyImported == 1, ` vulnerability`, ` vulnerabilities`))
-		informational.WriteString(" in packages that you import, but there are no call stacks leading to the use of ")
-		informational.WriteString(choose(onlyImported == 1, `this vulnerability.`, `these vulnerabilities.`))
+		informational.WriteString(" in packages that you import")
+		if h.scanLevel.WantSymbols() {
+			informational.WriteString(", but there are no call stacks leading to the use of ")
+			informational.WriteString(choose(onlyImported == 1, `this vulnerability.`, `these vulnerabilities.`))
+		} else {
+			informational.WriteString(".")
+		}
 	}
 	if onlyRequired > 0 {
 		isare := choose(onlyRequired == 1, ` is `, ` are `)
 		informational.WriteString(" There" + isare + choose(onlyImported > 0, `also `, ``) + fmt.Sprint(onlyRequired))
 		informational.WriteString(choose(onlyRequired == 1, ` vulnerability `, ` vulnerabilities `))
-		informational.WriteString("in modules that you require that" + isare)
-		informational.WriteString("neither imported nor called.")
+		informational.WriteString("in modules that you require")
+		if h.scanLevel.WantSymbols() {
+			informational.WriteString(" that" + choose(h.scanLevel.WantSymbols(), isare, " may be "))
+			informational.WriteString("neither imported nor called.")
+		} else {
+			informational.WriteString(".")
+		}
+
 	}
-	informational.WriteString(" You may not need to take any action.")
+	if h.scanLevel.WantSymbols() {
+		informational.WriteString(" You may not need to take any action.")
+	} else {
+		informational.WriteString(" Use -scan=symbol with govulncheck for more fine grained vulnerability detection.")
+	}
 	h.wrap("", informational.String(), 70)
 	h.print("\nSee https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.\n\n")
 	index := 0
@@ -283,7 +298,7 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 func (h *TextHandler) summary(findings []*findingSummary) {
 	counters := counters(findings)
 	if counters.VulnerabilitiesCalled == 0 {
-		h.print("No vulnerabilities found.\n")
+		h.print(choose(h.scanLevel.WantSymbols(), "No vulnerabilities found.\n", ""))
 		return
 	}
 	h.print(`Your code is affected by `)
