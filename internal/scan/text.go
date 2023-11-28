@@ -33,9 +33,10 @@ func NewTextHandler(w io.Writer) *TextHandler {
 }
 
 type TextHandler struct {
-	w        io.Writer
-	osvs     []*osv.Entry
-	findings []*findingSummary
+	w         io.Writer
+	osvs      []*osv.Entry
+	findings  []*findingSummary
+	scanLevel govulncheck.ScanLevel
 
 	err error
 
@@ -86,6 +87,9 @@ func (h *TextHandler) Flush() error {
 
 // Config writes version information only if --version was set.
 func (h *TextHandler) Config(config *govulncheck.Config) error {
+	if config.ScanLevel != "" {
+		h.scanLevel = config.ScanLevel
+	}
 	if !h.showVersion {
 		return nil
 	}
