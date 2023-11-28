@@ -1,0 +1,60 @@
+{
+  "config": {
+    "protocol_version": "v0.1.0",
+    "scanner_name": "govulncheck",
+    "scan_level": "package"
+  }
+}
+{
+  "osv": {
+    "id": "GO-0000-0001",
+    "modified": "0001-01-01T00:00:00Z",
+    "published": "0001-01-01T00:00:00Z",
+    "details": "Third-party vulnerability",
+    "affected": [
+      {
+        "package": {
+          "name": "golang.org/vmod",
+          "ecosystem": ""
+        },
+        "ecosystem_specific": {
+          "imports": [
+            {
+              "goos": [
+                "amd"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "database_specific": {
+      "url": "https://pkg.go.dev/vuln/GO-0000-0001"
+    }
+  }
+}
+{
+  "finding": {
+    "osv": "GO-0000-0001",
+    "fixed_version": "v0.1.3",
+    "trace": [
+      {
+        "module": "golang.org/vmod",
+        "version": "v0.0.1"
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "GO-0000-0001",
+    "fixed_version": "v0.1.3",
+    "trace": [
+      {
+        "module": "golang.org/vmod",
+        "version": "v0.0.1",
+        "package": "golang.org/vmod"
+      }
+    ]
+  }
+}
