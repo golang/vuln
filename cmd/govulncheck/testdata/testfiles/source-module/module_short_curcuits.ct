@@ -1,6 +1,6 @@
 #####
 # Test that findings with callstacks or packages are not emitted in module mode
-$ govulncheck -json -scan module -C ${moddir}/multientry .
+$ govulncheck -json -scan module -C ${moddir}/multientry
 {
   "config": {
     "protocol_version": "v1.0.0",

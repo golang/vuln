@@ -23,8 +23,8 @@ import (
 func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, client *client.Client, dir string) (err error) {
 	defer derrors.Wrap(&err, "govulncheck")
 
-	if len(cfg.patterns) == 0 {
-		return nil
+	if cfg.ScanLevel.WantPackages() && len(cfg.patterns) == 0 {
+		return nil // don't throw an error here
 	}
 	if !gomodExists(dir) {
 		return errNoGoMod
