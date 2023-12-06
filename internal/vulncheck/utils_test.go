@@ -5,8 +5,12 @@
 package vulncheck
 
 import (
+	"path"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"golang.org/x/tools/go/packages/packagestest"
+	"golang.org/x/tools/go/ssa/ssautil"
 	"golang.org/x/vuln/internal/osv"
 )
 
@@ -182,5 +186,81 @@ func TestFixedVersion(t *testing.T) {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
 		})
+	}
+}
+
+func TestDbSymbolName(t *testing.T) {
+	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
+		{
+			Name: "golang.org/package",
+			Files: map[string]interface{}{
+				"x/x.go": `
+			package x
+
+			func Foo() {
+				// needed for ssautil.Allfunctions
+				x := a{}
+				x.Do()
+				x.NotDo()
+				b := B[a]{}
+				b.P()
+				b.Q(x)
+				Z[a]()
+			}
+
+			func bar() {}
+
+			type a struct{}
+
+			func (x a) Do()     {}
+			func (x *a) NotDo() {
+			}
+
+			type B[T any] struct{}
+
+			func (b *B[T]) P()   {}
+			func (b B[T]) Q(t T) {}
+
+			func Z[T any]() {}
+			`},
+		},
+	})
+	defer e.Cleanup()
+
+	graph := NewPackageGraph("go1.18")
+	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "package/x")})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]bool{
+		"init":    true,
+		"bar":     true,
+		"B.P":     true,
+		"B.Q":     true,
+		"a.Do":    true,
+		"a.NotDo": true,
+		"Foo":     true,
+		"Z":       true,
+	}
+
+	// test dbFuncName
+	prog, _ := buildSSA(pkgs, pkgs[0].Fset)
+	got := make(map[string]bool)
+	for f := range ssautil.AllFunctions(prog) {
+		got[dbFuncName(f)] = true
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("(-want;got+): %s", diff)
+	}
+
+	// test dbTypesFuncName
+	delete(want, "init") // init does not appear in types.Package
+	got = make(map[string]bool)
+	for _, s := range allSymbols(pkgs[0].Types) {
+		got[s] = true
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("(-want;got+): %s", diff)
 	}
 }

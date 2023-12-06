@@ -10,6 +10,12 @@ import (
 	"golang.org/x/tools/go/ssa"
 )
 
+// entryPoints returns functions of topPackages considered entry
+// points of govulncheck analysis: main, inits, and exported methods
+// and functions.
+//
+// TODO(https://go.dev/issue/57221): currently, entry functions
+// that are generics are not considered an entry point.
 func entryPoints(topPackages []*ssa.Package) []*ssa.Function {
 	var entries []*ssa.Function
 	for _, pkg := range topPackages {

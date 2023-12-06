@@ -28,7 +28,6 @@ import (
 // the ssa program encapsulating the packages and top level
 // ssa packages corresponding to pkgs.
 func buildSSA(pkgs []*packages.Package, fset *token.FileSet) (*ssa.Program, []*ssa.Package) {
-	// TODO(https://go.dev/issue/57221): what about entry functions that are generics?
 	prog := ssa.NewProgram(fset, ssa.InstantiateGenerics)
 
 	imports := make(map[*packages.Package]*ssa.Package)
@@ -112,15 +111,17 @@ func dbTypeFormat(t types.Type) string {
 
 // dbFuncName computes a function name consistent with the namings used in vulnerability
 // databases. Effectively, a qualified name of a function local to its enclosing package.
-// If a receiver is a pointer, this information is not encoded in the resulting name. The
-// name of anonymous functions is simply "". The function names are unique subject to the
-// enclosing package, but not globally.
+// If a receiver is a pointer, this information is not encoded in the resulting name. If
+// a function has type argument/parameter, this information is omitted. The name of
+// anonymous functions is simply "". The function names are unique subject to the enclosing
+// package, but not globally.
 //
 // Examples:
 //
 //	func (a A) foo (...) {...}  -> A.foo
 //	func foo(...) {...}         -> foo
 //	func (b *B) bar (...) {...} -> B.bar
+//	func (c C[T]) do(...) {...} -> C.do
 func dbFuncName(f *ssa.Function) string {
 	selectBound := func(f *ssa.Function) types.Type {
 		// If f is a "bound" function introduced by ssa for a given type, return the type.
@@ -153,9 +154,17 @@ func dbFuncName(f *ssa.Function) string {
 	}
 
 	if qprefix == "" {
-		return f.Name()
+		return funcName(f)
 	}
-	return qprefix + "." + f.Name()
+	return qprefix + "." + funcName(f)
+}
+
+// funcName returns the name of the ssa function f.
+// It is f.Name() without additional type argument
+// information in case of generics.
+func funcName(f *ssa.Function) string {
+	n, _, _ := strings.Cut(f.Name(), "[")
+	return n
 }
 
 // dbTypesFuncName is dbFuncName defined over *types.Func.
