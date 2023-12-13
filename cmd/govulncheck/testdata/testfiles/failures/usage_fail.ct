@@ -4,9 +4,9 @@ $ govulncheck -mode=invalid ./... --> FAIL 2
 invalid value "invalid" for flag -mode: see -help for details
 
 #####
-# Test of trying to run -json with -v flag
+# Test of trying to run -json with -show flag
 $ govulncheck -C ${moddir}/vuln -show=traces -json . --> FAIL 2
-the -show flag is not supported for JSON output
+the -show flag is not supported for json output
 
 #####
 # Test of invalid input to -scan
@@ -42,4 +42,14 @@ the -json flag cannot be used with -format flag
 #####
 # Test of explicit format use together with -json flag
 $ govulncheck -C ${moddir}/vuln -format json -json . --> FAIL 2
+the -json flag cannot be used with -format flag
+
+#####
+# Test of trying to run -format sarif with -show flag
+$ govulncheck -C ${moddir}/vuln -show=traces -format sarif . --> FAIL 2
+the -show flag is not supported for sarif output
+
+#####
+# Test that -json and -format sarif are not allowed together
+$ govulncheck -format sarif -json ./... --> FAIL 2
 the -json flag cannot be used with -format flag

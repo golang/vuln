@@ -90,9 +90,6 @@ func validateConfig(cfg *config, json bool) error {
 		cfg.ScanLevel = govulncheck.ScanLevelSymbol
 	}
 	if json {
-		if len(cfg.show) > 0 {
-			return fmt.Errorf("the -show flag is not supported for JSON output")
-		}
 		if cfg.format != formatUnset {
 			return fmt.Errorf("the -json flag cannot be used with -format flag")
 		}
@@ -101,6 +98,11 @@ func validateConfig(cfg *config, json bool) error {
 		if cfg.format == formatUnset {
 			cfg.format = formatText
 		}
+	}
+
+	// show flag is only supported with text output
+	if cfg.format != formatText && len(cfg.show) > 0 {
+		return fmt.Errorf("the -show flag is not supported for %s output", cfg.format)
 	}
 
 	switch cfg.mode {
@@ -220,11 +222,13 @@ const (
 	formatUnset = ""
 	formatJSON  = "json"
 	formatText  = "text"
+	formatSarif = "sarif"
 )
 
 var supportedFormats = map[string]bool{
-	formatJSON: true,
-	formatText: true,
+	formatJSON:  true,
+	formatText:  true,
+	formatSarif: true,
 }
 
 func (f *formatFlag) Get() interface{} { return *f }
