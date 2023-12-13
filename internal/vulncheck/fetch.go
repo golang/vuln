@@ -6,6 +6,7 @@ package vulncheck
 
 import (
 	"context"
+	"fmt"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/client"
@@ -25,7 +26,7 @@ func FetchVulnerabilities(ctx context.Context, c *client.Client, modules []*pack
 	}
 	resps, err := c.ByModules(ctx, mreqs)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fetching vulnerabilities: %v", err)
 	}
 	var mv []*ModVulns
 	for i, resp := range resps {

@@ -96,11 +96,9 @@ func TestGovulncheck(t *testing.T) {
 	case nil:
 		t.Log("govulncheck: no vulnerabilities detected")
 	case interface{ ExitCode() int }:
-		if err.ExitCode() != 0 {
-			t.Errorf("govulncheck ./... failed with exit code: %d", err.ExitCode())
-		}
+		t.Errorf("govulncheck: unexpected exit code %d and error %v", err.ExitCode(), err)
 	default:
-		t.Errorf("unrecognized govulncheck command error: %v", err)
+		t.Errorf("govulncheck: abruptly failed with error %v", err)
 	}
 }
 
