@@ -126,27 +126,37 @@ $ govulncheck -format sarif -scan module -C ${moddir}/vuln
         {
           "ruleId": "GO-2020-0015",
           "level": "error",
-          "message": {}
+          "message": {
+            "text": "Your code depends on 1 vulnerable module (golang.org/x/text). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
+          }
         },
         {
           "ruleId": "GO-2021-0054",
           "level": "error",
-          "message": {}
+          "message": {
+            "text": "Your code depends on 1 vulnerable module (github.com/tidwall/gjson). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
+          }
         },
         {
           "ruleId": "GO-2021-0113",
           "level": "error",
-          "message": {}
+          "message": {
+            "text": "Your code depends on 1 vulnerable module (golang.org/x/text). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
+          }
         },
         {
           "ruleId": "GO-2021-0265",
           "level": "error",
-          "message": {}
+          "message": {
+            "text": "Your code depends on 1 vulnerable module (github.com/tidwall/gjson). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
+          }
         },
         {
           "ruleId": "GO-2022-0969",
           "level": "error",
-          "message": {}
+          "message": {
+            "text": "Your code depends on 1 vulnerable module (stdlib). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
+          }
         }
       ]
     }

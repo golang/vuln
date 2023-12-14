@@ -160,14 +160,54 @@ func results(h *handler) []Result {
 	var results []Result
 	for _, fs := range h.findings {
 		res := Result{
-			RuleID: fs[0].OSV,
-			Level:  level(fs[0], h.cfg),
-			// TODO: add location, message, code flows, and stacks
+			RuleID:  fs[0].OSV,
+			Level:   level(fs[0], h.cfg),
+			Message: Description{Text: resultMessage(fs, h.cfg)},
+			// TODO: add location, code flows, and stacks
 		}
 		results = append(results, res)
 	}
 	sort.SliceStable(results, func(i, j int) bool { return results[i].RuleID < results[j].RuleID }) // for deterministic output
 	return results
+}
+
+func resultMessage(findings []*govulncheck.Finding, cfg *govulncheck.Config) string {
+	// We can infer the findings' level by just looking at the
+	// top trace frame of any finding.
+	frame := findings[0].Trace[0]
+	uniqueElems := make(map[string]bool)
+	if frame.Function == "" && frame.Package == "" { // module level findings
+		for _, f := range findings {
+			uniqueElems[f.Trace[0].Module] = true
+		}
+	} else { // symbol and package level findings
+		for _, f := range findings {
+			uniqueElems[f.Trace[0].Package] = true
+		}
+	}
+	var elems []string
+	for e := range uniqueElems {
+		elems = append(elems, e)
+	}
+	sort.Strings(elems)
+
+	l := len(elems)
+	elemList := list(elems)
+	main, addition := "", ""
+	const runCallAnalysis = "Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
+	switch {
+	case frame.Function != "":
+		main = fmt.Sprintf("calls vulnerable functions in %d package%s (%s).", l, choose("", "s", l == 1), elemList)
+	case frame.Package != "":
+		main = fmt.Sprintf("imports %d vulnerable package%s (%s)", l, choose("", "s", l == 1), elemList)
+		addition = choose(", but doesn’t appear to call any of the vulnerable symbols.", ". "+runCallAnalysis, cfg.ScanLevel.WantSymbols())
+	default:
+		main = fmt.Sprintf("depends on %d vulnerable module%s (%s)", l, choose("", "s", l == 1), elemList)
+		informational := ", but doesn't appear to " + choose("call", "import", cfg.ScanLevel.WantSymbols()) + " any of the vulnerable symbols."
+		addition = choose(informational, ". "+runCallAnalysis, cfg.ScanLevel.WantPackages())
+	}
+
+	return fmt.Sprintf("Your code %s%s", main, addition)
 }
 
 const (

@@ -303,3 +303,41 @@ func TestMoreSpecific(t *testing.T) {
 		})
 	}
 }
+
+func TestResultMessage(t *testing.T) {
+	config := func(l govulncheck.ScanLevel) *govulncheck.Config {
+		return &govulncheck.Config{ScanLevel: l}
+	}
+
+	finding := func(m, p, f string) *govulncheck.Finding {
+		return &govulncheck.Finding{
+			Trace: []*govulncheck.Frame{
+				{Module: m, Package: p, Function: f},
+			},
+		}
+	}
+
+	for _, tc := range []struct {
+		findings []*govulncheck.Finding
+		level    govulncheck.ScanLevel
+		want     string
+	}{
+		{[]*govulncheck.Finding{finding("m", "p", "f1"), finding("m", "p", "f2")}, govulncheck.ScanLevelSymbol,
+			"Your code calls vulnerable functions in 1 package (p)."},
+		{[]*govulncheck.Finding{finding("m", "p", "")}, govulncheck.ScanLevelPackage,
+			"Your code imports 1 vulnerable package (p). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."},
+		{[]*govulncheck.Finding{finding("m", "p1", ""), finding("m", "p2", ""), finding("m", "p3", "")}, govulncheck.ScanLevelSymbol,
+			"Your code imports 3 vulnerable packages (p1, p2, and p3), but doesn’t appear to call any of the vulnerable symbols."},
+		{[]*govulncheck.Finding{finding("m1", "", ""), finding("m2", "", "")}, govulncheck.ScanLevelModule,
+			"Your code depends on 2 vulnerable modules (m1 and m2). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."},
+		{[]*govulncheck.Finding{finding("m1", "", ""), finding("m2", "", "")}, govulncheck.ScanLevelPackage,
+			"Your code depends on 2 vulnerable modules (m1 and m2), but doesn't appear to import any of the vulnerable symbols."},
+		{[]*govulncheck.Finding{finding("m1", "", ""), finding("m2", "", "")}, govulncheck.ScanLevelSymbol,
+			"Your code depends on 2 vulnerable modules (m1 and m2), but doesn't appear to call any of the vulnerable symbols."},
+	} {
+		got := resultMessage(tc.findings, config(tc.level))
+		if tc.want != got {
+			t.Errorf("want %s; got %s", tc.want, got)
+		}
+	}
+}

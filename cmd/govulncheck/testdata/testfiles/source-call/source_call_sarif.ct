@@ -126,27 +126,37 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
         {
           "ruleId": "GO-2020-0015",
           "level": "note",
-          "message": {}
+          "message": {
+            "text": "Your code depends on 1 vulnerable module (golang.org/x/text), but doesn't appear to call any of the vulnerable symbols."
+          }
         },
         {
           "ruleId": "GO-2021-0054",
           "level": "error",
-          "message": {}
+          "message": {
+            "text": "Your code calls vulnerable functions in 1 package (github.com/tidwall/gjson)."
+          }
         },
         {
           "ruleId": "GO-2021-0113",
           "level": "error",
-          "message": {}
+          "message": {
+            "text": "Your code calls vulnerable functions in 1 package (golang.org/x/text/language)."
+          }
         },
         {
           "ruleId": "GO-2021-0265",
           "level": "error",
-          "message": {}
+          "message": {
+            "text": "Your code calls vulnerable functions in 1 package (github.com/tidwall/gjson)."
+          }
         },
         {
           "ruleId": "GO-2022-0969",
           "level": "note",
-          "message": {}
+          "message": {
+            "text": "Your code depends on 1 vulnerable module (stdlib), but doesn't appear to call any of the vulnerable symbols."
+          }
         }
       ]
     }
