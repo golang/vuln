@@ -76,13 +76,6 @@ func (h *TextHandler) Show(show []string) {
 	}
 }
 
-func Flush(h govulncheck.Handler) error {
-	if th, ok := h.(interface{ Flush() error }); ok {
-		return th.Flush()
-	}
-	return nil
-}
-
 func (h *TextHandler) Flush() error {
 	if len(h.findings) == 0 {
 		h.print(noVulnsMessage + "\n")

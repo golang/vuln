@@ -17,6 +17,7 @@ import (
 
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/sarif"
 )
 
 // RunGovulncheck performs main govulncheck functionality and exits the
@@ -38,6 +39,8 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 	switch cfg.format {
 	case formatJSON:
 		handler = govulncheck.NewJSONHandler(stdout)
+	case formatSarif:
+		handler = sarif.NewHandler(stdout)
 	default:
 		th := NewTextHandler(stdout)
 		th.Show(cfg.show)
@@ -129,4 +132,11 @@ func scannerVersion(cfg *config, bi *debug.BuildInfo) {
 		}
 	}
 	cfg.ScannerVersion = buf.String()
+}
+
+func Flush(h govulncheck.Handler) error {
+	if th, ok := h.(interface{ Flush() error }); ok {
+		return th.Flush()
+	}
+	return nil
 }
