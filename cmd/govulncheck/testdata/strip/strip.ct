@@ -21,11 +21,7 @@ Vulnerability #1: GO-2021-0113
       #4: language.ParseAcceptLanguage
 
 Vulnerability #2: GO-2020-0015
-    An attacker could provide a single byte to a UTF16 decoder instantiated with
-    UseBOM or ExpectBOM to trigger an infinite loop if the String function on
-    the Decoder is called, or the Decoder is passed to transform.String. If used
-    to parse user supplied input, this may be used as a denial of service
-    vector.
+    Infinite loop when decoding some inputs in golang.org/x/text
   More info: https://pkg.go.dev/vuln/GO-2020-0015
   Module: golang.org/x/text
     Found in: golang.org/x/text@v0.3.0

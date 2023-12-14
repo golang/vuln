@@ -5,7 +5,10 @@
 package sarif
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
+	"sort"
 
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
@@ -99,5 +102,55 @@ func (h *handler) Finding(f *govulncheck.Finding) error {
 // Flush is used to print out to w the sarif json output.
 // This is needed as sarif is not streamed.
 func (h *handler) Flush() error {
+	sLog := toSarif(h)
+	s, err := json.MarshalIndent(sLog, "", "  ")
+	if err != nil {
+		return err
+	}
+	h.w.Write(s)
 	return nil
+}
+
+func toSarif(h *handler) Log {
+	cfg := h.cfg
+	r := Run{
+		Tool: Tool{
+			Driver: Driver{
+				Name:           cfg.ScannerName,
+				Version:        cfg.ScannerVersion,
+				InformationURI: "https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck",
+				Properties:     *cfg,
+				Rules:          rules(h),
+			},
+		},
+	}
+
+	return Log{
+		Version: "2.1.0",
+		Schema:  "https://json.schemastore.org/sarif-2.1.0.json",
+		Runs:    []Run{r},
+	}
+}
+
+func rules(h *handler) []Rule {
+	var rs []Rule
+	for id := range h.findings {
+		osv := h.osvs[id]
+		// s is either summary if it exists, or details
+		// otherwise. Govulncheck text does the same.
+		s := osv.Summary
+		if s == "" {
+			s = osv.Details
+		}
+		rs = append(rs, Rule{
+			ID:               osv.ID,
+			ShortDescription: Description{Text: fmt.Sprintf("[%s] %s", osv.ID, s)},
+			FullDescription:  Description{Text: s},
+			HelpURI:          fmt.Sprintf("https://pkg.go.dev/vuln/%s", osv.ID),
+			Help:             Description{Text: osv.Details},
+			Properties:       RuleTags{Tags: osv.Aliases},
+		})
+	}
+	sort.SliceStable(rs, func(i, j int) bool { return rs[i].ID < rs[j].ID })
+	return rs
 }

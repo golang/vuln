@@ -1,0 +1,126 @@
+#####
+# Test sarif json output
+$ govulncheck -C ${moddir}/vuln -format sarif ./...
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "govulncheck",
+          "semanticVersion": "v0.0.0",
+          "informationUri": "https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck",
+          "properties": {
+            "protocol_version": "v1.0.0",
+            "scanner_name": "govulncheck",
+            "scanner_version": "v0.0.0-00000000000-20000101010101",
+            "db": "testdata/vulndb-v1",
+            "db_last_modified": "2023-04-03T15:57:51Z",
+            "go_version": "go1.18",
+            "scan_level": "symbol"
+          },
+          "rules": [
+            {
+              "id": "GO-2020-0015",
+              "shortDescription": {
+                "text": "[GO-2020-0015] Infinite loop when decoding some inputs in golang.org/x/text"
+              },
+              "fullDescription": {
+                "text": "Infinite loop when decoding some inputs in golang.org/x/text"
+              },
+              "help": {
+                "text": "An attacker could provide a single byte to a UTF16 decoder instantiated with UseBOM or ExpectBOM to trigger an infinite loop if the String function on the Decoder is called, or the Decoder is passed to transform.String. If used to parse user supplied input, this may be used as a denial of service vector."
+              },
+              "helpUri": "https://pkg.go.dev/vuln/GO-2020-0015",
+              "properties": {
+                "tags": [
+                  "CVE-2020-14040",
+                  "GHSA-5rcv-m4m3-hfh7"
+                ]
+              }
+            },
+            {
+              "id": "GO-2021-0054",
+              "shortDescription": {
+                "text": "[GO-2021-0054] Due to improper bounds checking, maliciously crafted JSON objects can cause an out-of-bounds panic. If parsing user input, this may be used as a denial of service vector."
+              },
+              "fullDescription": {
+                "text": "Due to improper bounds checking, maliciously crafted JSON objects can cause an out-of-bounds panic. If parsing user input, this may be used as a denial of service vector."
+              },
+              "help": {
+                "text": "Due to improper bounds checking, maliciously crafted JSON objects can cause an out-of-bounds panic. If parsing user input, this may be used as a denial of service vector."
+              },
+              "helpUri": "https://pkg.go.dev/vuln/GO-2021-0054",
+              "properties": {
+                "tags": [
+                  "CVE-2020-36067",
+                  "GHSA-p64j-r5f4-pwwx"
+                ]
+              }
+            },
+            {
+              "id": "GO-2021-0113",
+              "shortDescription": {
+                "text": "[GO-2021-0113] Due to improper index calculation, an incorrectly formatted language tag can cause Parse to panic via an out of bounds read. If Parse is used to process untrusted user inputs, this may be used as a vector for a denial of service attack."
+              },
+              "fullDescription": {
+                "text": "Due to improper index calculation, an incorrectly formatted language tag can cause Parse to panic via an out of bounds read. If Parse is used to process untrusted user inputs, this may be used as a vector for a denial of service attack."
+              },
+              "help": {
+                "text": "Due to improper index calculation, an incorrectly formatted language tag can cause Parse to panic via an out of bounds read. If Parse is used to process untrusted user inputs, this may be used as a vector for a denial of service attack."
+              },
+              "helpUri": "https://pkg.go.dev/vuln/GO-2021-0113",
+              "properties": {
+                "tags": [
+                  "CVE-2021-38561",
+                  "GHSA-ppp9-7jff-5vj2"
+                ]
+              }
+            },
+            {
+              "id": "GO-2021-0265",
+              "shortDescription": {
+                "text": "[GO-2021-0265] A maliciously crafted path can cause Get and other query functions to consume excessive amounts of CPU and time."
+              },
+              "fullDescription": {
+                "text": "A maliciously crafted path can cause Get and other query functions to consume excessive amounts of CPU and time."
+              },
+              "help": {
+                "text": "A maliciously crafted path can cause Get and other query functions to consume excessive amounts of CPU and time."
+              },
+              "helpUri": "https://pkg.go.dev/vuln/GO-2021-0265",
+              "properties": {
+                "tags": [
+                  "CVE-2021-42248",
+                  "CVE-2021-42836",
+                  "GHSA-c9gm-7rfj-8w5h",
+                  "GHSA-ppj4-34rq-v8j9"
+                ]
+              }
+            },
+            {
+              "id": "GO-2022-0969",
+              "shortDescription": {
+                "text": "[GO-2022-0969] HTTP/2 server connections can hang forever waiting for a clean shutdown that was preempted by a fatal error. This condition can be exploited by a malicious client to cause a denial of service."
+              },
+              "fullDescription": {
+                "text": "HTTP/2 server connections can hang forever waiting for a clean shutdown that was preempted by a fatal error. This condition can be exploited by a malicious client to cause a denial of service."
+              },
+              "help": {
+                "text": "HTTP/2 server connections can hang forever waiting for a clean shutdown that was preempted by a fatal error. This condition can be exploited by a malicious client to cause a denial of service."
+              },
+              "helpUri": "https://pkg.go.dev/vuln/GO-2022-0969",
+              "properties": {
+                "tags": [
+                  "CVE-2022-27664",
+                  "GHSA-69cg-p879-7622"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
