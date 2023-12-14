@@ -123,6 +123,7 @@ func toSarif(h *handler) Log {
 				Rules:          rules(h),
 			},
 		},
+		Results: results(h),
 	}
 
 	return Log{
@@ -153,4 +154,45 @@ func rules(h *handler) []Rule {
 	}
 	sort.SliceStable(rs, func(i, j int) bool { return rs[i].ID < rs[j].ID })
 	return rs
+}
+
+func results(h *handler) []Result {
+	var results []Result
+	for _, fs := range h.findings {
+		res := Result{
+			RuleID: fs[0].OSV,
+			Level:  level(fs[0], h.cfg),
+			// TODO: add location, message, code flows, and stacks
+		}
+		results = append(results, res)
+	}
+	sort.SliceStable(results, func(i, j int) bool { return results[i].RuleID < results[j].RuleID }) // for deterministic output
+	return results
+}
+
+const (
+	errorLevel         = "error"
+	warningLevel       = "warning"
+	informationalLevel = "note"
+)
+
+func level(f *govulncheck.Finding, cfg *govulncheck.Config) string {
+	fr := f.Trace[0]
+	switch {
+	case cfg.ScanLevel.WantSymbols():
+		if fr.Function != "" {
+			return errorLevel
+		}
+		if fr.Package != "" {
+			return warningLevel
+		}
+		return informationalLevel
+	case cfg.ScanLevel.WantPackages():
+		if fr.Package != "" {
+			return errorLevel
+		}
+		return warningLevel
+	default:
+		return errorLevel
+	}
 }

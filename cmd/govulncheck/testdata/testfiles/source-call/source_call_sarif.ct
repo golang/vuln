@@ -121,7 +121,34 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
             }
           ]
         }
-      }
+      },
+      "results": [
+        {
+          "ruleId": "GO-2020-0015",
+          "level": "note",
+          "message": {}
+        },
+        {
+          "ruleId": "GO-2021-0054",
+          "level": "error",
+          "message": {}
+        },
+        {
+          "ruleId": "GO-2021-0113",
+          "level": "error",
+          "message": {}
+        },
+        {
+          "ruleId": "GO-2021-0265",
+          "level": "error",
+          "message": {}
+        },
+        {
+          "ruleId": "GO-2022-0969",
+          "level": "note",
+          "message": {}
+        }
+      ]
     }
   ]
 }

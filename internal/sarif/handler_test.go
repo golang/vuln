@@ -12,7 +12,7 @@ import (
 	"golang.org/x/vuln/internal/govulncheck"
 )
 
-func level(f *govulncheck.Finding) string {
+func scanLevel(f *govulncheck.Finding) string {
 	fr := f.Trace[0]
 	if fr.Function != "" {
 		return "symbol"
@@ -108,7 +108,7 @@ func TestHandlerSymbol(t *testing.T) {
 	}
 	got := make(map[string]string)
 	for osv, fs := range h.findings {
-		got[osv] = level(fs[0])
+		got[osv] = scanLevel(fs[0])
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("(-want;got+): %s", diff)
@@ -182,7 +182,7 @@ func TestHandlerPackage(t *testing.T) {
 	}
 	got := make(map[string]string)
 	for osv, fs := range h.findings {
-		got[osv] = level(fs[0])
+		got[osv] = scanLevel(fs[0])
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("(-want;got+): %s", diff)
@@ -234,7 +234,7 @@ func TestHandlerModule(t *testing.T) {
 	}
 	got := make(map[string]string)
 	for osv, fs := range h.findings {
-		got[osv] = level(fs[0])
+		got[osv] = scanLevel(fs[0])
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("(-want;got+): %s", diff)
