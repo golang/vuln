@@ -135,21 +135,148 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
           "level": "error",
           "message": {
             "text": "Your code calls vulnerable functions in 1 package (github.com/tidwall/gjson)."
-          }
+          },
+          "stacks": [
+            {
+              "message": {
+                "text": "A call stack for vulnerable function github.com/tidwall/gjson.Result.ForEach"
+              },
+              "frames": [
+                {
+                  "module": "golang.org/vuln",
+                  "location": {
+                    "physicalLocation": {
+                      "artifactLocation": {},
+                      "region": {}
+                    },
+                    "message": {}
+                  }
+                },
+                {
+                  "module": "github.com/tidwall/gjson",
+                  "location": {
+                    "physicalLocation": {
+                      "artifactLocation": {},
+                      "region": {}
+                    },
+                    "message": {}
+                  }
+                },
+                {
+                  "module": "github.com/tidwall/gjson",
+                  "location": {
+                    "physicalLocation": {
+                      "artifactLocation": {},
+                      "region": {}
+                    },
+                    "message": {}
+                  }
+                },
+                {
+                  "module": "github.com/tidwall/gjson",
+                  "location": {
+                    "physicalLocation": {
+                      "artifactLocation": {},
+                      "region": {}
+                    },
+                    "message": {}
+                  }
+                },
+                {
+                  "module": "github.com/tidwall/gjson",
+                  "location": {
+                    "physicalLocation": {
+                      "artifactLocation": {},
+                      "region": {}
+                    },
+                    "message": {}
+                  }
+                },
+                {
+                  "module": "github.com/tidwall/gjson",
+                  "location": {
+                    "physicalLocation": {
+                      "artifactLocation": {},
+                      "region": {}
+                    },
+                    "message": {}
+                  }
+                }
+              ]
+            }
+          ]
         },
         {
           "ruleId": "GO-2021-0113",
           "level": "error",
           "message": {
             "text": "Your code calls vulnerable functions in 1 package (golang.org/x/text/language)."
-          }
+          },
+          "stacks": [
+            {
+              "message": {
+                "text": "A call stack for vulnerable function golang.org/x/text/language.Parse"
+              },
+              "frames": [
+                {
+                  "module": "golang.org/vuln",
+                  "location": {
+                    "physicalLocation": {
+                      "artifactLocation": {},
+                      "region": {}
+                    },
+                    "message": {}
+                  }
+                },
+                {
+                  "module": "golang.org/x/text",
+                  "location": {
+                    "physicalLocation": {
+                      "artifactLocation": {},
+                      "region": {}
+                    },
+                    "message": {}
+                  }
+                }
+              ]
+            }
+          ]
         },
         {
           "ruleId": "GO-2021-0265",
           "level": "error",
           "message": {
             "text": "Your code calls vulnerable functions in 1 package (github.com/tidwall/gjson)."
-          }
+          },
+          "stacks": [
+            {
+              "message": {
+                "text": "A call stack for vulnerable function github.com/tidwall/gjson.Result.Get"
+              },
+              "frames": [
+                {
+                  "module": "golang.org/vuln",
+                  "location": {
+                    "physicalLocation": {
+                      "artifactLocation": {},
+                      "region": {}
+                    },
+                    "message": {}
+                  }
+                },
+                {
+                  "module": "github.com/tidwall/gjson",
+                  "location": {
+                    "physicalLocation": {
+                      "artifactLocation": {},
+                      "region": {}
+                    },
+                    "message": {}
+                  }
+                }
+              ]
+            }
+          ]
         },
         {
           "ruleId": "GO-2022-0969",

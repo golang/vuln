@@ -163,7 +163,8 @@ func results(h *handler) []Result {
 			RuleID:  fs[0].OSV,
 			Level:   level(fs[0], h.cfg),
 			Message: Description{Text: resultMessage(fs, h.cfg)},
-			// TODO: add location, code flows, and stacks
+			// TODO: add location and code flows
+			Stacks: stacks(fs),
 		}
 		results = append(results, res)
 	}
@@ -234,5 +235,46 @@ func level(f *govulncheck.Finding, cfg *govulncheck.Config) string {
 		return warningLevel
 	default:
 		return errorLevel
+	}
+}
+
+func stacks(fs []*govulncheck.Finding) []Stack {
+	if fs[0].Trace[0].Function == "" { // not call level findings
+		return nil
+	}
+
+	var stacks []Stack
+	for _, f := range fs {
+		stacks = append(stacks, stack(f))
+	}
+	// Sort stacks for deterministic output. We sort by message
+	// which is effectively sorting by full symbol name. The
+	// performance should not be an issue here.
+	sort.SliceStable(stacks, func(i, j int) bool { return stacks[i].Message.Text < stacks[j].Message.Text })
+	return stacks
+}
+
+// stack transforms call stack in f to a sarif stack.
+func stack(f *govulncheck.Finding) Stack {
+	trace := f.Trace
+
+	var frames []Frame
+	for i := len(trace) - 1; i >= 0; i-- { // vulnerable symbol is at the top frame
+		frame := trace[i]
+		frames = append(frames, Frame{
+			Module: frame.Module,
+			// TODO: add location
+		})
+	}
+
+	vuln := trace[0]
+	vulnSym := vuln.Function
+	if vuln.Receiver != "" {
+		vulnSym = vuln.Receiver + "." + vulnSym
+	}
+	vulnSym = vuln.Package + "." + vulnSym
+	return Stack{
+		Frames:  frames,
+		Message: Description{Text: fmt.Sprintf("A call stack for vulnerable function %s", vulnSym)},
 	}
 }
