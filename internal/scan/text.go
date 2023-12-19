@@ -75,7 +75,7 @@ func (h *TextHandler) Flush() error {
 	fixupFindings(h.osvs, h.findings)
 	h.byVulnerability(h.findings)
 	h.summary(h.findings)
-	h.print("\nShare feedback at https://go.dev/s/govulncheck-feedback.\n")
+	h.print("Share feedback at https://go.dev/s/govulncheck-feedback.\n")
 	if h.err != nil {
 		return h.err
 	}
@@ -298,7 +298,7 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 func (h *TextHandler) summary(findings []*findingSummary) {
 	counters := counters(findings)
 	if counters.VulnerabilitiesCalled == 0 {
-		h.print(choose(h.scanLevel.WantSymbols(), "No vulnerabilities found.\n", ""))
+		h.print(choose(h.scanLevel.WantSymbols(), "No vulnerabilities found.\n\n", ""))
 		return
 	}
 	h.print(`Your code is affected by `)
@@ -316,7 +316,7 @@ func (h *TextHandler) summary(findings []*findingSummary) {
 		}
 		h.print(` the Go standard library`)
 	}
-	h.print(".\n")
+	h.print(".\n\n")
 }
 
 func (h *TextHandler) style(style style, values ...any) {

@@ -29,5 +29,4 @@ Vulnerability #2: GO-2021-0113
     Found in: golang.org/x/text@v0.3.5
     Fixed in: golang.org/x/text@v0.3.7
 
-
 Share feedback at https://go.dev/s/govulncheck-feedback.
