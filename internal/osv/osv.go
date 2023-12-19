@@ -97,7 +97,7 @@ type Range struct {
 	Events []RangeEvent `json:"events"`
 }
 
-// Reference type is a reference (link) type.
+// ReferenceType is a reference (link) type.
 type ReferenceType string
 
 const (
