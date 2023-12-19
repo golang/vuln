@@ -116,6 +116,31 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
           "message": {
             "text": "Your code calls vulnerable functions in 1 package (github.com/tidwall/gjson)."
           },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "module": "github.com/tidwall/gjson",
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {},
+                          "region": {}
+                        },
+                        "message": {
+                          "text": "github.com/tidwall/gjson.Result.ForEach"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "message": {
+                "text": "A summarized code flow for vulnerable function github.com/tidwall/gjson.Result.ForEach"
+              }
+            }
+          ],
           "stacks": [
             {
               "message": {
@@ -129,7 +154,9 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
                       "artifactLocation": {},
                       "region": {}
                     },
-                    "message": {}
+                    "message": {
+                      "text": "github.com/tidwall/gjson.Result.ForEach"
+                    }
                   }
                 }
               ]
@@ -142,6 +169,31 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
           "message": {
             "text": "Your code calls vulnerable functions in 1 package (golang.org/x/text/language)."
           },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "module": "golang.org/x/text",
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {},
+                          "region": {}
+                        },
+                        "message": {
+                          "text": "golang.org/x/text/language.Parse"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "message": {
+                "text": "A summarized code flow for vulnerable function golang.org/x/text/language.Parse"
+              }
+            }
+          ],
           "stacks": [
             {
               "message": {
@@ -155,7 +207,9 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
                       "artifactLocation": {},
                       "region": {}
                     },
-                    "message": {}
+                    "message": {
+                      "text": "golang.org/x/text/language.Parse"
+                    }
                   }
                 }
               ]
@@ -168,6 +222,54 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
           "message": {
             "text": "Your code calls vulnerable functions in 1 package (github.com/tidwall/gjson)."
           },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "module": "github.com/tidwall/gjson",
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {},
+                          "region": {}
+                        },
+                        "message": {
+                          "text": "github.com/tidwall/gjson.Get"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "message": {
+                "text": "A summarized code flow for vulnerable function github.com/tidwall/gjson.Get"
+              }
+            },
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "module": "github.com/tidwall/gjson",
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {},
+                          "region": {}
+                        },
+                        "message": {
+                          "text": "github.com/tidwall/gjson.Result.Get"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "message": {
+                "text": "A summarized code flow for vulnerable function github.com/tidwall/gjson.Result.Get"
+              }
+            }
+          ],
           "stacks": [
             {
               "message": {
@@ -181,7 +283,9 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
                       "artifactLocation": {},
                       "region": {}
                     },
-                    "message": {}
+                    "message": {
+                      "text": "github.com/tidwall/gjson.Get"
+                    }
                   }
                 }
               ]
@@ -198,7 +302,9 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
                       "artifactLocation": {},
                       "region": {}
                     },
-                    "message": {}
+                    "message": {
+                      "text": "github.com/tidwall/gjson.Result.Get"
+                    }
                   }
                 }
               ]

@@ -6,6 +6,8 @@ package sarif
 
 import (
 	"strings"
+
+	"golang.org/x/vuln/internal/govulncheck"
 )
 
 func choose(s1, s2 string, cond bool) string {
@@ -26,4 +28,19 @@ func list(elems []string) string {
 
 	cList := strings.Join(elems[:l-1], ", ")
 	return cList + choose("", ",", l == 2) + " and " + elems[l-1]
+}
+
+// symbol is simplified adaptation of internal/scan/symbol.
+func symbol(fr *govulncheck.Frame) string {
+	if fr.Function == "" {
+		return ""
+	}
+	sym := strings.Split(fr.Function, "$")[0]
+	if fr.Receiver != "" {
+		sym = fr.Receiver + "." + sym
+	}
+	if fr.Package != "" {
+		sym = fr.Package + "." + sym
+	}
+	return sym
 }

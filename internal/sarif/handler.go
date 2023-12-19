@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
+	"golang.org/x/vuln/internal/traces"
 )
 
 // handler for sarif output.
@@ -163,8 +164,9 @@ func results(h *handler) []Result {
 			RuleID:  fs[0].OSV,
 			Level:   level(fs[0], h.cfg),
 			Message: Description{Text: resultMessage(fs, h.cfg)},
-			// TODO: add location and code flows
-			Stacks: stacks(fs),
+			// TODO: add location
+			Stacks:    stacks(fs),
+			CodeFlows: codeFlows(fs),
 		}
 		results = append(results, res)
 	}
@@ -263,7 +265,10 @@ func stack(f *govulncheck.Finding) Stack {
 		frame := trace[i]
 		frames = append(frames, Frame{
 			Module: frame.Module,
-			// TODO: add location
+			Location: Location{
+				Message: Description{Text: symbol(frame)}, // show the (full) symbol name
+				// TODO: add physical location
+			},
 		})
 	}
 
@@ -275,6 +280,59 @@ func stack(f *govulncheck.Finding) Stack {
 	vulnSym = vuln.Package + "." + vulnSym
 	return Stack{
 		Frames:  frames,
-		Message: Description{Text: fmt.Sprintf("A call stack for vulnerable function %s", vulnSym)},
+		Message: Description{Text: fmt.Sprintf("A call stack for vulnerable function %s", symbol(trace[0]))},
 	}
+}
+
+func codeFlows(fs []*govulncheck.Finding) []CodeFlow {
+	if fs[0].Trace[0].Function == "" { // not call level findings
+		return nil
+	}
+
+	// group call stacks per symbol. There should
+	// be one call stack currently per symbol, but
+	// this might change in the future.
+	m := make(map[govulncheck.Frame][]*govulncheck.Finding)
+	for _, f := range fs {
+		// fr.Position is currently the position
+		// of the definition of the vuln symbol
+		fr := *f.Trace[0]
+		m[fr] = append(m[fr], f)
+	}
+
+	var codeFlows []CodeFlow
+	for fr, fs := range m {
+		tfs := threadFlows(fs)
+		codeFlows = append(codeFlows, CodeFlow{
+			ThreadFlows: tfs,
+			// TODO: should we instead show the message from govulncheck text output?
+			Message: Description{Text: fmt.Sprintf("A summarized code flow for vulnerable function %s", symbol(&fr))},
+		})
+	}
+	// Sort flows for deterministic output. We sort by message
+	// which is effectively sorting by full symbol name. The
+	// performance should not be an issue here.
+	sort.SliceStable(codeFlows, func(i, j int) bool { return codeFlows[i].Message.Text < codeFlows[j].Message.Text })
+	return codeFlows
+}
+
+func threadFlows(fs []*govulncheck.Finding) []ThreadFlow {
+	var tfs []ThreadFlow
+	for _, f := range fs {
+		trace := traces.Compact(f)
+		var tf []ThreadFlowLocation
+		for i := len(trace) - 1; i >= 0; i-- { // vulnerable symbol is at the top frame
+			// TODO: should we, similar to govulncheck text output, only
+			// mention three elements of the compact trace?
+			frame := trace[i]
+			tf = append(tf, ThreadFlowLocation{
+				Module: frame.Module,
+				Location: Location{
+					Message: Description{Text: symbol(frame)}, // show the (full) symbol name
+					// TODO: add physical location
+				}})
+		}
+		tfs = append(tfs, ThreadFlow{Locations: tf})
+	}
+	return tfs
 }

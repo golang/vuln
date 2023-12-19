@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
+	"golang.org/x/vuln/internal/traces"
 )
 
 type findingSummary struct {
@@ -193,44 +194,36 @@ func symbol(frame *govulncheck.Frame, short bool) string {
 // If the vulnerable symbol is in the users code, it will show the entry point
 // and the vulnerable symbol.
 func compactTrace(finding *govulncheck.Finding) string {
-	if len(finding.Trace) < 1 {
+	compact := traces.Compact(finding)
+	if len(compact) == 0 {
 		return ""
 	}
-	iTop := len(finding.Trace) - 1
-	topModule := finding.Trace[iTop].Module
-	// search for the exit point of the top module
-	for i, frame := range finding.Trace {
-		if frame.Module == topModule {
-			iTop = i
-			break
-		}
-	}
 
-	if iTop == 0 {
-		// all in one module, reset to the end
-		iTop = len(finding.Trace) - 1
-	}
-
+	l := len(compact)
+	iTop := l - 1
 	buf := &strings.Builder{}
-	topPos := posToString(finding.Trace[iTop].Position)
+	topPos := posToString(compact[iTop].Position)
 	if topPos != "" {
 		buf.WriteString(topPos)
 		buf.WriteString(": ")
 	}
 
-	if iTop > 0 {
-		addSymbolName(buf, finding.Trace[iTop], true)
+	if l > 1 {
+		// print the root of the compact trace
+		addSymbolName(buf, compact[iTop], true)
 		buf.WriteString(" calls ")
 	}
-	if iTop > 1 {
-		addSymbolName(buf, finding.Trace[iTop-1], true)
+	if l > 2 {
+		// print next element of the trace, if any
+		addSymbolName(buf, compact[iTop-1], true)
 		buf.WriteString(", which")
-		if iTop > 2 {
+		if l > 3 {
+			// don't print the third element, just acknowledge it
 			buf.WriteString(" eventually")
 		}
 		buf.WriteString(" calls ")
 	}
-	addSymbolName(buf, finding.Trace[0], true)
+	addSymbolName(buf, compact[0], true) // print the vulnerable symbol
 	return buf.String()
 }
 

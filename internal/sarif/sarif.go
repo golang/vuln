@@ -110,6 +110,7 @@ type Result struct {
 type CodeFlow struct {
 	// ThreadFlows is effectively a set of related information flows.
 	ThreadFlows []ThreadFlow `json:"threadFlows,omitempty"`
+	Message     Description  `json:"message,omitempty"`
 }
 
 // ThreadFlow encodes an information flow as a sequence of locations.
