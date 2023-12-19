@@ -23,6 +23,7 @@ func main() {
 	}
 	out := os.Args[1]
 	want := map[string]bool{
+		"golang.org/x/crypto/ssh":                   true,
 		"golang.org/x/net/http2":                    true,
 		"golang.org/x/net/http2/hpack":              true,
 		"google.golang.org/grpc":                    true,
