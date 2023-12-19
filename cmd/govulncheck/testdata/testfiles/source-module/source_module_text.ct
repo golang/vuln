@@ -4,8 +4,6 @@
 $ govulncheck -scan module -C ${moddir}/multientry
 Scanning your code across 2 dependent modules for known vulnerabilities...
 
-=== Informational ===
-
 There are 2 vulnerabilities in modules that you require. Use
 -scan=symbol with govulncheck for more fine grained vulnerability
 detection.

@@ -154,7 +154,9 @@ func (h *TextHandler) byVulnerability(findings []*findingSummary) {
 	if onlyImported+onlyRequired == 0 {
 		return
 	}
-	h.style(sectionStyle, "=== Informational ===\n\n")
+	if h.scanLevel.WantSymbols() {
+		h.style(sectionStyle, "=== Informational ===\n\n")
+	}
 	var informational strings.Builder
 	if onlyImported > 0 {
 		informational.WriteString("Found " + fmt.Sprint(onlyImported))

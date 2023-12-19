@@ -1,5 +1,3 @@
-=== Informational ===
-
 There is 1 vulnerability in modules that you require. Use -scan=symbol
 with govulncheck for more fine grained vulnerability detection.
 See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.

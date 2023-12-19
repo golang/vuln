@@ -3,8 +3,6 @@
 $ govulncheck -scan package -C ${moddir}/multientry .
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-=== Informational ===
-
 Found 1 vulnerability in packages that you import. There is also 1
 vulnerability in modules that you require. Use -scan=symbol with
 govulncheck for more fine grained vulnerability detection.
