@@ -109,7 +109,18 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
           "level": "note",
           "message": {
             "text": "Your code depends on 1 vulnerable module (golang.org/x/text), but doesn't appear to call any of the vulnerable symbols."
-          }
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ]
         },
         {
           "ruleId": "GO-2021-0054",
@@ -117,6 +128,17 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
           "message": {
             "text": "Your code calls vulnerable functions in 1 package (github.com/tidwall/gjson)."
           },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ],
           "codeFlows": [
             {
               "threadFlows": [
@@ -127,7 +149,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
-                          "region": {}
+                          "region": {
+                            "startLine": 14,
+                            "startColumn": 20
+                          }
                         },
                         "message": {
                           "text": "golang.org/vuln.main"
@@ -139,7 +164,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
-                          "region": {}
+                          "region": {
+                            "startLine": 297,
+                            "startColumn": 12
+                          }
                         },
                         "message": {
                           "text": "github.com/tidwall/gjson.Result.Get"
@@ -151,7 +179,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
-                          "region": {}
+                          "region": {
+                            "startLine": 1881,
+                            "startColumn": 36
+                          }
                         },
                         "message": {
                           "text": "github.com/tidwall/gjson.Get"
@@ -163,7 +194,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
-                          "region": {}
+                          "region": {
+                            "startLine": 220,
+                            "startColumn": 17
+                          }
                         },
                         "message": {
                           "text": "github.com/tidwall/gjson.Result.ForEach"
@@ -189,7 +223,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
-                      "region": {}
+                      "region": {
+                        "startLine": 14,
+                        "startColumn": 20
+                      }
                     },
                     "message": {
                       "text": "golang.org/vuln.main"
@@ -201,7 +238,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
-                      "region": {}
+                      "region": {
+                        "startLine": 297,
+                        "startColumn": 12
+                      }
                     },
                     "message": {
                       "text": "github.com/tidwall/gjson.Result.Get"
@@ -213,7 +253,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
-                      "region": {}
+                      "region": {
+                        "startLine": 1881,
+                        "startColumn": 36
+                      }
                     },
                     "message": {
                       "text": "github.com/tidwall/gjson.Get"
@@ -225,7 +268,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
-                      "region": {}
+                      "region": {
+                        "startLine": 2587,
+                        "startColumn": 21
+                      }
                     },
                     "message": {
                       "text": "github.com/tidwall/gjson.execModifier"
@@ -237,7 +283,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
-                      "region": {}
+                      "region": {
+                        "startLine": 2631,
+                        "startColumn": 21
+                      }
                     },
                     "message": {
                       "text": "github.com/tidwall/gjson.modPretty"
@@ -249,7 +298,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
-                      "region": {}
+                      "region": {
+                        "startLine": 220,
+                        "startColumn": 17
+                      }
                     },
                     "message": {
                       "text": "github.com/tidwall/gjson.Result.ForEach"
@@ -266,6 +318,17 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
           "message": {
             "text": "Your code calls vulnerable functions in 1 package (golang.org/x/text/language)."
           },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ],
           "codeFlows": [
             {
               "threadFlows": [
@@ -276,7 +339,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
-                          "region": {}
+                          "region": {
+                            "startLine": 13,
+                            "startColumn": 16
+                          }
                         },
                         "message": {
                           "text": "golang.org/vuln.main"
@@ -288,7 +354,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
-                          "region": {}
+                          "region": {
+                            "startLine": 228,
+                            "startColumn": 6
+                          }
                         },
                         "message": {
                           "text": "golang.org/x/text/language.Parse"
@@ -314,7 +383,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
-                      "region": {}
+                      "region": {
+                        "startLine": 13,
+                        "startColumn": 16
+                      }
                     },
                     "message": {
                       "text": "golang.org/vuln.main"
@@ -326,7 +398,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
-                      "region": {}
+                      "region": {
+                        "startLine": 228,
+                        "startColumn": 6
+                      }
                     },
                     "message": {
                       "text": "golang.org/x/text/language.Parse"
@@ -343,6 +418,17 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
           "message": {
             "text": "Your code calls vulnerable functions in 1 package (github.com/tidwall/gjson)."
           },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ],
           "codeFlows": [
             {
               "threadFlows": [
@@ -353,7 +439,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
-                          "region": {}
+                          "region": {
+                            "startLine": 14,
+                            "startColumn": 20
+                          }
                         },
                         "message": {
                           "text": "golang.org/vuln.main"
@@ -365,7 +454,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
-                          "region": {}
+                          "region": {
+                            "startLine": 296,
+                            "startColumn": 17
+                          }
                         },
                         "message": {
                           "text": "github.com/tidwall/gjson.Result.Get"
@@ -391,7 +483,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
-                      "region": {}
+                      "region": {
+                        "startLine": 14,
+                        "startColumn": 20
+                      }
                     },
                     "message": {
                       "text": "golang.org/vuln.main"
@@ -403,7 +498,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
-                      "region": {}
+                      "region": {
+                        "startLine": 296,
+                        "startColumn": 17
+                      }
                     },
                     "message": {
                       "text": "github.com/tidwall/gjson.Result.Get"

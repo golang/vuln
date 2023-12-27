@@ -109,28 +109,72 @@ $ govulncheck -format sarif -scan package -C ${moddir}/vuln .
           "level": "warning",
           "message": {
             "text": "Your code depends on 1 vulnerable module (golang.org/x/text), but doesn't appear to import any of the vulnerable symbols."
-          }
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ]
         },
         {
           "ruleId": "GO-2021-0054",
           "level": "error",
           "message": {
             "text": "Your code imports 1 vulnerable package (github.com/tidwall/gjson). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
-          }
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ]
         },
         {
           "ruleId": "GO-2021-0113",
           "level": "error",
           "message": {
             "text": "Your code imports 1 vulnerable package (golang.org/x/text/language). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
-          }
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ]
         },
         {
           "ruleId": "GO-2021-0265",
           "level": "error",
           "message": {
             "text": "Your code imports 1 vulnerable package (github.com/tidwall/gjson). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
-          }
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ]
         }
       ]
     }

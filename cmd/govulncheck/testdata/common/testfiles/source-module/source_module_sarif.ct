@@ -109,28 +109,72 @@ $ govulncheck -format sarif -scan module -C ${moddir}/vuln
           "level": "error",
           "message": {
             "text": "Your code depends on 1 vulnerable module (golang.org/x/text). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
-          }
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ]
         },
         {
           "ruleId": "GO-2021-0054",
           "level": "error",
           "message": {
             "text": "Your code depends on 1 vulnerable module (github.com/tidwall/gjson). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
-          }
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ]
         },
         {
           "ruleId": "GO-2021-0113",
           "level": "error",
           "message": {
             "text": "Your code depends on 1 vulnerable module (golang.org/x/text). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
-          }
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ]
         },
         {
           "ruleId": "GO-2021-0265",
           "level": "error",
           "message": {
             "text": "Your code depends on 1 vulnerable module (github.com/tidwall/gjson). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
-          }
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {},
+                "region": {
+                  "startLine": 1
+                }
+              },
+              "message": {}
+            }
+          ]
         }
       ]
     }

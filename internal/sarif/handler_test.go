@@ -23,6 +23,12 @@ func scanLevel(f *govulncheck.Finding) string {
 	return "module"
 }
 
+func newTestHandler() *handler {
+	h := NewHandler(nil)
+	h.cfg = &govulncheck.Config{}
+	return h
+}
+
 func TestHandlerSymbol(t *testing.T) {
 	fs := `
 {
@@ -96,7 +102,7 @@ func TestHandlerSymbol(t *testing.T) {
   }
 }`
 
-	h := NewHandler(nil)
+	h := newTestHandler()
 	if err := govulncheck.HandleJSON(strings.NewReader(fs), h); err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +176,7 @@ func TestHandlerPackage(t *testing.T) {
   }
 }`
 
-	h := NewHandler(nil)
+	h := newTestHandler()
 	if err := govulncheck.HandleJSON(strings.NewReader(fs), h); err != nil {
 		t.Fatal(err)
 	}
@@ -222,7 +228,7 @@ func TestHandlerModule(t *testing.T) {
   }
 }`
 
-	h := NewHandler(nil)
+	h := newTestHandler()
 	if err := govulncheck.HandleJSON(strings.NewReader(fs), h); err != nil {
 		t.Fatal(err)
 	}

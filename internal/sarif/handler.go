@@ -26,6 +26,8 @@ type handler struct {
 	// an osv is indeed called, then all findings for
 	// the osv will have call stack info.
 	findings map[string][]*govulncheck.Finding
+
+	binary bool
 }
 
 func NewHandler(w io.Writer) *handler {
@@ -160,13 +162,23 @@ func rules(h *handler) []Rule {
 func results(h *handler) []Result {
 	var results []Result
 	for _, fs := range h.findings {
+		var locs []Location
+		if h.cfg.ScanMode != govulncheck.ScanModeBinary {
+			// Attach result to the go.mod file for source analysis.
+			// But there is no such place for binaries.
+			locs = []Location{{PhysicalLocation: PhysicalLocation{
+				// TODO: add artifact location for go.mod
+				Region: Region{StartLine: 1}, // for now, point to the first line
+			}}}
+		}
+
 		res := Result{
-			RuleID:  fs[0].OSV,
-			Level:   level(fs[0], h.cfg),
-			Message: Description{Text: resultMessage(fs, h.cfg)},
-			// TODO: add location
+			RuleID:    fs[0].OSV,
+			Level:     level(fs[0], h.cfg),
+			Message:   Description{Text: resultMessage(fs, h.cfg)},
 			Stacks:    stacks(fs),
 			CodeFlows: codeFlows(fs),
+			Locations: locs,
 		}
 		results = append(results, res)
 	}
@@ -263,11 +275,21 @@ func stack(f *govulncheck.Finding) Stack {
 	var frames []Frame
 	for i := len(trace) - 1; i >= 0; i-- { // vulnerable symbol is at the top frame
 		frame := trace[i]
+		pos := govulncheck.Position{}
+		if frame.Position != nil {
+			pos = *frame.Position
+		}
 		frames = append(frames, Frame{
 			Module: frame.Module,
 			Location: Location{
 				Message: Description{Text: symbol(frame)}, // show the (full) symbol name
-				// TODO: add physical location
+				PhysicalLocation: PhysicalLocation{
+					// TODO: add artifact location
+					Region: Region{
+						StartLine:   pos.Line,
+						StartColumn: pos.Column,
+					},
+				},
 			},
 		})
 	}
@@ -325,11 +347,21 @@ func threadFlows(fs []*govulncheck.Finding) []ThreadFlow {
 			// TODO: should we, similar to govulncheck text output, only
 			// mention three elements of the compact trace?
 			frame := trace[i]
+			pos := govulncheck.Position{}
+			if frame.Position != nil {
+				pos = *frame.Position
+			}
 			tf = append(tf, ThreadFlowLocation{
 				Module: frame.Module,
 				Location: Location{
 					Message: Description{Text: symbol(frame)}, // show the (full) symbol name
-					// TODO: add physical location
+					PhysicalLocation: PhysicalLocation{
+						// TODO: add artifact location
+						Region: Region{
+							StartLine:   pos.Line,
+							StartColumn: pos.Column,
+						},
+					},
 				}})
 		}
 		tfs = append(tfs, ThreadFlow{Locations: tf})
