@@ -3,6 +3,8 @@
 $ govulncheck -C ${moddir}/multientry . --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
+=== Source Results ===
+
 Vulnerability #1: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can
     cause Parse to panic via an out of bounds read. If Parse is used to process
@@ -16,11 +18,11 @@ Vulnerability #1: GO-2021-0113
       #1: .../main.go:99:20: multientry.foobar calls language.MustParse
       #2: .../main.go:44:23: multientry.C calls language.Parse
 
-=== Informational ===
+=== Package Results ===
 
-There is 1 vulnerability in modules that you require that is neither
-imported nor called. You may not need to take any action.
-See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+No other vulnerabilities found.
+
+=== Module Results ===
 
 Vulnerability #1: GO-2022-0969
     HTTP/2 server connections can hang forever waiting for a clean shutdown that
@@ -32,13 +34,16 @@ Vulnerability #1: GO-2022-0969
     Fixed in: net/http@go1.18.6
 
 Your code is affected by 1 vulnerability from 1 module.
-
-Share feedback at https://go.dev/s/govulncheck-feedback.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
 
 #####
 # Test for multple call stacks in source mode with expanded traces
 $ govulncheck -C ${moddir}/multientry -show=traces ./... --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
+
+=== Source Results ===
 
 Vulnerability #1: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can
@@ -60,11 +65,11 @@ Vulnerability #1: GO-2021-0113
         .../main.go:44:23: golang.org/multientry.C
         golang.org/x/text/language.Parse
 
-=== Informational ===
+=== Package Results ===
 
-There is 1 vulnerability in modules that you require that is neither
-imported nor called. You may not need to take any action.
-See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+No other vulnerabilities found.
+
+=== Module Results ===
 
 Vulnerability #1: GO-2022-0969
     HTTP/2 server connections can hang forever waiting for a clean shutdown that
@@ -76,5 +81,6 @@ Vulnerability #1: GO-2022-0969
     Fixed in: net/http@go1.18.6
 
 Your code is affected by 1 vulnerability from 1 module.
-
-Share feedback at https://go.dev/s/govulncheck-feedback.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.

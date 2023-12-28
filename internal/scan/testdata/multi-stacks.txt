@@ -1,3 +1,5 @@
+=== Source Results ===
+
 Vulnerability #1: GO-0000-0001
     Third-party vulnerability
   More info: https://pkg.go.dev/vuln/GO-0000-0001
@@ -16,6 +18,14 @@ Vulnerability #1: GO-0000-0001
       #1: other.Foo calls vmod1.Vuln
       #2: other.Bar calls vmod1.VulnFoo
 
-Your code is affected by 1 vulnerability from 2 modules.
+=== Package Results ===
 
-Share feedback at https://go.dev/s/govulncheck-feedback.
+No other vulnerabilities found.
+
+=== Module Results ===
+
+No other vulnerabilities found.
+
+Your code is affected by 1 vulnerability from the Go standard library.
+This scan found no other vulnerabilities in packages you import or modules you
+require.

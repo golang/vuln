@@ -3,6 +3,8 @@
 $ govulncheck -mode=binary ${testdir}/extract/vuln.blob --> FAIL 3
 Scanning your binary for known vulnerabilities...
 
+=== Source Results ===
+
 Vulnerability #1: GO-2021-0265
     A maliciously crafted path can cause Get and other query functions to
     consume excessive amounts of CPU and time.
@@ -37,9 +39,17 @@ Vulnerability #3: GO-2021-0054
     Example traces found:
       #1: gjson.Result.ForEach
 
-Your code is affected by 3 vulnerabilities from 2 modules.
+=== Package Results ===
 
-Share feedback at https://go.dev/s/govulncheck-feedback.
+No other vulnerabilities found.
+
+=== Module Results ===
+
+No other vulnerabilities found.
+
+Your code is affected by 3 vulnerabilities from 2 modules.
+This scan found no other vulnerabilities in packages you import or modules you
+require.
 
 # Test extract mode. Due to the size of the blob even for smallest programs, we
 # directly compare its output to a target vuln_blob.json file.

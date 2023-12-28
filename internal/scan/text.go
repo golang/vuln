@@ -49,6 +49,10 @@ const (
 	detailsMessage = `For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.`
 
 	binaryProgressMessage = `Scanning your binary for known vulnerabilities...`
+
+	noVulnsMessage = `No vulnerabilities found.`
+
+	noOtherVulnsMessage = `No other vulnerabilities found.`
 )
 
 func (h *TextHandler) Show(show []string) {
@@ -72,16 +76,20 @@ func Flush(h govulncheck.Handler) error {
 }
 
 func (h *TextHandler) Flush() error {
-	fixupFindings(h.osvs, h.findings)
-	h.byVulnerability(h.findings)
-	h.summary(h.findings)
-	h.print("Share feedback at https://go.dev/s/govulncheck-feedback.\n")
+	if len(h.findings) == 0 {
+		h.print(noVulnsMessage + "\n")
+	} else {
+		fixupFindings(h.osvs, h.findings)
+		counters := h.allVulns(h.findings)
+		h.summary(counters)
+	}
 	if h.err != nil {
 		return h.err
 	}
 	if isCalled(h.findings) {
 		return errVulnerabilitiesFound
 	}
+
 	return nil
 }
 
@@ -138,63 +146,60 @@ func (h *TextHandler) Finding(finding *govulncheck.Finding) error {
 	return nil
 }
 
-func (h *TextHandler) byVulnerability(findings []*findingSummary) {
+func (h *TextHandler) allVulns(findings []*findingSummary) summaryCounters {
 	byVuln := groupByVuln(findings)
-	called := 0
-	onlyImported := 0
+	var called, imported, required [][]*findingSummary
+	mods := map[string]struct{}{}
+	stdlibCalled := false
 	for _, findings := range byVuln {
-		if isCalled(findings) {
-			h.vulnerability(called, findings)
-			called++
-		} else if isImported(findings) && !isStdFindings(findings) {
-			onlyImported++
+		switch {
+		case isStdFindings(findings):
+			if isCalled(findings) {
+				called = append(called, findings)
+				stdlibCalled = true
+			} else {
+				required = append(required, findings)
+			}
+		case isCalled(findings):
+			called = append(called, findings)
+			mods[findings[0].Trace[0].Module] = struct{}{}
+		case isImported(findings):
+			imported = append(imported, findings)
+		default:
+			required = append(required, findings)
 		}
 	}
-	onlyRequired := len(byVuln) - (called + onlyImported)
-	if onlyImported+onlyRequired == 0 {
-		return
-	}
-	if h.scanLevel.WantSymbols() {
-		h.style(sectionStyle, "=== Informational ===\n\n")
-	}
-	var informational strings.Builder
-	if onlyImported > 0 {
-		informational.WriteString("Found " + fmt.Sprint(onlyImported))
-		informational.WriteString(choose(onlyImported == 1, ` vulnerability`, ` vulnerabilities`))
-		informational.WriteString(" in packages that you import")
-		if h.scanLevel.WantSymbols() {
-			informational.WriteString(", but there are no call stacks leading to the use of ")
-			informational.WriteString(choose(onlyImported == 1, `this vulnerability.`, `these vulnerabilities.`))
-		} else {
-			informational.WriteString(".")
-		}
-	}
-	if onlyRequired > 0 {
-		isare := choose(onlyRequired == 1, ` is `, ` are `)
-		informational.WriteString(" There" + isare + choose(onlyImported > 0, `also `, ``) + fmt.Sprint(onlyRequired))
-		informational.WriteString(choose(onlyRequired == 1, ` vulnerability `, ` vulnerabilities `))
-		informational.WriteString("in modules that you require")
-		if h.scanLevel.WantSymbols() {
-			informational.WriteString(" that" + choose(h.scanLevel.WantSymbols(), isare, " may be "))
-			informational.WriteString("neither imported nor called.")
-		} else {
-			informational.WriteString(".")
-		}
 
+	h.style(sectionStyle, "=== Source Results ===\n\n")
+	if len(called) == 0 {
+		h.print(noVulnsMessage, "\n\n")
 	}
-	if h.scanLevel.WantSymbols() {
-		informational.WriteString(" You may not need to take any action.")
-	} else {
-		informational.WriteString(" Use -scan=symbol with govulncheck for more fine grained vulnerability detection.")
+	for index, findings := range called {
+		h.vulnerability(index, findings)
 	}
-	h.wrap("", informational.String(), 70)
-	h.print("\nSee https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.\n\n")
-	index := 0
-	for _, findings := range byVuln {
-		if !isCalled(findings) {
-			h.vulnerability(index, findings)
-			index++
-		}
+
+	h.style(sectionStyle, "=== Package Results ===\n\n")
+	if len(imported) == 0 {
+		h.print(choose(!h.scanLevel.WantSymbols(), noVulnsMessage, noOtherVulnsMessage), "\n\n")
+	}
+	for index, findings := range imported {
+		h.vulnerability(index, findings)
+	}
+
+	h.style(sectionStyle, "=== Module Results ===\n\n")
+	if len(required) == 0 {
+		h.print(choose(!h.scanLevel.WantPackages(), noVulnsMessage, noOtherVulnsMessage), "\n\n")
+	}
+	for index, findings := range required {
+		h.vulnerability(index, findings)
+	}
+
+	return summaryCounters{
+		VulnerabilitiesCalled:   len(called),
+		VulnerabilitiesImported: len(imported),
+		VulnerabilitiesRequired: len(required),
+		ModulesCalled:           len(mods),
+		StdlibCalled:            stdlibCalled,
 	}
 }
 
@@ -297,28 +302,59 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 	}
 }
 
-func (h *TextHandler) summary(findings []*findingSummary) {
-	counters := counters(findings)
-	if counters.VulnerabilitiesCalled == 0 {
-		h.print(choose(h.scanLevel.WantSymbols(), "No vulnerabilities found.\n\n", ""))
-		return
-	}
+func (h *TextHandler) summary(c summaryCounters) {
+	var vulnCount int
 	h.print(`Your code is affected by `)
-	h.style(valueStyle, counters.VulnerabilitiesCalled)
-	h.print(choose(counters.VulnerabilitiesCalled == 1, ` vulnerability`, ` vulnerabilities`))
-	h.print(` from`)
-	if counters.ModulesCalled > 0 {
-		h.print(` `)
-		h.style(valueStyle, counters.ModulesCalled)
-		h.print(choose(counters.ModulesCalled == 1, ` module`, ` modules`))
+	switch h.scanLevel {
+	case govulncheck.ScanLevelSymbol:
+		vulnCount = c.VulnerabilitiesCalled
+	case govulncheck.ScanLevelPackage:
+		vulnCount = c.VulnerabilitiesImported
+	case govulncheck.ScanLevelModule:
+		vulnCount = c.VulnerabilitiesRequired
 	}
-	if counters.StdlibCalled {
-		if counters.ModulesCalled != 0 {
-			h.print(` and`)
+	h.style(valueStyle, vulnCount)
+	h.print(choose(vulnCount == 1, ` vulnerability`, ` vulnerabilities`))
+	if h.scanLevel.WantSymbols() {
+		h.print(choose(c.ModulesCalled > 0 || c.StdlibCalled, ` from `, ``))
+		if c.ModulesCalled > 0 {
+			h.style(valueStyle, c.ModulesCalled)
+			h.print(choose(c.ModulesCalled == 1, ` module`, ` modules`))
 		}
-		h.print(` the Go standard library`)
+		if c.StdlibCalled {
+			if c.ModulesCalled != 0 {
+				h.print(` and `)
+			}
+			h.print(`the Go standard library`)
+		}
 	}
-	h.print(".\n\n")
+	h.print(".\n")
+
+	var summary strings.Builder
+	if c.VulnerabilitiesRequired+c.VulnerabilitiesImported == 0 {
+		summary.WriteString("This scan found no other vulnerabilities in ")
+		if h.scanLevel.WantSymbols() {
+			summary.WriteString("packages you import or ")
+		}
+		summary.WriteString("modules you require.")
+	} else {
+		summary.WriteString(choose(h.scanLevel.WantPackages(), "This scan also found ", ""))
+		if h.scanLevel.WantSymbols() {
+			summary.WriteString(fmt.Sprint(c.VulnerabilitiesImported))
+			summary.WriteString(choose(c.VulnerabilitiesImported == 1, ` vulnerability `, ` vulnerabilities `))
+			summary.WriteString("in packages you import and ")
+		}
+		if h.scanLevel.WantPackages() {
+			summary.WriteString(fmt.Sprint(c.VulnerabilitiesRequired))
+			summary.WriteString(choose(c.VulnerabilitiesRequired == 1, ` vulnerability `, ` vulnerabilities `))
+			summary.WriteString("in modules you require")
+			summary.WriteString(choose(h.scanLevel.WantSymbols(), ", but your code doesn't appear to call these vulnerabilities.", "."))
+		}
+	}
+	h.wrap("", summary.String(), 80)
+	if !h.scanLevel.WantSymbols() {
+		h.print("\nUse -scan=symbol for more fine grained vulnerability detection.")
+	}
 }
 
 func (h *TextHandler) style(style style, values ...any) {
@@ -390,7 +426,7 @@ func choose[t any](b bool, yes, no t) t {
 
 func isStdFindings(findings []*findingSummary) bool {
 	for _, f := range findings {
-		if vulncheck.IsStdPackage(f.Trace[0].Package) {
+		if vulncheck.IsStdPackage(f.Trace[0].Package) || f.Trace[0].Module == internal.GoStdModulePath {
 			return true
 		}
 	}

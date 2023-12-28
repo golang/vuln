@@ -1,6 +1,8 @@
-Found 1 vulnerability in packages that you import. Use -scan=symbol
-with govulncheck for more fine grained vulnerability detection.
-See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+=== Source Results ===
+
+No vulnerabilities found.
+
+=== Package Results ===
 
 Vulnerability #1: GO-0000-0001
     Third-party vulnerability
@@ -10,4 +12,10 @@ Vulnerability #1: GO-0000-0001
     Fixed in: golang.org/vmod@v0.1.3
     Platforms: amd
 
-Share feedback at https://go.dev/s/govulncheck-feedback.
+=== Module Results ===
+
+No other vulnerabilities found.
+
+Your code is affected by 1 vulnerability.
+This scan also found 0 vulnerabilities in modules you require.
+Use -scan=symbol for more fine grained vulnerability detection.

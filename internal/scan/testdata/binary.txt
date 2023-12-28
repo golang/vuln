@@ -1,3 +1,5 @@
+=== Source Results ===
+
 Vulnerability #1: GO-0000-0002
     Stdlib vulnerability
   More info: https://pkg.go.dev/vuln/GO-0000-0002
@@ -17,6 +19,14 @@ Vulnerability #2: GO-0000-0001
     Example traces found:
       #1: vmod.Vuln
 
-Your code is affected by 2 vulnerabilities from 1 module and the Go standard library.
+=== Package Results ===
 
-Share feedback at https://go.dev/s/govulncheck-feedback.
+No other vulnerabilities found.
+
+=== Module Results ===
+
+No other vulnerabilities found.
+
+Your code is affected by 2 vulnerabilities from 1 module and the Go standard library.
+This scan found no other vulnerabilities in packages you import or modules you
+require.

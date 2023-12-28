@@ -35,8 +35,6 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 $ govulncheck
 No vulnerabilities found.
 
-Share feedback at https://go.dev/s/govulncheck-feedback.
-
 #####
 # Reporting version without scanning anything.
 $ govulncheck -version
@@ -46,5 +44,3 @@ DB: testdata/vulndb-v1
 DB updated: 2023-04-03 15:57:51 +0000 UTC
 
 No vulnerabilities found.
-
-Share feedback at https://go.dev/s/govulncheck-feedback.

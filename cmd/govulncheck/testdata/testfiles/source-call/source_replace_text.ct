@@ -4,6 +4,8 @@
 $ govulncheck -C ${moddir}/replace ./... --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
+=== Source Results ===
+
 Vulnerability #1: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can
     cause Parse to panic via an out of bounds read. If Parse is used to process
@@ -16,11 +18,11 @@ Vulnerability #1: GO-2021-0113
     Example traces found:
       #1: .../main.go:11:16: replace.main calls language.Parse
 
-=== Informational ===
+=== Package Results ===
 
-There are 2 vulnerabilities in modules that you require that are
-neither imported nor called. You may not need to take any action.
-See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+No other vulnerabilities found.
+
+=== Module Results ===
 
 Vulnerability #1: GO-2022-0969
     HTTP/2 server connections can hang forever waiting for a clean shutdown that
@@ -43,5 +45,6 @@ Vulnerability #2: GO-2020-0015
     Fixed in: golang.org/x/text@v0.3.3
 
 Your code is affected by 1 vulnerability from 1 module.
-
-Share feedback at https://go.dev/s/govulncheck-feedback.
+This scan also found 0 vulnerabilities in packages you import and 2
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.

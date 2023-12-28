@@ -4,10 +4,15 @@
 $ govulncheck -scan module -C ${moddir}/multientry
 Scanning your code across 2 dependent modules for known vulnerabilities...
 
-There are 2 vulnerabilities in modules that you require. Use
--scan=symbol with govulncheck for more fine grained vulnerability
-detection.
-See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+=== Source Results ===
+
+No vulnerabilities found.
+
+=== Package Results ===
+
+No vulnerabilities found.
+
+=== Module Results ===
 
 Vulnerability #1: GO-2022-0969
     HTTP/2 server connections can hang forever waiting for a clean shutdown that
@@ -28,4 +33,6 @@ Vulnerability #2: GO-2021-0113
     Found in: golang.org/x/text@v0.3.5
     Fixed in: golang.org/x/text@v0.3.7
 
-Share feedback at https://go.dev/s/govulncheck-feedback.
+Your code is affected by 2 vulnerabilities.
+
+Use -scan=symbol for more fine grained vulnerability detection.

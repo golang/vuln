@@ -4,6 +4,8 @@
 $ govulncheck -mode=convert < convert/convert_input.json --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
+=== Source Results ===
+
 Vulnerability #1: GO-2021-0265
     A maliciously crafted path can cause Get and other query functions to
     consume excessive amounts of CPU and time.
@@ -26,12 +28,7 @@ Vulnerability #2: GO-2021-0113
     Example traces found:
       #1: .../vuln.go:13:16: vuln.main calls language.Parse
 
-=== Informational ===
-
-Found 1 vulnerability in packages that you import, but there are no
-call stacks leading to the use of this vulnerability. You may not need
-to take any action.
-See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+=== Package Results ===
 
 Vulnerability #1: GO-2021-0054
     Due to improper bounds checking, maliciously crafted JSON objects can cause
@@ -42,6 +39,11 @@ Vulnerability #1: GO-2021-0054
     Found in: github.com/tidwall/gjson@v1.6.5
     Fixed in: github.com/tidwall/gjson@v1.6.6
 
-Your code is affected by 2 vulnerabilities from 2 modules.
+=== Module Results ===
 
-Share feedback at https://go.dev/s/govulncheck-feedback.
+No other vulnerabilities found.
+
+Your code is affected by 2 vulnerabilities from 2 modules.
+This scan also found 1 vulnerability in packages you import and 0
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.

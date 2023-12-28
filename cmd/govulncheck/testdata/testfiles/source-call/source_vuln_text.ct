@@ -3,6 +3,8 @@
 $ govulncheck -C ${moddir}/vuln ./... --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
+=== Source Results ===
+
 Vulnerability #1: GO-2021-0265
     A maliciously crafted path can cause Get and other query functions to
     consume excessive amounts of CPU and time.
@@ -36,11 +38,11 @@ Vulnerability #3: GO-2021-0054
     Example traces found:
       #1: .../vuln.go:14:20: vuln.main calls gjson.Result.Get, which eventually calls gjson.Result.ForEach
 
-=== Informational ===
+=== Package Results ===
 
-There are 2 vulnerabilities in modules that you require that are
-neither imported nor called. You may not need to take any action.
-See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+No other vulnerabilities found.
+
+=== Module Results ===
 
 Vulnerability #1: GO-2022-0969
     HTTP/2 server connections can hang forever waiting for a clean shutdown that
@@ -63,13 +65,16 @@ Vulnerability #2: GO-2020-0015
     Fixed in: golang.org/x/text@v0.3.3
 
 Your code is affected by 3 vulnerabilities from 2 modules.
-
-Share feedback at https://go.dev/s/govulncheck-feedback.
+This scan also found 0 vulnerabilities in packages you import and 2
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.
 
 #####
 # Test of basic govulncheck in source mode with expanded traces
 $ govulncheck -C ${moddir}/vuln -show=traces ./... --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
+
+=== Source Results ===
 
 Vulnerability #1: GO-2021-0265
     A maliciously crafted path can cause Get and other query functions to
@@ -114,11 +119,11 @@ Vulnerability #3: GO-2021-0054
         .../gjson.go:2631:21: github.com/tidwall/gjson.modPretty
         github.com/tidwall/gjson.Result.ForEach
 
-=== Informational ===
+=== Package Results ===
 
-There are 2 vulnerabilities in modules that you require that are
-neither imported nor called. You may not need to take any action.
-See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+No other vulnerabilities found.
+
+=== Module Results ===
 
 Vulnerability #1: GO-2022-0969
     HTTP/2 server connections can hang forever waiting for a clean shutdown that
@@ -141,5 +146,6 @@ Vulnerability #2: GO-2020-0015
     Fixed in: golang.org/x/text@v0.3.3
 
 Your code is affected by 3 vulnerabilities from 2 modules.
-
-Share feedback at https://go.dev/s/govulncheck-feedback.
+This scan also found 0 vulnerabilities in packages you import and 2
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.
