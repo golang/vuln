@@ -39,14 +39,7 @@ Vulnerability #3: GO-2021-0054
     Example traces found:
       #1: gjson.Result.ForEach
 
-=== Package Results ===
-
-No other vulnerabilities found.
-
-=== Module Results ===
-
-No other vulnerabilities found.
-
 Your code is affected by 3 vulnerabilities from 2 modules.
 This scan found no other vulnerabilities in packages you import or modules you
 require.
+Use -show verbose for more details.

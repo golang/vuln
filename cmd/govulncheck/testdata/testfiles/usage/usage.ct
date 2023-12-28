@@ -20,7 +20,7 @@ Usage:
     	set the scanning level desired, one of module, package or symbol (default "symbol")
   -show list
     	enable display of additional information specified by the comma separated list
-    	The supported values are 'traces','color', and 'version'
+    	The supported values are 'traces','color', 'version', and 'verbose'
   -tags list
     	comma-separated list of build tags
   -test

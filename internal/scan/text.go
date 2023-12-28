@@ -40,9 +40,10 @@ type TextHandler struct {
 
 	err error
 
-	showColor   bool
-	showTraces  bool
-	showVersion bool
+	showColor    bool
+	showTraces   bool
+	showVersion  bool
+	showAllVulns bool
 }
 
 const (
@@ -53,6 +54,10 @@ const (
 	noVulnsMessage = `No vulnerabilities found.`
 
 	noOtherVulnsMessage = `No other vulnerabilities found.`
+
+	verboseMessage = `-show verbose for more details`
+
+	symbolMessage = `-scan=symbol for more fine grained vulnerability detection`
 )
 
 func (h *TextHandler) Show(show []string) {
@@ -64,6 +69,8 @@ func (h *TextHandler) Show(show []string) {
 			h.showColor = true
 		case "version":
 			h.showVersion = true
+		case "verbose":
+			h.showAllVulns = true
 		}
 	}
 }
@@ -170,28 +177,34 @@ func (h *TextHandler) allVulns(findings []*findingSummary) summaryCounters {
 		}
 	}
 
-	h.style(sectionStyle, "=== Source Results ===\n\n")
-	if len(called) == 0 {
-		h.print(noVulnsMessage, "\n\n")
-	}
-	for index, findings := range called {
-		h.vulnerability(index, findings)
-	}
-
-	h.style(sectionStyle, "=== Package Results ===\n\n")
-	if len(imported) == 0 {
-		h.print(choose(!h.scanLevel.WantSymbols(), noVulnsMessage, noOtherVulnsMessage), "\n\n")
-	}
-	for index, findings := range imported {
-		h.vulnerability(index, findings)
+	if h.scanLevel.WantSymbols() {
+		h.style(sectionStyle, "=== Source Results ===\n\n")
+		if len(called) == 0 {
+			h.print(noVulnsMessage, "\n\n")
+		}
+		for index, findings := range called {
+			h.vulnerability(index, findings)
+		}
 	}
 
-	h.style(sectionStyle, "=== Module Results ===\n\n")
-	if len(required) == 0 {
-		h.print(choose(!h.scanLevel.WantPackages(), noVulnsMessage, noOtherVulnsMessage), "\n\n")
+	if h.scanLevel == govulncheck.ScanLevelPackage || (h.scanLevel.WantPackages() && h.showAllVulns) {
+		h.style(sectionStyle, "=== Package Results ===\n\n")
+		if len(imported) == 0 {
+			h.print(choose(!h.scanLevel.WantSymbols(), noVulnsMessage, noOtherVulnsMessage), "\n\n")
+		}
+		for index, findings := range imported {
+			h.vulnerability(index, findings)
+		}
 	}
-	for index, findings := range required {
-		h.vulnerability(index, findings)
+
+	if h.showAllVulns || h.scanLevel == govulncheck.ScanLevelModule {
+		h.style(sectionStyle, "=== Module Results ===\n\n")
+		if len(required) == 0 {
+			h.print(choose(!h.scanLevel.WantPackages(), noVulnsMessage, noOtherVulnsMessage), "\n\n")
+		}
+		for index, findings := range required {
+			h.vulnerability(index, findings)
+		}
 	}
 
 	return summaryCounters{
@@ -304,7 +317,7 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 
 func (h *TextHandler) summary(c summaryCounters) {
 	var vulnCount int
-	h.print(`Your code is affected by `)
+	h.print("Your code ", choose(h.scanLevel.WantSymbols(), "is", "may be"), " affected by ")
 	switch h.scanLevel {
 	case govulncheck.ScanLevelSymbol:
 		vulnCount = c.VulnerabilitiesCalled
@@ -352,8 +365,23 @@ func (h *TextHandler) summary(c summaryCounters) {
 		}
 	}
 	h.wrap("", summary.String(), 80)
-	if !h.scanLevel.WantSymbols() {
-		h.print("\nUse -scan=symbol for more fine grained vulnerability detection.")
+	h.print("\n")
+	// print suggested flags for more/better info depending on scan level and if in verbose mode
+	switch h.scanLevel {
+	case govulncheck.ScanLevelSymbol:
+		if !h.showAllVulns {
+			h.print("Use ", verboseMessage, ".")
+		}
+	case govulncheck.ScanLevelPackage:
+		var message strings.Builder
+		message.WriteString("Use " + symbolMessage)
+		if !h.showAllVulns {
+			message.WriteString(" and " + verboseMessage)
+		}
+		message.WriteString(".")
+		h.wrap("", message.String(), 80)
+	case govulncheck.ScanLevelModule:
+		h.print("Use ", symbolMessage, ".")
 	}
 }
 

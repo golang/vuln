@@ -10,20 +10,8 @@ Vulnerability #1: GO-0000-0001
     Example traces found:
       #1: main.main calls vmod.Vuln
 
-=== Package Results ===
-
-No other vulnerabilities found.
-
-=== Module Results ===
-
-Vulnerability #1: GO-0000-0002
-    Stdlib vulnerability
-  More info: https://pkg.go.dev/vuln/GO-0000-0002
-  Standard library
-    Found in: net/http@go0.0.1
-    Fixed in: N/A
-
 Your code is affected by 1 vulnerability from the Go standard library.
 This scan also found 0 vulnerabilities in packages you import and 1
 vulnerability in modules you require, but your code doesn't appear to call these
 vulnerabilities.
+Use -show verbose for more details.

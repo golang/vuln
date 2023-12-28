@@ -48,7 +48,7 @@ func parseFlags(cfg *config, stderr io.Writer, args []string) error {
 	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database `url`")
 	flags.StringVar(&cfg.mode, "mode", modeSource, "supports source or binary")
 	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
-	flags.Var(&showFlag, "show", "enable display of additional information specified by the comma separated `list`\nThe supported values are 'traces','color', and 'version'")
+	flags.Var(&showFlag, "show", "enable display of additional information specified by the comma separated `list`\nThe supported values are 'traces','color', 'version', and 'verbose'")
 	flags.BoolVar(&version, "version", false, "print the version information")
 	scanLevel := flags.String("scan", "symbol", "set the scanning level desired, one of module, package or symbol")
 	flags.Usage = func() {

@@ -10,14 +10,7 @@ Vulnerability #1: GO-0000-0001
     Example traces found:
       #1: main.main calls vmod.VulnFoo
 
-=== Package Results ===
-
-No other vulnerabilities found.
-
-=== Module Results ===
-
-No other vulnerabilities found.
-
 Your code is affected by 1 vulnerability from 1 module.
 This scan found no other vulnerabilities in packages you import or modules you
 require.
+Use -show verbose for more details.

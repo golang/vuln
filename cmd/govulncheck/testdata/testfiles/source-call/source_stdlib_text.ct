@@ -16,17 +16,10 @@ Vulnerability #1: GO-2022-0969
     Example traces found:
       #1: .../stdlib.go:17:31: stdlib.main calls http.ListenAndServe
 
-=== Package Results ===
-
-No other vulnerabilities found.
-
-=== Module Results ===
-
-No other vulnerabilities found.
-
 Your code is affected by 1 vulnerability from the Go standard library.
 This scan found no other vulnerabilities in packages you import or modules you
 require.
+Use -show verbose for more details.
 
 #####
 # Test finding stdlib vulnerability in source mode with expanded traces
@@ -48,14 +41,7 @@ Vulnerability #1: GO-2022-0969
         .../stdlib.go:17:31: golang.org/stdlib.main
         net/http.ListenAndServe
 
-=== Package Results ===
-
-No other vulnerabilities found.
-
-=== Module Results ===
-
-No other vulnerabilities found.
-
 Your code is affected by 1 vulnerability from the Go standard library.
 This scan found no other vulnerabilities in packages you import or modules you
 require.
+Use -show verbose for more details.

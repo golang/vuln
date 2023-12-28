@@ -28,22 +28,8 @@ Vulnerability #2: GO-2021-0113
     Example traces found:
       #1: .../vuln.go:13:16: vuln.main calls language.Parse
 
-=== Package Results ===
-
-Vulnerability #1: GO-2021-0054
-    Due to improper bounds checking, maliciously crafted JSON objects can cause
-    an out-of-bounds panic. If parsing user input, this may be used as a denial
-    of service vector.
-  More info: https://pkg.go.dev/vuln/GO-2021-0054
-  Module: github.com/tidwall/gjson
-    Found in: github.com/tidwall/gjson@v1.6.5
-    Fixed in: github.com/tidwall/gjson@v1.6.6
-
-=== Module Results ===
-
-No other vulnerabilities found.
-
 Your code is affected by 2 vulnerabilities from 2 modules.
 This scan also found 1 vulnerability in packages you import and 0
 vulnerabilities in modules you require, but your code doesn't appear to call
 these vulnerabilities.
+Use -show verbose for more details.
