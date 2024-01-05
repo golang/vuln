@@ -64,16 +64,16 @@ func (h *TextHandler) Show(show []string) {
 	}
 }
 
-func Flush(h govulncheck.Handler) error {
-	if th, ok := h.(interface{ Flush() error }); ok {
-		return th.Flush()
+func Flush(h govulncheck.Handler, hideUnused bool) error {
+	if th, ok := h.(interface{ Flush(hideUnused bool) error }); ok {
+		return th.Flush(hideUnused)
 	}
 	return nil
 }
 
-func (h *TextHandler) Flush() error {
+func (h *TextHandler) Flush(hideUnused bool) error {
 	fixupFindings(h.osvs, h.findings)
-	h.byVulnerability(h.findings)
+	h.byVulnerability(h.findings, hideUnused)
 	h.summary(h.findings)
 	h.print("Share feedback at https://go.dev/s/govulncheck-feedback.\n")
 	if h.err != nil {
@@ -138,7 +138,7 @@ func (h *TextHandler) Finding(finding *govulncheck.Finding) error {
 	return nil
 }
 
-func (h *TextHandler) byVulnerability(findings []*findingSummary) {
+func (h *TextHandler) byVulnerability(findings []*findingSummary, ignoreUnused bool) {
 	byVuln := groupByVuln(findings)
 	called := 0
 	onlyImported := 0
@@ -150,6 +150,12 @@ func (h *TextHandler) byVulnerability(findings []*findingSummary) {
 			onlyImported++
 		}
 	}
+
+	// if --hide-unused specified, don't output informational section
+	if ignoreUnused {
+		return
+	}
+
 	onlyRequired := len(byVuln) - (called + onlyImported)
 	if onlyImported+onlyRequired == 0 {
 		return

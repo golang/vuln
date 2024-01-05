@@ -26,6 +26,9 @@ type config struct {
 	test     bool
 	show     []string
 	env      []string
+
+	// hide vulnerabilities associated with the only imported or required modules
+	hideUnused bool
 }
 
 const (
@@ -50,6 +53,7 @@ func parseFlags(cfg *config, stderr io.Writer, args []string) error {
 	flags.Var(&showFlag, "show", "enable display of additional information specified by the comma separated `list`\nThe supported values are 'traces','color', and 'version'")
 	flags.BoolVar(&version, "version", false, "print the version information")
 	scanLevel := flags.String("scan", "symbol", "set the scanning level desired, one of module, package or symbol")
+	flags.BoolVar(&cfg.hideUnused, "hide-unused", false, "ignore unused packages")
 	flags.Usage = func() {
 		fmt.Fprint(flags.Output(), `Govulncheck reports known vulnerabilities in dependencies.
 

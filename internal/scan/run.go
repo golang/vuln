@@ -63,7 +63,7 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 	if err != nil {
 		return err
 	}
-	if err := Flush(handler); err != nil {
+	if err := Flush(handler, cfg.hideUnused); err != nil {
 		return err
 	}
 	return nil
