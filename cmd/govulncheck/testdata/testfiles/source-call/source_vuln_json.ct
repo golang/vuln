@@ -469,6 +469,81 @@ $ govulncheck -C ${moddir}/vuln -json ./...
   }
 }
 {
+  "finding": {
+    "osv": "GO-2021-0054",
+    "fixed_version": "v1.6.6",
+    "trace": [
+      {
+        "module": "github.com/tidwall/gjson",
+        "version": "v1.6.5",
+        "package": "github.com/tidwall/gjson",
+        "function": "ForEach",
+        "receiver": "Result"
+      },
+      {
+        "module": "github.com/tidwall/gjson",
+        "version": "v1.6.5",
+        "package": "github.com/tidwall/gjson",
+        "function": "modPretty",
+        "position": {
+          "filename": ".../gjson.go",
+          "offset": 53718,
+          "line": 2631,
+          "column": 21
+        }
+      },
+      {
+        "module": "github.com/tidwall/gjson",
+        "version": "v1.6.5",
+        "package": "github.com/tidwall/gjson",
+        "function": "execModifier",
+        "position": {
+          "filename": ".../gjson.go",
+          "offset": 52543,
+          "line": 2587,
+          "column": 21
+        }
+      },
+      {
+        "module": "github.com/tidwall/gjson",
+        "version": "v1.6.5",
+        "package": "github.com/tidwall/gjson",
+        "function": "Get",
+        "position": {
+          "filename": ".../gjson.go",
+          "offset": 38077,
+          "line": 1881,
+          "column": 36
+        }
+      },
+      {
+        "module": "github.com/tidwall/gjson",
+        "version": "v1.6.5",
+        "package": "github.com/tidwall/gjson",
+        "function": "Get",
+        "receiver": "Result",
+        "position": {
+          "filename": ".../gjson.go",
+          "offset": 5781,
+          "line": 297,
+          "column": 12
+        }
+      },
+      {
+        "module": "golang.org/vuln",
+        "package": "golang.org/vuln",
+        "function": "main",
+        "position": {
+          "filename": ".../vuln.go",
+          "offset": 183,
+          "line": 14,
+          "column": 20
+        }
+      }
+    ]
+  }
+}
+{
   "osv": {
     "schema_version": "1.3.1",
     "id": "GO-2020-0015",

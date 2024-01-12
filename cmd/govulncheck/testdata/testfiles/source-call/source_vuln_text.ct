@@ -25,12 +25,21 @@ Vulnerability #2: GO-2021-0113
     Example traces found:
       #1: .../vuln.go:13:16: vuln.main calls language.Parse
 
+Vulnerability #3: GO-2021-0054
+    Due to improper bounds checking, maliciously crafted JSON objects can cause
+    an out-of-bounds panic. If parsing user input, this may be used as a denial
+    of service vector.
+  More info: https://pkg.go.dev/vuln/GO-2021-0054
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.6.6
+    Example traces found:
+      #1: .../vuln.go:14:20: vuln.main calls gjson.Result.Get, which eventually calls gjson.Result.ForEach
+
 === Informational ===
 
-Found 1 vulnerability in packages that you import, but there are no
-call stacks leading to the use of this vulnerability. There are also 2
-vulnerabilities in modules that you require that are neither imported
-nor called. You may not need to take any action.
+There are 2 vulnerabilities in modules that you require that are
+neither imported nor called. You may not need to take any action.
 See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
 
 Vulnerability #1: GO-2022-0969
@@ -42,16 +51,7 @@ Vulnerability #1: GO-2022-0969
     Found in: net/http@go1.18
     Fixed in: net/http@go1.18.6
 
-Vulnerability #2: GO-2021-0054
-    Due to improper bounds checking, maliciously crafted JSON objects can cause
-    an out-of-bounds panic. If parsing user input, this may be used as a denial
-    of service vector.
-  More info: https://pkg.go.dev/vuln/GO-2021-0054
-  Module: github.com/tidwall/gjson
-    Found in: github.com/tidwall/gjson@v1.6.5
-    Fixed in: github.com/tidwall/gjson@v1.6.6
-
-Vulnerability #3: GO-2020-0015
+Vulnerability #2: GO-2020-0015
     An attacker could provide a single byte to a UTF16 decoder instantiated with
     UseBOM or ExpectBOM to trigger an infinite loop if the String function on
     the Decoder is called, or the Decoder is passed to transform.String. If used
@@ -62,7 +62,7 @@ Vulnerability #3: GO-2020-0015
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.3
 
-Your code is affected by 2 vulnerabilities from 2 modules.
+Your code is affected by 3 vulnerabilities from 2 modules.
 
 Share feedback at https://go.dev/s/govulncheck-feedback.
 
@@ -97,12 +97,27 @@ Vulnerability #2: GO-2021-0113
         .../vuln.go:13:16: golang.org/vuln.main
         golang.org/x/text/language.Parse
 
+Vulnerability #3: GO-2021-0054
+    Due to improper bounds checking, maliciously crafted JSON objects can cause
+    an out-of-bounds panic. If parsing user input, this may be used as a denial
+    of service vector.
+  More info: https://pkg.go.dev/vuln/GO-2021-0054
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.6.6
+    Example traces found:
+      #1: for function github.com/tidwall/gjson.Result.ForEach
+        .../vuln.go:14:20: golang.org/vuln.main
+        .../gjson.go:297:12: github.com/tidwall/gjson.Result.Get
+        .../gjson.go:1881:36: github.com/tidwall/gjson.Get
+        .../gjson.go:2587:21: github.com/tidwall/gjson.execModifier
+        .../gjson.go:2631:21: github.com/tidwall/gjson.modPretty
+        github.com/tidwall/gjson.Result.ForEach
+
 === Informational ===
 
-Found 1 vulnerability in packages that you import, but there are no
-call stacks leading to the use of this vulnerability. There are also 2
-vulnerabilities in modules that you require that are neither imported
-nor called. You may not need to take any action.
+There are 2 vulnerabilities in modules that you require that are
+neither imported nor called. You may not need to take any action.
 See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
 
 Vulnerability #1: GO-2022-0969
@@ -114,16 +129,7 @@ Vulnerability #1: GO-2022-0969
     Found in: net/http@go1.18
     Fixed in: net/http@go1.18.6
 
-Vulnerability #2: GO-2021-0054
-    Due to improper bounds checking, maliciously crafted JSON objects can cause
-    an out-of-bounds panic. If parsing user input, this may be used as a denial
-    of service vector.
-  More info: https://pkg.go.dev/vuln/GO-2021-0054
-  Module: github.com/tidwall/gjson
-    Found in: github.com/tidwall/gjson@v1.6.5
-    Fixed in: github.com/tidwall/gjson@v1.6.6
-
-Vulnerability #3: GO-2020-0015
+Vulnerability #2: GO-2020-0015
     An attacker could provide a single byte to a UTF16 decoder instantiated with
     UseBOM or ExpectBOM to trigger an infinite loop if the String function on
     the Decoder is called, or the Decoder is passed to transform.String. If used
@@ -134,6 +140,6 @@ Vulnerability #3: GO-2020-0015
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.3
 
-Your code is affected by 2 vulnerabilities from 2 modules.
+Your code is affected by 3 vulnerabilities from 2 modules.
 
 Share feedback at https://go.dev/s/govulncheck-feedback.
