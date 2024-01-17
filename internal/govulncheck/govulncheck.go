@@ -3,6 +3,24 @@
 // license that can be found in the LICENSE file.
 
 // Package govulncheck contains the JSON output structs for govulncheck.
+//
+// govulncheck supports streaming JSON by emitting a series of Message
+// objects as it analyzes user code and discovers vulnerabilities.
+// Streaming JSON is useful for displaying progress in real-time for
+// large projects where govulncheck execution might take some time.
+//
+// govulncheck JSON emits configuration used to perform the analysis,
+// a user-friendly message about what is being analyzed, and the
+// vulnerability findings. Findings for the same vulnerability can
+// can be emitted several times. For instance, govulncheck JSON will
+// emit a finding when it sees that a vulnerable module is required
+// before proceeding to check if the vulnerability is imported or called.
+// Please see documentation on Message and related types for precise
+// details on the stream encoding.
+//
+// There are no guarantees on the order of messages. The pattern of emitted
+// messages can change in the future. Clients can follow code in handler.go
+// for consuming the streaming JSON programmatically.
 package govulncheck
 
 import (
@@ -106,8 +124,10 @@ type Finding struct {
 	// In binary mode, trace will contain a single-frame with no position
 	// information.
 	//
-	// When a package is imported but no vulnerable symbol is called, the trace
-	// will contain a single-frame with no symbol or position information.
+	// For module level source findings, the trace will contain a single-frame
+	// with no symbol, position, or package information. For package level source
+	// findings, the trace will contain a single-frame with no symbol or position
+	// information.
 	Trace []*Frame `json:"trace,omitempty"`
 }
 

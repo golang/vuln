@@ -56,6 +56,8 @@ Govulncheck exits successfully (exit code 0) if there are no vulnerabilities,
 and exits unsuccessfully if there are. It also exits successfully if the -json flag
 is provided, regardless of the number of detected vulnerabilities.
 
+Govulncheck supports streaming JSON. For more details, please see [golang.org/x/vuln/internal/govulncheck].
+
 # Limitations
 
 Govulncheck has these limitations:
