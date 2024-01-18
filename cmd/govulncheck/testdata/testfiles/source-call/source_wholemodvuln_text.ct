@@ -1,0 +1,34 @@
+#####
+# Test of govulncheck call analysis for vulns with no package info available.
+# All symbols of the module are vulnerable.
+$ govulncheck -C ${moddir}/wholemodvuln ./... --> FAIL 3
+Scanning your code and P packages across M dependent modules for known vulnerabilities...
+
+Vulnerability #1: GO-2022-0956
+    Excessive resource consumption in gopkg.in/yaml.v2
+  More info: https://pkg.go.dev/vuln/GO-2022-0956
+  Module: gopkg.in/yaml.v2
+    Found in: gopkg.in/yaml.v2@v2.2.3
+    Fixed in: gopkg.in/yaml.v2@v2.2.4
+    Example traces found:
+      #1: .../whole_mod_vuln.go:8:21: wholemodvuln.main calls yaml.Marshal
+      #2: .../whole_mod_vuln.go:4:2: wholemodvuln.init calls yaml.init
+
+=== Informational ===
+
+There is 1 vulnerability in modules that you require that is neither
+imported nor called. You may not need to take any action.
+See https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck for details.
+
+Vulnerability #1: GO-2022-0969
+    HTTP/2 server connections can hang forever waiting for a clean shutdown that
+    was preempted by a fatal error. This condition can be exploited by a
+    malicious client to cause a denial of service.
+  More info: https://pkg.go.dev/vuln/GO-2022-0969
+  Standard library
+    Found in: net/http@go1.18
+    Fixed in: net/http@go1.18.6
+
+Your code is affected by 1 vulnerability from 1 module.
+
+Share feedback at https://go.dev/s/govulncheck-feedback.
