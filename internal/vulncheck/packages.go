@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -37,7 +38,17 @@ func NewPackageGraph(goVersion string) *PackageGraph {
 }
 
 func (g *PackageGraph) LoadModules(cfg *packages.Config) (mods []*packages.Module, err error) {
-	cmd := exec.Command("go", "list", "-m", "-json", "-mod=mod", "all")
+	cmd := exec.Command("go", "list", "-m", "-json")
+	// Quick fix for go.dev/issue/65155
+	// TODO: Fix go.dev/issue/65124
+	// This check makes it so that govulncheck doesn't crash if running on a
+	// vendored module from the root of a module. Essentially only here so that
+	// the vendor test doesn't fail until #65124 is fixed.
+	if fileExists(filepath.Join(cfg.Dir, "vendor")) {
+		cmd.Args = append(cmd.Args, "-mod=readonly")
+	}
+
+	cmd.Args = append(cmd.Args, "all")
 	cmd.Env = append(cmd.Env, cfg.Env...)
 	cmd.Dir = cfg.Dir
 	out, err := cmd.Output()
