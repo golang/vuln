@@ -42,21 +42,8 @@ func emitModuleFindings(handler govulncheck.Handler, affVulns affectingVulns) er
 }
 
 // emitPackageFinding emits package-level findings fod vulnerabilities in vulns.
-//
-// It does not emit imported symbols. Only the package information is emitted.
 func emitPackageFindings(handler govulncheck.Handler, vulns []*Vuln) error {
-	emitted := make(map[Vuln]bool)
-	for _, vuln := range vulns {
-		v := Vuln{
-			Package: vuln.Package,
-			OSV:     vuln.OSV,
-		}
-		if emitted[v] {
-			// do not emit the same finding all over again
-			continue
-		}
-		emitted[v] = true
-
+	for _, v := range vulns {
 		if err := handler.Finding(&govulncheck.Finding{
 			OSV:          v.OSV.ID,
 			FixedVersion: FixedVersion(modPath(v.Package.Module), modVersion(v.Package.Module), v.OSV.Affected),

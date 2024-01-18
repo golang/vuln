@@ -312,15 +312,13 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(result.Vulns) != 5 {
-		t.Errorf("want 5 Vulns, got %d", len(result.Vulns))
+	if len(result.Vulns) != 2 { // init and V1
+		t.Errorf("want 2 Vulns, got %d", len(result.Vulns))
 	}
 
 	for _, v := range result.Vulns {
-		if v.Symbol == "V1" && v.CallSink == nil {
-			t.Errorf("expected a call sink for V1; got none")
-		} else if v.Symbol != "V1" && v.CallSink != nil {
-			t.Errorf("expected no call sink for %v; got %v", v.Symbol, v.CallSink)
+		if v.CallSink == nil {
+			t.Errorf("expected a call sink for %s; got none", v.Symbol)
 		}
 	}
 }
@@ -382,19 +380,13 @@ func TestNoSyntheticNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(result.Vulns) != 2 {
-		t.Errorf("want 2 Vulns, got %d", len(result.Vulns))
+	if len(result.Vulns) != 1 {
+		t.Errorf("want 1 Vuln, got %d", len(result.Vulns))
 	}
 
-	var vuln *Vuln
-	for _, v := range result.Vulns {
-		if v.Symbol == "VulnData.Vuln1" && v.CallSink != nil {
-			vuln = v
-		}
-	}
-
-	if vuln == nil {
-		t.Fatal("VulnData.Vuln1 should be deemed a called vulnerability")
+	vuln := result.Vulns[0]
+	if vuln.Symbol != "VulnData.Vuln1" {
+		t.Fatalf("expected VulnData.Vuln1 as called symbol; got %s", vuln.Symbol)
 	}
 
 	stack := sourceCallstacks(result)[vuln]

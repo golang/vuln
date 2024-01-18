@@ -253,14 +253,4 @@ func TestDbSymbolName(t *testing.T) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("(-want;got+): %s", diff)
 	}
-
-	// test dbTypesFuncName
-	delete(want, "init") // init does not appear in types.Package
-	got = make(map[string]bool)
-	for _, s := range allSymbols(pkgs[0].Types) {
-		got[s] = true
-	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Errorf("(-want;got+): %s", diff)
-	}
 }

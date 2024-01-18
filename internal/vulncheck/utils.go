@@ -167,15 +167,6 @@ func funcName(f *ssa.Function) string {
 	return n
 }
 
-// dbTypesFuncName is dbFuncName defined over *types.Func.
-func dbTypesFuncName(f *types.Func) string {
-	sig := f.Type().(*types.Signature)
-	if sig.Recv() == nil {
-		return f.Name()
-	}
-	return dbTypeFormat(sig.Recv().Type()) + "." + f.Name()
-}
-
 // memberFuncs returns functions associated with the `member`:
 // 1) `member` itself if `member` is a function
 // 2) `member` methods if `member` is a type
@@ -236,27 +227,6 @@ func funcRecvType(f *ssa.Function) string {
 	buf := new(bytes.Buffer)
 	types.WriteType(buf, v.Type(), nil)
 	return buf.String()
-}
-
-// allSymbols returns all top-level functions and methods defined in pkg.
-func allSymbols(pkg *types.Package) []string {
-	var names []string
-	scope := pkg.Scope()
-	for _, name := range scope.Names() {
-		o := scope.Lookup(name)
-		switch o := o.(type) {
-		case *types.Func:
-			names = append(names, dbTypesFuncName(o))
-		case *types.TypeName:
-			ms := types.NewMethodSet(types.NewPointer(o.Type()))
-			for i := 0; i < ms.Len(); i++ {
-				if f, ok := ms.At(i).Obj().(*types.Func); ok {
-					names = append(names, dbTypesFuncName(f))
-				}
-			}
-		}
-	}
-	return names
 }
 
 // vulnMatchesPackage reports whether an entry applies to pkg (an import path).
