@@ -5,12 +5,7 @@
 package vulncheck
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -35,43 +30,6 @@ func NewPackageGraph(goVersion string) *PackageGraph {
 		Version: semver.GoTagToSemver(goVersion),
 	})
 	return graph
-}
-
-func (g *PackageGraph) LoadModules(cfg *packages.Config) (mods []*packages.Module, err error) {
-	cmd := exec.Command("go", "list", "-m", "-json")
-	// Quick fix for go.dev/issue/65155
-	// TODO: Fix go.dev/issue/65124
-	// This check makes it so that govulncheck doesn't crash if running on a
-	// vendored module from the root of a module. Essentially only here so that
-	// the vendor test doesn't fail until #65124 is fixed.
-	if fileExists(filepath.Join(cfg.Dir, "vendor")) {
-		cmd.Args = append(cmd.Args, "-mod=readonly")
-	}
-
-	cmd.Args = append(cmd.Args, "all")
-	cmd.Env = append(cmd.Env, cfg.Env...)
-	cmd.Dir = cfg.Dir
-	out, err := cmd.Output()
-	if err != nil {
-		if ee := (*exec.ExitError)(nil); errors.As(err, &ee) && len(ee.Stderr) > 0 {
-			return nil, fmt.Errorf("%v: %v\n%s", cmd, err, ee.Stderr)
-		}
-		return nil, fmt.Errorf("%v: %v", cmd, err)
-	}
-
-	dec := json.NewDecoder(bytes.NewReader(out))
-	for dec.More() {
-		var m *packages.Module
-		err = dec.Decode(&m)
-		if err != nil {
-			if err != nil {
-				return nil, fmt.Errorf("decoding output of %v: %v", cmd, err)
-			}
-		}
-		mods = append(mods, m)
-	}
-	g.AddModules(mods...)
-	return mods, nil
 }
 
 // AddModules adds the modules and any replace modules provided.
@@ -158,7 +116,7 @@ func (g *PackageGraph) GetPackage(path string) *packages.Package {
 
 // LoadPackages loads the packages specified by the patterns into the graph.
 // See golang.org/x/tools/go/packages.Load for details of how it works.
-func (g *PackageGraph) LoadPackages(cfg *packages.Config, tags []string, patterns []string) ([]*packages.Package, error) {
+func (g *PackageGraph) LoadPackagesAndMods(cfg *packages.Config, tags []string, patterns []string) ([]*packages.Package, []*packages.Module, error) {
 	if len(tags) > 0 {
 		cfg.BuildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(tags, ","))}
 	}
@@ -173,7 +131,7 @@ func (g *PackageGraph) LoadPackages(cfg *packages.Config, tags []string, pattern
 
 	pkgs, err := packages.Load(cfg, patterns...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var perrs []packages.Error
 	packages.Visit(pkgs, nil, func(p *packages.Package) {
@@ -183,7 +141,40 @@ func (g *PackageGraph) LoadPackages(cfg *packages.Config, tags []string, pattern
 		err = &packageError{perrs}
 	}
 	g.AddPackages(pkgs...)
-	return pkgs, err
+	return pkgs, extractModules(pkgs), err
+}
+
+// extractModules collects modules in `pkgs` up to uniqueness of
+// module path and version.
+func extractModules(pkgs []*packages.Package) []*packages.Module {
+	modMap := map[string]*packages.Module{}
+	seen := map[*packages.Package]bool{}
+	var extract func(*packages.Package, map[string]*packages.Module)
+	extract = func(pkg *packages.Package, modMap map[string]*packages.Module) {
+		if pkg == nil || seen[pkg] {
+			return
+		}
+		if pkg.Module != nil {
+			if pkg.Module.Replace != nil {
+				modMap[pkg.Module.Replace.Path] = pkg.Module
+			} else {
+				modMap[pkg.Module.Path] = pkg.Module
+			}
+		}
+		seen[pkg] = true
+		for _, imp := range pkg.Imports {
+			extract(imp, modMap)
+		}
+	}
+	for _, pkg := range pkgs {
+		extract(pkg, modMap)
+	}
+
+	modules := []*packages.Module{}
+	for _, mod := range modMap {
+		modules = append(modules, mod)
+	}
+	return modules
 }
 
 // packageError contains errors from loading a set of packages.

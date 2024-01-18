@@ -17,8 +17,8 @@ import (
 )
 
 // Source detects vulnerabilities in pkgs and emits the findings to handler.
-func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) error {
-	vr, err := source(ctx, handler, pkgs, cfg, client, graph)
+func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, mods []*packages.Module, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) error {
+	vr, err := source(ctx, handler, pkgs, mods, cfg, client, graph)
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 // and produces a Result that contains info on detected vulnerabilities.
 //
 // Assumes that pkgs are non-empty and belong to the same program.
-func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (*Result, error) {
+func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, mods []*packages.Module, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (*Result, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -57,10 +57,6 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 		}()
 	}
 
-	var mods []*packages.Module
-	for _, m := range graph.modules {
-		mods = append(mods, m)
-	}
 	mv, err := FetchVulnerabilities(ctx, client, mods)
 	if err != nil {
 		return nil, err

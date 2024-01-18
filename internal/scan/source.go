@@ -30,28 +30,21 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 		return errNoGoMod
 	}
 	var pkgs []*packages.Package
+	var mods []*packages.Module
 	graph := vulncheck.NewPackageGraph(cfg.GoVersion)
 	pkgConfig := &packages.Config{
 		Dir:   dir,
 		Tests: cfg.test,
 		Env:   cfg.env,
 	}
-	mods, err := graph.LoadModules(pkgConfig)
+	pkgs, mods, err = graph.LoadPackagesAndMods(pkgConfig, cfg.tags, cfg.patterns)
 	if err != nil {
 		if isGoVersionMismatchError(err) {
 			return fmt.Errorf("%v\n\n%v", errGoVersionMismatch, err)
 		}
-		return fmt.Errorf("loading modules: %w", err)
+		return fmt.Errorf("loading packages: %w", err)
 	}
-	if cfg.ScanLevel.WantPackages() {
-		pkgs, err = graph.LoadPackages(pkgConfig, cfg.tags, cfg.patterns)
-		if err != nil {
-			if isGoVersionMismatchError(err) {
-				return fmt.Errorf("%v\n\n%v", errGoVersionMismatch, err)
-			}
-			return fmt.Errorf("loading packages: %w", err)
-		}
-	}
+
 	if err := handler.Progress(sourceProgressMessage(pkgs, len(mods)-1, cfg.ScanLevel)); err != nil {
 		return err
 	}
@@ -59,7 +52,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	if cfg.ScanLevel.WantPackages() && len(pkgs) == 0 {
 		return nil // early exit
 	}
-	return vulncheck.Source(ctx, handler, pkgs, &cfg.Config, client, graph)
+	return vulncheck.Source(ctx, handler, pkgs, mods, &cfg.Config, client, graph)
 }
 
 // sourceProgressMessage returns a string of the form

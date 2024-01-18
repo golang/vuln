@@ -2,7 +2,7 @@
 # Test of source mode on a module with a replace directive.
 
 $ govulncheck -C ${moddir}/replace ./... --> FAIL 3
-Scanning your code and P packages across M dependent module for known vulnerabilities...
+Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
 Vulnerability #1: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can

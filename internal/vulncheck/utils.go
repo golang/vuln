@@ -7,10 +7,8 @@ package vulncheck
 import (
 	"bytes"
 	"context"
-	"errors"
 	"go/token"
 	"go/types"
-	"os"
 	"sort"
 	"strings"
 
@@ -358,18 +356,4 @@ func modVersion(mod *packages.Module) string {
 		return mod.Replace.Version
 	}
 	return mod.Version
-}
-
-// fileExists checks if file path exists. Returns true
-// if the file exists or it cannot prove that it does
-// not exist. Otherwise, returns false.
-func fileExists(path string) bool {
-	if _, err := os.Stat(path); err == nil {
-		return true
-	} else if errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-	// Conservatively return true if os.Stat fails
-	// for some other reason.
-	return true
 }

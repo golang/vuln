@@ -191,7 +191,7 @@ func TestCalls(t *testing.T) {
 
 	// Load x and y as entry packages.
 	graph := NewPackageGraph("go1.18")
-	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y")})
+	pkgs, mods, err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,7 +205,7 @@ func TestCalls(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
+	result, err := source(context.Background(), test.NewMockHandler(), pkgs, mods, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,7 +298,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 
 	// Load x as entry package.
 	graph := NewPackageGraph("go1.18")
-	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
+	pkgs, mods, err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,7 +307,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := source(context.Background(), test.NewMockHandler(), pkgs, cfg, client, graph)
+	result, err := source(context.Background(), test.NewMockHandler(), pkgs, mods, cfg, client, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -363,7 +363,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 
 	// Load x as entry package.
 	graph := NewPackageGraph("go1.18")
-	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
+	pkgs, mods, err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -377,7 +377,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
+	result, err := source(context.Background(), test.NewMockHandler(), pkgs, mods, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -443,7 +443,7 @@ func TestRecursion(t *testing.T) {
 
 	// Load x as entry package.
 	graph := NewPackageGraph("go1.18")
-	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
+	pkgs, mods, err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -457,7 +457,7 @@ func TestRecursion(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
+	result, err := source(context.Background(), test.NewMockHandler(), pkgs, mods, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -508,7 +508,7 @@ func TestIssue57174(t *testing.T) {
 
 	// Load x as entry package.
 	graph := NewPackageGraph("go1.18")
-	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
+	pkgs, mods, err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -522,7 +522,7 @@ func TestIssue57174(t *testing.T) {
 	}
 
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	_, err = source(context.Background(), test.NewMockHandler(), pkgs, cfg, c, graph)
+	_, err = source(context.Background(), test.NewMockHandler(), pkgs, mods, cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
 	}

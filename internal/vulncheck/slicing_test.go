@@ -91,7 +91,7 @@ func Do(i I, input string) {
 	})
 
 	graph := NewPackageGraph("go1.18")
-	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "/module/slice")})
+	pkgs, _, err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "/module/slice")})
 	if err != nil {
 		t.Fatal(err)
 	}

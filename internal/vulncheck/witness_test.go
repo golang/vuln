@@ -182,7 +182,7 @@ func TestInits(t *testing.T) {
 
 	// Load x as entry package.
 	graph := NewPackageGraph("go1.18")
-	pkgs, err := graph.LoadPackages(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
+	pkgs, mods, err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestInits(t *testing.T) {
 		t.Fatal("failed to load x test package")
 	}
 	cfg := &govulncheck.Config{ScanLevel: "symbol"}
-	result, err := source(context.Background(), test.NewMockHandler(), pkgs, cfg, testClient, graph)
+	result, err := source(context.Background(), test.NewMockHandler(), pkgs, mods, cfg, testClient, graph)
 	if err != nil {
 		t.Fatal(err)
 	}
