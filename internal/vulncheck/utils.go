@@ -229,18 +229,6 @@ func funcRecvType(f *ssa.Function) string {
 	return buf.String()
 }
 
-// vulnMatchesPackage reports whether an entry applies to pkg (an import path).
-func vulnMatchesPackage(v *osv.Entry, pkg string) bool {
-	for _, a := range v.Affected {
-		for _, p := range a.EcosystemSpecific.Packages {
-			if p.Path == pkg {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func FixedVersion(modulePath, version string, affected []osv.Affected) string {
 	fixed := earliestValidFix(modulePath, version, affected)
 	// Add "v" prefix if one does not exist. moduleVersionString

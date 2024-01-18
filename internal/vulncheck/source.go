@@ -227,9 +227,7 @@ func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.E
 
 		// Populate CallSink field for each detected vuln symbol.
 		for _, osv := range osvs {
-			if vulnMatchesPackage(osv, funNode.Package.PkgPath) {
-				vulns = append(vulns, calledVuln(funNode, osv, dbFuncName(f), funNode.Package))
-			}
+			vulns = append(vulns, calledVuln(funNode, osv, dbFuncName(f), funNode.Package))
 		}
 	}
 
