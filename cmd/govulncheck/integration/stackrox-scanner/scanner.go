@@ -23,11 +23,16 @@ func main() {
 	}
 	out := os.Args[1]
 	want := map[string]bool{
-		"golang.org/x/crypto/ssh":                   true,
-		"golang.org/x/net/http2":                    true,
-		"golang.org/x/net/http2/hpack":              true,
-		"google.golang.org/grpc":                    true,
-		"google.golang.org/grpc/internal/transport": true,
+		"github.com/go-git/go-git/v5":                           true,
+		"github.com/go-git/go-git/v5/config":                    true,
+		"github.com/go-git/go-git/v5/plumbing/object":           true,
+		"github.com/go-git/go-git/v5/storage/filesystem":        true,
+		"github.com/go-git/go-git/v5/storage/filesystem/dotgit": true,
+		"golang.org/x/crypto/ssh":                               true,
+		"golang.org/x/net/http2":                                true,
+		"golang.org/x/net/http2/hpack":                          true,
+		"google.golang.org/grpc":                                true,
+		"google.golang.org/grpc/internal/transport":             true,
 	}
 
 	if err := integration.CompareNonStdVulns(out, want); err != nil {
