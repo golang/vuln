@@ -1,7 +1,8 @@
 {
   "config": {
     "protocol_version": "v0.1.0",
-    "scanner_name": "govulncheck"
+    "scanner_name": "govulncheck",
+    "scan_level": "symbol"
   }
 }
 {

@@ -1,7 +1,8 @@
 {
   "config": {
     "protocol_version": "v0.1.0",
-    "scanner_name": "govulncheck"
+    "scanner_name": "govulncheck",
+    "scan_level": "symbol"
   }
 }
 {
@@ -52,13 +53,13 @@
       {
         "module": "golang.org/vmod",
         "version": "v0.0.1",
-        "package": "vmod",
+        "package": "golang.org/vmod",
         "function": "VulnFoo"
       },
       {
         "module": "golang.org/main",
         "version": "v0.0.1",
-        "package": "main",
+        "package": "golang.org/main",
         "function": "main"
       }
     ]
