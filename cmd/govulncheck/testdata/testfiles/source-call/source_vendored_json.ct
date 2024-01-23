@@ -252,14 +252,26 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "receiver": "Result"
       },
       {
+        "module": "private.com/privateuser/fakemod",
+        "version": "v1.0.0",
+        "package": "private.com/privateuser/fakemod",
+        "function": "Leave",
+        "position": {
+          "filename": ".../mod.go",
+          "offset": 86,
+          "line": 6,
+          "column": 20
+        }
+      },
+      {
         "module": "golang.org/vendored",
         "package": "golang.org/vendored",
         "function": "main",
         "position": {
           "filename": ".../vendored.go",
-          "offset": 183,
-          "line": 14,
-          "column": 20
+          "offset": 137,
+          "line": 12,
+          "column": 15
         }
       }
     ]
@@ -372,7 +384,7 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "function": "main",
         "position": {
           "filename": ".../vendored.go",
-          "offset": 159,
+          "offset": 155,
           "line": 13,
           "column": 16
         }

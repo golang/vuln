@@ -8,6 +8,7 @@ require (
 	github.com/tidwall/gjson v1.6.5
 	// This version has a vulnerability that is called.
 	golang.org/x/text v0.3.0
+	private.com/privateuser/fakemod v1.0.0
 )
 
 require (

@@ -2,15 +2,14 @@ package main
 
 import (
 	"encoding/pem"
-	"fmt"
 
-	"github.com/tidwall/gjson"
+	"private.com/privateuser/fakemod"
+
 	"golang.org/x/text/language"
 )
 
 func main() {
-	fmt.Println("hello")
+	fakemod.Leave()
 	language.Parse("")
-	gjson.Result{}.Get("")
 	_, _ = pem.Decode([]byte("test"))
 }
