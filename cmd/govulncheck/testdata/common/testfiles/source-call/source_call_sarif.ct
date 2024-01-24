@@ -113,7 +113,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
           "locations": [
             {
               "physicalLocation": {
-                "artifactLocation": {},
+                "artifactLocation": {
+                  "uri": "go.mod",
+                  "uriBaseId": "%SRCROOT%"
+                },
                 "region": {
                   "startLine": 1
                 }
@@ -131,7 +134,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
           "locations": [
             {
               "physicalLocation": {
-                "artifactLocation": {},
+                "artifactLocation": {
+                  "uri": "go.mod",
+                  "uriBaseId": "%SRCROOT%"
+                },
                 "region": {
                   "startLine": 1
                 }
@@ -148,7 +154,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "module": "golang.org/vuln",
                       "location": {
                         "physicalLocation": {
-                          "artifactLocation": {},
+                          "artifactLocation": {
+                            "uri": "vuln.go",
+                            "uriBaseId": "%SRCROOT%"
+                          },
                           "region": {
                             "startLine": 14,
                             "startColumn": 20
@@ -163,7 +172,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "module": "github.com/tidwall/gjson",
                       "location": {
                         "physicalLocation": {
-                          "artifactLocation": {},
+                          "artifactLocation": {
+                            "uri": "gjson.go",
+                            "uriBaseId": "%GOMODCACHE%"
+                          },
                           "region": {
                             "startLine": 297,
                             "startColumn": 12
@@ -178,7 +190,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "module": "github.com/tidwall/gjson",
                       "location": {
                         "physicalLocation": {
-                          "artifactLocation": {},
+                          "artifactLocation": {
+                            "uri": "gjson.go",
+                            "uriBaseId": "%GOMODCACHE%"
+                          },
                           "region": {
                             "startLine": 1881,
                             "startColumn": 36
@@ -193,7 +208,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "module": "github.com/tidwall/gjson",
                       "location": {
                         "physicalLocation": {
-                          "artifactLocation": {},
+                          "artifactLocation": {
+                            "uri": "gjson.go",
+                            "uriBaseId": "%GOMODCACHE%"
+                          },
                           "region": {
                             "startLine": 220,
                             "startColumn": 17
@@ -222,7 +240,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "module": "golang.org/vuln",
                   "location": {
                     "physicalLocation": {
-                      "artifactLocation": {},
+                      "artifactLocation": {
+                        "uri": "vuln.go",
+                        "uriBaseId": "%SRCROOT%"
+                      },
                       "region": {
                         "startLine": 14,
                         "startColumn": 20
@@ -237,7 +258,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "module": "github.com/tidwall/gjson",
                   "location": {
                     "physicalLocation": {
-                      "artifactLocation": {},
+                      "artifactLocation": {
+                        "uri": "gjson.go",
+                        "uriBaseId": "%GOMODCACHE%"
+                      },
                       "region": {
                         "startLine": 297,
                         "startColumn": 12
@@ -252,7 +276,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "module": "github.com/tidwall/gjson",
                   "location": {
                     "physicalLocation": {
-                      "artifactLocation": {},
+                      "artifactLocation": {
+                        "uri": "gjson.go",
+                        "uriBaseId": "%GOMODCACHE%"
+                      },
                       "region": {
                         "startLine": 1881,
                         "startColumn": 36
@@ -267,7 +294,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "module": "github.com/tidwall/gjson",
                   "location": {
                     "physicalLocation": {
-                      "artifactLocation": {},
+                      "artifactLocation": {
+                        "uri": "gjson.go",
+                        "uriBaseId": "%GOMODCACHE%"
+                      },
                       "region": {
                         "startLine": 2587,
                         "startColumn": 21
@@ -282,7 +312,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "module": "github.com/tidwall/gjson",
                   "location": {
                     "physicalLocation": {
-                      "artifactLocation": {},
+                      "artifactLocation": {
+                        "uri": "gjson.go",
+                        "uriBaseId": "%GOMODCACHE%"
+                      },
                       "region": {
                         "startLine": 2631,
                         "startColumn": 21
@@ -297,7 +330,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "module": "github.com/tidwall/gjson",
                   "location": {
                     "physicalLocation": {
-                      "artifactLocation": {},
+                      "artifactLocation": {
+                        "uri": "gjson.go",
+                        "uriBaseId": "%GOMODCACHE%"
+                      },
                       "region": {
                         "startLine": 220,
                         "startColumn": 17
@@ -321,7 +357,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
           "locations": [
             {
               "physicalLocation": {
-                "artifactLocation": {},
+                "artifactLocation": {
+                  "uri": "go.mod",
+                  "uriBaseId": "%SRCROOT%"
+                },
                 "region": {
                   "startLine": 1
                 }
@@ -338,7 +377,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "module": "golang.org/vuln",
                       "location": {
                         "physicalLocation": {
-                          "artifactLocation": {},
+                          "artifactLocation": {
+                            "uri": "vuln.go",
+                            "uriBaseId": "%SRCROOT%"
+                          },
                           "region": {
                             "startLine": 13,
                             "startColumn": 16
@@ -353,7 +395,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "module": "golang.org/x/text",
                       "location": {
                         "physicalLocation": {
-                          "artifactLocation": {},
+                          "artifactLocation": {
+                            "uri": "language/parse.go",
+                            "uriBaseId": "%GOMODCACHE%"
+                          },
                           "region": {
                             "startLine": 228,
                             "startColumn": 6
@@ -382,7 +427,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "module": "golang.org/vuln",
                   "location": {
                     "physicalLocation": {
-                      "artifactLocation": {},
+                      "artifactLocation": {
+                        "uri": "vuln.go",
+                        "uriBaseId": "%SRCROOT%"
+                      },
                       "region": {
                         "startLine": 13,
                         "startColumn": 16
@@ -397,7 +445,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "module": "golang.org/x/text",
                   "location": {
                     "physicalLocation": {
-                      "artifactLocation": {},
+                      "artifactLocation": {
+                        "uri": "language/parse.go",
+                        "uriBaseId": "%GOMODCACHE%"
+                      },
                       "region": {
                         "startLine": 228,
                         "startColumn": 6
@@ -421,7 +472,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
           "locations": [
             {
               "physicalLocation": {
-                "artifactLocation": {},
+                "artifactLocation": {
+                  "uri": "go.mod",
+                  "uriBaseId": "%SRCROOT%"
+                },
                 "region": {
                   "startLine": 1
                 }
@@ -438,7 +492,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "module": "golang.org/vuln",
                       "location": {
                         "physicalLocation": {
-                          "artifactLocation": {},
+                          "artifactLocation": {
+                            "uri": "vuln.go",
+                            "uriBaseId": "%SRCROOT%"
+                          },
                           "region": {
                             "startLine": 14,
                             "startColumn": 20
@@ -453,7 +510,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                       "module": "github.com/tidwall/gjson",
                       "location": {
                         "physicalLocation": {
-                          "artifactLocation": {},
+                          "artifactLocation": {
+                            "uri": "gjson.go",
+                            "uriBaseId": "%GOMODCACHE%"
+                          },
                           "region": {
                             "startLine": 296,
                             "startColumn": 17
@@ -482,7 +542,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "module": "golang.org/vuln",
                   "location": {
                     "physicalLocation": {
-                      "artifactLocation": {},
+                      "artifactLocation": {
+                        "uri": "vuln.go",
+                        "uriBaseId": "%SRCROOT%"
+                      },
                       "region": {
                         "startLine": 14,
                         "startColumn": 20
@@ -497,7 +560,10 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
                   "module": "github.com/tidwall/gjson",
                   "location": {
                     "physicalLocation": {
-                      "artifactLocation": {},
+                      "artifactLocation": {
+                        "uri": "gjson.go",
+                        "uriBaseId": "%GOMODCACHE%"
+                      },
                       "region": {
                         "startLine": 296,
                         "startColumn": 17

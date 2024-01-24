@@ -5,8 +5,13 @@
 // Package sarif defines Static Analysis Results Interchange Format
 // (SARIF) types supported by govulncheck.
 //
-// See https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=sarif
-// for more information on the SARIF format.
+// The implementation covers the subset of the specification available
+// at https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=sarif.
+//
+// If govulncheck is used in source mode, the locations will include a
+// physical location implemented as a path relative to either the source
+// module (%SRCROOT%), Go root (%GOROOT%), or Go module cache (%GOMODCACHE%)
+// URI base id.
 package sarif
 
 import "golang.org/x/vuln/internal/govulncheck"
@@ -150,6 +155,12 @@ type PhysicalLocation struct {
 	ArtifactLocation ArtifactLocation `json:"artifactLocation,omitempty"`
 	Region           Region           `json:"region,omitempty"`
 }
+
+const (
+	SrcRootID    = "%SRCROOT%"
+	GoRootID     = "%GOROOT%"
+	GoModCacheID = "%GOMODCACHE%"
+)
 
 // ArtifactLocation is a path to an offending file.
 type ArtifactLocation struct {

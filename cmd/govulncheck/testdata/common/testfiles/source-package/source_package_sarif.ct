@@ -113,7 +113,10 @@ $ govulncheck -format sarif -scan package -C ${moddir}/vuln .
           "locations": [
             {
               "physicalLocation": {
-                "artifactLocation": {},
+                "artifactLocation": {
+                  "uri": "go.mod",
+                  "uriBaseId": "%SRCROOT%"
+                },
                 "region": {
                   "startLine": 1
                 }
@@ -131,7 +134,10 @@ $ govulncheck -format sarif -scan package -C ${moddir}/vuln .
           "locations": [
             {
               "physicalLocation": {
-                "artifactLocation": {},
+                "artifactLocation": {
+                  "uri": "go.mod",
+                  "uriBaseId": "%SRCROOT%"
+                },
                 "region": {
                   "startLine": 1
                 }
@@ -149,7 +155,10 @@ $ govulncheck -format sarif -scan package -C ${moddir}/vuln .
           "locations": [
             {
               "physicalLocation": {
-                "artifactLocation": {},
+                "artifactLocation": {
+                  "uri": "go.mod",
+                  "uriBaseId": "%SRCROOT%"
+                },
                 "region": {
                   "startLine": 1
                 }
@@ -167,7 +176,10 @@ $ govulncheck -format sarif -scan package -C ${moddir}/vuln .
           "locations": [
             {
               "physicalLocation": {
-                "artifactLocation": {},
+                "artifactLocation": {
+                  "uri": "go.mod",
+                  "uriBaseId": "%SRCROOT%"
+                },
                 "region": {
                   "startLine": 1
                 }

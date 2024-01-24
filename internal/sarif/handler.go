@@ -10,6 +10,7 @@ import (
 	"io"
 	"sort"
 
+	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
 	"golang.org/x/vuln/internal/traces"
@@ -165,7 +166,10 @@ func results(h *handler) []Result {
 			// Attach result to the go.mod file for source analysis.
 			// But there is no such place for binaries.
 			locs = []Location{{PhysicalLocation: PhysicalLocation{
-				// TODO: add artifact location for go.mod
+				ArtifactLocation: ArtifactLocation{
+					URI:       "go.mod",
+					URIBaseID: SrcRootID,
+				},
 				Region: Region{StartLine: 1}, // for now, point to the first line
 			}}}
 		}
@@ -174,8 +178,8 @@ func results(h *handler) []Result {
 			RuleID:    fs[0].OSV,
 			Level:     level(fs[0], h.cfg),
 			Message:   Description{Text: resultMessage(fs, h.cfg)},
-			Stacks:    stacks(fs),
-			CodeFlows: codeFlows(fs),
+			Stacks:    stacks(h, fs),
+			CodeFlows: codeFlows(h, fs),
 			Locations: locs,
 		}
 		results = append(results, res)
@@ -250,14 +254,14 @@ func level(f *govulncheck.Finding, cfg *govulncheck.Config) string {
 	}
 }
 
-func stacks(fs []*govulncheck.Finding) []Stack {
+func stacks(h *handler, fs []*govulncheck.Finding) []Stack {
 	if fs[0].Trace[0].Function == "" { // not call level findings
 		return nil
 	}
 
 	var stacks []Stack
 	for _, f := range fs {
-		stacks = append(stacks, stack(f))
+		stacks = append(stacks, stack(h, f))
 	}
 	// Sort stacks for deterministic output. We sort by message
 	// which is effectively sorting by full symbol name. The
@@ -267,8 +271,9 @@ func stacks(fs []*govulncheck.Finding) []Stack {
 }
 
 // stack transforms call stack in f to a sarif stack.
-func stack(f *govulncheck.Finding) Stack {
+func stack(h *handler, f *govulncheck.Finding) Stack {
 	trace := f.Trace
+	top := trace[len(trace)-1] // belongs to top level module
 
 	var frames []Frame
 	for i := len(trace) - 1; i >= 0; i-- { // vulnerable symbol is at the top frame
@@ -277,19 +282,24 @@ func stack(f *govulncheck.Finding) Stack {
 		if frame.Position != nil {
 			pos = *frame.Position
 		}
-		frames = append(frames, Frame{
-			Module: frame.Module,
-			Location: Location{
-				Message: Description{Text: symbol(frame)}, // show the (full) symbol name
-				PhysicalLocation: PhysicalLocation{
-					// TODO: add artifact location
-					Region: Region{
-						StartLine:   pos.Line,
-						StartColumn: pos.Column,
-					},
+
+		sf := Frame{
+			Module:   frame.Module,
+			Location: Location{Message: Description{Text: symbol(frame)}}, // show the (full) symbol name
+		}
+		if h.cfg.ScanMode != govulncheck.ScanModeBinary {
+			sf.Location.PhysicalLocation = PhysicalLocation{
+				ArtifactLocation: ArtifactLocation{
+					URI:       pos.Filename,
+					URIBaseID: uriID(top.Module, frame.Module),
 				},
-			},
-		})
+				Region: Region{
+					StartLine:   pos.Line,
+					StartColumn: pos.Column,
+				},
+			}
+		}
+		frames = append(frames, sf)
 	}
 
 	return Stack{
@@ -298,7 +308,7 @@ func stack(f *govulncheck.Finding) Stack {
 	}
 }
 
-func codeFlows(fs []*govulncheck.Finding) []CodeFlow {
+func codeFlows(h *handler, fs []*govulncheck.Finding) []CodeFlow {
 	if fs[0].Trace[0].Function == "" { // not call level findings
 		return nil
 	}
@@ -316,7 +326,7 @@ func codeFlows(fs []*govulncheck.Finding) []CodeFlow {
 
 	var codeFlows []CodeFlow
 	for fr, fs := range m {
-		tfs := threadFlows(fs)
+		tfs := threadFlows(h, fs)
 		codeFlows = append(codeFlows, CodeFlow{
 			ThreadFlows: tfs,
 			// TODO: should we instead show the message from govulncheck text output?
@@ -330,10 +340,12 @@ func codeFlows(fs []*govulncheck.Finding) []CodeFlow {
 	return codeFlows
 }
 
-func threadFlows(fs []*govulncheck.Finding) []ThreadFlow {
+func threadFlows(h *handler, fs []*govulncheck.Finding) []ThreadFlow {
 	var tfs []ThreadFlow
 	for _, f := range fs {
 		trace := traces.Compact(f)
+		top := trace[len(trace)-1] // belongs to top level module
+
 		var tf []ThreadFlowLocation
 		for i := len(trace) - 1; i >= 0; i-- { // vulnerable symbol is at the top frame
 			// TODO: should we, similar to govulncheck text output, only
@@ -343,20 +355,36 @@ func threadFlows(fs []*govulncheck.Finding) []ThreadFlow {
 			if frame.Position != nil {
 				pos = *frame.Position
 			}
-			tf = append(tf, ThreadFlowLocation{
-				Module: frame.Module,
-				Location: Location{
-					Message: Description{Text: symbol(frame)}, // show the (full) symbol name
-					PhysicalLocation: PhysicalLocation{
-						// TODO: add artifact location
-						Region: Region{
-							StartLine:   pos.Line,
-							StartColumn: pos.Column,
-						},
+
+			tfl := ThreadFlowLocation{
+				Module:   frame.Module,
+				Location: Location{Message: Description{Text: symbol(frame)}}, // show the (full) symbol name
+			}
+			if h.cfg.ScanMode != govulncheck.ScanModeBinary {
+				tfl.Location.PhysicalLocation = PhysicalLocation{
+					ArtifactLocation: ArtifactLocation{
+						URI:       pos.Filename,
+						URIBaseID: uriID(top.Module, frame.Module),
 					},
-				}})
+					Region: Region{
+						StartLine:   pos.Line,
+						StartColumn: pos.Column,
+					},
+				}
+			}
+			tf = append(tf, tfl)
 		}
 		tfs = append(tfs, ThreadFlow{Locations: tf})
 	}
 	return tfs
+}
+
+func uriID(top, module string) string {
+	if top == module {
+		return SrcRootID
+	}
+	if module == internal.GoStdModulePath {
+		return GoRootID
+	}
+	return GoModCacheID
 }
