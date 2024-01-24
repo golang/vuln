@@ -121,7 +121,9 @@ $ govulncheck -format sarif -scan module -C ${moddir}/vuln
                   "startLine": 1
                 }
               },
-              "message": {}
+              "message": {
+                "text": "Findings for vulnerability GO-2020-0015"
+              }
             }
           ]
         },
@@ -142,7 +144,9 @@ $ govulncheck -format sarif -scan module -C ${moddir}/vuln
                   "startLine": 1
                 }
               },
-              "message": {}
+              "message": {
+                "text": "Findings for vulnerability GO-2021-0054"
+              }
             }
           ]
         },
@@ -163,7 +167,9 @@ $ govulncheck -format sarif -scan module -C ${moddir}/vuln
                   "startLine": 1
                 }
               },
-              "message": {}
+              "message": {
+                "text": "Findings for vulnerability GO-2021-0113"
+              }
             }
           ]
         },
@@ -184,7 +190,9 @@ $ govulncheck -format sarif -scan module -C ${moddir}/vuln
                   "startLine": 1
                 }
               },
-              "message": {}
+              "message": {
+                "text": "Findings for vulnerability GO-2021-0265"
+              }
             }
           ]
         }

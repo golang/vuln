@@ -160,7 +160,7 @@ func rules(h *handler) []Rule {
 
 func results(h *handler) []Result {
 	var results []Result
-	for _, fs := range h.findings {
+	for osv, fs := range h.findings {
 		var locs []Location
 		if h.cfg.ScanMode != govulncheck.ScanModeBinary {
 			// Attach result to the go.mod file for source analysis.
@@ -171,11 +171,13 @@ func results(h *handler) []Result {
 					URIBaseID: SrcRootID,
 				},
 				Region: Region{StartLine: 1}, // for now, point to the first line
-			}}}
+			},
+				Message: Description{Text: fmt.Sprintf("Findings for vulnerability %s", osv)}, // not having a message here results in an invalid sarif
+			}}
 		}
 
 		res := Result{
-			RuleID:    fs[0].OSV,
+			RuleID:    osv,
 			Level:     level(fs[0], h.cfg),
 			Message:   Description{Text: resultMessage(fs, h.cfg)},
 			Stacks:    stacks(h, fs),
@@ -278,7 +280,7 @@ func stack(h *handler, f *govulncheck.Finding) Stack {
 	var frames []Frame
 	for i := len(trace) - 1; i >= 0; i-- { // vulnerable symbol is at the top frame
 		frame := trace[i]
-		pos := govulncheck.Position{}
+		pos := govulncheck.Position{Line: 1, Column: 1}
 		if frame.Position != nil {
 			pos = *frame.Position
 		}
@@ -351,7 +353,7 @@ func threadFlows(h *handler, fs []*govulncheck.Finding) []ThreadFlow {
 			// TODO: should we, similar to govulncheck text output, only
 			// mention three elements of the compact trace?
 			frame := trace[i]
-			pos := govulncheck.Position{}
+			pos := govulncheck.Position{Line: 1, Column: 1}
 			if frame.Position != nil {
 				pos = *frame.Position
 			}
