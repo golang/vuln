@@ -250,7 +250,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
         "function": "Get",
         "receiver": "Result",
         "position": {
-          "filename": ".../gjson.go",
+          "filename": "gjson.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -261,7 +261,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
         "package": "golang.org/vuln",
         "function": "main",
         "position": {
-          "filename": ".../vuln.go",
+          "filename": "vuln.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -371,7 +371,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
         "package": "golang.org/x/text/language",
         "function": "Parse",
         "position": {
-          "filename": ".../parse.go",
+          "filename": "language/parse.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -382,7 +382,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
         "package": "golang.org/vuln",
         "function": "main",
         "position": {
-          "filename": ".../vuln.go",
+          "filename": "vuln.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -491,7 +491,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
         "function": "ForEach",
         "receiver": "Result",
         "position": {
-          "filename": ".../gjson.go",
+          "filename": "gjson.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -503,7 +503,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
         "package": "github.com/tidwall/gjson",
         "function": "modPretty",
         "position": {
-          "filename": ".../gjson.go",
+          "filename": "gjson.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -515,7 +515,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
         "package": "github.com/tidwall/gjson",
         "function": "execModifier",
         "position": {
-          "filename": ".../gjson.go",
+          "filename": "gjson.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -527,7 +527,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
         "package": "github.com/tidwall/gjson",
         "function": "Get",
         "position": {
-          "filename": ".../gjson.go",
+          "filename": "gjson.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -540,7 +540,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
         "function": "Get",
         "receiver": "Result",
         "position": {
-          "filename": ".../gjson.go",
+          "filename": "gjson.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -551,7 +551,7 @@ $ govulncheck -C ${moddir}/vuln -json ./...
         "package": "golang.org/vuln",
         "function": "main",
         "position": {
-          "filename": ".../vuln.go",
+          "filename": "vuln.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>

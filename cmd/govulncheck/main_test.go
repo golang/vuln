@@ -42,16 +42,6 @@ type fixup struct {
 
 var fixups = []fixup{
 	{
-		// modifies paths to Go files by replacing their directory with "...".
-		// For example,/a/b/c.go becomes .../c.go .
-		// This makes it possible to compare govulncheck output across systems, because
-		// Go filenames include setup-specific paths.
-		pattern: `[^\s"]*\.go[\s":]`,
-		replaceFunc: func(b []byte) []byte {
-			s := string(b)
-			return []byte(fmt.Sprintf(`.../%s%c`, filepath.Base(s[:len(s)-1]), s[len(s)-1]))
-		},
-	}, {
 		// modifies position lines to mask actual line and column with <l> and
 		// <c> placeholders, resp.
 		pattern: `\.go:(\d+):(\d+):`,

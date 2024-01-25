@@ -13,7 +13,7 @@ Vulnerability #1: GO-2021-0265
     Found in: github.com/tidwall/gjson@v1.6.5
     Fixed in: github.com/tidwall/gjson@v1.9.3
     Example traces found:
-      #1: .../vendored.go:<l>:<c>: vendored.main calls fakemod.Leave, which calls gjson.Result.Get
+      #1: vendored.go:<l>:<c>: vendored.main calls fakemod.Leave, which calls gjson.Result.Get
 
 Vulnerability #2: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can
@@ -25,7 +25,7 @@ Vulnerability #2: GO-2021-0113
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
     Example traces found:
-      #1: .../vendored.go:<l>:<c>: vendored.main calls language.Parse
+      #1: vendored.go:<l>:<c>: vendored.main calls language.Parse
 
 === Package Results ===
 

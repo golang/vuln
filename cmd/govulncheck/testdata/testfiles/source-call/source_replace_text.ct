@@ -16,7 +16,7 @@ Vulnerability #1: GO-2021-0113
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
     Example traces found:
-      #1: .../main.go:<l>:<c>: replace.main calls language.Parse
+      #1: main.go:<l>:<c>: replace.main calls language.Parse
 
 Your code is affected by 1 vulnerability from 1 module.
 This scan also found 0 vulnerabilities in packages you import and 2

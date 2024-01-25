@@ -1,6 +1,6 @@
 #####
-# Test for multiple call stacks in source mode
-$ govulncheck -json -C ${moddir}/multientry .
+# Test of source mode json on a module with a replace directive.
+$ govulncheck -C ${moddir}/replace -json ./...
 {
   "config": {
     "protocol_version": "v1.0.0",
@@ -135,7 +135,8 @@ $ govulncheck -json -C ${moddir}/multientry .
     "trace": [
       {
         "module": "stdlib",
-        "version": "v1.18.0"
+        "version": "v1.18.0",
+        "package": "net/http"
       }
     ]
   }
@@ -212,7 +213,7 @@ $ govulncheck -json -C ${moddir}/multientry .
     "trace": [
       {
         "module": "golang.org/x/text",
-        "version": "v0.3.5"
+        "version": "v0.3.0"
       }
     ]
   }
@@ -224,7 +225,7 @@ $ govulncheck -json -C ${moddir}/multientry .
     "trace": [
       {
         "module": "golang.org/x/text",
-        "version": "v0.3.5",
+        "version": "v0.3.0",
         "package": "golang.org/x/text/language"
       }
     ]
@@ -237,60 +238,7 @@ $ govulncheck -json -C ${moddir}/multientry .
     "trace": [
       {
         "module": "golang.org/x/text",
-        "version": "v0.3.5",
-        "package": "golang.org/x/text/language",
-        "function": "MustParse",
-        "position": {
-          "filename": "language/tags.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
-        }
-      },
-      {
-        "module": "golang.org/multientry",
-        "package": "golang.org/multientry",
-        "function": "foobar",
-        "position": {
-          "filename": "main.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
-        }
-      },
-      {
-        "module": "golang.org/multientry",
-        "package": "golang.org/multientry",
-        "function": "D",
-        "position": {
-          "filename": "main.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
-        }
-      },
-      {
-        "module": "golang.org/multientry",
-        "package": "golang.org/multientry",
-        "function": "main",
-        "position": {
-          "filename": "main.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
-        }
-      }
-    ]
-  }
-}
-{
-  "finding": {
-    "osv": "GO-2021-0113",
-    "fixed_version": "v0.3.7",
-    "trace": [
-      {
-        "module": "golang.org/x/text",
-        "version": "v0.3.5",
+        "version": "v0.3.0",
         "package": "golang.org/x/text/language",
         "function": "Parse",
         "position": {
@@ -301,19 +249,8 @@ $ govulncheck -json -C ${moddir}/multientry .
         }
       },
       {
-        "module": "golang.org/multientry",
-        "package": "golang.org/multientry",
-        "function": "C",
-        "position": {
-          "filename": "main.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
-        }
-      },
-      {
-        "module": "golang.org/multientry",
-        "package": "golang.org/multientry",
+        "module": "golang.org/replace",
+        "package": "golang.org/replace",
         "function": "main",
         "position": {
           "filename": "main.go",
@@ -400,5 +337,17 @@ $ govulncheck -json -C ${moddir}/multientry .
     "database_specific": {
       "url": "https://pkg.go.dev/vuln/GO-2020-0015"
     }
+  }
+}
+{
+  "finding": {
+    "osv": "GO-2020-0015",
+    "fixed_version": "v0.3.3",
+    "trace": [
+      {
+        "module": "golang.org/x/text",
+        "version": "v0.3.0"
+      }
+    ]
   }
 }

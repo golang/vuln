@@ -6,6 +6,7 @@ package vulncheck
 
 import (
 	"go/token"
+	"path/filepath"
 	"sort"
 
 	"golang.org/x/tools/go/packages"
@@ -102,25 +103,55 @@ func traceFromEntries(vcs CallStack) []*govulncheck.Frame {
 
 func posFromStackEntry(e StackEntry, sink bool) *govulncheck.Position {
 	var p *token.Position
+	var f *FuncNode
 	if sink && e.Function != nil && e.Function.Pos != nil {
 		// For sinks, i.e., vulns we take the position
 		// of the symbol.
 		p = e.Function.Pos
+		f = e.Function
 	} else if e.Call != nil && e.Call.Pos != nil {
 		// Otherwise, we take the position of
 		// the call statement.
 		p = e.Call.Pos
+		f = e.Call.Parent
 	}
 
 	if p == nil {
 		return nil
 	}
 	return &govulncheck.Position{
-		Filename: p.Filename,
+		Filename: pathRelativeToMod(p.Filename, f),
 		Offset:   p.Offset,
 		Line:     p.Line,
 		Column:   p.Column,
 	}
+}
+
+// pathRelativeToMod computes a version of path
+// relative to the module of f. If it does not
+// have all the necessary information, returns
+// an empty string.
+func pathRelativeToMod(path string, f *FuncNode) string {
+	if path == "" || f == nil || f.Package == nil { // sanity
+		return ""
+	}
+
+	var mod *packages.Module
+	if IsStdPackage(f.Package.PkgPath) {
+		mod = stdlibModule
+	} else {
+		mod = f.Package.Module
+	}
+
+	if mod.Replace != nil {
+		mod = mod.Replace // for replace directive
+	}
+
+	p, err := filepath.Rel(mod.Dir, path)
+	if err != nil {
+		return ""
+	}
+	return p
 }
 
 func frameFromPackage(pkg *packages.Package) *govulncheck.Frame {

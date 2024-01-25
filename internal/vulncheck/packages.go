@@ -6,12 +6,15 @@ package vulncheck
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/semver"
 )
+
+var stdlibModule *packages.Module
 
 // PackageGraph holds a complete module and package graph.
 // Its primary purpose is to allow fast access to the nodes by path.
@@ -25,10 +28,18 @@ func NewPackageGraph(goVersion string) *PackageGraph {
 		modules:  map[string]*packages.Module{},
 		packages: map[string]*packages.Package{},
 	}
-	graph.AddModules(&packages.Module{
+
+	goRoot := ""
+	if out, err := exec.Command("go", "env", "GOROOT").Output(); err == nil {
+		goRoot = strings.TrimSpace(string(out))
+	}
+
+	stdlibModule = &packages.Module{
 		Path:    internal.GoStdModulePath,
 		Version: semver.GoTagToSemver(goVersion),
-	})
+		Dir:     goRoot,
+	}
+	graph.AddModules(stdlibModule)
 	return graph
 }
 
