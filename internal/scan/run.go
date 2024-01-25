@@ -65,10 +65,7 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 	if err != nil {
 		return err
 	}
-	if err := Flush(handler); err != nil {
-		return err
-	}
-	return nil
+	return Flush(handler)
 }
 
 func prepareConfig(ctx context.Context, cfg *config, client *client.Client) {
