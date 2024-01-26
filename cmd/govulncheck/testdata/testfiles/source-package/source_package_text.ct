@@ -1,6 +1,6 @@
 #####
 # Testing that govulncheck doesn't mention calls when it doesn't have the relevant info
-$ govulncheck -scan package -C ${moddir}/multientry .
+$ govulncheck -scan package -C ${moddir}/multientry . --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
 === Package Results ===
@@ -22,7 +22,7 @@ for more details.
 
 #####
 # Test for package level scan with the -show verbose flag
-$ govulncheck -show verbose -scan package -C ${moddir}/multientry .
+$ govulncheck -show verbose -scan package -C ${moddir}/multientry . --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
 === Package Results ===

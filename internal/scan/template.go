@@ -75,6 +75,15 @@ func groupBy(findings []*findingSummary, compare func(left, right *findingSummar
 	return result
 }
 
+func isRequired(findings []*findingSummary) bool {
+	for _, f := range findings {
+		if f.Trace[0].Module != "" {
+			return true
+		}
+	}
+	return false
+}
+
 func isImported(findings []*findingSummary) bool {
 	for _, f := range findings {
 		if f.Trace[0].Package != "" {
@@ -92,6 +101,7 @@ func isCalled(findings []*findingSummary) bool {
 	}
 	return false
 }
+
 func getOSV(osvs []*osv.Entry, id string) *osv.Entry {
 	for _, entry := range osvs {
 		if entry.ID == id {

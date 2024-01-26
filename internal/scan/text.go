@@ -93,7 +93,10 @@ func (h *TextHandler) Flush() error {
 	if h.err != nil {
 		return h.err
 	}
-	if isCalled(h.findings) {
+	// We found vulnerabilities when the findings' level matches the scan level.
+	if (isCalled(h.findings) && h.scanLevel == govulncheck.ScanLevelSymbol) ||
+		(isImported(h.findings) && h.scanLevel == govulncheck.ScanLevelPackage) ||
+		(isRequired(h.findings) && h.scanLevel == govulncheck.ScanLevelModule) {
 		return errVulnerabilitiesFound
 	}
 
