@@ -40,8 +40,9 @@ Vulnerability #3: GO-2021-0054
       #1: gjson.Result.ForEach
 
 Your code is affected by 3 vulnerabilities from 2 modules.
-This scan found no other vulnerabilities in packages you import or modules you
-require.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
 Use -show verbose for more details.
 
 # Test extract mode. Due to the size of the blob even for smallest programs, we

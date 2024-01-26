@@ -9,9 +9,10 @@ package vulncheck
 
 import (
 	"context"
-	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/buildinfo"
 	"golang.org/x/vuln/internal/govulncheck"
@@ -50,15 +51,29 @@ func TestBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// With package scan level, all test vulnerable symbols should be detected.
-	wantVulns := []*testVuln{
-		{Symbol: "Vuln", PkgPath: "golang.org/bmod/bvuln", ModPath: "golang.org/bmod"},
-		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
-		{Symbol: "VulnData.Vuln2", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
-		{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"},
+	// With package scan level, all vulnerable packages should be detected.
+	want := []*Vuln{
+		{Package: &packages.Package{PkgPath: "golang.org/bmod/bvuln"}},
+		{Package: &packages.Package{PkgPath: "golang.org/amod/avuln"}},
+		{Package: &packages.Package{PkgPath: "archive/zip"}},
 	}
 
-	compareVulns(t, wantVulns, res)
+	less := func(v1, v2 *Vuln) bool {
+		return (v1.Package.PkgPath + "." + v1.Symbol) < (v2.Package.PkgPath + "." + v2.Symbol)
+	}
+	equal := func(v1, v2 *Vuln) bool {
+		if v1.Symbol != v2.Symbol {
+			return false
+		}
+		if v1.Package != nil && v2.Package != nil {
+			return v1.Package.PkgPath == v2.Package.PkgPath
+		}
+		return true // we don't care about these cases here
+	}
+
+	if diff := cmp.Diff(want, res.Vulns, cmpopts.SortSlices(less), cmp.Comparer(equal)); diff != "" {
+		t.Errorf("(-want, +got): %s", diff)
+	}
 
 	// Test the symbols.
 	cfg.ScanLevel = "symbol"
@@ -67,37 +82,11 @@ func TestBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantVulns = []*testVuln{
-		{Symbol: "VulnData.Vuln1", PkgPath: "golang.org/amod/avuln", ModPath: "golang.org/amod"},
-		{Symbol: "OpenReader", PkgPath: "archive/zip", ModPath: "stdlib"},
+	want = []*Vuln{
+		{Symbol: "OpenReader", Package: &packages.Package{PkgPath: "archive/zip"}},
+		{Symbol: "VulnData.Vuln1", Package: &packages.Package{PkgPath: "golang.org/amod/avuln"}},
 	}
-
-	compareVulns(t, wantVulns, res)
-}
-
-type testVuln struct {
-	Symbol  string
-	PkgPath string
-	ModPath string
-}
-
-func compareVulns(t *testing.T, want []*testVuln, res *Result) {
-	if len(want) != len(res.Vulns) {
-		t.Error("want", len(want), "vulnerabilities, got", len(res.Vulns))
-		return
-	}
-	sort.Slice(want, func(i, j int) bool { return want[i].Symbol < want[j].Symbol })
-	sort.Slice(res.Vulns, func(i, j int) bool { return res.Vulns[i].Symbol < res.Vulns[j].Symbol })
-	for i, want := range want {
-		got := res.Vulns[i]
-		if want.Symbol != got.Symbol {
-			t.Error("[", i, "] want", want.Symbol, ", got", got.Symbol)
-		}
-		if want.PkgPath != got.Package.PkgPath {
-			t.Error("[", i, "] want", want.ModPath, ", got", got.Package.Module.Path)
-		}
-		if want.ModPath != got.Package.Module.Path {
-			t.Error("[", i, "] want", want.ModPath, ", got", got.Package.Module.Path)
-		}
+	if diff := cmp.Diff(want, res.Vulns, cmpopts.SortSlices(less), cmp.Comparer(equal)); diff != "" {
+		t.Errorf("(-want, +got): %s", diff)
 	}
 }
