@@ -240,7 +240,13 @@ $ govulncheck -json -C ${moddir}/multientry .
         "module": "golang.org/x/text",
         "version": "v0.3.5",
         "package": "golang.org/x/text/language",
-        "function": "MustParse"
+        "function": "MustParse",
+        "position": {
+          "filename": ".../tags.go",
+          "offset": 427,
+          "line": 13,
+          "column": 6
+        }
       },
       {
         "module": "golang.org/multientry",
@@ -287,7 +293,13 @@ $ govulncheck -json -C ${moddir}/multientry .
         "module": "golang.org/x/text",
         "version": "v0.3.5",
         "package": "golang.org/x/text/language",
-        "function": "Parse"
+        "function": "Parse",
+        "position": {
+          "filename": ".../parse.go",
+          "offset": 1121,
+          "line": 33,
+          "column": 6
+        }
       },
       {
         "module": "golang.org/multientry",

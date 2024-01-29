@@ -42,7 +42,7 @@ Vulnerability #1: GO-2021-0113
     Example traces found:
       #1: for function golang.org/x/text/language.Parse
         .../subdir.go:8:16: golang.org/vuln/subdir.Foo
-        golang.org/x/text/language.Parse
+        .../parse.go:228:6: golang.org/x/text/language.Parse
 
 Your code is affected by 1 vulnerability from 1 module.
 This scan also found 0 vulnerabilities in packages you import and 2

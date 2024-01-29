@@ -249,7 +249,13 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "version": "v1.6.5",
         "package": "github.com/tidwall/gjson",
         "function": "Get",
-        "receiver": "Result"
+        "receiver": "Result",
+        "position": {
+          "filename": ".../gjson.go",
+          "offset": 81,
+          "line": 7,
+          "column": 15
+        }
       },
       {
         "module": "private.com/privateuser/fakemod",
@@ -376,7 +382,13 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "module": "golang.org/x/text",
         "version": "v0.3.0",
         "package": "golang.org/x/text/language",
-        "function": "Parse"
+        "function": "Parse",
+        "position": {
+          "filename": ".../language.go",
+          "offset": 53,
+          "line": 5,
+          "column": 6
+        }
       },
       {
         "module": "golang.org/vendored",

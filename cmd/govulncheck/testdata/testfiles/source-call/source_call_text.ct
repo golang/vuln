@@ -61,7 +61,7 @@ Vulnerability #1: GO-2021-0265
     Example traces found:
       #1: for function github.com/tidwall/gjson.Result.Get
         .../vuln.go:14:20: golang.org/vuln.main
-        github.com/tidwall/gjson.Result.Get
+        .../gjson.go:296:17: github.com/tidwall/gjson.Result.Get
 
 Vulnerability #2: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can
@@ -75,7 +75,7 @@ Vulnerability #2: GO-2021-0113
     Example traces found:
       #1: for function golang.org/x/text/language.Parse
         .../vuln.go:13:16: golang.org/vuln.main
-        golang.org/x/text/language.Parse
+        .../parse.go:228:6: golang.org/x/text/language.Parse
 
 Vulnerability #3: GO-2021-0054
     Due to improper bounds checking, maliciously crafted JSON objects can cause
@@ -92,7 +92,7 @@ Vulnerability #3: GO-2021-0054
         .../gjson.go:1881:36: github.com/tidwall/gjson.Get
         .../gjson.go:2587:21: github.com/tidwall/gjson.execModifier
         .../gjson.go:2631:21: github.com/tidwall/gjson.modPretty
-        github.com/tidwall/gjson.Result.ForEach
+        .../gjson.go:220:17: github.com/tidwall/gjson.Result.ForEach
 
 Your code is affected by 3 vulnerabilities from 2 modules.
 This scan also found 0 vulnerabilities in packages you import and 2

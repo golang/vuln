@@ -39,7 +39,7 @@ Vulnerability #1: GO-2022-0969
     Example traces found:
       #1: for function net/http.ListenAndServe
         .../stdlib.go:17:31: golang.org/stdlib.main
-        net/http.ListenAndServe
+        .../server.go:3439:6: net/http.ListenAndServe
 
 Your code is affected by 1 vulnerability from the Go standard library.
 This scan found no other vulnerabilities in packages you import or modules you

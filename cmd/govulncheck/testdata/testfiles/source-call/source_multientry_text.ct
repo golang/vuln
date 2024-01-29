@@ -45,11 +45,11 @@ Vulnerability #1: GO-2021-0113
         .../main.go:26:3: golang.org/multientry.main
         .../main.go:48:8: golang.org/multientry.D
         .../main.go:99:20: golang.org/multientry.foobar
-        golang.org/x/text/language.MustParse
+        .../tags.go:13:6: golang.org/x/text/language.MustParse
       #2: for function golang.org/x/text/language.Parse
         .../main.go:22:3: golang.org/multientry.main
         .../main.go:44:23: golang.org/multientry.C
-        golang.org/x/text/language.Parse
+        .../parse.go:33:6: golang.org/x/text/language.Parse
 
 === Package Results ===
 
