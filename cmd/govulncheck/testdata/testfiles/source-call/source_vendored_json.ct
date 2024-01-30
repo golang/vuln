@@ -250,6 +250,7 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "function": "Get",
         "receiver": "Result",
         "position": {
+          "filename": "gjson.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -261,6 +262,7 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "package": "private.com/privateuser/fakemod",
         "function": "Leave",
         "position": {
+          "filename": "mod.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>
@@ -381,6 +383,7 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "package": "golang.org/x/text/language",
         "function": "Parse",
         "position": {
+          "filename": "language/language.go",
           "offset": <o>,
           "line": <l>,
           "column": <c>

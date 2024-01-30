@@ -135,8 +135,7 @@ $ govulncheck -C ${moddir}/replace -json ./...
     "trace": [
       {
         "module": "stdlib",
-        "version": "v1.18.0",
-        "package": "net/http"
+        "version": "v1.18.0"
       }
     ]
   }

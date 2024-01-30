@@ -6,8 +6,10 @@ package vulncheck
 
 import (
 	"go/token"
+	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/govulncheck"
@@ -147,11 +149,31 @@ func pathRelativeToMod(path string, f *FuncNode) string {
 		mod = mod.Replace // for replace directive
 	}
 
-	p, err := filepath.Rel(mod.Dir, path)
+	modDir := modDirWithVendor(mod.Dir, path, mod.Path)
+	p, err := filepath.Rel(modDir, path)
 	if err != nil {
 		return ""
 	}
 	return p
+}
+
+// modDirWithVendor returns modDir if modDir is not empty.
+// Otherwise, the module might be located in the vendor
+// directory. This function attempts to reconstruct the
+// vendored module directory from path and module. It
+// returns an empty string if reconstruction fails.
+func modDirWithVendor(modDir, path, module string) string {
+	if modDir != "" {
+		return modDir
+	}
+
+	sep := string(os.PathSeparator)
+	vendor := sep + "vendor" + sep
+	vendorIndex := strings.Index(path, vendor)
+	if vendorIndex == -1 {
+		return ""
+	}
+	return filepath.Join(path[:vendorIndex], "vendor", filepath.FromSlash(module))
 }
 
 func frameFromPackage(pkg *packages.Package) *govulncheck.Frame {
