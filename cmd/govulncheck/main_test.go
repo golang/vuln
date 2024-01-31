@@ -193,8 +193,11 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 		}
 		parallelLimiter = make(chan struct{}, limit)
 	})
-
-	ts, err := cmdtest.Read(filepath.Join(dir, "*"))
+	tsReadDir := dir
+	if filepath.Base(dir) != "strip" {
+		tsReadDir = filepath.Join(tsReadDir, "*")
+	}
+	ts, err := cmdtest.Read(tsReadDir)
 	if err != nil {
 		t.Fatal(err)
 	}

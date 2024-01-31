@@ -1,7 +1,9 @@
-# Test for stripped binaries (see #57764).
-
+#####
+# Test for stripped binaries (see #57764)
 $ govulncheck -mode=binary ${strip_binary} --> FAIL 3
 Scanning your binary for known vulnerabilities...
+
+=== Symbol Results ===
 
 Vulnerability #1: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can
@@ -29,10 +31,11 @@ Vulnerability #2: GO-2020-0015
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.3
     Example traces found:
-      #1: unicode.bomOverride.Transform
-      #2: unicode.utf16Decoder.Transform
-      #3: transform.String
+      #1: transform.String
+      #2: unicode.bomOverride.Transform
+      #3: unicode.utf16Decoder.Transform
 
 Your code is affected by 2 vulnerabilities from 1 module.
-
-Share feedback at https://go.dev/s/govulncheck-feedback.
+This scan found no other vulnerabilities in packages you import or modules you
+require.
+Use -show verbose for more details.
