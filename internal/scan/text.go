@@ -135,7 +135,7 @@ func (h *TextHandler) Config(config *govulncheck.Config) error {
 	return h.err
 }
 
-// Progress writes progress updates during govulncheck execution..
+// Progress writes progress updates during govulncheck execution.
 func (h *TextHandler) Progress(progress *govulncheck.Progress) error {
 	h.print(progress.Message, "\n\n")
 	return h.err
