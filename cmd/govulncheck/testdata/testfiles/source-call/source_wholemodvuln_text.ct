@@ -4,7 +4,7 @@
 $ govulncheck -C ${moddir}/wholemodvuln ./... --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-=== Source Results ===
+=== Symbol Results ===
 
 Vulnerability #1: GO-2022-0956
     Excessive resource consumption in gopkg.in/yaml.v2

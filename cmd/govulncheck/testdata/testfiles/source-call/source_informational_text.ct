@@ -3,7 +3,7 @@
 $ govulncheck -C ${moddir}/informational -show=traces .
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-=== Source Results ===
+=== Symbol Results ===
 
 No vulnerabilities found.
 

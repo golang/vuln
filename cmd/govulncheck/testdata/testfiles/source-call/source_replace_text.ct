@@ -4,7 +4,7 @@
 $ govulncheck -C ${moddir}/replace ./... --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-=== Source Results ===
+=== Symbol Results ===
 
 Vulnerability #1: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can

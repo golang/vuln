@@ -4,7 +4,7 @@
 $ govulncheck -mode=convert < convert/convert_input.json --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-=== Source Results ===
+=== Symbol Results ===
 
 Vulnerability #1: GO-2021-0265
     A maliciously crafted path can cause Get and other query functions to

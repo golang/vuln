@@ -1,4 +1,4 @@
-=== Source Results ===
+=== Symbol Results ===
 
 Vulnerability #1: GO-0000-0002
     Stdlib vulnerability

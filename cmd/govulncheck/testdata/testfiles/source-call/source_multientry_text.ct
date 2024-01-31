@@ -3,7 +3,7 @@
 $ govulncheck -C ${moddir}/multientry . --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-=== Source Results ===
+=== Symbol Results ===
 
 Vulnerability #1: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can
@@ -29,7 +29,7 @@ Use -show verbose for more details.
 $ govulncheck -show verbose -C ${moddir}/multientry -show=traces ./... --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-=== Source Results ===
+=== Symbol Results ===
 
 Vulnerability #1: GO-2021-0113
     Due to improper index calculation, an incorrectly formatted language tag can

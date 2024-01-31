@@ -1,4 +1,4 @@
-=== Source Results ===
+=== Symbol Results ===
 
 No vulnerabilities found.
 

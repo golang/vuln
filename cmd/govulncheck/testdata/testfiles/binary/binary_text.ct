@@ -3,7 +3,7 @@
 $ govulncheck -mode=binary ${vuln_binary} --> FAIL 3
 Scanning your binary for known vulnerabilities...
 
-=== Source Results ===
+=== Symbol Results ===
 
 Vulnerability #1: GO-2021-0265
     A maliciously crafted path can cause Get and other query functions to

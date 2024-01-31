@@ -3,7 +3,7 @@
 $ govulncheck -C ${moddir}/vuln ./... --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-=== Source Results ===
+=== Symbol Results ===
 
 Vulnerability #1: GO-2021-0265
     A maliciously crafted path can cause Get and other query functions to
@@ -49,7 +49,7 @@ Use -show verbose for more details.
 $ govulncheck -C ${moddir}/vuln -show=traces ./... --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-=== Source Results ===
+=== Symbol Results ===
 
 Vulnerability #1: GO-2021-0265
     A maliciously crafted path can cause Get and other query functions to
@@ -105,7 +105,7 @@ Use -show verbose for more details.
 $ govulncheck -C ${moddir}/vuln -show verbose ./... --> FAIL 3
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 
-=== Source Results ===
+=== Symbol Results ===
 
 Vulnerability #1: GO-2021-0265
     A maliciously crafted path can cause Get and other query functions to

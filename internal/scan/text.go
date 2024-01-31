@@ -181,7 +181,7 @@ func (h *TextHandler) allVulns(findings []*findingSummary) summaryCounters {
 	}
 
 	if h.scanLevel.WantSymbols() {
-		h.style(sectionStyle, "=== Source Results ===\n\n")
+		h.style(sectionStyle, "=== Symbol Results ===\n\n")
 		if len(called) == 0 {
 			h.print(noVulnsMessage, "\n\n")
 		}
