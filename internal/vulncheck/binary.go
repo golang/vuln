@@ -159,9 +159,7 @@ func allKnownVulnerableSymbols(affVulns affectingVulns) map[string][]string {
 						syms = []string{fmt.Sprintf("%s/*", p.Path)}
 					}
 
-					for _, symbol := range syms {
-						pkgSymbols[p.Path] = append(pkgSymbols[p.Path], symbol)
-					}
+					pkgSymbols[p.Path] = append(pkgSymbols[p.Path], syms...)
 				}
 			}
 		}
