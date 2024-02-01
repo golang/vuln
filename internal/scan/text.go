@@ -386,6 +386,7 @@ func (h *TextHandler) summary(c summaryCounters) {
 	case govulncheck.ScanLevelModule:
 		h.print("Use ", symbolMessage, ".")
 	}
+	h.print("\n")
 }
 
 func (h *TextHandler) style(style style, values ...any) {
