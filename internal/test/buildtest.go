@@ -5,6 +5,7 @@
 package test
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -75,7 +76,10 @@ func GoBuild(t *testing.T, dir, tags string, strip bool, envVarVals ...string) (
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
+		if ee := (*exec.ExitError)(nil); errors.As(err, &ee) && len(ee.Stderr) > 0 {
+			t.Fatalf("%v: %v\n%s", cmd, err, ee.Stderr)
+		}
+		t.Fatalf("%v: %v", cmd, err)
 	}
 	return binaryPath + exeSuffix, func() { os.RemoveAll(tmpDir) }
 }
