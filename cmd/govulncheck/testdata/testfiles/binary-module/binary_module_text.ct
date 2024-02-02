@@ -45,4 +45,4 @@ Vulnerability #4: GO-2020-0015
 
 Your code may be affected by 4 vulnerabilities.
 
-Use -scan=symbol for more fine grained vulnerability detection.
+Use '-scan symbol' for more fine grained vulnerability detection.

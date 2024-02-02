@@ -27,7 +27,7 @@ Vulnerability #2: GO-2021-0113
 
 Your code may be affected by 2 vulnerabilities.
 
-Use -scan=symbol for more fine grained vulnerability detection.
+Use '-scan symbol' for more fine grained vulnerability detection.
 
 #####
 # -show verbose flag should only show module results with scan level module
@@ -57,4 +57,4 @@ Vulnerability #2: GO-2021-0113
 
 Your code may be affected by 2 vulnerabilities.
 
-Use -scan=symbol for more fine grained vulnerability detection.
+Use '-scan symbol' for more fine grained vulnerability detection.

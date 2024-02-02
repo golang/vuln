@@ -17,8 +17,8 @@ Vulnerability #1: GO-2021-0113
 
 Your code may be affected by 1 vulnerability.
 This scan also found 1 vulnerability in modules you require.
-Use -scan=symbol for more fine grained vulnerability detection and -show verbose
-for more details.
+Use '-scan symbol' for more fine grained vulnerability detection and '-show
+verbose' for more details.
 
 #####
 # Test for package level scan with the -show verbose flag
@@ -50,4 +50,4 @@ Vulnerability #1: GO-2022-0969
 
 Your code may be affected by 1 vulnerability.
 This scan also found 1 vulnerability in modules you require.
-Use -scan=symbol for more fine grained vulnerability detection.
+Use '-scan symbol' for more fine grained vulnerability detection.

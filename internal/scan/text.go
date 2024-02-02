@@ -55,9 +55,9 @@ const (
 
 	noOtherVulnsMessage = `No other vulnerabilities found.`
 
-	verboseMessage = `-show verbose for more details`
+	verboseMessage = `'-show verbose' for more details`
 
-	symbolMessage = `-scan=symbol for more fine grained vulnerability detection`
+	symbolMessage = `'-scan symbol' for more fine grained vulnerability detection`
 )
 
 func (h *TextHandler) Show(show []string) {

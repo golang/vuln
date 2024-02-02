@@ -10,5 +10,5 @@ Vulnerability #1: GO-0000-0001
 
 Your code may be affected by 1 vulnerability.
 This scan also found 0 vulnerabilities in modules you require.
-Use -scan=symbol for more fine grained vulnerability detection and -show verbose
-for more details.
+Use '-scan symbol' for more fine grained vulnerability detection and '-show
+verbose' for more details.

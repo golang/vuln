@@ -32,4 +32,4 @@ Your code is affected by 2 vulnerabilities from 2 modules.
 This scan also found 1 vulnerability in packages you import and 0
 vulnerabilities in modules you require, but your code doesn't appear to call
 these vulnerabilities.
-Use -show verbose for more details.
+Use '-show verbose' for more details.

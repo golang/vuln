@@ -38,4 +38,4 @@ Vulnerability #2: GO-2020-0015
 Your code is affected by 2 vulnerabilities from 1 module.
 This scan found no other vulnerabilities in packages you import or modules you
 require.
-Use -show verbose for more details.
+Use '-show verbose' for more details.

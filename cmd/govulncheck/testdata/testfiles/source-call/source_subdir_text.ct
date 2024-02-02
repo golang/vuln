@@ -21,7 +21,7 @@ Your code is affected by 1 vulnerability from 1 module.
 This scan also found 0 vulnerabilities in packages you import and 2
 vulnerabilities in modules you require, but your code doesn't appear to call
 these vulnerabilities.
-Use -show verbose for more details.
+Use '-show verbose' for more details.
 
 #####
 # Test govulncheck runs on the subdirectory of a module
@@ -48,4 +48,4 @@ Your code is affected by 1 vulnerability from 1 module.
 This scan also found 0 vulnerabilities in packages you import and 2
 vulnerabilities in modules you require, but your code doesn't appear to call
 these vulnerabilities.
-Use -show verbose for more details.
+Use '-show verbose' for more details.
