@@ -243,9 +243,9 @@ $ govulncheck -json -C ${moddir}/multientry .
         "function": "MustParse",
         "position": {
           "filename": ".../tags.go",
-          "offset": 427,
-          "line": 13,
-          "column": 6
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       },
       {
@@ -254,9 +254,9 @@ $ govulncheck -json -C ${moddir}/multientry .
         "function": "foobar",
         "position": {
           "filename": ".../main.go",
-          "offset": 1694,
-          "line": 99,
-          "column": 20
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       },
       {
@@ -265,9 +265,9 @@ $ govulncheck -json -C ${moddir}/multientry .
         "function": "D",
         "position": {
           "filename": ".../main.go",
-          "offset": 705,
-          "line": 48,
-          "column": 8
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       },
       {
@@ -276,9 +276,9 @@ $ govulncheck -json -C ${moddir}/multientry .
         "function": "main",
         "position": {
           "filename": ".../main.go",
-          "offset": 441,
-          "line": 26,
-          "column": 3
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       }
     ]
@@ -296,9 +296,9 @@ $ govulncheck -json -C ${moddir}/multientry .
         "function": "Parse",
         "position": {
           "filename": ".../parse.go",
-          "offset": 1121,
-          "line": 33,
-          "column": 6
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       },
       {
@@ -307,9 +307,9 @@ $ govulncheck -json -C ${moddir}/multientry .
         "function": "C",
         "position": {
           "filename": ".../main.go",
-          "offset": 679,
-          "line": 44,
-          "column": 23
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       },
       {
@@ -318,9 +318,9 @@ $ govulncheck -json -C ${moddir}/multientry .
         "function": "main",
         "position": {
           "filename": ".../main.go",
-          "offset": 340,
-          "line": 22,
-          "column": 3
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       }
     ]

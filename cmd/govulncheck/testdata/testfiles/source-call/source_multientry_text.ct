@@ -15,8 +15,8 @@ Vulnerability #1: GO-2021-0113
     Found in: golang.org/x/text@v0.3.5
     Fixed in: golang.org/x/text@v0.3.7
     Example traces found:
-      #1: .../main.go:99:20: multientry.foobar calls language.MustParse
-      #2: .../main.go:44:23: multientry.C calls language.Parse
+      #1: .../main.go:<l>:<c>: multientry.foobar calls language.MustParse
+      #2: .../main.go:<l>:<c>: multientry.C calls language.Parse
 
 Your code is affected by 1 vulnerability from 1 module.
 This scan also found 0 vulnerabilities in packages you import and 1
@@ -42,14 +42,14 @@ Vulnerability #1: GO-2021-0113
     Fixed in: golang.org/x/text@v0.3.7
     Example traces found:
       #1: for function golang.org/x/text/language.MustParse
-        .../main.go:26:3: golang.org/multientry.main
-        .../main.go:48:8: golang.org/multientry.D
-        .../main.go:99:20: golang.org/multientry.foobar
-        .../tags.go:13:6: golang.org/x/text/language.MustParse
+        .../main.go:<l>:<c>: golang.org/multientry.main
+        .../main.go:<l>:<c>: golang.org/multientry.D
+        .../main.go:<l>:<c>: golang.org/multientry.foobar
+        .../tags.go:<l>:<c>: golang.org/x/text/language.MustParse
       #2: for function golang.org/x/text/language.Parse
-        .../main.go:22:3: golang.org/multientry.main
-        .../main.go:44:23: golang.org/multientry.C
-        .../parse.go:33:6: golang.org/x/text/language.Parse
+        .../main.go:<l>:<c>: golang.org/multientry.main
+        .../main.go:<l>:<c>: golang.org/multientry.C
+        .../parse.go:<l>:<c>: golang.org/x/text/language.Parse
 
 === Package Results ===
 

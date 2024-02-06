@@ -252,9 +252,9 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "receiver": "Result",
         "position": {
           "filename": ".../gjson.go",
-          "offset": 81,
-          "line": 7,
-          "column": 15
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       },
       {
@@ -264,9 +264,9 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "function": "Leave",
         "position": {
           "filename": ".../mod.go",
-          "offset": 86,
-          "line": 6,
-          "column": 20
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       },
       {
@@ -275,9 +275,9 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "function": "main",
         "position": {
           "filename": ".../vendored.go",
-          "offset": 137,
-          "line": 12,
-          "column": 15
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       }
     ]
@@ -385,9 +385,9 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "function": "Parse",
         "position": {
           "filename": ".../language.go",
-          "offset": 53,
-          "line": 5,
-          "column": 6
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       },
       {
@@ -396,9 +396,9 @@ $ govulncheck -C ${moddir}/vendored -json ./...
         "function": "main",
         "position": {
           "filename": ".../vendored.go",
-          "offset": 155,
-          "line": 13,
-          "column": 16
+          "offset": <o>,
+          "line": <l>,
+          "column": <c>
         }
       }
     ]

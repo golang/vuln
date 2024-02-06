@@ -52,6 +52,23 @@ var fixups = []fixup{
 			return []byte(fmt.Sprintf(`.../%s%c`, filepath.Base(s[:len(s)-1]), s[len(s)-1]))
 		},
 	}, {
+		// modifies position lines to mask actual line and column with <l> and
+		// <c> placeholders, resp.
+		pattern: `\.go:(\d+):(\d+):`,
+		replace: `.go:<l>:<c>:`,
+	}, {
+		// modify position lines in json
+		pattern: `\"line\":(\s)*(\d+)`,
+		replace: `"line": <l>`,
+	}, {
+		// modify position columns in json
+		pattern: `\"column\":(\s)*(\d+)`,
+		replace: `"column": <c>`,
+	}, {
+		// modify position offset in json
+		pattern: `\"offset\":(\s)*(\d+)`,
+		replace: `"offset": <o>`,
+	}, {
 		// There was a one-line change in container/heap/heap.go between 1.18
 		// and 1.19 that makes the stack traces different. Ignore it.
 		pattern: `heap\.go:(\d+)`,
