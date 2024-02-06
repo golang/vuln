@@ -16,5 +16,4 @@ Vulnerability #2: GO-0000-0001
     Platforms: amd
 
 Your code may be affected by 2 vulnerabilities.
-
 Use '-scan symbol' for more fine grained vulnerability detection.

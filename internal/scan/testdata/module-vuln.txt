@@ -9,5 +9,4 @@ Vulnerability #1: GO-0000-0001
     Platforms: amd
 
 Your code may be affected by 1 vulnerability.
-
 Use '-scan symbol' for more fine grained vulnerability detection.

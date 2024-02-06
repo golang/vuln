@@ -44,5 +44,4 @@ Vulnerability #4: GO-2020-0015
     Fixed in: golang.org/x/text@v0.3.3
 
 Your code may be affected by 4 vulnerabilities.
-
 Use '-scan symbol' for more fine grained vulnerability detection.

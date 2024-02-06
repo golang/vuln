@@ -319,6 +319,7 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 }
 
 func (h *TextHandler) summary(c summaryCounters) {
+	// print short summary of findings identified at the desired level of scan precision
 	var vulnCount int
 	h.print("Your code ", choose(h.scanLevel.WantSymbols(), "is", "may be"), " affected by ")
 	switch h.scanLevel {
@@ -346,6 +347,20 @@ func (h *TextHandler) summary(c summaryCounters) {
 	}
 	h.print(".\n")
 
+	// print summary for vulnerabilities found at other levels of scan precision
+	if other := h.summaryOtherVulns(c); other != "" {
+		h.wrap("", other, 80)
+		h.print("\n")
+	}
+
+	// print suggested flags for more/better info depending on scan level and if in verbose mode
+	if sugg := h.summarySuggestion(); sugg != "" {
+		h.wrap("", sugg, 80)
+		h.print("\n")
+	}
+}
+
+func (h *TextHandler) summaryOtherVulns(c summaryCounters) string {
 	var summary strings.Builder
 	if c.VulnerabilitiesRequired+c.VulnerabilitiesImported == 0 {
 		summary.WriteString("This scan found no other vulnerabilities in ")
@@ -367,26 +382,26 @@ func (h *TextHandler) summary(c summaryCounters) {
 			summary.WriteString(choose(h.scanLevel.WantSymbols(), ", but your code doesn't appear to call these vulnerabilities.", "."))
 		}
 	}
-	h.wrap("", summary.String(), 80)
-	h.print("\n")
-	// print suggested flags for more/better info depending on scan level and if in verbose mode
+	return summary.String()
+}
+
+func (h *TextHandler) summarySuggestion() string {
+	var sugg strings.Builder
 	switch h.scanLevel {
 	case govulncheck.ScanLevelSymbol:
 		if !h.showAllVulns {
-			h.print("Use ", verboseMessage, ".")
+			sugg.WriteString("Use " + verboseMessage + ".")
 		}
 	case govulncheck.ScanLevelPackage:
-		var message strings.Builder
-		message.WriteString("Use " + symbolMessage)
+		sugg.WriteString("Use " + symbolMessage)
 		if !h.showAllVulns {
-			message.WriteString(" and " + verboseMessage)
+			sugg.WriteString(" and " + verboseMessage)
 		}
-		message.WriteString(".")
-		h.wrap("", message.String(), 80)
+		sugg.WriteString(".")
 	case govulncheck.ScanLevelModule:
-		h.print("Use ", symbolMessage, ".")
+		sugg.WriteString("Use " + symbolMessage + ".")
 	}
-	h.print("\n")
+	return sugg.String()
 }
 
 func (h *TextHandler) style(style style, values ...any) {
