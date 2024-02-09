@@ -79,6 +79,17 @@
     "trace": [
       {
         "module": "stdlib",
+        "version": "v0.0.1"
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "GO-0000-0002",
+    "trace": [
+      {
+        "module": "stdlib",
         "version": "v0.0.1",
         "package": "net/http"
       }

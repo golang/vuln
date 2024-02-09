@@ -9,9 +9,7 @@ import (
 	"sort"
 
 	"golang.org/x/tools/go/packages"
-	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/govulncheck"
-	"golang.org/x/vuln/internal/osv"
 )
 
 // emitOSVs emits all OSV vuln entries in modVulns to handler.
@@ -33,7 +31,7 @@ func emitModuleFindings(handler govulncheck.Handler, affVulns affectingVulns) er
 			if err := handler.Finding(&govulncheck.Finding{
 				OSV:          osv.ID,
 				FixedVersion: FixedVersion(modPath(vuln.Module), modVersion(vuln.Module), osv.Affected),
-				Trace:        []*govulncheck.Frame{frameFromModule(vuln.Module, osv.Affected)},
+				Trace:        []*govulncheck.Frame{frameFromModule(vuln.Module)},
 			}); err != nil {
 				return err
 			}
@@ -139,19 +137,10 @@ func frameFromPackage(pkg *packages.Package) *govulncheck.Frame {
 	return fr
 }
 
-func frameFromModule(mod *packages.Module, affected []osv.Affected) *govulncheck.Frame {
+func frameFromModule(mod *packages.Module) *govulncheck.Frame {
 	fr := &govulncheck.Frame{
 		Module:  mod.Path,
 		Version: mod.Version,
-	}
-
-	if mod.Path == internal.GoStdModulePath {
-		for _, a := range affected {
-			if a.Module.Path != mod.Path {
-				continue
-			}
-			fr.Package = a.EcosystemSpecific.Packages[0].Path
-		}
 	}
 
 	if mod.Replace != nil {
