@@ -23,21 +23,10 @@ check_shellcheck() {
   runcmd shellcheck ./**/*.sh
 }
 
-go_modtidy() {
-  runcmd go mod tidy
-}
-
 # runchecks runs all checks and is intended to run as a precommit hook.
 runchecks() {
-  trybots "$@"
-
   # These checks only run locally due to a limitation with TryBots.
   check_shellcheck
-}
-
-# trybots runs checks supported by TryBots.
-trybots() {
-  go_modtidy
 }
 
 usage() {
@@ -56,9 +45,6 @@ main() {
       ;;
     "")
       runchecks "$@"
-      ;;
-    trybots)
-      trybots
       ;;
     *)
       usage

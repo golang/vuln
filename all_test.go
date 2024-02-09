@@ -11,6 +11,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -122,6 +123,10 @@ func TestVet(t *testing.T) {
 	rungo(t, "vet", "-all", "./...")
 }
 
+func TestGoModTidy(t *testing.T) {
+	rungo(t, "mod", "tidy")
+}
+
 func TestMisspell(t *testing.T) {
 	skipIfShort(t)
 	rungo(t, "run", "github.com/client9/misspell/cmd/misspell@v0.3.4", "-error", ".")
@@ -157,8 +162,10 @@ func rungo(t *testing.T, args ...string) {
 
 	cmd := exec.Command("go", args...)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Log("\n" + string(output))
-		t.Error("command had non zero exit code")
+		if ee := (*exec.ExitError)(nil); errors.As(err, &ee) && len(ee.Stderr) > 0 {
+			t.Fatalf("%v: %v\n%s", cmd, err, ee.Stderr)
+		}
+		t.Fatalf("%v: %v\n%s", cmd, err, output)
 	}
 }
 
