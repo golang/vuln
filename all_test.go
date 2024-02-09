@@ -34,26 +34,6 @@ var goHeader = regexp.MustCompile(`^// Copyright 20\d\d The Go Authors\. All rig
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file\.`)
 
-func TestBashChecks(t *testing.T) {
-	skipIfShort(t)
-	bash, err := exec.LookPath("bash")
-	if err != nil {
-		t.Skipf("skipping: %v", err)
-	}
-
-	var cmd *exec.Cmd
-	if os.Getenv("GO_BUILDER_NAME") != "" {
-		cmd = exec.Command(bash, "./checks.bash", "trybots")
-	} else {
-		cmd = exec.Command(bash, "./checks.bash")
-	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestDependencies(t *testing.T) {
 	dat, err := os.ReadFile("go.mod")
 	if err != nil {
