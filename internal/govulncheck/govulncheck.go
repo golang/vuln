@@ -181,9 +181,9 @@ const (
 )
 
 // WantSymbols can be used to check whether the scan level is one that is able
-// to generate symbols called findings.
+// to generate symbol-level findings.
 func (l ScanLevel) WantSymbols() bool { return l == ScanLevelSymbol }
 
 // WantPackages can be used to check whether the scan level is one that is able
-// to generate package
+// to generate package-level findings.
 func (l ScanLevel) WantPackages() bool { return l == ScanLevelPackage || l == ScanLevelSymbol }
