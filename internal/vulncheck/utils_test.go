@@ -228,7 +228,7 @@ func TestDbSymbolName(t *testing.T) {
 	defer e.Cleanup()
 
 	graph := NewPackageGraph("go1.18")
-	pkgs, _, err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "package/x")})
+	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "package/x")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,7 +245,7 @@ func TestDbSymbolName(t *testing.T) {
 	}
 
 	// test dbFuncName
-	prog, _ := buildSSA(pkgs, pkgs[0].Fset)
+	prog, _ := buildSSA(graph.TopPkgs(), graph.TopPkgs()[0].Fset)
 	got := make(map[string]bool)
 	for f := range ssautil.AllFunctions(prog) {
 		got[dbFuncName(f)] = true

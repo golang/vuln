@@ -17,8 +17,8 @@ import (
 )
 
 // Source detects vulnerabilities in pkgs and emits the findings to handler.
-func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, mods []*packages.Module, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) error {
-	vr, err := source(ctx, handler, pkgs, mods, cfg, client, graph)
+func Source(ctx context.Context, handler govulncheck.Handler, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) error {
+	vr, err := source(ctx, handler, cfg, client, graph)
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func Source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 // and produces a Result that contains info on detected vulnerabilities.
 //
 // Assumes that pkgs are non-empty and belong to the same program.
-func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.Package, mods []*packages.Module, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (*Result, error) {
+func source(ctx context.Context, handler govulncheck.Handler, cfg *govulncheck.Config, client *client.Client, graph *PackageGraph) (*Result, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -47,17 +47,17 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 		buildErr error
 	)
 	if cfg.ScanLevel.WantSymbols() {
-		fset := pkgs[0].Fset
+		fset := graph.TopPkgs()[0].Fset
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			prog, ssaPkgs := buildSSA(pkgs, fset)
+			prog, ssaPkgs := buildSSA(graph.TopPkgs(), fset)
 			entries = entryPoints(ssaPkgs)
 			cg, buildErr = callGraph(ctx, prog, entries)
 		}()
 	}
 
-	mv, err := FetchVulnerabilities(ctx, client, mods)
+	mv, err := FetchVulnerabilities(ctx, client, graph.Modules())
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 		return &Result{}, nil
 	}
 
-	impVulns := importedVulnPackages(pkgs, affVulns)
+	impVulns := importedVulnPackages(affVulns, graph)
 	// Emit information on imported vulnerable packages now as
 	// call graph computation might take a while.
 	if err := emitPackageFindings(handler, impVulns); err != nil {
@@ -99,7 +99,7 @@ func source(ctx context.Context, handler govulncheck.Handler, pkgs []*packages.P
 }
 
 // importedVulnPackages detects imported vulnerable packages.
-func importedVulnPackages(pkgs []*packages.Package, affVulns affectingVulns) []*Vuln {
+func importedVulnPackages(affVulns affectingVulns, graph *PackageGraph) []*Vuln {
 	var vulns []*Vuln
 	analyzed := make(map[*packages.Package]bool) // skip analyzing the same package multiple times
 	var vulnImports func(pkg *packages.Package)
@@ -113,7 +113,7 @@ func importedVulnPackages(pkgs []*packages.Package, affVulns affectingVulns) []*
 		for _, osv := range osvs {
 			vuln := &Vuln{
 				OSV:     osv,
-				Package: pkg,
+				Package: graph.GetPackage(pkg.PkgPath),
 			}
 			vulns = append(vulns, vuln)
 		}
@@ -124,7 +124,7 @@ func importedVulnPackages(pkgs []*packages.Package, affVulns affectingVulns) []*
 		}
 	}
 
-	for _, pkg := range pkgs {
+	for _, pkg := range graph.TopPkgs() {
 		vulnImports(pkg)
 	}
 	return vulns

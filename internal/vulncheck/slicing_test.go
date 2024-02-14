@@ -91,11 +91,11 @@ func Do(i I, input string) {
 	})
 
 	graph := NewPackageGraph("go1.18")
-	pkgs, _, err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "/module/slice")})
+	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "/module/slice")})
 	if err != nil {
 		t.Fatal(err)
 	}
-	prog, ssaPkgs := ssautil.AllPackages(pkgs, 0)
+	prog, ssaPkgs := ssautil.AllPackages(graph.TopPkgs(), 0)
 	prog.Build()
 
 	pkg := ssaPkgs[0]

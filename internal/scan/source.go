@@ -29,30 +29,27 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	if !gomodExists(dir) {
 		return errNoGoMod
 	}
-	var pkgs []*packages.Package
-	var mods []*packages.Module
 	graph := vulncheck.NewPackageGraph(cfg.GoVersion)
 	pkgConfig := &packages.Config{
 		Dir:   dir,
 		Tests: cfg.test,
 		Env:   cfg.env,
 	}
-	pkgs, mods, err = graph.LoadPackagesAndMods(pkgConfig, cfg.tags, cfg.patterns)
-	if err != nil {
+	if err := graph.LoadPackagesAndMods(pkgConfig, cfg.tags, cfg.patterns); err != nil {
 		if isGoVersionMismatchError(err) {
 			return fmt.Errorf("%v\n\n%v", errGoVersionMismatch, err)
 		}
 		return fmt.Errorf("loading packages: %w", err)
 	}
 
-	if err := handler.Progress(sourceProgressMessage(pkgs, len(mods)-1, cfg.ScanLevel)); err != nil {
+	if err := handler.Progress(sourceProgressMessage(graph, cfg.ScanLevel)); err != nil {
 		return err
 	}
 
-	if cfg.ScanLevel.WantPackages() && len(pkgs) == 0 {
+	if cfg.ScanLevel.WantPackages() && len(graph.TopPkgs()) == 0 {
 		return nil // early exit
 	}
-	return vulncheck.Source(ctx, handler, pkgs, mods, &cfg.Config, client, graph)
+	return vulncheck.Source(ctx, handler, &cfg.Config, client, graph)
 }
 
 // sourceProgressMessage returns a string of the form
@@ -60,20 +57,20 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 //	"Scanning your code and P packages across M dependent modules for known vulnerabilities..."
 //
 // P is the number of strictly dependent packages of
-// topPkgs and Y is the number of their modules. If P
-// is 0, then the following message is returned
+// graph.TopPkgs() and Y is the number of their modules.
+// If P is 0, then the following message is returned
 //
 //	"No packages matching the provided pattern."
-func sourceProgressMessage(topPkgs []*packages.Package, mods int, mode govulncheck.ScanLevel) *govulncheck.Progress {
+func sourceProgressMessage(graph *vulncheck.PackageGraph, mode govulncheck.ScanLevel) *govulncheck.Progress {
 	var pkgsPhrase, modsPhrase string
-
+	mods := uniqueAnalyzableMods(graph)
 	if mode.WantPackages() {
-		if len(topPkgs) == 0 {
+		if len(graph.TopPkgs()) == 0 {
 			// The package pattern is valid, but no packages are matching.
 			// Example is pkg/strace/... (see #59623).
 			return &govulncheck.Progress{Message: "No packages matching the provided pattern."}
 		}
-		pkgs := depPkgs(topPkgs)
+		pkgs := len(graph.DepPkgs())
 		pkgsPhrase = fmt.Sprintf(" and %d package%s", pkgs, choose(pkgs != 1, "s", ""))
 	}
 	modsPhrase = fmt.Sprintf(" %d dependent module%s", mods, choose(mods != 1, "s", ""))
@@ -82,43 +79,24 @@ func sourceProgressMessage(topPkgs []*packages.Package, mods int, mode govulnche
 	return &govulncheck.Progress{Message: msg}
 }
 
-// depPkgs returns the number of packages that topPkgs depend on
-func depPkgs(topPkgs []*packages.Package) int {
-	tops := make(map[string]bool)
-	depPkgs := make(map[string]bool)
-
-	for _, t := range topPkgs {
-		tops[t.PkgPath] = true
+// uniqueAnalyzableMods returns the number of unique modules
+// that are analyzable. Those are basically all modules except
+// those that are replaced. The latter won't be analyzed as
+// their code is never reachable.
+func uniqueAnalyzableMods(graph *vulncheck.PackageGraph) int {
+	replaced := 0
+	mods := graph.Modules()
+	for _, m := range mods {
+		if m.Replace == nil {
+			continue
+		}
+		if m.Path == m.Replace.Path {
+			// If the replacing path is the same as
+			// the one being replaced, then only one
+			// of these modules is in mods.
+			continue
+		}
+		replaced++
 	}
-
-	var visit func(*packages.Package, bool)
-	visit = func(p *packages.Package, top bool) {
-		path := p.PkgPath
-		if depPkgs[path] {
-			return
-		}
-		if tops[path] && !top {
-			// A top package that is a dependency
-			// will not be in depPkgs, so we skip
-			// reiterating on it here.
-			return
-		}
-
-		// We don't count a top-level package as
-		// a dependency even when they are used
-		// as a dependent package.
-		if !tops[path] {
-			depPkgs[path] = true
-		}
-
-		for _, d := range p.Imports {
-			visit(d, false)
-		}
-	}
-
-	for _, t := range topPkgs {
-		visit(t, true)
-	}
-
-	return len(depPkgs)
+	return len(mods) - replaced - 1 // don't include stdlib
 }
