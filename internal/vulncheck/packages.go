@@ -14,8 +14,6 @@ import (
 	"golang.org/x/vuln/internal/semver"
 )
 
-var stdlibModule *packages.Module
-
 // PackageGraph holds a complete module and package graph.
 // Its primary purpose is to allow fast access to the nodes by path.
 type PackageGraph struct {
@@ -33,8 +31,7 @@ func NewPackageGraph(goVersion string) *PackageGraph {
 	if out, err := exec.Command("go", "env", "GOROOT").Output(); err == nil {
 		goRoot = strings.TrimSpace(string(out))
 	}
-
-	stdlibModule = &packages.Module{
+	stdlibModule := &packages.Module{
 		Path:    internal.GoStdModulePath,
 		Version: semver.GoTagToSemver(goVersion),
 		Dir:     goRoot,

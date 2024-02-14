@@ -141,13 +141,7 @@ func pathRelativeToMod(path string, f *FuncNode) string {
 		return ""
 	}
 
-	var mod *packages.Module
-	if IsStdPackage(f.Package.PkgPath) {
-		mod = stdlibModule
-	} else {
-		mod = f.Package.Module
-	}
-
+	mod := f.Package.Module
 	if mod.Replace != nil {
 		mod = mod.Replace // for replace directive
 	}
