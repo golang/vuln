@@ -133,6 +133,9 @@ func posFromStackEntry(e StackEntry, sink bool) *govulncheck.Position {
 // relative to the module of f. If it does not
 // have all the necessary information, returns
 // an empty string.
+//
+// The returned paths always use slash as separator
+// so they can work across different platforms.
 func pathRelativeToMod(path string, f *FuncNode) string {
 	if path == "" || f == nil || f.Package == nil { // sanity
 		return ""
@@ -154,7 +157,8 @@ func pathRelativeToMod(path string, f *FuncNode) string {
 	if err != nil {
 		return ""
 	}
-	return p
+	// make sure paths are portable.
+	return filepath.ToSlash(p)
 }
 
 // modDirWithVendor returns modDir if modDir is not empty.

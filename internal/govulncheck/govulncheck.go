@@ -156,6 +156,10 @@ type Frame struct {
 	// Position describes an arbitrary source position
 	// including the file, line, and column location.
 	// A Position is valid if the line number is > 0.
+	//
+	// The filenames are relative to the directory of
+	// the enclosing module and always use "/" for
+	// portability.
 	Position *Position `json:"position,omitempty"`
 }
 
