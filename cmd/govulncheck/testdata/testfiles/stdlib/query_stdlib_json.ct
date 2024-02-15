@@ -1,6 +1,6 @@
 #####
 # Test of query mode with the standard library.
-$ govulncheck -mode=query -json stdlib@go1.17
+$ govulncheck -mode=query -format json stdlib@go1.17
 {
   "config": {
     "protocol_version": "v1.0.0",

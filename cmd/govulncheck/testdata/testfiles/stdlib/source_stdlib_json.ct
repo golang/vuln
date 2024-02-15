@@ -1,6 +1,6 @@
 #####
 # Test finding stdlib vulnerability in source mode with json output
-$ govulncheck -C ${moddir}/stdlib -json .
+$ govulncheck -C ${moddir}/stdlib -format json .
 {
   "config": {
     "protocol_version": "v1.0.0",

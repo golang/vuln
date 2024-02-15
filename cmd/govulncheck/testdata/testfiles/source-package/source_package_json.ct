@@ -1,6 +1,6 @@
 #####
 # Test that findings with callstacks are not emitted in package mode
-$ govulncheck -json -scan package -C ${moddir}/multientry .
+$ govulncheck -format json -scan package -C ${moddir}/multientry .
 {
   "config": {
     "protocol_version": "v1.0.0",

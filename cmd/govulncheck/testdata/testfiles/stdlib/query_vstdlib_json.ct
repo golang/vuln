@@ -1,6 +1,6 @@
 #####
 # Test of query mode with the standard library (with a v prefix on the version).
-$ govulncheck -mode=query -json stdlib@v1.17.0
+$ govulncheck -mode=query -format json stdlib@v1.17.0
 {
   "config": {
     "protocol_version": "v1.0.0",

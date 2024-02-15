@@ -20,11 +20,11 @@ type config struct {
 	patterns []string
 	mode     string
 	db       string
-	json     bool
 	dir      string
-	tags     []string
+	tags     buildutil.TagsFlag
 	test     bool
-	show     []string
+	show     showFlag
+	format   string
 	env      []string
 }
 
@@ -34,21 +34,25 @@ const (
 	modeConvert = "convert" // only intended for use by gopls
 	modeQuery   = "query"   // only intended for use by gopls
 	modeExtract = "extract" // currently, only binary extraction is supported
+
+	formatUnset = ""
+	formatJSON  = "json"
+	formatText  = "text"
 )
 
 func parseFlags(cfg *config, stderr io.Writer, args []string) error {
-	var tagsFlag buildutil.TagsFlag
-	var showFlag showFlag
 	var version bool
+	var json bool
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	flags.BoolVar(&cfg.json, "json", false, "output JSON")
+	flags.BoolVar(&json, "json", false, "output JSON (Go compatible legacy flag, see format flag)")
 	flags.BoolVar(&cfg.test, "test", false, "analyze test files (only valid for source mode, default false)")
 	flags.StringVar(&cfg.dir, "C", "", "change to `dir` before running govulncheck")
 	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database `url`")
 	flags.StringVar(&cfg.mode, "mode", modeSource, "supports source or binary")
-	flags.Var(&tagsFlag, "tags", "comma-separated `list` of build tags")
-	flags.Var(&showFlag, "show", "enable display of additional information specified by the comma separated `list`\nThe supported values are 'traces','color', 'version', and 'verbose'")
+	flags.Var(&cfg.tags, "tags", "comma-separated `list` of build tags")
+	flags.Var(&cfg.show, "show", "enable display of additional information specified by the comma separated `list`\nThe supported values are 'traces','color', 'version', and 'verbose'")
+	flags.StringVar(&cfg.format, "format", formatUnset, "specify format output\nThe supported values are 'text' and 'json' (default 'text')")
 	flags.BoolVar(&version, "version", false, "print the version information")
 	scanLevel := flags.String("scan", "symbol", "set the scanning level desired, one of module, package or symbol")
 	flags.Usage = func() {
@@ -70,13 +74,11 @@ Usage:
 		return err
 	}
 	cfg.patterns = flags.Args()
-	cfg.tags = tagsFlag
-	cfg.show = showFlag
 	if version {
 		cfg.show = append(cfg.show, "version")
 	}
 	cfg.ScanLevel = govulncheck.ScanLevel(*scanLevel)
-	if err := validateConfig(cfg); err != nil {
+	if err := validateConfig(cfg, json); err != nil {
 		fmt.Fprintln(flags.Output(), err)
 		return errUsage
 	}
@@ -97,13 +99,36 @@ var supportedLevels = map[string]bool{
 	govulncheck.ScanLevelSymbol:  true,
 }
 
-func validateConfig(cfg *config) error {
+var supportedFormats = map[string]bool{
+	formatJSON: true,
+	formatText: true,
+}
+
+func validateConfig(cfg *config, json bool) error {
+	if json {
+		if len(cfg.show) > 0 {
+			return fmt.Errorf("the -show flag is not supported for JSON output")
+		}
+		if cfg.format != formatUnset {
+			return fmt.Errorf("the -json flag cannot be used with -format flag")
+		}
+		cfg.format = formatJSON
+	} else {
+		if cfg.format == formatUnset {
+			cfg.format = formatText
+		}
+	}
+
 	if _, ok := supportedModes[cfg.mode]; !ok {
 		return fmt.Errorf("%q is not a valid mode", cfg.mode)
 	}
 	if _, ok := supportedLevels[string(cfg.ScanLevel)]; !ok {
 		return fmt.Errorf("%q is not a valid scan level", cfg.ScanLevel)
 	}
+	if _, ok := supportedFormats[cfg.format]; !ok {
+		return fmt.Errorf("%q is not a valid output format", cfg.format)
+	}
+
 	switch cfg.mode {
 	case modeSource:
 		if len(cfg.patterns) == 1 && isFile(cfg.patterns[0]) {
@@ -135,8 +160,8 @@ func validateConfig(cfg *config) error {
 		if len(cfg.patterns) != 1 {
 			return fmt.Errorf("only 1 binary can be extracted at a time")
 		}
-		if cfg.json {
-			return fmt.Errorf("the -json flag must be off in extract mode")
+		if cfg.format == formatJSON {
+			return fmt.Errorf("the json format must be off in extract mode")
 		}
 		if !isFile(cfg.patterns[0]) {
 			return fmt.Errorf("%q is not a file (source extraction is not supported)", cfg.patterns[0])
@@ -161,8 +186,8 @@ func validateConfig(cfg *config) error {
 		if len(cfg.tags) > 0 {
 			return fmt.Errorf("the -tags flag is not supported in query mode")
 		}
-		if !cfg.json {
-			return fmt.Errorf("the -json flag must be set in query mode")
+		if cfg.format != formatJSON {
+			return fmt.Errorf("the json format must be set in query mode")
 		}
 		for _, pattern := range cfg.patterns {
 			// Parse the input here so that we can catch errors before
@@ -171,9 +196,6 @@ func validateConfig(cfg *config) error {
 				return err
 			}
 		}
-	}
-	if cfg.json && len(cfg.show) > 0 {
-		return fmt.Errorf("the -show flag is not supported for JSON output")
 	}
 	return nil
 }

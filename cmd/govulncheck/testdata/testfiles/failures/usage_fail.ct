@@ -12,3 +12,18 @@ the -show flag is not supported for JSON output
 # Test of invalid input to -scan
 $ govulncheck -scan=invalid ./... --> FAIL 2
 "invalid" is not a valid scan level
+
+#####
+# Test of invalid -format value
+$ govulncheck -format  invalid ./... --> FAIL 2
+"invalid" is not a valid output format
+
+#####
+# Test of trying to run -json with '-format text' flag
+$ govulncheck -C ${moddir}/vuln -json -format text . --> FAIL 2
+the -json flag cannot be used with -format flag
+
+#####
+# Test of explicit format use together with -json flag
+$ govulncheck -C ${moddir}/vuln -format json -json . --> FAIL 2
+the -json flag cannot be used with -format flag

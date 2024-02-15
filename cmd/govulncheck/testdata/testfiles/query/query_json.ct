@@ -1,6 +1,6 @@
 #####
 # Test of query mode for a third party module.
-$ govulncheck -mode=query -json github.com/tidwall/gjson@v1.6.5
+$ govulncheck -mode=query -format json github.com/tidwall/gjson@v1.6.5
 {
   "config": {
     "protocol_version": "v1.0.0",

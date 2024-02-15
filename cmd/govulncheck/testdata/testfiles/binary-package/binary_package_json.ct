@@ -1,6 +1,6 @@
 #####
 # Test binary scanning at the package level with json output
-$ govulncheck -json -mode=binary -scan=package ${vuln_binary}
+$ govulncheck -format json -mode binary -scan package ${vuln_binary}
 {
   "config": {
     "protocol_version": "v1.0.0",

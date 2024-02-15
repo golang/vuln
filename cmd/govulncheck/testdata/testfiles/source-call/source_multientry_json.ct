@@ -1,6 +1,6 @@
 #####
 # Test for multiple call stacks in source mode
-$ govulncheck -json -C ${moddir}/multientry .
+$ govulncheck -format json -C ${moddir}/multientry .
 {
   "config": {
     "protocol_version": "v1.0.0",

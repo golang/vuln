@@ -304,7 +304,7 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 
 func isJSONMode(args []string) bool {
 	for _, arg := range args {
-		if arg == "-json" {
+		if arg == "json" {
 			return true
 		}
 	}

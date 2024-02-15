@@ -1,5 +1,5 @@
 #####
-# Test souce mode with no callstacks
+# Test source mode with no callstacks
 $ govulncheck -C ${moddir}/informational -show=traces .
 Scanning your code and P packages across M dependent modules for known vulnerabilities...
 

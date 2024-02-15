@@ -1,6 +1,6 @@
 #####
 #
-$ govulncheck -C ${moddir}/vendored -json ./...
+$ govulncheck -C ${moddir}/vendored -format json ./...
 {
   "config": {
     "protocol_version": "v1.0.0",

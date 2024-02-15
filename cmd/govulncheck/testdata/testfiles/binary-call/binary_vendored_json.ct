@@ -1,6 +1,6 @@
 #####
 # Test basic binary scanning with json output
-$ govulncheck -json -mode=binary ${vendored_binary}
+$ govulncheck -format json -mode binary ${vendored_binary}
 {
   "config": {
     "protocol_version": "v1.0.0",

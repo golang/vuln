@@ -35,8 +35,8 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 
 	prepareConfig(ctx, cfg, client)
 	var handler govulncheck.Handler
-	switch {
-	case cfg.json:
+	switch cfg.format {
+	case formatJSON:
 		handler = govulncheck.NewJSONHandler(stdout)
 	default:
 		th := NewTextHandler(stdout)

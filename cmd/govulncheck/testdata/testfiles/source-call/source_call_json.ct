@@ -1,6 +1,5 @@
 #####
-#
-$ govulncheck -C ${moddir}/vuln -json ./...
+$ govulncheck -C ${moddir}/vuln -format json ./...
 {
   "config": {
     "protocol_version": "v1.0.0",

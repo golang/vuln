@@ -1,6 +1,6 @@
 #####
 # Test of source mode json on a module with a replace directive.
-$ govulncheck -C ${moddir}/replace -json ./...
+$ govulncheck -C ${moddir}/replace -format json ./...
 {
   "config": {
     "protocol_version": "v1.0.0",
