@@ -1,7 +1,7 @@
 #####
 # Test of invalid input to -mode
 $ govulncheck -mode=invalid ./... --> FAIL 2
-"invalid" is not a valid mode
+invalid value "invalid" for flag -mode: see -help for details
 
 #####
 # Test of trying to run -json with -v flag
@@ -11,12 +11,28 @@ the -show flag is not supported for JSON output
 #####
 # Test of invalid input to -scan
 $ govulncheck -scan=invalid ./... --> FAIL 2
-"invalid" is not a valid scan level
+invalid value "invalid" for flag -scan: see -help for details
+
+#####
+# Test of invalid flag
+$ govulncheck -flag go ./... --> FAIL 2
+flag provided but not defined: -flag
+
+
+#####
+# Test of invalid show flag list value
+$ govulncheck -show traces,color,verbose,something ./... --> FAIL 2
+invalid value "traces,color,verbose,something" for flag -show: see -help for details
+
+#####
+# Test of invalid show flag value
+$ govulncheck -show everything ./... --> FAIL 2
+invalid value "everything" for flag -show: see -help for details
 
 #####
 # Test of invalid -format value
-$ govulncheck -format  invalid ./... --> FAIL 2
-"invalid" is not a valid output format
+$ govulncheck -format invalid ./... --> FAIL 2
+invalid value "invalid" for flag -format: see -help for details
 
 #####
 # Test of trying to run -json with '-format text' flag

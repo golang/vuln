@@ -22,7 +22,7 @@ var (
 	// errUsage indicates that there was a usage error on the command line.
 	//
 	// In this case, we assume that the user does not know how to run
-	// govulncheck, and print the usage message with exit status 2.
+	// govulncheck and exit with status 2.
 	errUsage = &exitCodeError{message: "invalid usage", code: 2}
 
 	// errGoVersionMismatch is used to indicate that there is a mismatch between

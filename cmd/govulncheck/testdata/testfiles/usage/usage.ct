@@ -12,15 +12,15 @@ Usage:
     	change to dir before running govulncheck
   -db url
     	vulnerability database url (default "https://vuln.go.dev")
-  -format string
+  -format value
     	specify format output
     	The supported values are 'text' and 'json' (default 'text')
   -json
     	output JSON (Go compatible legacy flag, see format flag)
-  -mode string
-    	supports source or binary (default "source")
-  -scan string
-    	set the scanning level desired, one of module, package or symbol (default "symbol")
+  -mode value
+    	supports 'source', 'binary', and 'extract'
+  -scan value
+    	set the scanning level desired, one of 'module', 'package', or 'symbol'
   -show list
     	enable display of additional information specified by the comma separated list
     	The supported values are 'traces','color', 'version', and 'verbose'
