@@ -7,6 +7,7 @@ package scan
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"golang.org/x/vuln/internal"
@@ -308,6 +309,13 @@ func (h *TextHandler) pkg(summaries []*findingSummary) string {
 // traces prints out the most precise trace information
 // found in the given summaries.
 func (h *TextHandler) traces(traces []*findingSummary) {
+	// Sort the traces by the vulnerable symbol. This
+	// guarantees determinism since we are currently
+	// showing only one trace per symbol.
+	sort.SliceStable(traces, func(i, j int) bool {
+		return symbol(traces[i].Trace[0], true) < symbol(traces[j].Trace[0], true)
+	})
+
 	first := true
 	count := 1
 	for _, entry := range traces {

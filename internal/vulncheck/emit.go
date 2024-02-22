@@ -8,7 +8,6 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -64,10 +63,6 @@ func emitCallFindings(handler govulncheck.Handler, callstacks map[*Vuln]CallStac
 	for v := range callstacks {
 		vulns = append(vulns, v)
 	}
-
-	sort.SliceStable(vulns, func(i, j int) bool {
-		return vulns[i].Symbol < vulns[j].Symbol
-	})
 
 	for _, vuln := range vulns {
 		stack := callstacks[vuln]

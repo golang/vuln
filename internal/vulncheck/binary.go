@@ -10,7 +10,6 @@ package vulncheck
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal"
@@ -120,8 +119,6 @@ func binImportedVulnPackages(graph *PackageGraph, pkgSymbols map[string][]string
 func binVulnSymbols(graph *PackageGraph, pkgSymbols map[string][]string, affVulns affectingVulns) []*Vuln {
 	var vulns []*Vuln
 	for pkg, symbols := range pkgSymbols {
-		// sort symbols for deterministic results
-		sort.SliceStable(symbols, func(i, j int) bool { return symbols[i] < symbols[j] })
 		for _, symbol := range symbols {
 			for _, osv := range affVulns.ForSymbol(pkg, symbol) {
 				vuln := &Vuln{

@@ -69,6 +69,12 @@ func (h *MockHandler) Sort() {
 		if iframe.Package > jframe.Package {
 			return false
 		}
+		if iframe.Receiver < jframe.Receiver {
+			return true
+		}
+		if iframe.Receiver > jframe.Receiver {
+			return false
+		}
 		return iframe.Function < jframe.Function
 	})
 }
