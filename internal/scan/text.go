@@ -7,6 +7,7 @@ package scan
 import (
 	"fmt"
 	"io"
+	"runtime/debug"
 	"strings"
 
 	"golang.org/x/vuln/internal"
@@ -123,6 +124,12 @@ func (h *TextHandler) Config(config *govulncheck.Config) error {
 		}
 		h.print("\n")
 	}
+
+	if info, ok := debug.ReadBuildInfo(); ok {
+		h.style(keyStyle, "Scanner builder: ")
+		h.print(info.GoVersion, "\n")
+	}
+
 	if config.DB != "" {
 		h.style(keyStyle, "DB: ")
 		h.print(config.DB, "\n")
