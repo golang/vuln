@@ -9,7 +9,8 @@ $ govulncheck -format json -scan module -C ${moddir}/multientry
     "db": "testdata/vulndb-v1",
     "db_last_modified": "2023-04-03T15:57:51Z",
     "go_version": "go1.18",
-    "scan_level": "module"
+    "scan_level": "module",
+    "scan_mode": "source"
   }
 }
 {

@@ -18,9 +18,9 @@ Usage:
   -json
     	output JSON (Go compatible legacy flag, see format flag)
   -mode value
-    	supports 'source', 'binary', and 'extract'
+    	supports 'source', 'binary', and 'extract' (default 'source')
   -scan value
-    	set the scanning level desired, one of 'module', 'package', or 'symbol'
+    	set the scanning level desired, one of 'module', 'package', or 'symbol' (default 'symbol')
   -show list
     	enable display of additional information specified by the comma separated list
     	The supported values are 'traces','color', 'version', and 'verbose'

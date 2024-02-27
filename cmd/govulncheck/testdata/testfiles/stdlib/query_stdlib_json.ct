@@ -8,7 +8,8 @@ $ govulncheck -mode=query -format json stdlib@go1.17
     "scanner_version": "v0.0.0-00000000000-20000101010101",
     "db": "testdata/vulndb-v1",
     "db_last_modified": "2023-04-03T15:57:51Z",
-    "scan_level": "symbol"
+    "scan_level": "symbol",
+    "scan_mode": "query"
   }
 }
 {

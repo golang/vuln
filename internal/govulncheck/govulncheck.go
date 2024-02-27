@@ -73,6 +73,11 @@ type Config struct {
 	// ScanLevel instructs govulncheck to analyze at a specific level of detail.
 	// Valid values include module, package and symbol.
 	ScanLevel ScanLevel `json:"scan_level,omitempty"`
+
+	// ScanMode instructs govulncheck how to interpret the input and
+	// what to do with it. Valid values are source, binary, query,
+	// and extract.
+	ScanMode ScanMode `json:"scan_mode,omitempty"`
 }
 
 // Progress messages are informational only, intended to allow users to monitor
@@ -191,3 +196,17 @@ func (l ScanLevel) WantSymbols() bool { return l == ScanLevelSymbol }
 // WantPackages can be used to check whether the scan level is one that is able
 // to generate package-level findings.
 func (l ScanLevel) WantPackages() bool { return l == ScanLevelPackage || l == ScanLevelSymbol }
+
+// ScanMode represents the mode in which a scan occurred. This can
+// be necessary to correctly to interpret findings. For instance,
+// a binary can be checked for vulnerabilities or the user just wants
+// to extract minimal data necessary for the vulnerability check.
+type ScanMode string
+
+const (
+	ScanModeSource  = "source"
+	ScanModeBinary  = "binary"
+	ScanModeConvert = "convert"
+	ScanModeQuery   = "query"
+	ScanModeExtract = "extract" // currently, only binary extraction is supported
+)

@@ -19,7 +19,6 @@ import (
 type config struct {
 	govulncheck.Config
 	patterns []string
-	mode     modeFlag
 	db       string
 	dir      string
 	tags     buildutil.TagsFlag
@@ -33,18 +32,19 @@ func parseFlags(cfg *config, stderr io.Writer, args []string) error {
 	var version bool
 	var json bool
 	var scanFlag scanFlag
+	var modeFlag modeFlag
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	flags.BoolVar(&json, "json", false, "output JSON (Go compatible legacy flag, see format flag)")
 	flags.BoolVar(&cfg.test, "test", false, "analyze test files (only valid for source mode, default false)")
 	flags.StringVar(&cfg.dir, "C", "", "change to `dir` before running govulncheck")
 	flags.StringVar(&cfg.db, "db", "https://vuln.go.dev", "vulnerability database `url`")
-	flags.Var(&cfg.mode, "mode", "supports 'source', 'binary', and 'extract'")
+	flags.Var(&modeFlag, "mode", "supports 'source', 'binary', and 'extract' (default 'source')")
 	flags.Var(&cfg.tags, "tags", "comma-separated `list` of build tags")
 	flags.Var(&cfg.show, "show", "enable display of additional information specified by the comma separated `list`\nThe supported values are 'traces','color', 'version', and 'verbose'")
 	flags.Var(&cfg.format, "format", "specify format output\nThe supported values are 'text' and 'json' (default 'text')")
 	flags.BoolVar(&version, "version", false, "print the version information")
-	flags.Var(&scanFlag, "scan", "set the scanning level desired, one of 'module', 'package', or 'symbol'")
+	flags.Var(&scanFlag, "scan", "set the scanning level desired, one of 'module', 'package', or 'symbol' (default 'symbol')")
 
 	// We don't want to print the whole usage message on each flags
 	// error, so we set to a no-op and do the printing ourselves.
@@ -74,6 +74,7 @@ Usage:
 		cfg.show = append(cfg.show, "version")
 	}
 	cfg.ScanLevel = govulncheck.ScanLevel(scanFlag)
+	cfg.ScanMode = govulncheck.ScanMode(modeFlag)
 	if err := validateConfig(cfg, json); err != nil {
 		fmt.Fprintln(flags.Output(), err)
 		return errUsage
@@ -83,8 +84,8 @@ Usage:
 
 func validateConfig(cfg *config, json bool) error {
 	// take care of default values
-	if cfg.mode == "" {
-		cfg.mode = modeSource
+	if cfg.ScanMode == "" {
+		cfg.ScanMode = govulncheck.ScanModeSource
 	}
 	if cfg.ScanLevel == "" {
 		cfg.ScanLevel = govulncheck.ScanLevelSymbol
@@ -105,15 +106,15 @@ func validateConfig(cfg *config, json bool) error {
 		return fmt.Errorf("the -show flag is not supported for %s output", cfg.format)
 	}
 
-	switch cfg.mode {
-	case modeSource:
+	switch cfg.ScanMode {
+	case govulncheck.ScanModeSource:
 		if len(cfg.patterns) == 1 && isFile(cfg.patterns[0]) {
 			return fmt.Errorf("%q is a file.\n\n%v", cfg.patterns[0], errNoBinaryFlag)
 		}
 		if cfg.ScanLevel == govulncheck.ScanLevelModule && len(cfg.patterns) != 0 {
 			return fmt.Errorf("patterns are not accepted for module only scanning")
 		}
-	case modeBinary:
+	case govulncheck.ScanModeBinary:
 		if cfg.test {
 			return fmt.Errorf("the -test flag is not supported in binary mode")
 		}
@@ -126,7 +127,7 @@ func validateConfig(cfg *config, json bool) error {
 		if !isFile(cfg.patterns[0]) {
 			return fmt.Errorf("%q is not a file", cfg.patterns[0])
 		}
-	case modeExtract:
+	case govulncheck.ScanModeExtract:
 		if cfg.test {
 			return fmt.Errorf("the -test flag is not supported in extract mode")
 		}
@@ -142,7 +143,7 @@ func validateConfig(cfg *config, json bool) error {
 		if !isFile(cfg.patterns[0]) {
 			return fmt.Errorf("%q is not a file (source extraction is not supported)", cfg.patterns[0])
 		}
-	case modeConvert:
+	case govulncheck.ScanModeConvert:
 		if len(cfg.patterns) != 0 {
 			return fmt.Errorf("patterns are not accepted in convert mode")
 		}
@@ -155,7 +156,7 @@ func validateConfig(cfg *config, json bool) error {
 		if len(cfg.tags) > 0 {
 			return fmt.Errorf("the -tags flag is not supported in convert mode")
 		}
-	case modeQuery:
+	case govulncheck.ScanModeQuery:
 		if cfg.test {
 			return fmt.Errorf("the -test flag is not supported in query mode")
 		}
@@ -245,20 +246,12 @@ func (f *formatFlag) String() string { return "" }
 // govulncheck -mode flag.
 type modeFlag string
 
-const (
-	modeBinary  = "binary"
-	modeSource  = "source"
-	modeConvert = "convert" // only intended for use by gopls
-	modeQuery   = "query"   // only intended for use by gopls
-	modeExtract = "extract" // currently, only binary extraction is supported
-)
-
 var supportedModes = map[string]bool{
-	modeSource:  true,
-	modeBinary:  true,
-	modeConvert: true,
-	modeQuery:   true,
-	modeExtract: true,
+	govulncheck.ScanModeSource:  true,
+	govulncheck.ScanModeBinary:  true,
+	govulncheck.ScanModeConvert: true,
+	govulncheck.ScanModeQuery:   true,
+	govulncheck.ScanModeExtract: true,
 }
 
 func (f *modeFlag) Get() interface{} { return *f }

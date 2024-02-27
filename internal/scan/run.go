@@ -52,17 +52,17 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 		return err
 	}
 
-	switch cfg.mode {
-	case modeSource:
+	switch cfg.ScanMode {
+	case govulncheck.ScanModeSource:
 		dir := filepath.FromSlash(cfg.dir)
 		err = runSource(ctx, handler, cfg, client, dir)
-	case modeBinary:
+	case govulncheck.ScanModeBinary:
 		err = runBinary(ctx, handler, cfg, client)
-	case modeExtract:
+	case govulncheck.ScanModeExtract:
 		return runExtract(cfg, stdout)
-	case modeQuery:
+	case govulncheck.ScanModeQuery:
 		err = runQuery(ctx, handler, cfg, client)
-	case modeConvert:
+	case govulncheck.ScanModeConvert:
 		err = govulncheck.HandleJSON(r, handler)
 	}
 	if err != nil {
@@ -74,7 +74,7 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 func prepareConfig(ctx context.Context, cfg *config, client *client.Client) {
 	cfg.ProtocolVersion = govulncheck.ProtocolVersion
 	cfg.DB = cfg.db
-	if cfg.mode == modeSource && cfg.GoVersion == "" {
+	if cfg.ScanMode == govulncheck.ScanModeSource && cfg.GoVersion == "" {
 		const goverPrefix = "GOVERSION="
 		for _, env := range cfg.env {
 			if val := strings.TrimPrefix(env, goverPrefix); val != env {
