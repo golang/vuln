@@ -167,7 +167,7 @@ func (g *PackageGraph) fixupPackage(pkg *packages.Package) {
 // not find anything, it returns the "unknown" module.
 func (g *PackageGraph) findModule(pkgPath string) *packages.Module {
 	//TODO: better stdlib test
-	if !strings.Contains(pkgPath, ".") {
+	if IsStdPackage(pkgPath) {
 		return g.GetModule(internal.GoStdModulePath)
 	}
 	for _, m := range g.modules {
