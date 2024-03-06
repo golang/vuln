@@ -184,7 +184,7 @@ func isFile(path string) bool {
 	return !s.IsDir()
 }
 
-var flagParseError = errors.New("see -help for details")
+var errFlagParse = errors.New("see -help for details")
 
 // showFlag is used for parsing and validation of
 // govulncheck -show flag.
@@ -204,7 +204,7 @@ func (v *showFlag) Set(s string) error {
 	for _, show := range strings.Split(s, ",") {
 		sh := strings.TrimSpace(show)
 		if _, ok := supportedShows[sh]; !ok {
-			return flagParseError
+			return errFlagParse
 		}
 		*v = append(*v, sh)
 	}
@@ -234,7 +234,7 @@ var supportedFormats = map[string]bool{
 func (f *formatFlag) Get() interface{} { return *f }
 func (f *formatFlag) Set(s string) error {
 	if _, ok := supportedFormats[s]; !ok {
-		return flagParseError
+		return errFlagParse
 	}
 	*f = formatFlag(s)
 	return nil
@@ -264,7 +264,7 @@ var supportedModes = map[string]bool{
 func (f *modeFlag) Get() interface{} { return *f }
 func (f *modeFlag) Set(s string) error {
 	if _, ok := supportedModes[s]; !ok {
-		return flagParseError
+		return errFlagParse
 	}
 	*f = modeFlag(s)
 	return nil
@@ -284,7 +284,7 @@ var supportedLevels = map[string]bool{
 func (f *scanFlag) Get() interface{} { return *f }
 func (f *scanFlag) Set(s string) error {
 	if _, ok := supportedLevels[s]; !ok {
-		return flagParseError
+		return errFlagParse
 	}
 	*f = scanFlag(s)
 	return nil
