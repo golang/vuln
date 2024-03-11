@@ -275,15 +275,6 @@ func vulnFuncs(cg *callgraph.Graph, affVulns affectingVulns) map[*callgraph.Node
 	return m
 }
 
-// pkgPath returns the path of the f's enclosing package, if any.
-// Otherwise, returns "".
-func pkgPath(f *ssa.Function) string {
-	if f.Package() != nil && f.Package().Pkg != nil {
-		return f.Package().Pkg.Path()
-	}
-	return ""
-}
-
 func createNode(nodes map[*ssa.Function]*FuncNode, f *ssa.Function, graph *PackageGraph) *FuncNode {
 	if fn, ok := nodes[f]; ok {
 		return fn

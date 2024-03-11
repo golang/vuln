@@ -24,5 +24,9 @@ const (
 
 	// UnknownModulePath is a special module path for when we cannot work out
 	// the module for a package.
-	UnknownModulePath = "unknown"
+	UnknownModulePath = "unknown-module"
+
+	// UnknownPackagePath is a special package path for when we cannot work out
+	// the packagUnknownModulePath = "unknown"
+	UnknownPackagePath = "unknown-package"
 )

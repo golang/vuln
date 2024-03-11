@@ -15,4 +15,12 @@ func main() {
 
 	http.HandleFunc("/hello", helloHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
+
+	// Test issue #66139
+	log.Fatal(work[string]("golang"))
+}
+
+func work[T any](t T) error {
+	log.Printf("%v\n", t)
+	return http.Serve(nil, nil)
 }
