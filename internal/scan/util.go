@@ -25,13 +25,13 @@ func validateFindings(findings ...*govulncheck.Finding) error {
 		}
 		for _, frame := range f.Trace {
 			if frame.Version != "" && frame.Module == "" {
-				return fmt.Errorf("invalid finding: if Frame.Version is set, Frame.Module must also be")
+				return fmt.Errorf("invalid finding: if Frame.Version (%s) is set, Frame.Module must also be", frame.Version)
 			}
 			if frame.Package != "" && frame.Module == "" {
-				return fmt.Errorf("invalid finding: if Frame.Package is set, Frame.Module must also be")
+				return fmt.Errorf("invalid finding: if Frame.Package (%s) is set, Frame.Module must also be", frame.Package)
 			}
 			if frame.Function != "" && frame.Package == "" {
-				return fmt.Errorf("invalid finding: if Frame.Function is set, Frame.Package must also be")
+				return fmt.Errorf("invalid finding: if Frame.Function (%s) is set, Frame.Package must also be", frame.Function)
 			}
 		}
 	}
