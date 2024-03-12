@@ -1,0 +1,9 @@
+#####
+# Test of missing go.mod error message.
+$ govulncheck -C ${moddir}/nogomod .  --> FAIL 1
+govulncheck: no go.mod file
+
+govulncheck only works with Go modules. Try navigating to your module directory.
+Otherwise, run go mod init to make your project a module.
+
+See https://go.dev/doc/modules/managing-dependencies for more information.

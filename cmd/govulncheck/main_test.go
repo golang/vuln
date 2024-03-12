@@ -112,9 +112,11 @@ func init() {
 
 // testCase models a group of tests in cmd/govulncheck testdata.
 type testCase struct {
-	dir      string   // subdirectory in testdata containing tests
-	skipGOOS []string // GOOS to skip, if any
-	strip    bool     // indicates if binaries should be stripped
+	dir       string   // subdirectory in testdata containing tests
+	skipGOOS  []string // GOOS to skip, if any
+	copy      bool     // copy the folder to isolate it
+	skipBuild bool     // skip building the test case
+	strip     bool     // indicates if binaries should be stripped
 }
 
 func (tc testCase) skip() bool {
@@ -133,6 +135,9 @@ var testCases = []testCase{
 	{dir: "common"},
 	// Binaries are not stripped on darwin with go1.21 and earlier. See #61051.
 	{dir: "strip", skipGOOS: []string{"darwin"}, strip: true},
+	// nogomod case has code with no go.mod and does not compile,
+	// so we need to copy it and skip building binaries.
+	{dir: "nogomod", copy: true, skipBuild: true},
 }
 
 func TestCommand(t *testing.T) {
@@ -149,39 +154,28 @@ func TestCommand(t *testing.T) {
 		if tc.skip() {
 			continue
 		}
-		base := tc.dir
 
-		vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", base, "vulndb-v1"))
-		if err != nil {
-			t.Fatal(err)
+		base := tc.dir
+		testCaseDir := filepath.Join(testDir, "testdata", base)
+		if tc.copy {
+			testCaseDir = copyTestCase(testCaseDir, t)
 		}
+		vulndbDir := filepath.Join(testCaseDir, "vulndb-v1")
+		modulesDir := filepath.Join(testCaseDir, "modules")
+		testfilesDir := filepath.Join(testCaseDir, "testfiles")
 		govulndbURI, err := web.URLFromFilePath(vulndbDir)
 		if err != nil {
-			t.Fatalf("failed to create make vulndb url: %v", err)
+			t.Fatalf("failed to create vulndb url: %v", err)
 		}
 
-		moduleDirs, err := filepath.Glob(fmt.Sprintf("testdata/%s/modules/*", base))
+		moduleDirs, err := filepath.Glob(filepath.Join(modulesDir, "*"))
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		os.Setenv("moddir", filepath.Join(testDir, "testdata", base, "modules"))
+		os.Setenv("moddir", modulesDir)
 		for _, md := range moduleDirs {
-			// Skip nogomod module. It has intended build issues.
-			if filepath.Base(md) == "nogomod" {
-				noModDir, err := filepath.Abs(t.TempDir())
-				if err != nil {
-					t.Fatal(err)
-				}
-				os.Setenv("nomoddir", noModDir)
-				b, err := os.ReadFile(filepath.Join(md, "vuln.go"))
-				if err != nil {
-					t.Fatal(err)
-				}
-				err = os.WriteFile(filepath.Join(noModDir, "vuln.go"), b, 0644)
-				if err != nil {
-					t.Fatal(err)
-				}
+			if tc.skipBuild {
 				continue
 			}
 
@@ -193,10 +187,9 @@ func TestCommand(t *testing.T) {
 			varName := tc.dir + "_" + filepath.Base(md) + "_binary"
 			os.Setenv(varName, binary)
 		}
-		testFilesDir := filepath.Join(testDir, "testdata", base, "testfiles")
-		os.Setenv("testdir", testFilesDir)
+		os.Setenv("testdir", testfilesDir)
 
-		runTestSuite(t, testFilesDir, govulndbURI.String(), *update)
+		runTestSuite(t, testfilesDir, govulndbURI.String(), *update)
 	}
 }
 
