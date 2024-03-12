@@ -10,7 +10,7 @@ See https://go.dev/doc/modules/managing-dependencies for more information.
 
 #####
 # Test of handing a binary to source mode
-$ govulncheck ${vuln_binary} --> FAIL 2
+$ govulncheck ${common_vuln_binary} --> FAIL 2
 govulncheck: myfile is a file.
 
 By default, govulncheck runs source analysis on Go modules.

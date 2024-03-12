@@ -1,6 +1,6 @@
 #####
 # Test basic binary scanning with text output
-$ govulncheck -mode=binary ${vuln_binary} --> FAIL 3
+$ govulncheck -mode=binary ${common_vuln_binary} --> FAIL 3
 Scanning your binary for known vulnerabilities...
 
 === Symbol Results ===

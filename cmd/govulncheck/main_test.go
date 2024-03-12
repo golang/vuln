@@ -76,7 +76,7 @@ var fixups = []fixup{
 		pattern: `"scanner_version": "[^"]*"`,
 		replace: `"scanner_version": "v0.0.0-00000000000-20000101010101"`,
 	}, {
-		pattern: `file:///(.*)/testdata/vulndb`,
+		pattern: `file:///(.*)/testdata/(.*)/vulndb`,
 		replace: `testdata/vulndb`,
 	}, {
 		pattern: `package (.*) is not in (GOROOT|std) (.*)`,
@@ -110,6 +110,31 @@ func init() {
 	}
 }
 
+// testCase models a group of tests in cmd/govulncheck testdata.
+type testCase struct {
+	dir      string   // subdirectory in testdata containing tests
+	skipGOOS []string // GOOS to skip, if any
+	strip    bool     // indicates if binaries should be stripped
+}
+
+func (tc testCase) skip() bool {
+	for _, sg := range tc.skipGOOS {
+		if runtime.GOOS == sg {
+			return true
+		}
+	}
+	return false
+}
+
+// testCases contains the list of major groups of tests in
+// cmd/govulncheck/testdata folder with information on how
+// to run them.
+var testCases = []testCase{
+	{dir: "common"},
+	// Binaries are not stripped on darwin with go1.21 and earlier. See #61051.
+	{dir: "strip", skipGOOS: []string{"darwin"}, strip: true},
+}
+
 func TestCommand(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test that uses internet in short mode")
@@ -119,55 +144,59 @@ func TestCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", "vulndb-v1"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	govulndbURI, err := web.URLFromFilePath(vulndbDir)
-	if err != nil {
-		t.Fatalf("failed to create make vulndb url: %v", err)
-	}
 
-	moduleDirs, err := filepath.Glob("testdata/modules/*")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	os.Setenv("moddir", filepath.Join(testDir, "testdata", "modules"))
-	for _, md := range moduleDirs {
-		// Skip nogomod module. It has intended build issues.
-		if filepath.Base(md) == "nogomod" {
-			noModDir, err := filepath.Abs(t.TempDir())
-			if err != nil {
-				t.Fatal(err)
-			}
-			os.Setenv("nomoddir", noModDir)
-			b, err := os.ReadFile(filepath.Join(md, "vuln.go"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = os.WriteFile(filepath.Join(noModDir, "vuln.go"), b, 0644)
-			if err != nil {
-				t.Fatal(err)
-			}
+	for _, tc := range testCases {
+		if tc.skip() {
 			continue
 		}
+		base := tc.dir
 
-		// Build test module binary.
-		binary, cleanup := test.GoBuild(t, md, "", filepath.Base(md) == "strip")
-		t.Cleanup(cleanup)
-		// Set an environment variable to the path to the binary, so tests
-		// can refer to it.
-		varName := filepath.Base(md) + "_binary"
-		os.Setenv(varName, binary)
-	}
-	testFilesDir := filepath.Join(testDir, "testdata", "testfiles")
-	os.Setenv("testdir", testFilesDir)
+		vulndbDir, err := filepath.Abs(filepath.Join(testDir, "testdata", base, "vulndb-v1"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		govulndbURI, err := web.URLFromFilePath(vulndbDir)
+		if err != nil {
+			t.Fatalf("failed to create make vulndb url: %v", err)
+		}
 
-	runTestSuite(t, testFilesDir, govulndbURI.String(), *update)
-	if runtime.GOOS != "darwin" {
-		// Binaries are not stripped on darwin with go1.21 and earlier. See #61051.
-		runTestSuite(t, filepath.Join(testDir, "testdata", "strip"), govulndbURI.String(), *update)
+		moduleDirs, err := filepath.Glob(fmt.Sprintf("testdata/%s/modules/*", base))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		os.Setenv("moddir", filepath.Join(testDir, "testdata", base, "modules"))
+		for _, md := range moduleDirs {
+			// Skip nogomod module. It has intended build issues.
+			if filepath.Base(md) == "nogomod" {
+				noModDir, err := filepath.Abs(t.TempDir())
+				if err != nil {
+					t.Fatal(err)
+				}
+				os.Setenv("nomoddir", noModDir)
+				b, err := os.ReadFile(filepath.Join(md, "vuln.go"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				err = os.WriteFile(filepath.Join(noModDir, "vuln.go"), b, 0644)
+				if err != nil {
+					t.Fatal(err)
+				}
+				continue
+			}
+
+			// Build test module binary.
+			binary, cleanup := test.GoBuild(t, md, "", tc.strip)
+			t.Cleanup(cleanup)
+			// Set an environment variable to the path to the binary, so tests
+			// can refer to it. The binary name is unique across all test cases.
+			varName := tc.dir + "_" + filepath.Base(md) + "_binary"
+			os.Setenv(varName, binary)
+		}
+		testFilesDir := filepath.Join(testDir, "testdata", base, "testfiles")
+		os.Setenv("testdir", testFilesDir)
+
+		runTestSuite(t, testFilesDir, govulndbURI.String(), *update)
 	}
 }
 
@@ -189,10 +218,10 @@ var (
 	parallelLimiterInit sync.Once
 )
 
-// testSuite creates a cmdtest suite from dir. It also defines
+// testSuite creates a cmdtest suite from tsReadDir. It also defines
 // a govulncheck command on the suite that runs govulncheck
 // against vulnerability database available at vulndbDir.
-func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
+func runTestSuite(t *testing.T, tsReadDir string, govulndb string, update bool) {
 	parallelLimiterInit.Do(func() {
 		limit := (runtime.GOMAXPROCS(0) + 3) / 4
 		if limit > 2 && unsafe.Sizeof(uintptr(0)) < 8 {
@@ -200,11 +229,7 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 		}
 		parallelLimiter = make(chan struct{}, limit)
 	})
-	tsReadDir := dir
-	if filepath.Base(dir) != "strip" {
-		tsReadDir = filepath.Join(tsReadDir, "*")
-	}
-	ts, err := cmdtest.Read(tsReadDir)
+	ts, err := cmdtest.Read(filepath.Join(tsReadDir, "*"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,7 +246,7 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 		cmd.Stdout = buf
 		cmd.Stderr = buf
 		if inputFile != "" {
-			input, err := os.Open(filepath.Join(dir, inputFile))
+			input, err := os.Open(filepath.Join(tsReadDir, inputFile))
 			if err != nil {
 				return nil, err
 			}
@@ -299,7 +324,7 @@ func runTestSuite(t *testing.T, dir string, govulndb string, update bool) {
 		ts.Run(t, true)
 		return
 	}
-	ts.RunParallel(t, false)
+	ts.Run(t, false) // TODO: make parallel
 }
 
 func isJSONMode(args []string) bool {

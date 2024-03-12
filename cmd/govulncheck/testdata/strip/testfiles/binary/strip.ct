@@ -1,6 +1,6 @@
 #####
 # Test for stripped binaries (see #57764)
-$ govulncheck -mode=binary ${strip_binary} --> FAIL 3
+$ govulncheck -mode=binary ${strip_vuln_binary} --> FAIL 3
 Scanning your binary for known vulnerabilities...
 
 === Symbol Results ===

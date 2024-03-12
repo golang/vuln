@@ -1,6 +1,6 @@
 #####
 # Test basic binary scanning with json output
-$ govulncheck -format json -mode binary ${vuln_binary}
+$ govulncheck -format json -mode binary ${common_vendored_binary}
 {
   "config": {
     "protocol_version": "v1.0.0",
@@ -332,21 +332,6 @@ $ govulncheck -format json -mode binary ${vuln_binary}
         "module": "github.com/tidwall/gjson",
         "version": "v1.6.5",
         "package": "github.com/tidwall/gjson"
-      }
-    ]
-  }
-}
-{
-  "finding": {
-    "osv": "GO-2021-0054",
-    "fixed_version": "v1.6.6",
-    "trace": [
-      {
-        "module": "github.com/tidwall/gjson",
-        "version": "v1.6.5",
-        "package": "github.com/tidwall/gjson",
-        "function": "ForEach",
-        "receiver": "Result"
       }
     ]
   }

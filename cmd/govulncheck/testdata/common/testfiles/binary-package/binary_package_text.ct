@@ -1,5 +1,5 @@
 # Test binary scanning at the package level.
-$ govulncheck -mode=binary -scan package ${vuln_binary} --> FAIL 3
+$ govulncheck -mode=binary -scan package ${common_vuln_binary} --> FAIL 3
 Scanning your binary for known vulnerabilities...
 
 === Package Results ===

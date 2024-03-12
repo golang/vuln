@@ -1,0 +1,1 @@
+[{"path":"golang.org/x/text","vulns":[{"id":"GO-2020-0015","modified":"2023-04-03T15:57:51Z","fixed":"0.3.3"},{"id":"GO-2021-0113","modified":"2023-04-03T15:57:51Z","fixed":"0.3.7"}]}]
