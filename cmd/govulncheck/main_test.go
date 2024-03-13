@@ -151,46 +151,51 @@ func TestCommand(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		if tc.skip() {
+		t.Run(tc.dir, func(t *testing.T) {
+			runTestCase(t, testDir, tc)
+		})
+	}
+}
+
+func runTestCase(t *testing.T, testDir string, tc testCase) {
+	if tc.skip() {
+		return
+	}
+
+	base := tc.dir
+	testCaseDir := filepath.Join(testDir, "testdata", base)
+	if tc.copy {
+		testCaseDir = copyTestCase(testCaseDir, t)
+	}
+	vulndbDir := filepath.Join(testCaseDir, "vulndb-v1")
+	modulesDir := filepath.Join(testCaseDir, "modules")
+	testfilesDir := filepath.Join(testCaseDir, "testfiles")
+	govulndbURI, err := web.URLFromFilePath(vulndbDir)
+	if err != nil {
+		t.Fatalf("failed to create vulndb url: %v", err)
+	}
+
+	moduleDirs, err := filepath.Glob(filepath.Join(modulesDir, "*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, md := range moduleDirs {
+		if tc.skipBuild {
 			continue
 		}
 
-		base := tc.dir
-		testCaseDir := filepath.Join(testDir, "testdata", base)
-		if tc.copy {
-			testCaseDir = copyTestCase(testCaseDir, t)
-		}
-		vulndbDir := filepath.Join(testCaseDir, "vulndb-v1")
-		modulesDir := filepath.Join(testCaseDir, "modules")
-		testfilesDir := filepath.Join(testCaseDir, "testfiles")
-		govulndbURI, err := web.URLFromFilePath(vulndbDir)
-		if err != nil {
-			t.Fatalf("failed to create vulndb url: %v", err)
-		}
-
-		moduleDirs, err := filepath.Glob(filepath.Join(modulesDir, "*"))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		os.Setenv("moddir", modulesDir)
-		for _, md := range moduleDirs {
-			if tc.skipBuild {
-				continue
-			}
-
-			// Build test module binary.
-			binary, cleanup := test.GoBuild(t, md, "", tc.strip)
-			t.Cleanup(cleanup)
-			// Set an environment variable to the path to the binary, so tests
-			// can refer to it. The binary name is unique across all test cases.
-			varName := tc.dir + "_" + filepath.Base(md) + "_binary"
-			os.Setenv(varName, binary)
-		}
-		os.Setenv("testdir", testfilesDir)
-
-		runTestSuite(t, testfilesDir, govulndbURI.String(), *update)
+		// Build test module binary.
+		binary, cleanup := test.GoBuild(t, md, "", tc.strip)
+		t.Cleanup(cleanup)
+		// Set an environment variable to the path to the binary, so tests
+		// can refer to it. The binary name is unique across all test cases.
+		varName := tc.dir + "_" + filepath.Base(md) + "_binary"
+		os.Setenv(varName, binary)
 	}
+
+	os.Setenv("moddir", modulesDir)
+	os.Setenv("testdir", testfilesDir)
+	runTestSuite(t, testfilesDir, govulndbURI.String(), *update)
 }
 
 // Limit the number of concurrent scans. Scanning is implemented using
@@ -211,10 +216,10 @@ var (
 	parallelLimiterInit sync.Once
 )
 
-// testSuite creates a cmdtest suite from tsReadDir. It also defines
-// a govulncheck command on the suite that runs govulncheck
-// against vulnerability database available at vulndbDir.
-func runTestSuite(t *testing.T, tsReadDir string, govulndb string, update bool) {
+// testSuite creates a cmdtest suite from testfilesDir. It also defines
+// a govulncheck command on the suite that runs govulncheck against
+// vulnerability database available at vulndbDir.
+func runTestSuite(t *testing.T, testfilesDir string, vulndbDir string, update bool) {
 	parallelLimiterInit.Do(func() {
 		limit := (runtime.GOMAXPROCS(0) + 3) / 4
 		if limit > 2 && unsafe.Sizeof(uintptr(0)) < 8 {
@@ -222,7 +227,7 @@ func runTestSuite(t *testing.T, tsReadDir string, govulndb string, update bool) 
 		}
 		parallelLimiter = make(chan struct{}, limit)
 	})
-	ts, err := cmdtest.Read(filepath.Join(tsReadDir, "*"))
+	ts, err := cmdtest.Read(filepath.Join(testfilesDir, "*"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,14 +237,14 @@ func runTestSuite(t *testing.T, tsReadDir string, govulndb string, update bool) 
 		parallelLimiter <- struct{}{}
 		defer func() { <-parallelLimiter }()
 
-		newargs := append([]string{"-db", govulndb}, args...)
+		newargs := append([]string{"-db", vulndbDir}, args...)
 
 		buf := &bytes.Buffer{}
 		cmd := scan.Command(context.Background(), newargs...)
 		cmd.Stdout = buf
 		cmd.Stderr = buf
 		if inputFile != "" {
-			input, err := os.Open(filepath.Join(tsReadDir, inputFile))
+			input, err := os.Open(filepath.Join(testfilesDir, inputFile))
 			if err != nil {
 				return nil, err
 			}
@@ -317,7 +322,7 @@ func runTestSuite(t *testing.T, tsReadDir string, govulndb string, update bool) 
 		ts.Run(t, true)
 		return
 	}
-	ts.Run(t, false) // TODO: make parallel
+	ts.RunParallel(t, false)
 }
 
 func isJSONMode(args []string) bool {
