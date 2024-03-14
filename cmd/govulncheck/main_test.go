@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"sync"
 	"testing"
@@ -32,83 +31,6 @@ import (
 )
 
 var update = flag.Bool("update", false, "update test files with results")
-
-type fixup struct {
-	pattern     string
-	compiled    *regexp.Regexp
-	replace     string
-	replaceFunc func(b []byte) []byte
-}
-
-var fixups = []fixup{
-	{
-		// modifies position lines to mask actual line and column with <l> and
-		// <c> placeholders, resp.
-		pattern: `\.go:(\d+):(\d+):`,
-		replace: `.go:<l>:<c>:`,
-	}, {
-		// modify position lines in json
-		pattern: `\"line\":(\s)*(\d+)`,
-		replace: `"line": <l>`,
-	}, {
-		// modify position columns in json
-		pattern: `\"column\":(\s)*(\d+)`,
-		replace: `"column": <c>`,
-	}, {
-		// modify position offset in json
-		pattern: `\"offset\":(\s)*(\d+)`,
-		replace: `"offset": <o>`,
-	}, {
-		// There was a one-line change in container/heap/heap.go between 1.18
-		// and 1.19 that makes the stack traces different. Ignore it.
-		pattern: `heap\.go:(\d+)`,
-		replace: `N`,
-	}, {
-		pattern: `Scanning your code and (\d+) packages across (\d+)`,
-		replace: `Scanning your code and P packages across M`,
-	}, {
-		pattern: `Scanner: govulncheck@v.*`,
-		replace: `Scanner: govulncheck@v1.0.0`,
-	}, {
-		pattern: `"([^"]*") is a file`,
-		replace: `govulncheck: myfile is a file`,
-	}, {
-		pattern: `"scanner_version": "[^"]*"`,
-		replace: `"scanner_version": "v0.0.0-00000000000-20000101010101"`,
-	}, {
-		pattern: `file:///(.*)/testdata/(.*)/vulndb`,
-		replace: `testdata/vulndb`,
-	}, {
-		pattern: `package (.*) is not in (GOROOT|std) (.*)`,
-		replace: `package foo is not in GOROOT (/tmp/foo)`,
-	}, {
-		pattern: `modified (.*)\)`,
-		replace: `modified 01 Jan 21 00:00 UTC)`,
-	}, {
-		pattern: `Go: (go1.[\.\d]*|devel).*`,
-		replace: `Go: go1.18`,
-	}, {
-		pattern: `"go_version": "go[^\s"]*"`,
-		replace: `"go_version": "go1.18"`,
-	},
-}
-
-func (f *fixup) init() {
-	f.compiled = regexp.MustCompile(f.pattern)
-}
-
-func (f *fixup) apply(data []byte) []byte {
-	if f.replaceFunc != nil {
-		return f.compiled.ReplaceAllFunc(data, f.replaceFunc)
-	}
-	return f.compiled.ReplaceAll(data, []byte(f.replace))
-}
-
-func init() {
-	for i := range fixups {
-		fixups[i].init()
-	}
-}
 
 // testCase models a group of tests in cmd/govulncheck testdata.
 type testCase struct {
@@ -175,6 +97,10 @@ func runTestCase(t *testing.T, testDir string, tc testCase) {
 	if err != nil {
 		t.Fatalf("failed to create vulndb url: %v", err)
 	}
+	fixups, err := loadFixups(filepath.Join(testCaseDir, "fixups.json"))
+	if err != nil {
+		t.Fatalf("failed to load fixups: %v", err)
+	}
 
 	moduleDirs, err := filepath.Glob(filepath.Join(modulesDir, "*"))
 	if err != nil {
@@ -196,7 +122,7 @@ func runTestCase(t *testing.T, testDir string, tc testCase) {
 
 	os.Setenv("moddir", modulesDir)
 	os.Setenv("testdir", testfilesDir)
-	runTestSuite(t, testfilesDir, govulndbURI.String(), *update)
+	runTestSuite(t, testfilesDir, govulndbURI.String(), fixups, *update)
 }
 
 // Limit the number of concurrent scans. Scanning is implemented using
@@ -220,7 +146,7 @@ var (
 // testSuite creates a cmdtest suite from testfilesDir. It also defines
 // a govulncheck command on the suite that runs govulncheck against
 // vulnerability database available at vulndbDir.
-func runTestSuite(t *testing.T, testfilesDir string, vulndbDir string, update bool) {
+func runTestSuite(t *testing.T, testfilesDir string, vulndbDir string, fixups []fixup, update bool) {
 	parallelLimiterInit.Do(func() {
 		limit := (runtime.GOMAXPROCS(0) + 3) / 4
 		if limit > 2 && unsafe.Sizeof(uintptr(0)) < 8 {

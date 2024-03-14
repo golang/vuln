@@ -5,8 +5,11 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 )
 
@@ -63,4 +66,42 @@ func copyFile(src, dest string) error {
 		return err
 	}
 	return os.WriteFile(dest, b, 0644)
+}
+
+type fixup struct {
+	Pattern     string `json:"pattern,omitempty"`
+	Replace     string `json:"replace,omitempty"`
+	compiled    *regexp.Regexp
+	replaceFunc func(b []byte) []byte
+}
+
+func (f *fixup) init() {
+	f.compiled = regexp.MustCompile(f.Pattern)
+}
+
+func (f *fixup) apply(data []byte) []byte {
+	if f.replaceFunc != nil {
+		return f.compiled.ReplaceAllFunc(data, f.replaceFunc)
+	}
+	return f.compiled.ReplaceAll(data, []byte(f.Replace))
+}
+
+// loadFixups loads and initializes fixups from path. If there is
+// nothing at path, returns nil, nil.
+func loadFixups(path string) ([]fixup, error) {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return nil, nil // no fixups, which is ok
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var fixups []fixup
+	if err := json.Unmarshal(b, &fixups); err != nil {
+		return nil, err
+	}
+	for i := range fixups {
+		fixups[i].init()
+	}
+	return fixups, nil
 }
