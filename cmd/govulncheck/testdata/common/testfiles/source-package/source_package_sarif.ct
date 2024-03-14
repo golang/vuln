@@ -131,13 +131,6 @@ $ govulncheck -format sarif -scan package -C ${moddir}/vuln .
           "message": {
             "text": "Your code imports 1 vulnerable package (github.com/tidwall/gjson). Run the call-level analysis to understand whether your code actually calls the vulnerabilities."
           }
-        },
-        {
-          "ruleId": "GO-2022-0969",
-          "level": "warning",
-          "message": {
-            "text": "Your code depends on 1 vulnerable module (stdlib), but doesn't appear to import any of the vulnerable symbols."
-          }
         }
       ]
     }

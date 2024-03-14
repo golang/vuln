@@ -128,9 +128,9 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "receiver": "Result",
         "position": {
           "filename": "gjson.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 5744,
+          "line": 296,
+          "column": 17
         }
       },
       {
@@ -139,9 +139,9 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "function": "main",
         "position": {
           "filename": "vuln.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 183,
+          "line": 14,
+          "column": 20
         }
       }
     ]
@@ -249,9 +249,9 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "function": "Parse",
         "position": {
           "filename": "language/parse.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 5808,
+          "line": 228,
+          "column": 6
         }
       },
       {
@@ -260,9 +260,9 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "function": "main",
         "position": {
           "filename": "vuln.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 159,
+          "line": 13,
+          "column": 16
         }
       }
     ]
@@ -369,9 +369,9 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "receiver": "Result",
         "position": {
           "filename": "gjson.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 4415,
+          "line": 220,
+          "column": 17
         }
       },
       {
@@ -381,9 +381,9 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "function": "modPretty",
         "position": {
           "filename": "gjson.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 53718,
+          "line": 2631,
+          "column": 21
         }
       },
       {
@@ -393,9 +393,9 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "function": "execModifier",
         "position": {
           "filename": "gjson.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 52543,
+          "line": 2587,
+          "column": 21
         }
       },
       {
@@ -405,9 +405,9 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "function": "Get",
         "position": {
           "filename": "gjson.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 38077,
+          "line": 1881,
+          "column": 36
         }
       },
       {
@@ -418,9 +418,9 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "receiver": "Result",
         "position": {
           "filename": "gjson.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 5781,
+          "line": 297,
+          "column": 12
         }
       },
       {
@@ -429,9 +429,9 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "function": "main",
         "position": {
           "filename": "vuln.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 183,
+          "line": 14,
+          "column": 20
         }
       }
     ]

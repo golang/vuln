@@ -13,8 +13,8 @@ Vulnerability #1: GO-2022-0956
     Found in: gopkg.in/yaml.v2@v2.2.3
     Fixed in: gopkg.in/yaml.v2@v2.2.4
     Example traces found:
-      #1: whole_mod_vuln.go:<l>:<c>: wholemodvuln.main calls yaml.Marshal
-      #2: whole_mod_vuln.go:<l>:<c>: wholemodvuln.init calls yaml.init
+      #1: whole_mod_vuln.go:8:21: wholemodvuln.main calls yaml.Marshal
+      #2: whole_mod_vuln.go:4:2: wholemodvuln.init calls yaml.init
 
 Your code is affected by 1 vulnerability from 1 module.
 This scan found no other vulnerabilities in packages you import or modules you

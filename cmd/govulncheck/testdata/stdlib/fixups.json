@@ -16,20 +16,12 @@
     "replace": "\"offset\": \u003co\u003e"
   },
   {
-    "pattern": "heap\\.go:(\\d+)",
-    "replace": "N"
-  },
-  {
     "pattern": "Scanning your code and (\\d+) packages across (\\d+)",
     "replace": "Scanning your code and P packages across M"
   },
   {
     "pattern": "Scanner: govulncheck@v.*",
     "replace": "Scanner: govulncheck@v1.0.0"
-  },
-  {
-    "pattern": "\"([^\"]*\") is a file",
-    "replace": "govulncheck: myfile is a file"
   },
   {
     "pattern": "\"scanner_version\": \"[^\"]*\"",
@@ -40,16 +32,8 @@
     "replace": "testdata/vulndb"
   },
   {
-    "pattern": "package (.*) is not in (GOROOT|std) (.*)",
-    "replace": "package foo is not in GOROOT (/tmp/foo)"
-  },
-  {
     "pattern": "modified (.*)\\)",
     "replace": "modified 01 Jan 21 00:00 UTC)"
-  },
-  {
-    "pattern": "Go: (go1.[\\.\\d]*|devel).*",
-    "replace": "Go: go1.18"
   },
   {
     "pattern": "\"go_version\": \"go[^\\s\"]*\"",

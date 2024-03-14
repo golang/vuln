@@ -120,9 +120,9 @@ $ govulncheck -format json -C ${moddir}/multientry .
         "function": "MustParse",
         "position": {
           "filename": "language/tags.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 427,
+          "line": 13,
+          "column": 6
         }
       },
       {
@@ -131,9 +131,9 @@ $ govulncheck -format json -C ${moddir}/multientry .
         "function": "foobar",
         "position": {
           "filename": "main.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 1694,
+          "line": 99,
+          "column": 20
         }
       },
       {
@@ -142,9 +142,9 @@ $ govulncheck -format json -C ${moddir}/multientry .
         "function": "D",
         "position": {
           "filename": "main.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 705,
+          "line": 48,
+          "column": 8
         }
       },
       {
@@ -153,9 +153,9 @@ $ govulncheck -format json -C ${moddir}/multientry .
         "function": "main",
         "position": {
           "filename": "main.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 441,
+          "line": 26,
+          "column": 3
         }
       }
     ]
@@ -173,9 +173,9 @@ $ govulncheck -format json -C ${moddir}/multientry .
         "function": "Parse",
         "position": {
           "filename": "language/parse.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 1121,
+          "line": 33,
+          "column": 6
         }
       },
       {
@@ -184,9 +184,9 @@ $ govulncheck -format json -C ${moddir}/multientry .
         "function": "C",
         "position": {
           "filename": "main.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 679,
+          "line": 44,
+          "column": 23
         }
       },
       {
@@ -195,9 +195,9 @@ $ govulncheck -format json -C ${moddir}/multientry .
         "function": "main",
         "position": {
           "filename": "main.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 340,
+          "line": 22,
+          "column": 3
         }
       }
     ]

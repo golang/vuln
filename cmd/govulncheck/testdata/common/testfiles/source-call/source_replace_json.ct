@@ -120,9 +120,9 @@ $ govulncheck -C ${moddir}/replace -format json ./...
         "function": "Parse",
         "position": {
           "filename": "language/parse.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 5808,
+          "line": 228,
+          "column": 6
         }
       },
       {
@@ -131,9 +131,9 @@ $ govulncheck -C ${moddir}/replace -format json ./...
         "function": "main",
         "position": {
           "filename": "main.go",
-          "offset": <o>,
-          "line": <l>,
-          "column": <c>
+          "offset": 115,
+          "line": 11,
+          "column": 16
         }
       }
     ]

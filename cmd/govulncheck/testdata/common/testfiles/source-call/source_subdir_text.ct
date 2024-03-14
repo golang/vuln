@@ -15,7 +15,7 @@ Vulnerability #1: GO-2021-0113
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
     Example traces found:
-      #1: subdir/subdir.go:<l>:<c>: subdir.Foo calls language.Parse
+      #1: subdir/subdir.go:8:16: subdir.Foo calls language.Parse
 
 Your code is affected by 1 vulnerability from 1 module.
 This scan also found 0 vulnerabilities in packages you import and 1
@@ -41,8 +41,8 @@ Vulnerability #1: GO-2021-0113
     Fixed in: golang.org/x/text@v0.3.7
     Example traces found:
       #1: for function golang.org/x/text/language.Parse
-        subdir/subdir.go:<l>:<c>: golang.org/vuln/subdir.Foo
-        language/parse.go:<l>:<c>: golang.org/x/text/language.Parse
+        subdir/subdir.go:8:16: golang.org/vuln/subdir.Foo
+        language/parse.go:228:6: golang.org/x/text/language.Parse
 
 Your code is affected by 1 vulnerability from 1 module.
 This scan also found 0 vulnerabilities in packages you import and 1

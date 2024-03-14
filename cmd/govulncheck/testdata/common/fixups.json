@@ -1,25 +1,5 @@
 [
   {
-    "pattern": "\\.go:(\\d+):(\\d+):",
-    "replace": ".go:\u003cl\u003e:\u003cc\u003e:"
-  },
-  {
-    "pattern": "\\\"line\\\":(\\s)*(\\d+)",
-    "replace": "\"line\": \u003cl\u003e"
-  },
-  {
-    "pattern": "\\\"column\\\":(\\s)*(\\d+)",
-    "replace": "\"column\": \u003cc\u003e"
-  },
-  {
-    "pattern": "\\\"offset\\\":(\\s)*(\\d+)",
-    "replace": "\"offset\": \u003co\u003e"
-  },
-  {
-    "pattern": "heap\\.go:(\\d+)",
-    "replace": "N"
-  },
-  {
     "pattern": "Scanning your code and (\\d+) packages across (\\d+)",
     "replace": "Scanning your code and P packages across M"
   },
