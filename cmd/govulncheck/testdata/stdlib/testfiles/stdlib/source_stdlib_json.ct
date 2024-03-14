@@ -73,36 +73,6 @@ $ govulncheck -C ${moddir}/stdlib -format json .
             }
           ]
         }
-      },
-      {
-        "package": {
-          "name": "golang.org/x/net",
-          "ecosystem": "Go"
-        },
-        "ranges": [
-          {
-            "type": "SEMVER",
-            "events": [
-              {
-                "introduced": "0"
-              },
-              {
-                "fixed": "0.0.0-20220906165146-f3363e06e74c"
-              }
-            ]
-          }
-        ],
-        "ecosystem_specific": {
-          "imports": [
-            {
-              "path": "golang.org/x/net/http2",
-              "symbols": [
-                "Server.ServeConn",
-                "serverConn.goAway"
-              ]
-            }
-          ]
-        }
       }
     ],
     "references": [

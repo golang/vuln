@@ -99,25 +99,6 @@ $ govulncheck -format sarif -scan package -C ${moddir}/vuln .
                   "GHSA-ppj4-34rq-v8j9"
                 ]
               }
-            },
-            {
-              "id": "GO-2022-0969",
-              "shortDescription": {
-                "text": "[GO-2022-0969] HTTP/2 server connections can hang forever waiting for a clean shutdown that was preempted by a fatal error. This condition can be exploited by a malicious client to cause a denial of service."
-              },
-              "fullDescription": {
-                "text": "HTTP/2 server connections can hang forever waiting for a clean shutdown that was preempted by a fatal error. This condition can be exploited by a malicious client to cause a denial of service."
-              },
-              "help": {
-                "text": "HTTP/2 server connections can hang forever waiting for a clean shutdown that was preempted by a fatal error. This condition can be exploited by a malicious client to cause a denial of service."
-              },
-              "helpUri": "https://pkg.go.dev/vuln/GO-2022-0969",
-              "properties": {
-                "tags": [
-                  "CVE-2022-27664",
-                  "GHSA-69cg-p879-7622"
-                ]
-              }
             }
           ]
         }

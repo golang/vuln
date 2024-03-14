@@ -133,6 +133,7 @@ func (tc testCase) skip() bool {
 // to run them.
 var testCases = []testCase{
 	{dir: "common"},
+	{dir: "stdlib"},
 	// Binaries are not stripped on darwin with go1.21 and earlier. See #61051.
 	{dir: "strip", skipGOOS: []string{"darwin"}, strip: true},
 	// nogomod case has code with no go.mod and does not compile,

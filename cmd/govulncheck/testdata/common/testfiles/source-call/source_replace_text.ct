@@ -19,7 +19,7 @@ Vulnerability #1: GO-2021-0113
       #1: main.go:<l>:<c>: replace.main calls language.Parse
 
 Your code is affected by 1 vulnerability from 1 module.
-This scan also found 0 vulnerabilities in packages you import and 2
-vulnerabilities in modules you require, but your code doesn't appear to call
-these vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
 Use '-show verbose' for more details.

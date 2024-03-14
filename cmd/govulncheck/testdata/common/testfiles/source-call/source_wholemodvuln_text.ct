@@ -17,7 +17,6 @@ Vulnerability #1: GO-2022-0956
       #2: whole_mod_vuln.go:<l>:<c>: wholemodvuln.init calls yaml.init
 
 Your code is affected by 1 vulnerability from 1 module.
-This scan also found 0 vulnerabilities in packages you import and 1
-vulnerability in modules you require, but your code doesn't appear to call these
-vulnerabilities.
+This scan found no other vulnerabilities in packages you import or modules you
+require.
 Use '-show verbose' for more details.
