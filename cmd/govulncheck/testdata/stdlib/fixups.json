@@ -1,19 +1,23 @@
 [
   {
     "pattern": "\\.go:(\\d+):(\\d+):",
-    "replace": ".go:\u003cl\u003e:\u003cc\u003e:"
+    "replace": ".go:\u003cl\u003e:\u003cc\u003e:",
+    "comment": " mask line and column with <l> and <c> placeholders, resp."
   },
   {
     "pattern": "\\\"line\\\":(\\s)*(\\d+)",
-    "replace": "\"line\": \u003cl\u003e"
+    "replace": "\"line\": \u003cl\u003e",
+    "comment": "modify position lines in json"
   },
   {
     "pattern": "\\\"column\\\":(\\s)*(\\d+)",
-    "replace": "\"column\": \u003cc\u003e"
+    "replace": "\"column\": \u003cc\u003e",
+    "comment": "modify position columns in json"
   },
   {
     "pattern": "\\\"offset\\\":(\\s)*(\\d+)",
-    "replace": "\"offset\": \u003co\u003e"
+    "replace": "\"offset\": \u003co\u003e",
+    "comment": "modify position offsets in json"
   },
   {
     "pattern": "Scanning your code and (\\d+) packages across (\\d+)",
