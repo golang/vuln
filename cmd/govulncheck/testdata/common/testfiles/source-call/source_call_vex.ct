@@ -7,5 +7,98 @@ $ govulncheck -C ${moddir}/vuln -format openvex ./...
   "author": "Unknown Author",
   "timestamp": "2024-01-01T00:00:00",
   "version": 1,
-  "tooling": "https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck"
+  "tooling": "https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck",
+  "statements": [
+    {
+      "vulnerability": {
+        "@id": "https://pkg.go.dev/vuln/GO-2020-0015",
+        "name": "GO-2020-0015",
+        "description": "Infinite loop when decoding some inputs in golang.org/x/text",
+        "aliases": [
+          "CVE-2020-14040",
+          "GHSA-5rcv-m4m3-hfh7"
+        ]
+      },
+      "products": [
+        {
+          "@id": "Unknown Product"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "Govulncheck determined that the vulnerable code isn't called"
+    },
+    {
+      "vulnerability": {
+        "@id": "https://pkg.go.dev/vuln/GO-2021-0054",
+        "name": "GO-2021-0054",
+        "description": "Due to improper bounds checking, maliciously crafted JSON objects can cause an out-of-bounds panic. If parsing user input, this may be used as a denial of service vector.",
+        "aliases": [
+          "CVE-2020-36067",
+          "GHSA-p64j-r5f4-pwwx"
+        ]
+      },
+      "products": [
+        {
+          "@id": "Unknown Product"
+        }
+      ],
+      "status": "affected"
+    },
+    {
+      "vulnerability": {
+        "@id": "https://pkg.go.dev/vuln/GO-2021-0059",
+        "name": "GO-2021-0059",
+        "description": "Due to improper bounds checking, maliciously crafted JSON objects can cause an out-of-bounds panic. If parsing user input, this may be used as a denial of service vector.",
+        "aliases": [
+          "CVE-2020-35380",
+          "GHSA-w942-gw6m-p62c"
+        ]
+      },
+      "products": [
+        {
+          "@id": "Unknown Product"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "Govulncheck determined that the vulnerable code isn't called"
+    },
+    {
+      "vulnerability": {
+        "@id": "https://pkg.go.dev/vuln/GO-2021-0113",
+        "name": "GO-2021-0113",
+        "description": "Due to improper index calculation, an incorrectly formatted language tag can cause Parse to panic via an out of bounds read. If Parse is used to process untrusted user inputs, this may be used as a vector for a denial of service attack.",
+        "aliases": [
+          "CVE-2021-38561",
+          "GHSA-ppp9-7jff-5vj2"
+        ]
+      },
+      "products": [
+        {
+          "@id": "Unknown Product"
+        }
+      ],
+      "status": "affected"
+    },
+    {
+      "vulnerability": {
+        "@id": "https://pkg.go.dev/vuln/GO-2021-0265",
+        "name": "GO-2021-0265",
+        "description": "A maliciously crafted path can cause Get and other query functions to consume excessive amounts of CPU and time.",
+        "aliases": [
+          "CVE-2021-42248",
+          "CVE-2021-42836",
+          "GHSA-c9gm-7rfj-8w5h",
+          "GHSA-ppj4-34rq-v8j9"
+        ]
+      },
+      "products": [
+        {
+          "@id": "Unknown Product"
+        }
+      ],
+      "status": "affected"
+    }
+  ]
 }

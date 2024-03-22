@@ -6,7 +6,9 @@ package openvex
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"slices"
 	"time"
 
 	"golang.org/x/vuln/internal/govulncheck"
@@ -75,7 +77,7 @@ func (h *handler) Finding(f *govulncheck.Finding) error {
 // Flush is used to print the vex json to w.
 // This is needed as vex is not streamed.
 func (h *handler) Flush() error {
-	doc := toVex()
+	doc := toVex(h)
 	out, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {
 		return err
@@ -84,15 +86,77 @@ func (h *handler) Flush() error {
 	return err
 }
 
-func toVex() Document {
+func toVex(h *handler) Document {
 	doc := Document{
-		ID:        "govulncheckVEX", // TODO: create hash from document for ID
-		Context:   ContextURI,
-		Author:    DefaultAuthor,
-		Timestamp: time.Now().UTC(),
-		Version:   1,
-		Tooling:   Tooling,
-		//TODO: Add statements
+		ID:         "govulncheckVEX", // TODO: create hash from document for ID
+		Context:    ContextURI,
+		Author:     DefaultAuthor,
+		Timestamp:  time.Now().UTC(),
+		Version:    1,
+		Tooling:    Tooling,
+		Statements: statements(h),
 	}
 	return doc
+}
+
+// statements combines all OSVs found by govulncheck and generates the list of
+// vex statements with the proper affected level and justification to match the
+// openVex specification.
+func statements(h *handler) []Statement {
+	var scanLevel findingLevel
+	switch h.cfg.ScanLevel {
+	case govulncheck.ScanLevelModule:
+		scanLevel = required
+	case govulncheck.ScanLevelPackage:
+		scanLevel = imported
+	case govulncheck.ScanLevelSymbol:
+		scanLevel = called
+	}
+
+	var statements []Statement
+	for id, osv := range h.osvs {
+		description := osv.Summary
+		if description == "" {
+			description = osv.Details
+		}
+		s := Statement{
+			Vulnerability: Vulnerability{
+				ID:          fmt.Sprintf("https://pkg.go.dev/vuln/%s", id),
+				Name:        id,
+				Description: description,
+				Aliases:     osv.Aliases,
+			},
+			Products: []Product{
+				{
+					ID: DefaultPID,
+				},
+			},
+		}
+
+		if h.levels[id] >= scanLevel {
+			s.Status = StatusAffected
+		} else {
+			s.Status = StatusNotAffected
+			s.ImpactStatement = Impact
+			s.Justification = JustificationNotPresent
+			// We only reach this case if running in symbol mode
+			if h.levels[id] == imported {
+				s.Justification = JustificationNotExecuted
+			}
+		}
+		statements = append(statements, s)
+	}
+
+	slices.SortFunc(statements, func(a, b Statement) int {
+		if a.Vulnerability.ID > b.Vulnerability.ID {
+			return 1
+		}
+		if a.Vulnerability.ID < b.Vulnerability.ID {
+			return -1
+		}
+		// this should never happen in practice, since statements are being
+		// populated from a map with the vulnerability IDs as keys
+		return 0
+	})
+	return statements
 }
