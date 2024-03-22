@@ -236,16 +236,18 @@ func (v ShowFlag) Update(h *TextHandler) {
 type FormatFlag string
 
 const (
-	formatUnset = ""
-	formatJSON  = "json"
-	formatText  = "text"
-	formatSarif = "sarif"
+	formatUnset   = ""
+	formatJSON    = "json"
+	formatText    = "text"
+	formatSarif   = "sarif"
+	formatOpenVEX = "openvex"
 )
 
 var supportedFormats = map[string]bool{
-	formatJSON:  true,
-	formatText:  true,
-	formatSarif: true,
+	formatJSON:    true,
+	formatText:    true,
+	formatSarif:   true,
+	formatOpenVEX: true,
 }
 
 func (f *FormatFlag) Get() interface{} { return *f }

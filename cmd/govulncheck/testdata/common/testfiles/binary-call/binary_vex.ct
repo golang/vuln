@@ -1,0 +1,11 @@
+#####
+# Test basic binary scanning with vex output
+$ govulncheck -format openvex -mode binary ${common_vuln_binary}
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "govulncheckVEX",
+  "author": "Unknown Author",
+  "timestamp": "2024-01-01T00:00:00",
+  "version": 1,
+  "tooling": "https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck"
+}

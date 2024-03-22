@@ -18,6 +18,7 @@ import (
 	"golang.org/x/telemetry/counter"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/openvex"
 	"golang.org/x/vuln/internal/sarif"
 )
 
@@ -42,6 +43,8 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 		handler = govulncheck.NewJSONHandler(stdout)
 	case formatSarif:
 		handler = sarif.NewHandler(stdout)
+	case formatOpenVEX:
+		handler = openvex.NewHandler(stdout)
 	default:
 		th := NewTextHandler(stdout)
 		cfg.show.Update(th)
