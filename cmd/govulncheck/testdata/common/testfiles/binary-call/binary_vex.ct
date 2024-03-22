@@ -3,7 +3,7 @@
 $ govulncheck -format openvex -mode binary ${common_vuln_binary}
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "govulncheckVEX",
+  "@id": "govulncheck/vex:b2e8274f24820051d79285827c4fe6e1912c99143a4693804b9a5c366ec5fb8d",
   "author": "Unknown Author",
   "timestamp": "2024-01-01T00:00:00",
   "version": 1,

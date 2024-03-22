@@ -5,6 +5,7 @@
 package openvex
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -88,7 +89,6 @@ func (h *handler) Flush() error {
 
 func toVex(h *handler) Document {
 	doc := Document{
-		ID:         "govulncheckVEX", // TODO: create hash from document for ID
 		Context:    ContextURI,
 		Author:     DefaultAuthor,
 		Timestamp:  time.Now().UTC(),
@@ -96,6 +96,9 @@ func toVex(h *handler) Document {
 		Tooling:    Tooling,
 		Statements: statements(h),
 	}
+
+	id := hashVex(doc)
+	doc.ID = "govulncheck/vex:" + id
 	return doc
 }
 
@@ -159,4 +162,22 @@ func statements(h *handler) []Statement {
 		return 0
 	})
 	return statements
+}
+
+func hashVex(doc Document) string {
+	// json.Marshal should never error here (because of the structure of Document).
+	// If an error does occur, it won't be a jsonerror, but instead a panic
+	d := Document{
+		Context:    doc.Context,
+		ID:         doc.ID,
+		Author:     doc.Author,
+		Version:    doc.Version,
+		Tooling:    doc.Tooling,
+		Statements: doc.Statements,
+	}
+	out, err := json.Marshal(d)
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%x", sha256.Sum256(out))
 }
