@@ -32,37 +32,6 @@ import (
 
 var update = flag.Bool("update", false, "update test files with results")
 
-// testCase models a group of tests in cmd/govulncheck testdata.
-type testCase struct {
-	dir       string   // subdirectory in testdata containing tests
-	skipGOOS  []string // GOOS to skip, if any
-	copy      bool     // copy the folder to isolate it
-	skipBuild bool     // skip building the test case
-	strip     bool     // indicates if binaries should be stripped
-}
-
-func (tc testCase) skip() bool {
-	for _, sg := range tc.skipGOOS {
-		if runtime.GOOS == sg {
-			return true
-		}
-	}
-	return false
-}
-
-// testCases contains the list of major groups of tests in
-// cmd/govulncheck/testdata folder with information on how
-// to run them.
-var testCases = []testCase{
-	{dir: "common"},
-	{dir: "stdlib"},
-	// Binaries are not stripped on darwin with go1.21 and earlier. See #61051.
-	{dir: "strip", skipGOOS: []string{"darwin"}, strip: true},
-	// nogomod case has code with no go.mod and does not compile,
-	// so we need to copy it and skip building binaries.
-	{dir: "nogomod", copy: true, skipBuild: true},
-}
-
 func TestCommand(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test that uses internet in short mode")
@@ -73,23 +42,35 @@ func TestCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.dir, func(t *testing.T) {
-			runTestCase(t, testDir, tc)
+	// test all cases in testdata subdirectory
+	fs, err := os.ReadDir(filepath.Join(testDir, "testdata"))
+	if err != nil {
+		t.Fatalf("failed to read test cases: %v", err)
+	}
+	for _, tc := range fs {
+		if !tc.IsDir() {
+			continue
+		}
+		t.Run(tc.Name(), func(t *testing.T) {
+			runTestCase(t, tc.Name(), testDir)
 		})
 	}
 }
 
-func runTestCase(t *testing.T, testDir string, tc testCase) {
-	if tc.skip() {
-		return
+func runTestCase(t *testing.T, tcName, testDir string) {
+	testCaseDir := filepath.Join(testDir, "testdata", tcName)
+	cfg, err := loadConfig(filepath.Join(testCaseDir, "config.json"))
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
 	}
 
-	base := tc.dir
-	testCaseDir := filepath.Join(testDir, "testdata", base)
-	if tc.copy {
+	if cfg.skip() {
+		return
+	}
+	if cfg.Copy {
 		testCaseDir = copyTestCase(testCaseDir, t)
 	}
+
 	vulndbDir := filepath.Join(testCaseDir, "vulndb-v1")
 	modulesDir := filepath.Join(testCaseDir, "modules")
 	testfilesDir := filepath.Join(testCaseDir, "testfiles")
@@ -97,32 +78,28 @@ func runTestCase(t *testing.T, testDir string, tc testCase) {
 	if err != nil {
 		t.Fatalf("failed to create vulndb url: %v", err)
 	}
-	fixups, err := loadFixups(filepath.Join(testCaseDir, "fixups.json"))
-	if err != nil {
-		t.Fatalf("failed to load fixups: %v", err)
-	}
 
 	moduleDirs, err := filepath.Glob(filepath.Join(modulesDir, "*"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, md := range moduleDirs {
-		if tc.skipBuild {
+		if cfg.SkipBuild {
 			continue
 		}
 
 		// Build test module binary.
-		binary, cleanup := test.GoBuild(t, md, "", tc.strip)
+		binary, cleanup := test.GoBuild(t, md, "", cfg.Strip)
 		t.Cleanup(cleanup)
 		// Set an environment variable to the path to the binary, so tests
 		// can refer to it. The binary name is unique across all test cases.
-		varName := tc.dir + "_" + filepath.Base(md) + "_binary"
+		varName := tcName + "_" + filepath.Base(md) + "_binary"
 		os.Setenv(varName, binary)
 	}
 
 	os.Setenv("moddir", modulesDir)
 	os.Setenv("testdir", testfilesDir)
-	runTestSuite(t, testfilesDir, govulndbURI.String(), fixups, *update)
+	runTestSuite(t, testfilesDir, govulndbURI.String(), cfg.Fixups, *update)
 }
 
 // Limit the number of concurrent scans. Scanning is implemented using

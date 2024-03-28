@@ -6,10 +6,10 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"testing"
 )
 
@@ -68,6 +68,28 @@ func copyFile(src, dest string) error {
 	return os.WriteFile(dest, b, 0644)
 }
 
+type config struct {
+	// SkipGOOS is a list of GOOS to skip
+	SkipGOOS []string `json:"skipGOOS,omitempty"`
+	// Copy the folder to isolate it
+	Copy bool `json:"copy,omitempty"`
+	// SkipBuild the test case
+	SkipBuild bool `json:"skipBuild,omitempty"`
+	// Strip indicates if binaries should be stripped
+	Strip bool `json:"strip,omitempty"`
+
+	Fixups []fixup `json:"fixups,omitempty"`
+}
+
+func (c *config) skip() bool {
+	for _, sg := range c.SkipGOOS {
+		if runtime.GOOS == sg {
+			return true
+		}
+	}
+	return false
+}
+
 type fixup struct {
 	Pattern     string `json:"pattern,omitempty"`
 	Replace     string `json:"replace,omitempty"`
@@ -86,22 +108,18 @@ func (f *fixup) apply(data []byte) []byte {
 	return f.compiled.ReplaceAll(data, []byte(f.Replace))
 }
 
-// loadFixups loads and initializes fixups from path. If there is
-// nothing at path, returns nil, nil.
-func loadFixups(path string) ([]fixup, error) {
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		return nil, nil // no fixups, which is ok
-	}
+// loadConfig loads and initializes the config from path.
+func loadConfig(path string) (*config, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	var fixups []fixup
-	if err := json.Unmarshal(b, &fixups); err != nil {
+	var cfg config
+	if err := json.Unmarshal(b, &cfg); err != nil {
 		return nil, err
 	}
-	for i := range fixups {
-		fixups[i].init()
+	for i, _ := range cfg.Fixups {
+		cfg.Fixups[i].init()
 	}
-	return fixups, nil
+	return &cfg, nil
 }

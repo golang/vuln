@@ -1,0 +1,48 @@
+{
+  "fixups": [
+    {
+      "pattern": "\\.go:(\\d+):(\\d+):",
+      "replace": ".go:\u003cl\u003e:\u003cc\u003e:",
+      "comment": " mask line and column with <l> and <c> placeholders, resp."
+    },
+    {
+      "pattern": "\\\"line\\\":(\\s)*(\\d+)",
+      "replace": "\"line\": \u003cl\u003e",
+      "comment": "modify position lines in json"
+    },
+    {
+      "pattern": "\\\"column\\\":(\\s)*(\\d+)",
+      "replace": "\"column\": \u003cc\u003e",
+      "comment": "modify position columns in json"
+    },
+    {
+      "pattern": "\\\"offset\\\":(\\s)*(\\d+)",
+      "replace": "\"offset\": \u003co\u003e",
+      "comment": "modify position offsets in json"
+    },
+    {
+      "pattern": "Scanning your code and (\\d+) packages across (\\d+)",
+      "replace": "Scanning your code and P packages across M"
+    },
+    {
+      "pattern": "Scanner: govulncheck@v.*",
+      "replace": "Scanner: govulncheck@v1.0.0"
+    },
+    {
+      "pattern": "\"scanner_version\": \"[^\"]*\"",
+      "replace": "\"scanner_version\": \"v0.0.0-00000000000-20000101010101\""
+    },
+    {
+      "pattern": "file:///(.*)/testdata/(.*)/vulndb",
+      "replace": "testdata/vulndb"
+    },
+    {
+      "pattern": "modified (.*)\\)",
+      "replace": "modified 01 Jan 21 00:00 UTC)"
+    },
+    {
+      "pattern": "\"go_version\": \"go[^\\s\"]*\"",
+      "replace": "\"go_version\": \"go1.18\""
+    }
+  ]
+}
