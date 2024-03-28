@@ -118,7 +118,7 @@ func loadConfig(path string) (*config, error) {
 	if err := json.Unmarshal(b, &cfg); err != nil {
 		return nil, err
 	}
-	for i, _ := range cfg.Fixups {
+	for i := range cfg.Fixups {
 		cfg.Fixups[i].init()
 	}
 	return &cfg, nil
