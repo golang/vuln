@@ -49,13 +49,13 @@ func TestCompact(t *testing.T) {
 		{
 			[]*govulncheck.Frame{
 				{Module: "vuln", Function: "V"},
-				{Module: "interm", Function: "I"},
+				{Module: "interim", Function: "I"},
 				{Module: "user", Function: "U"},
 				{Module: "user", Function: "W"},
 			},
 			[]*govulncheck.Frame{
 				{Module: "vuln", Function: "V"},
-				{Module: "interm", Function: "I"},
+				{Module: "interim", Function: "I"},
 				{Module: "user", Function: "U"},
 			},
 		},
@@ -63,16 +63,16 @@ func TestCompact(t *testing.T) {
 			[]*govulncheck.Frame{
 				{Module: "vuln", Function: "V"},
 				{Module: "x", Function: "X"},
-				{Module: "interm", Function: "K"},
-				{Module: "interm", Function: "J"},
-				{Module: "interm", Function: "I"},
+				{Module: "interim", Function: "K"},
+				{Module: "interim", Function: "J"},
+				{Module: "interim", Function: "I"},
 				{Module: "user", Function: "U"},
 				{Module: "user", Function: "W"},
 			},
 			[]*govulncheck.Frame{
 				{Module: "vuln", Function: "V"},
-				{Module: "interm", Function: "J"},
-				{Module: "interm", Function: "I"},
+				{Module: "interim", Function: "J"},
+				{Module: "interim", Function: "I"},
 				{Module: "user", Function: "U"},
 			},
 		},

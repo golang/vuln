@@ -294,12 +294,6 @@ func stack(f *govulncheck.Finding) Stack {
 		})
 	}
 
-	vuln := trace[0]
-	vulnSym := vuln.Function
-	if vuln.Receiver != "" {
-		vulnSym = vuln.Receiver + "." + vulnSym
-	}
-	vulnSym = vuln.Package + "." + vulnSym
 	return Stack{
 		Frames:  frames,
 		Message: Description{Text: fmt.Sprintf("A call stack for vulnerable function %s", symbol(trace[0]))},
