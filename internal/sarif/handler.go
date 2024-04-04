@@ -26,8 +26,6 @@ type handler struct {
 	// an osv is indeed called, then all findings for
 	// the osv will have call stack info.
 	findings map[string][]*govulncheck.Finding
-
-	binary bool
 }
 
 func NewHandler(w io.Writer) *handler {
