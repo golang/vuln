@@ -38,6 +38,7 @@ type TextHandler struct {
 	osvs      []*osv.Entry
 	findings  []*findingSummary
 	scanLevel govulncheck.ScanLevel
+	scanMode  govulncheck.ScanMode
 
 	err error
 
@@ -84,9 +85,9 @@ func (h *TextHandler) Flush() error {
 
 // Config writes version information only if --version was set.
 func (h *TextHandler) Config(config *govulncheck.Config) error {
-	if config.ScanLevel != "" {
-		h.scanLevel = config.ScanLevel
-	}
+	h.scanLevel = config.ScanLevel
+	h.scanMode = config.ScanMode
+
 	if !h.showVersion {
 		return nil
 	}
@@ -300,10 +301,14 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 	count := 1
 	for _, entry := range traces {
 		if entry.Compact == "" {
-			continue
+			continue // skip package and module level traces
 		}
 		if first {
-			h.style(keyStyle, "    Example traces found:\n")
+			if h.scanMode == govulncheck.ScanModeBinary {
+				h.style(keyStyle, "    Vulnerable symbols found:\n")
+			} else {
+				h.style(keyStyle, "    Example traces found:\n")
+			}
 		}
 		first = false
 

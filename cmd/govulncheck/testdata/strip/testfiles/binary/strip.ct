@@ -12,7 +12,7 @@ Vulnerability #1: GO-2021-0113
   Module: golang.org/x/text
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
-    Example traces found:
+    Vulnerable symbols found:
       #1: language.MatchStrings
       #2: language.MustParse
       #3: language.Parse
@@ -24,7 +24,7 @@ Vulnerability #2: GO-2020-0015
   Module: golang.org/x/text
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.3
-    Example traces found:
+    Vulnerable symbols found:
       #1: transform.String
       #2: unicode.bomOverride.Transform
       #3: unicode.utf16Decoder.Transform
