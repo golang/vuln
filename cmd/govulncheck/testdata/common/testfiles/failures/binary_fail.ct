@@ -56,7 +56,7 @@ govulncheck: unrecognized binary format
 #####
 # Test of trying to analyze multiple binaries
 $ govulncheck -mode=binary ${common_vuln_binary} ${common_vuln_binary} --> FAIL 2
-only 1 binary can be analyzed at a time
+only one binary can be analyzed at a time
 
 #####
 # Test of trying to run -mode=binary with -tags flag
