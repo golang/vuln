@@ -91,40 +91,8 @@ func callGraph(ctx context.Context, prog *ssa.Program, entries []*ssa.Function) 
 		return nil, err
 	}
 	cg := vta.CallGraph(fslice, vtaCg)
-	deleteSyntheticNodes(cg)
+	cg.DeleteSyntheticNodes()
 	return cg, nil
-}
-
-// deleteSyntheticNodes is like g.DeleteSyntheticNodes except
-// that instantiation of generics, which are also synthetics,
-// are preserved. We want to keep those functions in the
-// call graph for more accurate call stacks.
-func deleteSyntheticNodes(g *callgraph.Graph) {
-	edges := make(map[callgraph.Edge]bool)
-	for _, cgn := range g.Nodes {
-		for _, e := range cgn.Out {
-			edges[*e] = true
-		}
-	}
-	for fn, cgn := range g.Nodes {
-		if cgn == g.Root || fn.Synthetic == "" || isInit(&FuncNode{Name: fn.Name()}) {
-			continue // keep
-		}
-		if fn.Synthetic != "" && fn.Origin() != nil { // added to the original function
-			continue
-		}
-		for _, eIn := range cgn.In {
-			for _, eOut := range cgn.Out {
-				newEdge := callgraph.Edge{Caller: eIn.Caller, Site: eIn.Site, Callee: eOut.Callee}
-				if edges[newEdge] {
-					continue // don't add duplicate
-				}
-				callgraph.AddEdge(eIn.Caller, eIn.Site, eOut.Callee)
-				edges[newEdge] = true
-			}
-		}
-		g.DeleteNode(cgn)
-	}
 }
 
 // dbTypeFormat formats the name of t according how types
