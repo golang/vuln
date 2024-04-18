@@ -49,6 +49,10 @@ func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 	graph.AddModules(bin.Modules...)
 	mods := append(bin.Modules, graph.GetModule(internal.GoStdModulePath))
 
+	if err := handler.Progress(&govulncheck.Progress{Message: fetchingVulnsMessage}); err != nil {
+		return nil, err
+	}
+
 	mv, err := FetchVulnerabilities(ctx, client, mods)
 	if err != nil {
 		return nil, err
@@ -56,6 +60,10 @@ func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 
 	// Emit OSV entries immediately in their raw unfiltered form.
 	if err := emitOSVs(handler, mv); err != nil {
+		return nil, err
+	}
+
+	if err := handler.Progress(&govulncheck.Progress{Message: checkingVulnsMessage}); err != nil {
 		return nil, err
 	}
 

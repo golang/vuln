@@ -57,6 +57,10 @@ func source(ctx context.Context, handler govulncheck.Handler, cfg *govulncheck.C
 		}()
 	}
 
+	if err := handler.Progress(&govulncheck.Progress{Message: fetchingVulnsMessage}); err != nil {
+		return nil, err
+	}
+
 	mv, err := FetchVulnerabilities(ctx, client, graph.Modules())
 	if err != nil {
 		return nil, err
@@ -64,6 +68,10 @@ func source(ctx context.Context, handler govulncheck.Handler, cfg *govulncheck.C
 
 	// Emit OSV entries immediately in their raw unfiltered form.
 	if err := emitOSVs(handler, mv); err != nil {
+		return nil, err
+	}
+
+	if err := handler.Progress(&govulncheck.Progress{Message: checkingVulnsMessage}); err != nil {
 		return nil, err
 	}
 

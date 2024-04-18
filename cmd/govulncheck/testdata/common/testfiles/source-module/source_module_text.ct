@@ -22,6 +22,10 @@ Use '-scan symbol' for more fine grained vulnerability detection.
 $ govulncheck -scan module -show verbose -C ${moddir}/multientry --> FAIL 3
 Scanning your code across 2 dependent modules for known vulnerabilities...
 
+Fetching vulnerabilities from the database...
+
+Checking the code against the vulnerabilities...
+
 === Module Results ===
 
 Vulnerability #1: GO-2021-0113

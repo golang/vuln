@@ -18,6 +18,16 @@ $ govulncheck -format json -mode binary -scan package ${common_vuln_binary}
   }
 }
 {
+  "progress": {
+    "message": "Fetching vulnerabilities from the database..."
+  }
+}
+{
+  "progress": {
+    "message": "Checking the code against the vulnerabilities..."
+  }
+}
+{
   "osv": {
     "schema_version": "1.3.1",
     "id": "GO-2021-0265",
