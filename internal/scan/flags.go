@@ -23,16 +23,16 @@ type config struct {
 	dir      string
 	tags     buildutil.TagsFlag
 	test     bool
-	show     showFlag
-	format   formatFlag
+	show     ShowFlag
+	format   FormatFlag
 	env      []string
 }
 
 func parseFlags(cfg *config, stderr io.Writer, args []string) error {
 	var version bool
 	var json bool
-	var scanFlag scanFlag
-	var modeFlag modeFlag
+	var scanFlag ScanFlag
+	var modeFlag ModeFlag
 	flags := flag.NewFlagSet("", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	flags.BoolVar(&json, "json", false, "output JSON (Go compatible legacy flag, see format flag)")
@@ -187,9 +187,9 @@ func isFile(path string) bool {
 
 var errFlagParse = errors.New("see -help for details")
 
-// showFlag is used for parsing and validation of
+// ShowFlag is used for parsing and validation of
 // govulncheck -show flag.
-type showFlag []string
+type ShowFlag []string
 
 var supportedShows = map[string]bool{
 	"traces":  true,
@@ -198,7 +198,7 @@ var supportedShows = map[string]bool{
 	"version": true,
 }
 
-func (v *showFlag) Set(s string) error {
+func (v *ShowFlag) Set(s string) error {
 	if s == "" {
 		return nil
 	}
@@ -212,12 +212,28 @@ func (v *showFlag) Set(s string) error {
 	return nil
 }
 
-func (f *showFlag) Get() interface{} { return *f }
-func (f *showFlag) String() string   { return "" }
+func (v *ShowFlag) Get() interface{} { return *v }
+func (v *ShowFlag) String() string   { return "" }
 
-// formatFlag is used for parsing and validation of
+// Update the text handler h with values of the flag.
+func (v ShowFlag) Update(h *TextHandler) {
+	for _, show := range v {
+		switch show {
+		case "traces":
+			h.showTraces = true
+		case "color":
+			h.showColor = true
+		case "version":
+			h.showVersion = true
+		case "verbose":
+			h.showVerbose = true
+		}
+	}
+}
+
+// FormatFlag is used for parsing and validation of
 // govulncheck -format flag.
-type formatFlag string
+type FormatFlag string
 
 const (
 	formatUnset = ""
@@ -232,19 +248,19 @@ var supportedFormats = map[string]bool{
 	formatSarif: true,
 }
 
-func (f *formatFlag) Get() interface{} { return *f }
-func (f *formatFlag) Set(s string) error {
+func (f *FormatFlag) Get() interface{} { return *f }
+func (f *FormatFlag) Set(s string) error {
 	if _, ok := supportedFormats[s]; !ok {
 		return errFlagParse
 	}
-	*f = formatFlag(s)
+	*f = FormatFlag(s)
 	return nil
 }
-func (f *formatFlag) String() string { return "" }
+func (f *FormatFlag) String() string { return "" }
 
-// modeFlag is used for parsing and validation of
+// ModeFlag is used for parsing and validation of
 // govulncheck -mode flag.
-type modeFlag string
+type ModeFlag string
 
 var supportedModes = map[string]bool{
 	govulncheck.ScanModeSource:  true,
@@ -254,19 +270,19 @@ var supportedModes = map[string]bool{
 	govulncheck.ScanModeExtract: true,
 }
 
-func (f *modeFlag) Get() interface{} { return *f }
-func (f *modeFlag) Set(s string) error {
+func (f *ModeFlag) Get() interface{} { return *f }
+func (f *ModeFlag) Set(s string) error {
 	if _, ok := supportedModes[s]; !ok {
 		return errFlagParse
 	}
-	*f = modeFlag(s)
+	*f = ModeFlag(s)
 	return nil
 }
-func (f *modeFlag) String() string { return "" }
+func (f *ModeFlag) String() string { return "" }
 
-// scanFlag is used for parsing and validation of
+// ScanFlag is used for parsing and validation of
 // govulncheck -scan flag.
-type scanFlag string
+type ScanFlag string
 
 var supportedLevels = map[string]bool{
 	govulncheck.ScanLevelModule:  true,
@@ -274,12 +290,12 @@ var supportedLevels = map[string]bool{
 	govulncheck.ScanLevelSymbol:  true,
 }
 
-func (f *scanFlag) Get() interface{} { return *f }
-func (f *scanFlag) Set(s string) error {
+func (f *ScanFlag) Get() interface{} { return *f }
+func (f *ScanFlag) Set(s string) error {
 	if _, ok := supportedLevels[s]; !ok {
 		return errFlagParse
 	}
-	*f = scanFlag(s)
+	*f = ScanFlag(s)
 	return nil
 }
-func (f *scanFlag) String() string { return "" }
+func (f *ScanFlag) String() string { return "" }

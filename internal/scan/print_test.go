@@ -38,7 +38,7 @@ func TestPrinting(t *testing.T) {
 				wantText, _ := fs.ReadFile(testdata, textfile)
 				got := &bytes.Buffer{}
 				handler := scan.NewTextHandler(got)
-				handler.Show(strings.Split(textname, "_")[1:])
+				scan.ShowFlag(strings.Split(textname, "_")[1:]).Update(handler)
 				testRunHandler(t, rawJSON, handler)
 				if diff := cmp.Diff(string(wantText), got.String()); diff != "" {
 					if *update {

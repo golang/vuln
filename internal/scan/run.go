@@ -43,7 +43,7 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 		handler = sarif.NewHandler(stdout)
 	default:
 		th := NewTextHandler(stdout)
-		th.Show(cfg.show)
+		cfg.show.Update(th)
 		handler = th
 	}
 
