@@ -47,7 +47,6 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 		handler = th
 	}
 
-	// Write the introductory message to the user.
 	if err := handler.Config(&cfg.Config); err != nil {
 		return err
 	}

@@ -2,8 +2,6 @@
 # Testing that govulncheck doesn't mention calls when it doesn't
 # have callstack information
 $ govulncheck -scan module -C ${moddir}/multientry --> FAIL 3
-Scanning your code across 2 dependent modules for known vulnerabilities...
-
 === Module Results ===
 
 Vulnerability #1: GO-2021-0113

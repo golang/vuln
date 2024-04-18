@@ -1,8 +1,6 @@
 #####
 # Testing that govulncheck doesn't mention calls when it doesn't have the relevant info
 $ govulncheck -scan package -C ${moddir}/multientry . --> FAIL 3
-Scanning your code and P packages across M dependent modules for known vulnerabilities...
-
 === Package Results ===
 
 Vulnerability #1: GO-2021-0113

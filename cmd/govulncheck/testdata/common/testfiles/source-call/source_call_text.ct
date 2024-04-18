@@ -1,8 +1,6 @@
 #####
 # Test of basic govulncheck in source mode
 $ govulncheck -C ${moddir}/vuln ./... --> FAIL 3
-Scanning your code and P packages across M dependent modules for known vulnerabilities...
-
 === Symbol Results ===
 
 Vulnerability #1: GO-2021-0265
@@ -47,8 +45,6 @@ Use '-show verbose' for more details.
 #####
 # Test of basic govulncheck in source mode with expanded traces
 $ govulncheck -C ${moddir}/vuln -show=traces ./... --> FAIL 3
-Scanning your code and P packages across M dependent modules for known vulnerabilities...
-
 === Symbol Results ===
 
 Vulnerability #1: GO-2021-0265

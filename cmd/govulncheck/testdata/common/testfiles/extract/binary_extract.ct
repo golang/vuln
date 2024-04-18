@@ -1,8 +1,6 @@
 #####
 # Test binary mode using the extracted binary blob.
 $ govulncheck -mode=binary ${testdir}/extract/vuln.blob --> FAIL 3
-Scanning your binary for known vulnerabilities...
-
 === Symbol Results ===
 
 Vulnerability #1: GO-2021-0265

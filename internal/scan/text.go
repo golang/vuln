@@ -116,7 +116,9 @@ func (h *TextHandler) Config(config *govulncheck.Config) error {
 
 // Progress writes progress updates during govulncheck execution.
 func (h *TextHandler) Progress(progress *govulncheck.Progress) error {
-	h.print(progress.Message, "\n\n")
+	if h.showVerbose {
+		h.print(progress.Message, "\n\n")
+	}
 	return h.err
 }
 

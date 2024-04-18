@@ -41,25 +41,27 @@ To control which files are processed, use the -tags flag to provide a
 comma-separated list of build tags, and the -test flag to indicate that test
 files should be included.
 
-To include more detailed stack traces, pass -show=traces, this will cause it to
+To include more detailed stack traces, pass '-show traces', this will cause it to
 print the full call stack for each entry.
 
-To run govulncheck on a compiled binary, pass it the path to the binary file
-with the -mode=binary flag:
+To include progress messages and more details on findings, pass '-show verbose'.
 
-	$ govulncheck -mode=binary $HOME/go/bin/my-go-program
+To run govulncheck on a compiled binary, pass it the path to the binary file
+with the '-mode binary' flag:
+
+	$ govulncheck -mode binary $HOME/go/bin/my-go-program
 
 Govulncheck uses the binary's symbol information to find mentions of vulnerable
 functions. Its output omits call stacks, which require source code analysis.
 
-Govulncheck also supports -mode=extract on a Go binary for extraction of minimal
+Govulncheck also supports '-mode extract' on a Go binary for extraction of minimal
 information needed to analyze the binary. This will produce a blob, typically much
 smaller than the binary, that can also be passed to govulncheck as an argument with
--mode=binary. The users should not rely on the contents or representation of the blob.
+'-mode binary'. The users should not rely on the contents or representation of the blob.
 
 Govulncheck exits successfully (exit code 0) if there are no vulnerabilities,
 and exits unsuccessfully if there are. It also exits successfully if the -json flag
-is provided, regardless of the number of detected vulnerabilities.
+(or '-format json') is provided, regardless of the number of detected vulnerabilities.
 
 Govulncheck supports streaming JSON. For more details, please see [golang.org/x/vuln/internal/govulncheck].
 

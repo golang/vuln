@@ -2,8 +2,6 @@
 # Test of govulncheck call analysis for vulns with no package info available.
 # All symbols of the module are vulnerable.
 $ govulncheck -C ${moddir}/wholemodvuln ./... --> FAIL 3
-Scanning your code and P packages across M dependent modules for known vulnerabilities...
-
 === Symbol Results ===
 
 Vulnerability #1: GO-2022-0956

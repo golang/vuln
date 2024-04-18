@@ -1,8 +1,6 @@
 #####
 # Test of explicit text format
 $ govulncheck -C ${moddir}/informational -format text .
-Scanning your code and P packages across M dependent modules for known vulnerabilities...
-
 === Symbol Results ===
 
 No vulnerabilities found.

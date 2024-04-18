@@ -1,8 +1,6 @@
 #####
 # Test binary scanning at the module level
 $ govulncheck -mode=binary -scan module ${common_vuln_binary} --> FAIL 3
-Scanning your binary for known vulnerabilities...
-
 === Module Results ===
 
 Vulnerability #1: GO-2021-0265

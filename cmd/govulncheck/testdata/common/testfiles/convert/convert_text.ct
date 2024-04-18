@@ -2,8 +2,6 @@
 # Test using the conversion from json on stdin to text on stdout
 # location of convert input is subdirectory/convert_intput
 $ govulncheck -mode=convert < convert/convert_input.json --> FAIL 3
-Scanning your code and P packages across M dependent modules for known vulnerabilities...
-
 === Symbol Results ===
 
 Vulnerability #1: GO-2021-0265

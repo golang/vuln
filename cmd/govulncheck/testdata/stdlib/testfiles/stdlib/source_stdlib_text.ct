@@ -1,8 +1,6 @@
 #####
 # Test finding stdlib vulnerability in source mode
 $ govulncheck -C ${moddir}/stdlib . --> FAIL 3
-Scanning your code and P packages across M dependent module for known vulnerabilities...
-
 === Symbol Results ===
 
 Vulnerability #1: GO-2022-0969
@@ -25,8 +23,6 @@ Use '-show verbose' for more details.
 #####
 # Test finding stdlib vulnerability in source mode with expanded traces
 $ govulncheck -C ${moddir}/stdlib -show=traces . --> FAIL 3
-Scanning your code and P packages across M dependent module for known vulnerabilities...
-
 === Symbol Results ===
 
 Vulnerability #1: GO-2022-0969
@@ -55,8 +51,6 @@ Use '-show verbose' for more details.
 #####
 # Test finding stdlib vulnerability in source mode at the package level
 $ govulncheck -C ${moddir}/stdlib -scan package . --> FAIL 3
-Scanning your code and P packages across M dependent module for known vulnerabilities...
-
 === Package Results ===
 
 Vulnerability #1: GO-2022-0969
@@ -77,8 +71,6 @@ verbose' for more details.
 #####
 # Test finding stdlib vulnerability in source mode at the module level
 $ govulncheck -C ${moddir}/stdlib -scan module --> FAIL 3
-Scanning your code across 1 dependent module for known vulnerabilities...
-
 === Module Results ===
 
 Vulnerability #1: GO-2022-0969
