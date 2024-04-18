@@ -114,9 +114,6 @@ func validateConfig(cfg *config, json bool) error {
 		if cfg.ScanLevel == govulncheck.ScanLevelModule && len(cfg.patterns) != 0 {
 			return fmt.Errorf("patterns are not accepted for module only scanning")
 		}
-		if len(cfg.patterns) > 1 {
-			return fmt.Errorf("only one pattern can be analyzed at a time")
-		}
 	case govulncheck.ScanModeBinary:
 		if cfg.test {
 			return fmt.Errorf("the -test flag is not supported in binary mode")
@@ -125,7 +122,7 @@ func validateConfig(cfg *config, json bool) error {
 			return fmt.Errorf("the -tags flag is not supported in binary mode")
 		}
 		if len(cfg.patterns) != 1 {
-			return fmt.Errorf("only one binary can be analyzed at a time")
+			return fmt.Errorf("only 1 binary can be analyzed at a time")
 		}
 		if !isFile(cfg.patterns[0]) {
 			return fmt.Errorf("%q is not a file", cfg.patterns[0])
@@ -138,7 +135,7 @@ func validateConfig(cfg *config, json bool) error {
 			return fmt.Errorf("the -tags flag is not supported in extract mode")
 		}
 		if len(cfg.patterns) != 1 {
-			return fmt.Errorf("only one binary can be extracted at a time")
+			return fmt.Errorf("only 1 binary can be extracted at a time")
 		}
 		if cfg.format == formatJSON {
 			return fmt.Errorf("the json format must be off in extract mode")
@@ -159,9 +156,6 @@ func validateConfig(cfg *config, json bool) error {
 		if len(cfg.tags) > 0 {
 			return fmt.Errorf("the -tags flag is not supported in convert mode")
 		}
-		if len(cfg.patterns) > 1 {
-			return fmt.Errorf("only one file can be analyzed at a time")
-		}
 	case govulncheck.ScanModeQuery:
 		if cfg.test {
 			return fmt.Errorf("the -test flag is not supported in query mode")
@@ -180,7 +174,6 @@ func validateConfig(cfg *config, json bool) error {
 			}
 		}
 	}
-
 	return nil
 }
 

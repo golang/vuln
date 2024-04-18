@@ -23,8 +23,3 @@ For details on package patterns, see https://pkg.go.dev/cmd/go#hdr-Package_lists
 # Test of handing a package pattern to scan level module
 $ govulncheck -scan module -C ${moddir}/vuln pattern --> FAIL 2
 patterns are not accepted for module only scanning
-
-#####
-# Test of handing multiple package patterns to source mode
-$ govulncheck -C ${moddir}/vuln pattern1 pattern2 --> FAIL 2
-only one pattern can be analyzed at a time
