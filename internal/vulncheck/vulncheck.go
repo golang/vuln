@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	fetchingVulnsMessage = "Fetching vulnerabilities from the database..."
-	checkingVulnsMessage = "Checking the code against the vulnerabilities..."
+	fetchingVulnsMessage    = "Fetching vulnerabilities from the database..."
+	checkingSrcVulnsMessage = "Checking the code against the vulnerabilities..."
+	checkingBinVulnsMessage = "Checking the binary against the vulnerabilities..."
 )
 
 // Result contains information on detected vulnerabilities.

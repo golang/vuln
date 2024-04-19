@@ -71,7 +71,7 @@ func source(ctx context.Context, handler govulncheck.Handler, cfg *govulncheck.C
 		return nil, err
 	}
 
-	if err := handler.Progress(&govulncheck.Progress{Message: checkingVulnsMessage}); err != nil {
+	if err := handler.Progress(&govulncheck.Progress{Message: checkingSrcVulnsMessage}); err != nil {
 		return nil, err
 	}
 

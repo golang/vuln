@@ -63,7 +63,7 @@ func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 		return nil, err
 	}
 
-	if err := handler.Progress(&govulncheck.Progress{Message: checkingVulnsMessage}); err != nil {
+	if err := handler.Progress(&govulncheck.Progress{Message: checkingBinVulnsMessage}); err != nil {
 		return nil, err
 	}
 

@@ -24,7 +24,7 @@ $ govulncheck -format json -mode binary ${common_vuln_binary}
 }
 {
   "progress": {
-    "message": "Checking the code against the vulnerabilities..."
+    "message": "Checking the binary against the vulnerabilities..."
   }
 }
 {
