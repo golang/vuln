@@ -14,7 +14,7 @@ Usage:
     	vulnerability database url (default "https://vuln.go.dev")
   -format value
     	specify format output
-    	The supported values are 'text' and 'json' (default 'text')
+    	The supported values are 'text', 'json', and 'sarif' (default 'text')
   -json
     	output JSON (Go compatible legacy flag, see format flag)
   -mode value

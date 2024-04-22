@@ -9,10 +9,10 @@ only those that could affect the application.
 
 By default, govulncheck makes requests to the Go vulnerability database at
 https://vuln.go.dev. Requests to the vulnerability database contain only module
-paths, not code or other properties of your program. See
-https://vuln.go.dev/privacy.html for more. Use the -db flag to specify a
-different database, which must implement the specification at
-https://go.dev/security/vuln/database.
+paths with vulnerabilities already known to the database, not code or other
+properties of your program. See https://vuln.go.dev/privacy.html for more.
+Use the -db flag to specify a different database, which must implement the
+specification at https://go.dev/security/vuln/database.
 
 Govulncheck looks for vulnerabilities in Go programs using a specific build
 configuration. For analyzing source code, that configuration is the Go version
@@ -59,11 +59,20 @@ information needed to analyze the binary. This will produce a blob, typically mu
 smaller than the binary, that can also be passed to govulncheck as an argument with
 '-mode binary'. The users should not rely on the contents or representation of the blob.
 
-Govulncheck exits successfully (exit code 0) if there are no vulnerabilities,
-and exits unsuccessfully if there are. It also exits successfully if the -json flag
-(or '-format json') is provided, regardless of the number of detected vulnerabilities.
+# Integrations
 
 Govulncheck supports streaming JSON. For more details, please see [golang.org/x/vuln/internal/govulncheck].
+
+Govulncheck also supports Static Analysis Results Interchange Format (SARIF) output
+format, following the specification at https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=sarif.
+For more details, please see [golang.org/x/vuln/internal/sarif].
+
+# Exit codes
+
+Govulncheck exits successfully (exit code 0) if there are no vulnerabilities,
+and exits unsuccessfully if there are. It also exits successfully if the
+'format -json' ('-json') or '-format sarif' is provided, regardless of the number
+of detected vulnerabilities.
 
 # Limitations
 

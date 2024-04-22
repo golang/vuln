@@ -42,7 +42,7 @@ func parseFlags(cfg *config, stderr io.Writer, args []string) error {
 	flags.Var(&modeFlag, "mode", "supports 'source', 'binary', and 'extract' (default 'source')")
 	flags.Var(&cfg.tags, "tags", "comma-separated `list` of build tags")
 	flags.Var(&cfg.show, "show", "enable display of additional information specified by the comma separated `list`\nThe supported values are 'traces','color', 'version', and 'verbose'")
-	flags.Var(&cfg.format, "format", "specify format output\nThe supported values are 'text' and 'json' (default 'text')")
+	flags.Var(&cfg.format, "format", "specify format output\nThe supported values are 'text', 'json', and 'sarif' (default 'text')")
 	flags.BoolVar(&version, "version", false, "print the version information")
 	flags.Var(&scanFlag, "scan", "set the scanning level desired, one of 'module', 'package', or 'symbol' (default 'symbol')")
 
