@@ -60,7 +60,7 @@ func (t *LineTable) InlineTree(f *Func, goFuncValue, baseAddr uint64, progReader
 	}
 
 	r := io.NewSectionReader(progReader, offset, 1<<32) // pick a size larger than we need
-	var ics []InlinedCall
+	ics := make([]InlinedCall, 0, f.inlineTreeCount)
 	for i := 0; i < f.inlineTreeCount; i++ {
 		if t.version >= ver120 {
 			var ric rawInlinedCall120
