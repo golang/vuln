@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path/filepath"
 	"sort"
 
 	"golang.org/x/vuln/internal"
@@ -289,11 +290,12 @@ func stack(h *handler, f *govulncheck.Finding) Stack {
 			Module:   frame.Module + "@" + frame.Version,
 			Location: Location{Message: Description{Text: symbol(frame)}}, // show the (full) symbol name
 		}
+		file, base := fileURIInfo(pos.Filename, top.Module, frame.Module, frame.Version)
 		if h.cfg.ScanMode != govulncheck.ScanModeBinary {
 			sf.Location.PhysicalLocation = PhysicalLocation{
 				ArtifactLocation: ArtifactLocation{
-					URI:       pos.Filename,
-					URIBaseID: uriID(top.Module, frame.Module),
+					URI:       file,
+					URIBaseID: base,
 				},
 				Region: Region{
 					StartLine:   pos.Line,
@@ -362,11 +364,12 @@ func threadFlows(h *handler, fs []*govulncheck.Finding) []ThreadFlow {
 				Module:   frame.Module + "@" + frame.Version,
 				Location: Location{Message: Description{Text: symbol(frame)}}, // show the (full) symbol name
 			}
+			file, base := fileURIInfo(pos.Filename, top.Module, frame.Module, frame.Version)
 			if h.cfg.ScanMode != govulncheck.ScanModeBinary {
 				tfl.Location.PhysicalLocation = PhysicalLocation{
 					ArtifactLocation: ArtifactLocation{
-						URI:       pos.Filename,
-						URIBaseID: uriID(top.Module, frame.Module),
+						URI:       file,
+						URIBaseID: base,
 					},
 					Region: Region{
 						StartLine:   pos.Line,
@@ -381,12 +384,12 @@ func threadFlows(h *handler, fs []*govulncheck.Finding) []ThreadFlow {
 	return tfs
 }
 
-func uriID(top, module string) string {
+func fileURIInfo(filename, top, module, version string) (string, string) {
 	if top == module {
-		return SrcRootID
+		return filename, SrcRootID
 	}
 	if module == internal.GoStdModulePath {
-		return GoRootID
+		return filename, GoRootID
 	}
-	return GoModCacheID
+	return filepath.ToSlash(filepath.Join(module+"@"+version, filename)), GoModCacheID
 }
