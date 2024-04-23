@@ -68,7 +68,10 @@ func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 	}
 
 	if bin.GOOS == "" || bin.GOARCH == "" {
-		fmt.Printf("warning: failed to extract build system specification GOOS: %s GOARCH: %s\n", bin.GOOS, bin.GOARCH)
+		p := &govulncheck.Progress{Message: fmt.Sprintf("warning: failed to extract build system specification GOOS: %s GOARCH: %s\n", bin.GOOS, bin.GOARCH)}
+		if err := handler.Progress(p); err != nil {
+			return nil, err
+		}
 	}
 	affVulns := affectingVulnerabilities(mv, bin.GOOS, bin.GOARCH)
 	if err := emitModuleFindings(handler, affVulns); err != nil {
