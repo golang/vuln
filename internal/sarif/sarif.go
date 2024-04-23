@@ -122,6 +122,9 @@ type ThreadFlow struct {
 }
 
 type ThreadFlowLocation struct {
+	// Module is module information in the form <module-path>@<version>.
+	// <version> can be empty when the module version is not known as
+	// with, say, the source module analyzed.
 	Module string `json:"module,omitempty"`
 	// Location also contains a Message field.
 	Location Location `json:"location,omitempty"`
@@ -138,6 +141,9 @@ type Stack struct {
 // Frame is effectively a module location. It can also contain thread and
 // parameter info, but those are not needed for govulncheck.
 type Frame struct {
+	// Module is module information in the form <module-path>@<version>.
+	// <version> can be empty when the module version is not known as
+	// with, say, the source module analyzed.
 	Module   string   `json:"module,omitempty"`
 	Location Location `json:"location,omitempty"`
 }

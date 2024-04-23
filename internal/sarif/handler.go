@@ -286,7 +286,7 @@ func stack(h *handler, f *govulncheck.Finding) Stack {
 		}
 
 		sf := Frame{
-			Module:   frame.Module,
+			Module:   frame.Module + "@" + frame.Version,
 			Location: Location{Message: Description{Text: symbol(frame)}}, // show the (full) symbol name
 		}
 		if h.cfg.ScanMode != govulncheck.ScanModeBinary {
@@ -359,7 +359,7 @@ func threadFlows(h *handler, fs []*govulncheck.Finding) []ThreadFlow {
 			}
 
 			tfl := ThreadFlowLocation{
-				Module:   frame.Module,
+				Module:   frame.Module + "@" + frame.Version,
 				Location: Location{Message: Description{Text: symbol(frame)}}, // show the (full) symbol name
 			}
 			if h.cfg.ScanMode != govulncheck.ScanModeBinary {

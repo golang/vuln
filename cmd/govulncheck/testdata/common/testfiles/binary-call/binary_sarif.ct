@@ -122,7 +122,7 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
                 {
                   "locations": [
                     {
-                      "module": "github.com/tidwall/gjson",
+                      "module": "github.com/tidwall/gjson@v1.6.5",
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
@@ -148,7 +148,7 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
               },
               "frames": [
                 {
-                  "module": "github.com/tidwall/gjson",
+                  "module": "github.com/tidwall/gjson@v1.6.5",
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
@@ -175,7 +175,7 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
                 {
                   "locations": [
                     {
-                      "module": "golang.org/x/text",
+                      "module": "golang.org/x/text@v0.3.0",
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
@@ -201,7 +201,7 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
               },
               "frames": [
                 {
-                  "module": "golang.org/x/text",
+                  "module": "golang.org/x/text@v0.3.0",
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
@@ -228,7 +228,7 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
                 {
                   "locations": [
                     {
-                      "module": "github.com/tidwall/gjson",
+                      "module": "github.com/tidwall/gjson@v1.6.5",
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
@@ -251,7 +251,7 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
                 {
                   "locations": [
                     {
-                      "module": "github.com/tidwall/gjson",
+                      "module": "github.com/tidwall/gjson@v1.6.5",
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {},
@@ -277,7 +277,7 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
               },
               "frames": [
                 {
-                  "module": "github.com/tidwall/gjson",
+                  "module": "github.com/tidwall/gjson@v1.6.5",
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
@@ -296,7 +296,7 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
               },
               "frames": [
                 {
-                  "module": "github.com/tidwall/gjson",
+                  "module": "github.com/tidwall/gjson@v1.6.5",
                   "location": {
                     "physicalLocation": {
                       "artifactLocation": {},
