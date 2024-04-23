@@ -36,9 +36,6 @@ type Run struct {
 	// Results contain govulncheck findings. There should be exactly one
 	// Result per a detected OSV.
 	Results []Result `json:"results,omitempty"`
-
-	// URIBaseIDs encodes the SARIF originalUriBaseIds property
-	URIBaseIDs map[string]ArtifactLocation `json:"originalUriBaseIds,omitempty"`
 }
 
 // Tool captures information about govulncheck analysis that was run.
