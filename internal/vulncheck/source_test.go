@@ -191,7 +191,7 @@ func TestCalls(t *testing.T) {
 
 	// Load x and y as entry packages.
 	graph := NewPackageGraph("go1.18")
-	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y")})
+	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x"), path.Join(e.Temp(), "entry/y")}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,7 +298,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 
 	// Load x as entry package.
 	graph := NewPackageGraph("go1.18")
-	err = graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
+	err = graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,7 +361,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 
 	// Load x as entry package.
 	graph := NewPackageGraph("go1.18")
-	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
+	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -435,7 +435,7 @@ func TestRecursion(t *testing.T) {
 
 	// Load x as entry package.
 	graph := NewPackageGraph("go1.18")
-	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
+	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -500,7 +500,7 @@ func TestIssue57174(t *testing.T) {
 
 	// Load x as entry package.
 	graph := NewPackageGraph("go1.18")
-	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")})
+	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")}, true)
 	if err != nil {
 		t.Fatal(err)
 	}

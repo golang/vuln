@@ -194,18 +194,12 @@ func (g *PackageGraph) GetPackage(path string) *packages.Package {
 
 // LoadPackages loads the packages specified by the patterns into the graph.
 // See golang.org/x/tools/go/packages.Load for details of how it works.
-func (g *PackageGraph) LoadPackagesAndMods(cfg *packages.Config, tags []string, patterns []string) error {
+func (g *PackageGraph) LoadPackagesAndMods(cfg *packages.Config, tags []string, patterns []string, wantSymbols bool) error {
 	if len(tags) > 0 {
 		cfg.BuildFlags = []string{fmt.Sprintf("-tags=%s", strings.Join(tags, ","))}
 	}
-	cfg.Mode |=
-		packages.NeedDeps |
-			packages.NeedImports |
-			packages.NeedModule |
-			packages.NeedSyntax |
-			packages.NeedTypes |
-			packages.NeedTypesInfo |
-			packages.NeedName
+
+	addLoadMode(cfg, wantSymbols)
 
 	pkgs, err := packages.Load(cfg, patterns...)
 	if err != nil {
@@ -228,6 +222,17 @@ func (g *PackageGraph) LoadPackagesAndMods(cfg *packages.Config, tags []string, 
 		g.topPkgs = append(g.topPkgs, g.GetPackage(p.PkgPath))
 	}
 	return err
+}
+
+func addLoadMode(cfg *packages.Config, wantSymbols bool) {
+	cfg.Mode |=
+		packages.NeedModule |
+			packages.NeedName |
+			packages.NeedDeps |
+			packages.NeedImports
+	if wantSymbols {
+		cfg.Mode |= packages.NeedSyntax | packages.NeedTypes | packages.NeedTypesInfo
+	}
 }
 
 // packageError contains errors from loading a set of packages.

@@ -35,7 +35,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 		Tests: cfg.test,
 		Env:   cfg.env,
 	}
-	if err := graph.LoadPackagesAndMods(pkgConfig, cfg.tags, cfg.patterns); err != nil {
+	if err := graph.LoadPackagesAndMods(pkgConfig, cfg.tags, cfg.patterns, cfg.ScanLevel == govulncheck.ScanLevelSymbol); err != nil {
 		if isGoVersionMismatchError(err) {
 			return fmt.Errorf("%v\n\n%v", errGoVersionMismatch, err)
 		}

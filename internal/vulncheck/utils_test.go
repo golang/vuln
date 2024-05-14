@@ -228,7 +228,7 @@ func TestDbSymbolName(t *testing.T) {
 	defer e.Cleanup()
 
 	graph := NewPackageGraph("go1.18")
-	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "package/x")})
+	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "package/x")}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
