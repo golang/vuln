@@ -26,7 +26,7 @@ var ErrNoSymbols = errors.New("no symbol section")
 // SymbolInfo is derived from cmd/internal/objfile/elf.go:symbols, symbolData.
 func (x *elfExe) SymbolInfo(name string) (uint64, uint64, io.ReaderAt, error) {
 	sym, err := x.lookupSymbol(name)
-	if err != nil {
+	if err != nil || sym == nil {
 		if errors.Is(err, elf.ErrNoSymbols) {
 			return 0, 0, nil, ErrNoSymbols
 		}
