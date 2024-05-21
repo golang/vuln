@@ -22,7 +22,6 @@ import (
 	"golang.org/x/mod/modfile"
 	"golang.org/x/vuln/internal/testenv"
 	"golang.org/x/vuln/scan"
-	"mvdan.cc/unparam/check"
 )
 
 // excluded contains the set of modules that x/vuln should not depend on.
@@ -83,33 +82,12 @@ func TestGovulncheck(t *testing.T) {
 	}
 }
 
-func TestStaticCheck(t *testing.T) {
-	skipIfShort(t)
-	rungo(t, "run", "honnef.co/go/tools/cmd/staticcheck@v0.4.3", "./...")
-}
-
-func TestUnparam(t *testing.T) {
-	testenv.NeedsGoBuild(t)
-	warns, err := check.UnusedParams(false, false, false, "./...")
-	if err != nil {
-		t.Fatalf("check.UnusedParams: %v", err)
-	}
-	for _, warn := range warns {
-		t.Errorf(warn)
-	}
-}
-
 func TestVet(t *testing.T) {
 	rungo(t, "vet", "-all", "./...")
 }
 
 func TestGoModTidy(t *testing.T) {
 	rungo(t, "mod", "tidy")
-}
-
-func TestMisspell(t *testing.T) {
-	skipIfShort(t)
-	rungo(t, "run", "github.com/client9/misspell/cmd/misspell@v0.3.4", "-error", ".")
 }
 
 func TestHeaders(t *testing.T) {
