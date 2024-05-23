@@ -297,23 +297,37 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 		return symbol(traces[i].Trace[0], true) < symbol(traces[j].Trace[0], true)
 	})
 
-	first := true
-	count := 1
-	for _, entry := range traces {
-		if entry.Compact == "" {
-			continue // skip package and module level traces
+	// compacts are finding summaries with compact traces
+	// suitable for non-verbose textual output. Currently,
+	// only traces produced by symbol analysis.
+	var compacts []*findingSummary
+	for _, t := range traces {
+		if t.Compact != "" {
+			compacts = append(compacts, t)
 		}
-		if first {
+	}
+
+	// binLimit is a limit on the number of binary traces
+	// to show. Traces for binaries are less interesting
+	// as users cannot act on them and they can hence
+	// spam users.
+	const binLimit = 5
+	for i, entry := range compacts {
+		if i == 0 {
 			if h.scanMode == govulncheck.ScanModeBinary {
 				h.style(keyStyle, "    Vulnerable symbols found:\n")
 			} else {
 				h.style(keyStyle, "    Example traces found:\n")
 			}
 		}
-		first = false
 
-		h.print("      #", count, ": ")
-		count++
+		// skip showing all symbols in binary mode unless '-show traces' is on.
+		if h.scanMode == govulncheck.ScanModeBinary && (i+1) > binLimit && !h.showTraces {
+			h.print("      Use '-show traces' to see the other ", len(compacts)-binLimit, " found symbols\n")
+			break
+		}
+
+		h.print("      #", i+1, ": ")
 		if !h.showTraces {
 			h.print(entry.Compact, "\n")
 		} else {
