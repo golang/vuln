@@ -9,10 +9,13 @@ import (
 	"fmt"
 	"os"
 
+	"golang.org/x/telemetry"
 	"golang.org/x/vuln/scan"
 )
 
 func main() {
+	telemetry.Start(telemetry.Config{ReportCrashes: true})
+
 	ctx := context.Background()
 
 	cmd := scan.Command(ctx, os.Args[1:]...)

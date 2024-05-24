@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/telemetry/counter"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/sarif"
@@ -50,6 +51,8 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 	if err := handler.Config(&cfg.Config); err != nil {
 		return err
 	}
+
+	counter.Inc(fmt.Sprintf("govulncheck/mode:%s", cfg.ScanMode))
 
 	switch cfg.ScanMode {
 	case govulncheck.ScanModeSource:
