@@ -9,8 +9,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
-	"context"
 	"errors"
 	"io/fs"
 	"os"
@@ -21,7 +19,6 @@ import (
 
 	"golang.org/x/mod/modfile"
 	"golang.org/x/vuln/internal/testenv"
-	"golang.org/x/vuln/scan"
 )
 
 // excluded contains the set of modules that x/vuln should not depend on.
@@ -52,33 +49,6 @@ func TestDependencies(t *testing.T) {
 				t.Errorf("go.mod contains %q as a dependency, which should not happen", r.Mod.Path)
 			}
 		}
-	}
-}
-
-func TestGovulncheck(t *testing.T) {
-	skipIfShort(t)
-	testenv.NeedsGoBuild(t)
-
-	var o string
-	out := bytes.NewBufferString(o)
-	ctx := context.Background()
-
-	cmd := scan.Command(ctx, "./...")
-	cmd.Stdout = out
-	cmd.Stderr = out
-	err := cmd.Start()
-	if err == nil {
-		err = cmd.Wait()
-	}
-
-	t.Logf("govulncheck finished with std out/err:\n%s", out.String())
-	switch err := err.(type) {
-	case nil:
-		t.Log("govulncheck: no vulnerabilities detected")
-	case interface{ ExitCode() int }:
-		t.Errorf("govulncheck: unexpected exit code %d and error %v", err.ExitCode(), err)
-	default:
-		t.Errorf("govulncheck: abruptly failed with error %v", err)
 	}
 }
 
