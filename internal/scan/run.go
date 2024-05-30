@@ -56,6 +56,8 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 	}
 
 	counter.Inc(fmt.Sprintf("govulncheck/mode:%s", cfg.ScanMode))
+	counter.Inc(fmt.Sprintf("govulncheck/scan:%s", cfg.ScanLevel))
+	counter.Inc(fmt.Sprintf("govulncheck/format:%s", cfg.format))
 
 	switch cfg.ScanMode {
 	case govulncheck.ScanModeSource:
