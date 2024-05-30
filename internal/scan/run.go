@@ -55,9 +55,7 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 		return err
 	}
 
-	counter.Inc(fmt.Sprintf("govulncheck/mode:%s", cfg.ScanMode))
-	counter.Inc(fmt.Sprintf("govulncheck/scan:%s", cfg.ScanLevel))
-	counter.Inc(fmt.Sprintf("govulncheck/format:%s", cfg.format))
+	incTelemetryFlagCounters(cfg)
 
 	switch cfg.ScanMode {
 	case govulncheck.ScanModeSource:
@@ -139,6 +137,19 @@ func scannerVersion(cfg *config, bi *debug.BuildInfo) {
 		}
 	}
 	cfg.ScannerVersion = buf.String()
+}
+
+func incTelemetryFlagCounters(cfg *config) {
+	counter.Inc(fmt.Sprintf("govulncheck/mode:%s", cfg.ScanMode))
+	counter.Inc(fmt.Sprintf("govulncheck/scan:%s", cfg.ScanLevel))
+	counter.Inc(fmt.Sprintf("govulncheck/format:%s", cfg.format))
+
+	if len(cfg.show) == 0 {
+		counter.Inc("govulncheck/show:none")
+	}
+	for _, s := range cfg.show {
+		counter.Inc(fmt.Sprintf("govulncheck/show:%s", s))
+	}
 }
 
 func Flush(h govulncheck.Handler) error {
