@@ -39,7 +39,7 @@
 // Properties field of a Tool.Driver is a govulncheck.Config used for the
 // invocation of govulncheck producing the Results. Properties field of
 // a Rule contains information on CVE and GHSA aliases for the corresponding
-// rule OSV. Clients can use this information to, say, supress and filter
+// rule OSV. Clients can use this information to, say, suppress and filter
 // vulnerabilities.
 //
 // Please see the definition of types below for more information.
