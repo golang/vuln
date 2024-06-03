@@ -12,6 +12,5 @@ WORKDIR /go/src/golang.org/x/vuln/cmd/govulncheck/integration
 RUN go install golang.org/x/vuln/cmd/govulncheck
 
 # ---- Step 2: Build other test binaries ----
-RUN go install golang.org/dl/go1.18@latest
 RUN go install golang.org/x/vuln/cmd/govulncheck/integration/k8s
 RUN go install golang.org/x/vuln/cmd/govulncheck/integration/stackrox-scanner
