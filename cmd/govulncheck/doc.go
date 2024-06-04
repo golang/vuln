@@ -67,12 +67,16 @@ Govulncheck also supports Static Analysis Results Interchange Format (SARIF) out
 format, following the specification at https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=sarif.
 For more details, please see [golang.org/x/vuln/internal/sarif].
 
+Govulncheck supports the Vulnerability EXchange (VEX) output format, following
+the specification at https://github.com/openvex/spec.
+For more details, please see [golang.org/x/vuln/internal/openvex].
+
 # Exit codes
 
 Govulncheck exits successfully (exit code 0) if there are no vulnerabilities,
 and exits unsuccessfully if there are. It also exits successfully if the
-'format -json' ('-json') or '-format sarif' is provided, regardless of the number
-of detected vulnerabilities.
+'format -json' ('-json'), '-format sarif', or '-format openvex' is provided,
+regardless of the number of detected vulnerabilities.
 
 # Limitations
 

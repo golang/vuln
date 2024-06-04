@@ -7,6 +7,9 @@
 //
 // These types match the OpenVEX standard. See https://github.com/openvex for
 // more information on VEX and OpenVEX.
+//
+// This is intended to be the minimimal amount of information required to output
+// a complete VEX document according to the specification.
 package openvex
 
 import "time"
