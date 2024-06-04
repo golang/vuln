@@ -37,10 +37,15 @@ const (
 // Message is an entry in the output stream. It will always have exactly one
 // field filled in.
 type Message struct {
-	Config   *Config    `json:"config,omitempty"`
-	Progress *Progress  `json:"progress,omitempty"`
-	OSV      *osv.Entry `json:"osv,omitempty"`
-	Finding  *Finding   `json:"finding,omitempty"`
+	Config   *Config   `json:"config,omitempty"`
+	Progress *Progress `json:"progress,omitempty"`
+	// OSV is emitted for every vulnerability in the current database
+	// that applies to user modules regardless of their version. If a
+	// module is being used at a vulnerable version, the corresponding
+	// OSV will be referenced in Findings depending on the type of usage
+	// and the desired scan level.
+	OSV     *osv.Entry `json:"osv,omitempty"`
+	Finding *Finding   `json:"finding,omitempty"`
 }
 
 // Config must occur as the first message of a stream and informs the client
