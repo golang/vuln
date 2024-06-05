@@ -28,6 +28,7 @@ func main() {
 		"github.com/go-git/go-git/v5/plumbing/object":           true,
 		"github.com/go-git/go-git/v5/storage/filesystem":        true,
 		"github.com/go-git/go-git/v5/storage/filesystem/dotgit": true,
+		"github.com/mholt/archiver/v3":                          true,
 		"golang.org/x/crypto/ssh":                               true,
 		"golang.org/x/net/http2":                                true,
 		"golang.org/x/net/http2/hpack":                          true,
