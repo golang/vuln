@@ -116,7 +116,7 @@ func importedVulnPackages(affVulns affectingVulns, graph *PackageGraph) []*Vuln 
 			return
 		}
 
-		osvs := affVulns.ForPackage(pkg.PkgPath)
+		osvs := affVulns.ForPackage(pkgModPath(pkg), pkg.PkgPath)
 		// Create Vuln entry for each OSV entry for pkg.
 		for _, osv := range osvs {
 			vuln := &Vuln{
@@ -145,7 +145,7 @@ func importedVulnPackages(affVulns affectingVulns, graph *PackageGraph) []*Vuln 
 // reachable Vuln has attached FuncNode that can be upward traversed to the entry points.
 // Entry points that reach the vulnerable symbols are also returned.
 func calledVulnSymbols(sources []*ssa.Function, affVulns affectingVulns, cg *callgraph.Graph, graph *PackageGraph) ([]*FuncNode, []*Vuln) {
-	sinksWithVulns := vulnFuncs(cg, affVulns)
+	sinksWithVulns := vulnFuncs(cg, affVulns, graph)
 
 	// Compute call graph backwards reachable
 	// from vulnerable functions and methods.
@@ -272,10 +272,11 @@ func vulnCallGraph(sources []*callgraph.Node, sinks map[*callgraph.Node][]*osv.E
 }
 
 // vulnFuncs returns vulnerability information for vulnerable functions in cg.
-func vulnFuncs(cg *callgraph.Graph, affVulns affectingVulns) map[*callgraph.Node][]*osv.Entry {
+func vulnFuncs(cg *callgraph.Graph, affVulns affectingVulns, graph *PackageGraph) map[*callgraph.Node][]*osv.Entry {
 	m := make(map[*callgraph.Node][]*osv.Entry)
 	for f, n := range cg.Nodes {
-		vulns := affVulns.ForSymbol(pkgPath(f), dbFuncName(f))
+		p := pkgPath(f)
+		vulns := affVulns.ForSymbol(pkgModPath(graph.GetPackage(p)), p, dbFuncName(f))
 		if len(vulns) > 0 {
 			m[n] = vulns
 		}

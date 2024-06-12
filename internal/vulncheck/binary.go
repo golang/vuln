@@ -116,7 +116,7 @@ func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 func binImportedVulnPackages(graph *PackageGraph, pkgSymbols map[string][]string, affVulns affectingVulns) []*Vuln {
 	var vulns []*Vuln
 	for pkg := range pkgSymbols {
-		for _, osv := range affVulns.ForPackage(pkg) {
+		for _, osv := range affVulns.ForPackage(internal.UnknownModulePath, pkg) {
 			vuln := &Vuln{
 				OSV:     osv,
 				Package: graph.GetPackage(pkg),
@@ -131,7 +131,7 @@ func binVulnSymbols(graph *PackageGraph, pkgSymbols map[string][]string, affVuln
 	var vulns []*Vuln
 	for pkg, symbols := range pkgSymbols {
 		for _, symbol := range symbols {
-			for _, osv := range affVulns.ForSymbol(pkg, symbol) {
+			for _, osv := range affVulns.ForSymbol(internal.UnknownModulePath, pkg, symbol) {
 				vuln := &Vuln{
 					OSV:     osv,
 					Symbol:  symbol,

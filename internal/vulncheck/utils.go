@@ -332,6 +332,14 @@ func pkgPath(f *ssa.Function) string {
 	}
 	return internal.UnknownPackagePath
 }
+
+func pkgModPath(pkg *packages.Package) string {
+	if pkg != nil && pkg.Module != nil {
+		return pkg.Module.Path
+	}
+	return internal.UnknownModulePath
+}
+
 func IsStdPackage(pkg string) bool {
 	if pkg == "" || pkg == internal.UnknownPackagePath {
 		return false

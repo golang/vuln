@@ -263,7 +263,7 @@ func TestVulnsForPackage(t *testing.T) {
 		},
 	}
 
-	got := aff.ForPackage("example.mod/a/b/c")
+	got := aff.ForPackage("example.mod/a/b", "example.mod/a/b/c")
 	want := []*osv.Entry{
 		{ID: "b", Affected: []osv.Affected{{
 			Module: osv.Module{Path: "example.mod/a/b"},
@@ -319,7 +319,7 @@ func TestVulnsForPackageReplaced(t *testing.T) {
 		},
 	}
 
-	got := aff.ForPackage("example.mod/a/b/c")
+	got := aff.ForPackage("example.mod/a/b", "example.mod/a/b/c")
 	want := []*osv.Entry{
 		{ID: "c", Affected: []osv.Affected{{
 			Module: osv.Module{Path: "example.mod/b"},
@@ -382,7 +382,7 @@ func TestVulnsForSymbol(t *testing.T) {
 		},
 	}
 
-	got := aff.ForSymbol("example.mod/a/b/c", "a")
+	got := aff.ForSymbol("example.mod/a/b", "example.mod/a/b/c", "a")
 	want := []*osv.Entry{
 		{ID: "b", Affected: []osv.Affected{{
 			Module: osv.Module{Path: "example.mod/a/b"},
