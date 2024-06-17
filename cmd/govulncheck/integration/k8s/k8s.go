@@ -48,7 +48,7 @@ func main() {
 		"golang.org/x/text/encoding/unicode":                          true,
 		"google.golang.org/grpc":                                      true,
 	}
-	if err := integration.CompareNonStdVulns(out, want); err != nil {
+	if err := integration.CompareVulns(out, want); err != nil {
 		log.Fatal(err)
 	}
 }

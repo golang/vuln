@@ -36,7 +36,7 @@ func main() {
 		"google.golang.org/grpc/internal/transport":             true,
 	}
 
-	if err := integration.CompareNonStdVulns(out, want); err != nil {
+	if err := integration.CompareVulns(out, want); err != nil {
 		log.Fatal(err)
 	}
 }

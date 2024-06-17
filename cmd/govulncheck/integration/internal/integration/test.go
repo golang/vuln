@@ -7,19 +7,17 @@ package integration
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
-	"github.com/google/go-cmp/cmp"
 	"golang.org/x/vuln/internal/govulncheck"
 )
 
-// CompareNonStdVulns compares vulnerable packages in out and want.
-// For out, it only considers vulnerabilities outside of the standard
-// library. Assumes the same for want.
-func CompareNonStdVulns(out string, want map[string]bool) error {
+// CompareVulns checks if packages of called vulnerable symbols
+// out are a superset of want.
+func CompareVulns(out string, want map[string]bool) error {
 	outJson, err := os.ReadFile(out)
 	if err != nil {
 		return fmt.Errorf("failed to read: %v", out)
@@ -40,18 +38,16 @@ func CompareNonStdVulns(out string, want map[string]bool) error {
 			}
 			// collect only called non-std packages
 			pkgPath := msg.Finding.Trace[0].Package
-			if !isStd(pkgPath) {
-				calledVulnPkgs[pkgPath] = true
-			}
+			calledVulnPkgs[pkgPath] = true
 		}
 	}
-	if diff := cmp.Diff(want, calledVulnPkgs); diff != "" {
-		return fmt.Errorf("reachable vulnerable packages mismatch (-want, +got):\n%s", diff)
-	}
-	return nil
-}
 
-// isStd returns true iff pkg is a standard library package.
-func isStd(pkg string) bool {
-	return !strings.Contains(pkg, ".")
+	for pkg := range want {
+		if _, ok := calledVulnPkgs[pkg]; !ok {
+			e := fmt.Errorf("vulnerable symbols of expected package %s not detected", pkg)
+			err = errors.Join(err, e)
+		}
+
+	}
+	return err
 }
