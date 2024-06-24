@@ -220,12 +220,10 @@ func matchesPlatformComponent(s string, ps []string) bool {
 // it figures the module from package importPath. It returns the module
 // whose path is the longest prefix of importPath.
 func (aff affectingVulns) moduleVulns(module, importPath string) *ModVulns {
-	unknown := func(module string) bool {
-		return module == "" || module == internal.UnknownModulePath
-	}
+	moduleKnown := module != "" && module != internal.UnknownModulePath
 
 	isStd := IsStdPackage(importPath)
-	var mostSpecificMod *ModVulns // for the case where unknown(module)
+	var mostSpecificMod *ModVulns // for the case where !moduleKnown
 	for _, mod := range aff {
 		md := mod
 		if isStd && mod.Module.Path == internal.GoStdModulePath {
@@ -234,7 +232,7 @@ func (aff affectingVulns) moduleVulns(module, importPath string) *ModVulns {
 			return md
 		}
 
-		if !unknown(module) {
+		if moduleKnown {
 			if mod.Module.Path == module {
 				// If we know exactly which module we need,
 				// return its vulnerabilities.
