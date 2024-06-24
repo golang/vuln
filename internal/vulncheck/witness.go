@@ -443,5 +443,8 @@ func isExported(symbol string) bool {
 	if len(parts) == 1 {
 		return unicode.IsUpper(rune(symbol[0]))
 	}
-	return unicode.IsUpper(rune(parts[1][0]))
+	if len(parts[1]) > 0 {
+		return unicode.IsUpper(rune(parts[1][0]))
+	}
+	return false
 }
