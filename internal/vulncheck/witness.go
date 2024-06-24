@@ -437,14 +437,13 @@ func uniqueVulns(vulns []*Vuln) []*Vuln {
 }
 
 // isExported checks if the symbol is exported. Assumes that the
-// symbol is of the form "identifier" or "identifier1.identifier2".
+// symbol is of the form "identifier", "identifier1.identifier2",
+// or "identifier.".
 func isExported(symbol string) bool {
 	parts := strings.Split(symbol, ".")
-	if len(parts) == 1 {
-		return unicode.IsUpper(rune(symbol[0]))
+	last := parts[len(parts)-1]
+	if last == "" { // case for "identifier."
+		return false
 	}
-	if len(parts[1]) > 0 {
-		return unicode.IsUpper(rune(parts[1][0]))
-	}
-	return false
+	return unicode.IsUpper(rune(last[0]))
 }
