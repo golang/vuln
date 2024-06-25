@@ -18,6 +18,14 @@ import (
 func emitOSVs(handler govulncheck.Handler, modVulns []*ModVulns) error {
 	for _, mv := range modVulns {
 		for _, v := range mv.Vulns {
+			// Retrieve the affected path (package) and version for
+			// the OpenVEX document.
+			v.Internal.AffectedPath = mv.Module.Path
+			v.Internal.AffectedVersion = mv.Module.Version
+			if mv.Module.Replace != nil {
+				v.Internal.AffectedPath = mv.Module.Replace.Path
+				v.Internal.AffectedVersion = mv.Module.Replace.Version
+			}
 			if err := handler.OSV(v); err != nil {
 				return err
 			}

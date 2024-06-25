@@ -215,6 +215,9 @@ type Entry struct {
 	// DatabaseSpecific contains additional information about the
 	// vulnerability, specific to the Go vulnerability database.
 	DatabaseSpecific *DatabaseSpecific `json:"database_specific,omitempty"`
+	// Internal contains information internal only to govulncheck that is
+	// not present in the OSV specification.
+	Internal Internal
 }
 
 // Credit represents a credit for the discovery, confirmation, patch, or
@@ -237,4 +240,13 @@ type DatabaseSpecific struct {
 	URL string `json:"url,omitempty"`
 	// The review status of this report (UNREVIEWED or REVIEWED).
 	ReviewStatus ReviewStatus `json:"review_status,omitempty"`
+}
+
+// Internal contains information internal and specific only to govulncheck that
+// is not present in the OSV specification.
+type Internal struct {
+	// The affected path (package import) for the OpenVEX products field.
+	AffectedPath string
+	// The affected version for the OpenVEX products field.
+	AffectedVersion string
 }

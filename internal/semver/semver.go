@@ -25,7 +25,7 @@ func addSemverPrefix(s string) string {
 
 // removeSemverPrefix removes the 'v' or 'go' prefixes from go-style
 // SEMVER strings, for usage in the public vulnerability format.
-func removeSemverPrefix(s string) string {
+func RemoveSemverPrefix(s string) string {
 	s = strings.TrimPrefix(s, "v")
 	s = strings.TrimPrefix(s, "go")
 	return s
@@ -36,7 +36,7 @@ func removeSemverPrefix(s string) string {
 // Input may be a bare SEMVER ("1.2.3"), Go prefixed SEMVER ("go1.2.3"),
 // or already canonical SEMVER ("v1.2.3").
 func canonicalizeSemverPrefix(s string) string {
-	return addSemverPrefix(removeSemverPrefix(s))
+	return addSemverPrefix(RemoveSemverPrefix(s))
 }
 
 // Less returns whether v1 < v2, where v1 and v2 are

@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/vuln/internal/govulncheck"
 	"golang.org/x/vuln/internal/osv"
+	"golang.org/x/vuln/internal/semver"
 )
 
 type findingLevel int
@@ -131,7 +132,9 @@ func statements(h *handler) []Statement {
 			},
 			Products: []Product{
 				{
-					ID: DefaultPID,
+					ID: fmt.Sprintf("pkg:golang/%s@%s",
+						osv.Internal.AffectedPath,
+						semver.RemoveSemverPrefix(osv.Internal.AffectedVersion)),
 				},
 			},
 		}

@@ -20,7 +20,6 @@ const (
 	Impact     = "Govulncheck determined that the vulnerable code isn't called"
 
 	DefaultAuthor = "Unknown Author"
-	DefaultPID    = "Unknown Product"
 
 	// The following are defined by the VEX standard.
 	StatusAffected    = "affected"
@@ -102,7 +101,5 @@ type Vulnerability struct {
 
 // Product identifies the products associated with the given vuln.
 type Product struct {
-	// For now, the ID will always be "Unknown product".
-	// This is temporary and is subject to change.
 	ID string `json:"@id,omitempty"`
 }
