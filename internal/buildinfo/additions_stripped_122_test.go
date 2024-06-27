@@ -8,7 +8,6 @@
 package buildinfo
 
 import (
-	"os"
 	"testing"
 
 	"golang.org/x/vuln/internal/test"
@@ -19,15 +18,10 @@ import (
 func TestStrippedBinary(t *testing.T) {
 	testAll(t, []string{"linux", "windows", "freebsd", "darwin"}, []string{"amd64", "386", "arm", "arm64"},
 		func(t *testing.T, goos, goarch string) {
-			binary, done := test.GoBuild(t, "testdata", "", true, "GOOS", goos, "GOARCH", goarch)
+			binary, done := test.GoBuild(t, "testdata/src", "", true, "GOOS", goos, "GOARCH", goarch)
 			defer done()
 
-			f, err := os.Open(binary)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer f.Close()
-			_, syms, _, err := ExtractPackagesAndSymbols(f)
+			_, syms, _, err := ExtractPackagesAndSymbols(binary)
 			if err != nil {
 				t.Fatal(err)
 			}

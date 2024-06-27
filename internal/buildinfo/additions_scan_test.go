@@ -9,7 +9,6 @@ package buildinfo
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
@@ -50,15 +49,10 @@ func testAll(t *testing.T, gooss, goarchs []string, ft func(*testing.T, string, 
 func TestExtractPackagesAndSymbols(t *testing.T) {
 	testAll(t, []string{"linux", "darwin", "windows", "freebsd"}, []string{"amd64", "386", "arm", "arm64"},
 		func(t *testing.T, goos, goarch string) {
-			binary, done := test.GoBuild(t, "testdata", "", false, "GOOS", goos, "GOARCH", goarch)
+			binary, done := test.GoBuild(t, "testdata/src", "", false, "GOOS", goos, "GOARCH", goarch)
 			defer done()
 
-			f, err := os.Open(binary)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer f.Close()
-			_, syms, _, err := ExtractPackagesAndSymbols(f)
+			_, syms, _, err := ExtractPackagesAndSymbols(binary)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -74,6 +68,16 @@ func TestExtractPackagesAndSymbols(t *testing.T) {
 				t.Errorf("(-want,+got):%s", diff)
 			}
 		})
+}
+
+func TestAncientGoBinaries(t *testing.T) {
+	_, _, bi, err := ExtractPackagesAndSymbols("testdata/bin/hello-world")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bi.GoVersion != "go1.6.4" {
+		t.Errorf("want go1.6.4 Go binary version; got %s", bi.GoVersion)
+	}
 }
 
 // sortedSymbols gets symbols for pkg and
@@ -149,13 +153,7 @@ func Vuln() {
 				t.Fatalf("failed to build the binary %v %v", err, string(out))
 			}
 
-			exe, err := os.Open(filepath.Join(e.Config.Dir, "entry"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer exe.Close()
-
-			_, syms, _, err := ExtractPackagesAndSymbols(exe)
+			_, syms, _, err := ExtractPackagesAndSymbols(filepath.Join(e.Config.Dir, "entry"))
 			if err != nil {
 				t.Fatal(err)
 			}

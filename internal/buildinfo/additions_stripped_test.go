@@ -8,7 +8,6 @@
 package buildinfo
 
 import (
-	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -23,15 +22,10 @@ func TestStrippedBinary(t *testing.T) {
 	// preserve the symbol table. See TestStrippedDarwin.
 	testAll(t, []string{"linux", "windows", "freebsd"}, []string{"amd64", "386", "arm", "arm64"},
 		func(t *testing.T, goos, goarch string) {
-			binary, done := test.GoBuild(t, "testdata", "", true, "GOOS", goos, "GOARCH", goarch)
+			binary, done := test.GoBuild(t, "testdata/src", "", true, "GOOS", goos, "GOARCH", goarch)
 			defer done()
 
-			f, err := os.Open(binary)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer f.Close()
-			_, syms, _, err := ExtractPackagesAndSymbols(f)
+			_, syms, _, err := ExtractPackagesAndSymbols(binary)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -47,15 +41,10 @@ func TestStrippedBinary(t *testing.T) {
 func TestStrippedDarwin(t *testing.T) {
 	testAll(t, []string{"darwin"}, []string{"amd64", "386"},
 		func(t *testing.T, goos, goarch string) {
-			binary, done := test.GoBuild(t, "testdata", "", true, "GOOS", goos, "GOARCH", goarch)
+			binary, done := test.GoBuild(t, "testdata/src", "", true, "GOOS", goos, "GOARCH", goarch)
 			defer done()
 
-			f, err := os.Open(binary)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer f.Close()
-			_, syms, _, err := ExtractPackagesAndSymbols(f)
+			_, syms, _, err := ExtractPackagesAndSymbols(binary)
 			if err != nil {
 				t.Fatal(err)
 			}
