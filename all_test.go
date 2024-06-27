@@ -92,9 +92,3 @@ func rungo(t *testing.T, args ...string) {
 		t.Fatalf("%v: %v\n%s", cmd, err, output)
 	}
 }
-
-func skipIfShort(t *testing.T) {
-	if testing.Short() {
-		t.Skipf("skipping: short mode")
-	}
-}
