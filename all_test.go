@@ -40,10 +40,6 @@ func TestDependencies(t *testing.T) {
 		t.Fatalf("modfile.Parse: %v", err)
 	}
 	for _, r := range f.Require {
-		// This is used by staticcheck.
-		if strings.HasPrefix(r.Mod.Path, "golang.org/x/exp/typeparams") {
-			continue
-		}
 		for ex := range excluded {
 			if strings.HasPrefix(r.Mod.Path, ex) {
 				t.Errorf("go.mod contains %q as a dependency, which should not happen", r.Mod.Path)
