@@ -20,8 +20,6 @@ specified by the “go” command found on the PATH. For binaries, the build
 configuration is the one used to build the binary. Note that different build
 configurations may have different known vulnerabilities.
 
-Govulncheck must be built with Go version 1.18 or later.
-
 # Usage
 
 To analyze source code, run govulncheck from the module directory, using the
