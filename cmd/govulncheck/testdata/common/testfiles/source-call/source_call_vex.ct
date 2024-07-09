@@ -3,7 +3,7 @@
 $ govulncheck -C ${moddir}/vuln -format openvex ./...
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "govulncheck/vex:b2e8274f24820051d79285827c4fe6e1912c99143a4693804b9a5c366ec5fb8d",
+  "@id": "govulncheck/vex:12f16e1541f93ab0d46d78966849d71bc20932795108f69d0df5a415a2c3a5e6",
   "author": "Unknown Author",
   "timestamp": "2024-01-01T00:00:00",
   "version": 1,
@@ -44,25 +44,6 @@ $ govulncheck -C ${moddir}/vuln -format openvex ./...
         }
       ],
       "status": "affected"
-    },
-    {
-      "vulnerability": {
-        "@id": "https://pkg.go.dev/vuln/GO-2021-0059",
-        "name": "GO-2021-0059",
-        "description": "Due to improper bounds checking, maliciously crafted JSON objects can cause an out-of-bounds panic. If parsing user input, this may be used as a denial of service vector.",
-        "aliases": [
-          "CVE-2020-35380",
-          "GHSA-w942-gw6m-p62c"
-        ]
-      },
-      "products": [
-        {
-          "@id": "Unknown Product"
-        }
-      ],
-      "status": "not_affected",
-      "justification": "vulnerable_code_not_present",
-      "impact_statement": "Govulncheck determined that the vulnerable code isn't called"
     },
     {
       "vulnerability": {

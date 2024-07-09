@@ -118,6 +118,9 @@ func statements(h *handler) []Statement {
 
 	var statements []Statement
 	for id, osv := range h.osvs {
+		if _, found := h.levels[id]; !found {
+			continue
+		}
 		description := osv.Summary
 		if description == "" {
 			description = osv.Details
