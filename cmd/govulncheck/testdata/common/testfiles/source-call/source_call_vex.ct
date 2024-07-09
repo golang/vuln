@@ -3,7 +3,7 @@
 $ govulncheck -C ${moddir}/vuln -format openvex ./...
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "govulncheck/vex:b1a12e6f591b29f244e67c80a88d10539c220a04f6ca48d3fe7af2faf0189437",
+  "@id": "govulncheck/vex:261b597336f7aa5eb53a4a196c354c5afed43fe55658ae3816194192b5268881",
   "author": "Unknown Author",
   "timestamp": "2024-01-01T00:00:00",
   "version": 1,
@@ -21,7 +21,12 @@ $ govulncheck -C ${moddir}/vuln -format openvex ./...
       },
       "products": [
         {
-          "@id": "Unknown Product"
+          "@id": "Unknown Product",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org%2Fx%2Ftext@v0.3.0"
+            }
+          ]
         }
       ],
       "status": "not_affected",
@@ -40,7 +45,12 @@ $ govulncheck -C ${moddir}/vuln -format openvex ./...
       },
       "products": [
         {
-          "@id": "Unknown Product"
+          "@id": "Unknown Product",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/github.com%2Ftidwall%2Fgjson@v1.6.5"
+            }
+          ]
         }
       ],
       "status": "affected"
@@ -57,7 +67,12 @@ $ govulncheck -C ${moddir}/vuln -format openvex ./...
       },
       "products": [
         {
-          "@id": "Unknown Product"
+          "@id": "Unknown Product",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org%2Fx%2Ftext@v0.3.0"
+            }
+          ]
         }
       ],
       "status": "not_affected",
@@ -78,7 +93,12 @@ $ govulncheck -C ${moddir}/vuln -format openvex ./...
       },
       "products": [
         {
-          "@id": "Unknown Product"
+          "@id": "Unknown Product",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/github.com%2Ftidwall%2Fgjson@v1.6.5"
+            }
+          ]
         }
       ],
       "status": "affected"

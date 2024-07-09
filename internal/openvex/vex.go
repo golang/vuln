@@ -102,7 +102,12 @@ type Vulnerability struct {
 
 // Product identifies the products associated with the given vuln.
 type Product struct {
-	// For now, the ID will always be "Unknown product".
-	// This is temporary and is subject to change.
+	// The main product ID will remian default for now.
+	Component
+	// The subcomponent ID will be a PURL to the vulnerable dependency.
+	Subcomponents []Component `json:"subcomponents,omitempty"`
+}
+
+type Component struct {
 	ID string `json:"@id,omitempty"`
 }
