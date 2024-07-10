@@ -13,6 +13,7 @@ import (
 	"golang.org/x/vuln/internal/buildinfo"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
+	"golang.org/x/vuln/internal/semver"
 )
 
 // Bin is an abstraction of Go binary containing
@@ -62,6 +63,15 @@ func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 
 	if err := handler.Progress(&govulncheck.Progress{Message: checkingBinVulnsMessage}); err != nil {
 		return nil, err
+	}
+
+	// Emit warning message for ancient Go binaries, defined as binaries
+	// built with Go version without support for debug.BuildInfo (< go1.18).
+	if semver.Less(bin.GoVersion, "go1.18") {
+		p := &govulncheck.Progress{Message: fmt.Sprintf("warning: binary built with Go version %s, only standard library vulnerabilities will be checked", bin.GoVersion)}
+		if err := handler.Progress(p); err != nil {
+			return nil, err
+		}
 	}
 
 	if bin.GOOS == "" || bin.GOARCH == "" {
