@@ -84,7 +84,8 @@ Govulncheck has these limitations:
     which may result in false positives or inaccurate call stacks in some cases.
   - Calls to functions made using package reflect are not visible to static
     analysis. Vulnerable code reachable only through those calls will not be
-    reported. Use of the unsafe package may result in false negatives.
+    reported in source scan mode. Similarly, use of the unsafe package may
+    result in false negatives.
   - Because Go binaries do not contain detailed call information, govulncheck
     cannot show the call graphs for detected vulnerabilities. It may also
     report false positives for code that is in the binary but unreachable.
