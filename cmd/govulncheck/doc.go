@@ -90,7 +90,8 @@ Govulncheck has these limitations:
     report false positives for code that is in the binary but unreachable.
   - There is no support for silencing vulnerability findings. See https://go.dev/issue/61211 for
     updates.
-  - Govulncheck only reads binaries compiled with Go 1.18 and later.
+  - Govulncheck reports only standard library vulnerabilities for binaries
+    built with Go versions prior to Go 1.18.
   - For binaries where the symbol information cannot be extracted, govulncheck
     reports vulnerabilities for all modules on which the binary depends.
 
