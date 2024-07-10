@@ -24,8 +24,7 @@ detection in Go source code and binaries, respectively.
 
 [Source] accepts a list of [Package] objects, which
 are a trimmed version of [golang.org/x/tools/go/packages.Package] objects to
-reduce memory consumption. [Binary] accepts a path to a Go binary file that
-must have been compiled with Go 1.18 or greater.
+reduce memory consumption. [Binary] accepts a path to a Go binary file.
 
 Both [Source] and [Binary] require information about known
 vulnerabilities in the form of a vulnerability database,

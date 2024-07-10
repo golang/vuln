@@ -2,12 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Only run this on Go 1.18 or higher, because govulncheck can't
-// run on binaries before 1.18.
-
-//go:build go1.18
-// +build go1.18
-
 package main
 
 import (
