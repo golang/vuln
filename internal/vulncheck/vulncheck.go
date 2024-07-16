@@ -150,18 +150,10 @@ func affectingVulnerabilities(vulns []*ModVulns, os, arch string) affectingVulns
 				if a.Module.Path != module.Path {
 					continue
 				}
+				if !affected(modVersion, a) {
+					continue
+				}
 
-				// A module version is affected if
-				//  - it is included in one of the affected version ranges
-				//  - and module version is not ""
-				if modVersion == "" {
-					// Module version of "" means the module version is not available,
-					// and so we don't want to spam users with potential false alarms.
-					continue
-				}
-				if !semver.Affects(a.Ranges, modVersion) {
-					continue
-				}
 				var filteredImports []osv.Package
 				for _, p := range a.EcosystemSpecific.Packages {
 					if matchesPlatform(os, arch, p) {
@@ -194,6 +186,21 @@ func affectingVulnerabilities(vulns []*ModVulns, os, arch string) affectingVulns
 		})
 	}
 	return filtered
+}
+
+// affected checks if modVersion is affected by a:
+//   - it is included in one of the affected version ranges
+//   - and module version is not "" and "(devel)"
+func affected(modVersion string, a osv.Affected) bool {
+	const devel = "(devel)"
+	if modVersion == "" || modVersion == devel {
+		// Module version of "" means the module version is not available
+		// and devel means it is in development stage. Either way, we don't
+		// know the exact version so we don't want to spam users with
+		// potential false alarms.
+		return false
+	}
+	return semver.Affects(a.Ranges, modVersion)
 }
 
 func matchesPlatform(os, arch string, e osv.Package) bool {
