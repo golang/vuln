@@ -354,9 +354,9 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
         },
         {
           "ruleId": "GO-2021-0113",
-          "level": "error",
+          "level": "warning",
           "message": {
-            "text": "Your code calls vulnerable functions in 1 package (golang.org/x/text/language)."
+            "text": "Your code imports 1 vulnerable package (golang.org/x/text/language), but doesn’t appear to call any of the vulnerable symbols."
           },
           "locations": [
             {
@@ -372,100 +372,6 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
               "message": {
                 "text": "Findings for vulnerability GO-2021-0113"
               }
-            }
-          ],
-          "codeFlows": [
-            {
-              "threadFlows": [
-                {
-                  "locations": [
-                    {
-                      "module": "golang.org/vuln@",
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "vuln.go",
-                            "uriBaseId": "%SRCROOT%"
-                          },
-                          "region": {
-                            "startLine": 13,
-                            "startColumn": 16
-                          }
-                        },
-                        "message": {
-                          "text": "golang.org/vuln.main"
-                        }
-                      }
-                    },
-                    {
-                      "module": "golang.org/x/text@v0.3.0",
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "golang.org/x/text@v0.3.0/language/parse.go",
-                            "uriBaseId": "%GOMODCACHE%"
-                          },
-                          "region": {
-                            "startLine": 228,
-                            "startColumn": 6
-                          }
-                        },
-                        "message": {
-                          "text": "golang.org/x/text/language.Parse"
-                        }
-                      }
-                    }
-                  ]
-                }
-              ],
-              "message": {
-                "text": "A summarized code flow for vulnerable function golang.org/x/text/language.Parse"
-              }
-            }
-          ],
-          "stacks": [
-            {
-              "message": {
-                "text": "A call stack for vulnerable function golang.org/x/text/language.Parse"
-              },
-              "frames": [
-                {
-                  "module": "golang.org/vuln@",
-                  "location": {
-                    "physicalLocation": {
-                      "artifactLocation": {
-                        "uri": "vuln.go",
-                        "uriBaseId": "%SRCROOT%"
-                      },
-                      "region": {
-                        "startLine": 13,
-                        "startColumn": 16
-                      }
-                    },
-                    "message": {
-                      "text": "golang.org/vuln.main"
-                    }
-                  }
-                },
-                {
-                  "module": "golang.org/x/text@v0.3.0",
-                  "location": {
-                    "physicalLocation": {
-                      "artifactLocation": {
-                        "uri": "golang.org/x/text@v0.3.0/language/parse.go",
-                        "uriBaseId": "%GOMODCACHE%"
-                      },
-                      "region": {
-                        "startLine": 228,
-                        "startColumn": 6
-                      }
-                    },
-                    "message": {
-                      "text": "golang.org/x/text/language.Parse"
-                    }
-                  }
-                }
-              ]
             }
           ]
         },

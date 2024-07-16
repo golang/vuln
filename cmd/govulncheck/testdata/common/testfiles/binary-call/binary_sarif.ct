@@ -165,56 +165,10 @@ $ govulncheck -format sarif -mode binary ${common_vuln_binary}
         },
         {
           "ruleId": "GO-2021-0113",
-          "level": "error",
+          "level": "warning",
           "message": {
-            "text": "Your code calls vulnerable functions in 1 package (golang.org/x/text/language)."
-          },
-          "codeFlows": [
-            {
-              "threadFlows": [
-                {
-                  "locations": [
-                    {
-                      "module": "golang.org/x/text@v0.3.0",
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {},
-                          "region": {}
-                        },
-                        "message": {
-                          "text": "golang.org/x/text/language.Parse"
-                        }
-                      }
-                    }
-                  ]
-                }
-              ],
-              "message": {
-                "text": "A summarized code flow for vulnerable function golang.org/x/text/language.Parse"
-              }
-            }
-          ],
-          "stacks": [
-            {
-              "message": {
-                "text": "A call stack for vulnerable function golang.org/x/text/language.Parse"
-              },
-              "frames": [
-                {
-                  "module": "golang.org/x/text@v0.3.0",
-                  "location": {
-                    "physicalLocation": {
-                      "artifactLocation": {},
-                      "region": {}
-                    },
-                    "message": {
-                      "text": "golang.org/x/text/language.Parse"
-                    }
-                  }
-                }
-              ]
-            }
-          ]
+            "text": "Your code imports 1 vulnerable package (golang.org/x/text/language), but doesn’t appear to call any of the vulnerable symbols."
+          }
         },
         {
           "ruleId": "GO-2021-0265",

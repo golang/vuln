@@ -3,7 +3,7 @@
 $ govulncheck -C ${moddir}/vuln -format openvex ./...
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "govulncheck/vex:12f16e1541f93ab0d46d78966849d71bc20932795108f69d0df5a415a2c3a5e6",
+  "@id": "govulncheck/vex:b1a12e6f591b29f244e67c80a88d10539c220a04f6ca48d3fe7af2faf0189437",
   "author": "Unknown Author",
   "timestamp": "2024-01-01T00:00:00",
   "version": 1,
@@ -60,7 +60,9 @@ $ govulncheck -C ${moddir}/vuln -format openvex ./...
           "@id": "Unknown Product"
         }
       ],
-      "status": "affected"
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Govulncheck determined that the vulnerable code isn't called"
     },
     {
       "vulnerability": {

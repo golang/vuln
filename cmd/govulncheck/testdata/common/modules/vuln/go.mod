@@ -3,10 +3,11 @@ module golang.org/vuln
 go 1.18
 
 require (
-	// This version has one vulnerability that is imported, and
-	// one that is called.
+	// This version has two vulnerabilities that are called:
+	// one directly and one indirectly.
 	github.com/tidwall/gjson v1.6.5
-	// This version has a vulnerability that is called.
+	// This version has a vulnerability that is called and one
+	// vulnerability that is imported but not called.
 	golang.org/x/text v0.3.0
 )
 

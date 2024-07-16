@@ -1,9 +1,9 @@
 package subdir
 
 import (
-	"golang.org/x/text/language"
+	"github.com/tidwall/gjson"
 )
 
 func Foo() {
-	language.Parse("")
+	gjson.Result{}.Get("")
 }

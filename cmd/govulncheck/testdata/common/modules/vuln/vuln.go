@@ -10,7 +10,7 @@ import (
 
 func main() {
 	fmt.Println("hello")
-	language.Parse("")
+	language.CompactIndex(language.English)
 	gjson.Result{}.Get("")
 	_, _ = pem.Decode([]byte("test"))
 }

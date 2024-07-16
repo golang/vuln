@@ -3,22 +3,30 @@
 $ govulncheck -C ${moddir}/vuln/subdir . --> FAIL 3
 === Symbol Results ===
 
-Vulnerability #1: GO-2021-0113
-    Due to improper index calculation, an incorrectly formatted language tag can
-    cause Parse to panic via an out of bounds read. If Parse is used to process
-    untrusted user inputs, this may be used as a vector for a denial of service
-    attack.
-  More info: https://pkg.go.dev/vuln/GO-2021-0113
-  Module: golang.org/x/text
-    Found in: golang.org/x/text@v0.3.0
-    Fixed in: golang.org/x/text@v0.3.7
+Vulnerability #1: GO-2021-0265
+    A maliciously crafted path can cause Get and other query functions to
+    consume excessive amounts of CPU and time.
+  More info: https://pkg.go.dev/vuln/GO-2021-0265
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.9.3
     Example traces found:
-      #1: subdir/subdir.go:8:16: subdir.Foo calls language.Parse
+      #1: subdir/subdir.go:8:20: subdir.Foo calls gjson.Result.Get
 
-Your code is affected by 1 vulnerability from 1 module.
-This scan also found 0 vulnerabilities in packages you import and 1
-vulnerability in modules you require, but your code doesn't appear to call these
-vulnerabilities.
+Vulnerability #2: GO-2021-0054
+    Due to improper bounds checking, maliciously crafted JSON objects can cause
+    an out-of-bounds panic. If parsing user input, this may be used as a denial
+    of service vector.
+  More info: https://pkg.go.dev/vuln/GO-2021-0054
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.6.6
+    Example traces found:
+      #1: subdir/subdir.go:8:20: subdir.Foo calls gjson.Result.Get, which eventually calls gjson.Result.ForEach
+
+Your code is affected by 2 vulnerabilities from 1 module.
+This scan found no other vulnerabilities in packages you import or modules you
+require.
 Use '-show verbose' for more details.
 
 #####
@@ -26,22 +34,36 @@ Use '-show verbose' for more details.
 $ govulncheck -C ${moddir}/vuln/subdir -show=traces . --> FAIL 3
 === Symbol Results ===
 
-Vulnerability #1: GO-2021-0113
-    Due to improper index calculation, an incorrectly formatted language tag can
-    cause Parse to panic via an out of bounds read. If Parse is used to process
-    untrusted user inputs, this may be used as a vector for a denial of service
-    attack.
-  More info: https://pkg.go.dev/vuln/GO-2021-0113
-  Module: golang.org/x/text
-    Found in: golang.org/x/text@v0.3.0
-    Fixed in: golang.org/x/text@v0.3.7
+Vulnerability #1: GO-2021-0265
+    A maliciously crafted path can cause Get and other query functions to
+    consume excessive amounts of CPU and time.
+  More info: https://pkg.go.dev/vuln/GO-2021-0265
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.9.3
     Example traces found:
-      #1: for function golang.org/x/text/language.Parse
-        subdir/subdir.go:8:16: golang.org/vuln/subdir.Foo
-        language/parse.go:228:6: golang.org/x/text/language.Parse
+      #1: for function github.com/tidwall/gjson.Result.Get
+        subdir/subdir.go:8:20: golang.org/vuln/subdir.Foo
+        gjson.go:296:17: github.com/tidwall/gjson.Result.Get
 
-Your code is affected by 1 vulnerability from 1 module.
-This scan also found 0 vulnerabilities in packages you import and 1
-vulnerability in modules you require, but your code doesn't appear to call these
-vulnerabilities.
+Vulnerability #2: GO-2021-0054
+    Due to improper bounds checking, maliciously crafted JSON objects can cause
+    an out-of-bounds panic. If parsing user input, this may be used as a denial
+    of service vector.
+  More info: https://pkg.go.dev/vuln/GO-2021-0054
+  Module: github.com/tidwall/gjson
+    Found in: github.com/tidwall/gjson@v1.6.5
+    Fixed in: github.com/tidwall/gjson@v1.6.6
+    Example traces found:
+      #1: for function github.com/tidwall/gjson.Result.ForEach
+        subdir/subdir.go:8:20: golang.org/vuln/subdir.Foo
+        gjson.go:297:12: github.com/tidwall/gjson.Result.Get
+        gjson.go:1881:36: github.com/tidwall/gjson.Get
+        gjson.go:2587:21: github.com/tidwall/gjson.execModifier
+        gjson.go:2631:21: github.com/tidwall/gjson.modPretty
+        gjson.go:220:17: github.com/tidwall/gjson.Result.ForEach
+
+Your code is affected by 2 vulnerabilities from 1 module.
+This scan found no other vulnerabilities in packages you import or modules you
+require.
 Use '-show verbose' for more details.

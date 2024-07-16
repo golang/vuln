@@ -149,7 +149,7 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "function": "main",
         "position": {
           "filename": "vuln.go",
-          "offset": 183,
+          "offset": 204,
           "line": 14,
           "column": 20
         }
@@ -243,37 +243,6 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "module": "golang.org/x/text",
         "version": "v0.3.0",
         "package": "golang.org/x/text/language"
-      }
-    ]
-  }
-}
-{
-  "finding": {
-    "osv": "GO-2021-0113",
-    "fixed_version": "v0.3.7",
-    "trace": [
-      {
-        "module": "golang.org/x/text",
-        "version": "v0.3.0",
-        "package": "golang.org/x/text/language",
-        "function": "Parse",
-        "position": {
-          "filename": "language/parse.go",
-          "offset": 5808,
-          "line": 228,
-          "column": 6
-        }
-      },
-      {
-        "module": "golang.org/vuln",
-        "package": "golang.org/vuln",
-        "function": "main",
-        "position": {
-          "filename": "vuln.go",
-          "offset": 159,
-          "line": 13,
-          "column": 16
-        }
       }
     ]
   }
@@ -439,7 +408,7 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
         "function": "main",
         "position": {
           "filename": "vuln.go",
-          "offset": 183,
+          "offset": 204,
           "line": 14,
           "column": 20
         }
