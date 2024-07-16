@@ -19,6 +19,10 @@ import (
 // Bin is an abstraction of Go binary containing
 // minimal information needed by govulncheck.
 type Bin struct {
+	// Path of the main package.
+	Path string `json:"path,omitempty"`
+	// Main module. When present, it never has empty information.
+	Main       *packages.Module   `json:"main,omitempty"`
 	Modules    []*packages.Module `json:"modules,omitempty"`
 	PkgSymbols []buildinfo.Symbol `json:"pkgSymbols,omitempty"`
 	GoVersion  string             `json:"goVersion,omitempty"`
@@ -44,8 +48,11 @@ func Binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 // info in Result will be empty.
 func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *govulncheck.Config, client *client.Client) (*Result, error) {
 	graph := NewPackageGraph(bin.GoVersion)
-	graph.AddModules(bin.Modules...)
 	mods := append(bin.Modules, graph.GetModule(internal.GoStdModulePath))
+	if bin.Main != nil {
+		mods = append(mods, bin.Main)
+	}
+	graph.AddModules(mods...)
 
 	if err := handler.Progress(&govulncheck.Progress{Message: fetchingVulnsMessage}); err != nil {
 		return nil, err

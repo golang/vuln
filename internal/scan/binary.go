@@ -11,6 +11,7 @@ import (
 	"os"
 	"runtime/debug"
 
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/vuln/internal/buildinfo"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/derrors"
@@ -41,7 +42,17 @@ func createBin(path string) (*vulncheck.Bin, error) {
 	// TODO(#64716): use fingerprinting to make this precise, clean, and fast.
 	mods, packageSymbols, bi, err := buildinfo.ExtractPackagesAndSymbols(path)
 	if err == nil {
+		var main *packages.Module
+		if bi.Main.Path != "" {
+			main = &packages.Module{
+				Path:    bi.Main.Path,
+				Version: bi.Main.Version,
+			}
+		}
+
 		return &vulncheck.Bin{
+			Path:       bi.Path,
+			Main:       main,
 			Modules:    mods,
 			PkgSymbols: packageSymbols,
 			GoVersion:  bi.GoVersion,
