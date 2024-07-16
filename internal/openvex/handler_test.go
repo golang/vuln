@@ -27,7 +27,7 @@ func TestFinding(t *testing.T) {
 					Trace: []*govulncheck.Frame{
 						{
 							Module:  "mod",
-							Package: "pkg",
+							Package: "mod/pkg",
 						},
 					},
 				},
@@ -36,7 +36,7 @@ func TestFinding(t *testing.T) {
 					Trace: []*govulncheck.Frame{
 						{
 							Module:   "mod",
-							Package:  "pkg",
+							Package:  "mod/pkg",
 							Function: "func",
 						},
 					},
