@@ -1,0 +1,23 @@
+#####
+# Test no vulnerabilities in main module with devel version.
+$ govulncheck -mode=binary ${main_vuln_binary}
+No vulnerabilities found.
+
+
+# Test vulnerabilities in main module with v0.3.1 version.
+$ govulncheck -mode=binary ${moddir}/vuln/vuln_main_v0.3.1 --> FAIL 3
+=== Symbol Results ===
+
+Vulnerability #1: GO-9999-9999
+    A fake vulnerability in golang.org/x/vuln
+  More info: https://pkg.go.dev/vuln/GO-9999-9999
+  Module: golang.org/vuln
+    Found in: golang.org/vuln@v0.3.1
+    Fixed in: golang.org/vuln@v0.3.3
+    Vulnerable symbols found:
+      #1: vuln.main
+
+Your code is affected by 1 vulnerability from 1 module.
+This scan found no other vulnerabilities in packages you import or modules you
+require.
+Use '-show verbose' for more details.

@@ -104,10 +104,7 @@ func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 		// vulnerabilities at the go.mod-level precision.
 		pkgSymbols = allKnownVulnerableSymbols(affVulns)
 	} else {
-		pkgSymbols = make(map[string][]string)
-		for _, sym := range bin.PkgSymbols {
-			pkgSymbols[sym.Pkg] = append(pkgSymbols[sym.Pkg], sym.Name)
-		}
+		pkgSymbols = packagesAndSymbols(bin)
 	}
 
 	impVulns := binImportedVulnPackages(graph, pkgSymbols, affVulns)
@@ -125,6 +122,20 @@ func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 
 	symVulns := binVulnSymbols(graph, pkgSymbols, affVulns)
 	return &Result{Vulns: symVulns}, nil
+}
+
+func packagesAndSymbols(bin *Bin) map[string][]string {
+	pkgSymbols := make(map[string][]string)
+	for _, sym := range bin.PkgSymbols {
+		// If the name of the package is main, we need to expand
+		// it to its full path as that is what vuln db uses.
+		if sym.Pkg == "main" && bin.Path != "" {
+			pkgSymbols[bin.Path] = append(pkgSymbols[bin.Path], sym.Name)
+		} else {
+			pkgSymbols[sym.Pkg] = append(pkgSymbols[sym.Pkg], sym.Name)
+		}
+	}
+	return pkgSymbols
 }
 
 func binImportedVulnPackages(graph *PackageGraph, pkgSymbols map[string][]string, affVulns affectingVulns) []*Vuln {

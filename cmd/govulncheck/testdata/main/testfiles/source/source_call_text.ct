@@ -1,0 +1,4 @@
+#####
+# Test of basic govulncheck in source mode
+$ govulncheck -C ${moddir}/vuln ./...
+No vulnerabilities found.
