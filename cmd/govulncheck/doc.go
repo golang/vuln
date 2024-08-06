@@ -50,7 +50,10 @@ with the '-mode binary' flag:
 	$ govulncheck -mode binary $HOME/go/bin/my-go-program
 
 Govulncheck uses the binary's symbol information to find mentions of vulnerable
-functions. Its output omits call stacks, which require source code analysis.
+functions. These functions can belong to binary's transitive dependencies and
+also the main module of the binary. The latter functions are checked for only
+when the precise version of the binary module is known. Govulncheck output on
+binaries omits call stacks, which require source code analysis.
 
 Govulncheck also supports '-mode extract' on a Go binary for extraction of minimal
 information needed to analyze the binary. This will produce a blob, typically much
