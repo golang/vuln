@@ -1,6 +1,6 @@
 #####
 # Test no vulnerabilities in main module with devel version.
-$ govulncheck -mode=binary ${main_vuln_binary}
+$ govulncheck -mode=binary ${moddir}/vuln/vuln_main_devel
 No vulnerabilities found.
 
 
