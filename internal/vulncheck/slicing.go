@@ -44,12 +44,3 @@ func forwardSlice(sources map[*ssa.Function]bool, cg *callgraph.Graph) map[*ssa.
 	}
 	return seen
 }
-
-// pruneSet removes functions in `set` that are in `toPrune`.
-func pruneSet(set, toPrune map[*ssa.Function]bool) {
-	for f := range set {
-		if !toPrune[f] {
-			delete(set, f)
-		}
-	}
-}

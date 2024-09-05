@@ -16,7 +16,6 @@ import (
 	"golang.org/x/tools/go/callgraph/cha"
 	"golang.org/x/tools/go/callgraph/vta"
 	"golang.org/x/tools/go/packages"
-	"golang.org/x/tools/go/ssa/ssautil"
 	"golang.org/x/tools/go/types/typeutil"
 	"golang.org/x/vuln/internal"
 	"golang.org/x/vuln/internal/osv"
@@ -71,12 +70,8 @@ func callGraph(ctx context.Context, prog *ssa.Program, entries []*ssa.Function) 
 		return nil, err
 	}
 	initial := cha.CallGraph(prog)
-	allFuncs := ssautil.AllFunctions(prog)
 
 	fslice := forwardSlice(entrySlice, initial)
-	// Keep only actually linked functions.
-	pruneSet(fslice, allFuncs)
-
 	if err := ctx.Err(); err != nil { // cancelled?
 		return nil, err
 	}
@@ -85,8 +80,6 @@ func callGraph(ctx context.Context, prog *ssa.Program, entries []*ssa.Function) 
 	// Repeat the process once more, this time using
 	// the produced VTA call graph as the base graph.
 	fslice = forwardSlice(entrySlice, vtaCg)
-	pruneSet(fslice, allFuncs)
-
 	if err := ctx.Err(); err != nil { // cancelled?
 		return nil, err
 	}
