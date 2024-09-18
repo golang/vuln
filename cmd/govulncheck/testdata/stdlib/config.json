@@ -1,8 +1,8 @@
 {
   "fixups": [
     {
-      "pattern": "\\.go:(\\d+):(\\d+):",
-      "replace": ".go:\u003cl\u003e:\u003cc\u003e:",
+      "pattern": "\\.go:(\\d+):(\\d+)",
+      "replace": ".go:\u003cl\u003e:\u003cc\u003e",
       "comment": " mask line and column with <l> and <c> placeholders, resp."
     },
     {

@@ -62,7 +62,7 @@ func TestFrame(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			buf := &strings.Builder{}
-			addSymbolName(buf, test.frame, test.short)
+			addSymbol(buf, test.frame, test.short)
 			got := buf.String()
 			if got != test.wantFunc {
 				t.Errorf("want %v func name; got %v", test.wantFunc, got)

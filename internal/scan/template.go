@@ -182,7 +182,13 @@ func posToString(p *govulncheck.Position) string {
 
 func symbol(frame *govulncheck.Frame, short bool) string {
 	buf := &strings.Builder{}
-	addSymbolName(buf, frame, short)
+	addSymbol(buf, frame, short)
+	return buf.String()
+}
+
+func symbolName(frame *govulncheck.Frame) string {
+	buf := &strings.Builder{}
+	addSymbolName(buf, frame)
 	return buf.String()
 }
 
@@ -210,12 +216,12 @@ func compactTrace(finding *govulncheck.Finding) string {
 
 	if l > 1 {
 		// print the root of the compact trace
-		addSymbolName(buf, compact[iTop], true)
+		addSymbol(buf, compact[iTop], true)
 		buf.WriteString(" calls ")
 	}
 	if l > 2 {
 		// print next element of the trace, if any
-		addSymbolName(buf, compact[iTop-1], true)
+		addSymbol(buf, compact[iTop-1], true)
 		buf.WriteString(", which")
 		if l > 3 {
 			// don't print the third element, just acknowledge it
@@ -223,7 +229,7 @@ func compactTrace(finding *govulncheck.Finding) string {
 		}
 		buf.WriteString(" calls ")
 	}
-	addSymbolName(buf, compact[0], true) // print the vulnerable symbol
+	addSymbol(buf, compact[0], true) // print the vulnerable symbol
 	return buf.String()
 }
 
@@ -255,7 +261,7 @@ func importPathToAssumedName(importPath string) string {
 	return base
 }
 
-func addSymbolName(w io.Writer, frame *govulncheck.Frame, short bool) {
+func addSymbol(w io.Writer, frame *govulncheck.Frame, short bool) {
 	if frame.Function == "" {
 		return
 	}
@@ -267,6 +273,10 @@ func addSymbolName(w io.Writer, frame *govulncheck.Frame, short bool) {
 		io.WriteString(w, pkg)
 		io.WriteString(w, ".")
 	}
+	addSymbolName(w, frame)
+}
+
+func addSymbolName(w io.Writer, frame *govulncheck.Frame) {
 	if frame.Receiver != "" {
 		if frame.Receiver[0] == '*' {
 			io.WriteString(w, frame.Receiver[1:])

@@ -43,14 +43,14 @@ Vulnerability #1: GO-2021-0113
     Fixed in: golang.org/x/text@v0.3.7
     Example traces found:
       #1: for function golang.org/x/text/language.MustParse
-        main.go:26:3: golang.org/multientry.main
-        main.go:48:8: golang.org/multientry.D
-        main.go:99:20: golang.org/multientry.foobar
-        language/tags.go:13:6: golang.org/x/text/language.MustParse
+        main @ golang.org/multientry/main.go:26:3
+        D @ golang.org/multientry/main.go:48:8
+        foobar @ golang.org/multientry/main.go:99:20
+        MustParse @ golang.org/x/text/language/tags.go:13:6
       #2: for function golang.org/x/text/language.Parse
-        main.go:22:3: golang.org/multientry.main
-        main.go:44:23: golang.org/multientry.C
-        language/parse.go:33:6: golang.org/x/text/language.Parse
+        main @ golang.org/multientry/main.go:22:3
+        C @ golang.org/multientry/main.go:44:23
+        Parse @ golang.org/x/text/language/parse.go:33:6
 
 === Package Results ===
 

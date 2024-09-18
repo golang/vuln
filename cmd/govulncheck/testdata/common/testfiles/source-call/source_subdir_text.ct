@@ -43,8 +43,8 @@ Vulnerability #1: GO-2021-0265
     Fixed in: github.com/tidwall/gjson@v1.9.3
     Example traces found:
       #1: for function github.com/tidwall/gjson.Result.Get
-        subdir/subdir.go:8:20: golang.org/vuln/subdir.Foo
-        gjson.go:296:17: github.com/tidwall/gjson.Result.Get
+        Foo @ golang.org/vuln/subdir/subdir.go:8:20
+        Result.Get @ github.com/tidwall/gjson/gjson.go:296:17
 
 Vulnerability #2: GO-2021-0054
     Due to improper bounds checking, maliciously crafted JSON objects can cause
@@ -56,12 +56,12 @@ Vulnerability #2: GO-2021-0054
     Fixed in: github.com/tidwall/gjson@v1.6.6
     Example traces found:
       #1: for function github.com/tidwall/gjson.Result.ForEach
-        subdir/subdir.go:8:20: golang.org/vuln/subdir.Foo
-        gjson.go:297:12: github.com/tidwall/gjson.Result.Get
-        gjson.go:1881:36: github.com/tidwall/gjson.Get
-        gjson.go:2587:21: github.com/tidwall/gjson.execModifier
-        gjson.go:2631:21: github.com/tidwall/gjson.modPretty
-        gjson.go:220:17: github.com/tidwall/gjson.Result.ForEach
+        Foo @ golang.org/vuln/subdir/subdir.go:8:20
+        Result.Get @ github.com/tidwall/gjson/gjson.go:297:12
+        Get @ github.com/tidwall/gjson/gjson.go:1881:36
+        execModifier @ github.com/tidwall/gjson/gjson.go:2587:21
+        modPretty @ github.com/tidwall/gjson/gjson.go:2631:21
+        Result.ForEach @ github.com/tidwall/gjson/gjson.go:220:17
 
 Your code is affected by 2 vulnerabilities from 1 module.
 This scan found no other vulnerabilities in packages you import or modules you

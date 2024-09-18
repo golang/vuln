@@ -9,8 +9,8 @@ Vulnerability #1: GO-0000-0001
     Platforms: amd
     Example traces found:
       #1: for function vmod.Vuln
-        main.main
-        vmod.Vuln
+        main
+        Vuln
 
 Your code is affected by 1 vulnerability from the Go standard library.
 This scan also found 1 vulnerability in packages you import and 0

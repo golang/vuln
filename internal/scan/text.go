@@ -335,13 +335,21 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 			for i := len(entry.Trace) - 1; i >= 0; i-- {
 				t := entry.Trace[i]
 				h.print("        ")
+				h.print(symbolName(t))
 				if t.Position != nil {
-					h.print(posToString(t.Position), ": ")
+					h.print(" @ ", symbolPath(t))
 				}
-				h.print(symbol(t, false), "\n")
+				h.print("\n")
 			}
 		}
 	}
+}
+
+// symbolPath returns a user-friendly path to a symbol.
+func symbolPath(t *govulncheck.Frame) string {
+	// Add module path prefix to symbol paths to be more
+	// explicit to which module the symbols belong to.
+	return t.Module + "/" + posToString(t.Position)
 }
 
 func (h *TextHandler) summary(c summaryCounters) {
