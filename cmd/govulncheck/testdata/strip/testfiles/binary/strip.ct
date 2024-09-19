@@ -50,30 +50,18 @@ Vulnerability #1: GO-2021-0113
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.7
     Vulnerable symbols found:
-      #1: for function golang.org/x/text/language.Compose
-        Compose
-      #2: for function golang.org/x/text/language.Make
-        Make
-      #3: for function golang.org/x/text/language.MatchStrings
-        MatchStrings
-      #4: for function golang.org/x/text/language.MustParse
-        MustParse
-      #5: for function golang.org/x/text/language.Parse
-        Parse
-      #6: for function golang.org/x/text/language.ParseAcceptLanguage
-        ParseAcceptLanguage
-      #7: for function golang.org/x/text/language.Tag.Base
-        Tag.Base
-      #8: for function golang.org/x/text/language.Tag.Extension
-        Tag.Extension
-      #9: for function golang.org/x/text/language.Tag.IsRoot
-        Tag.IsRoot
-      #10: for function golang.org/x/text/language.Tag.Parent
-        Tag.Parent
-      #11: for function golang.org/x/text/language.Tag.Region
-        Tag.Region
-      #12: for function golang.org/x/text/language.Tag.String
-        Tag.String
+      #1: golang.org/x/text/language.Compose
+      #2: golang.org/x/text/language.Make
+      #3: golang.org/x/text/language.MatchStrings
+      #4: golang.org/x/text/language.MustParse
+      #5: golang.org/x/text/language.Parse
+      #6: golang.org/x/text/language.ParseAcceptLanguage
+      #7: golang.org/x/text/language.Tag.Base
+      #8: golang.org/x/text/language.Tag.Extension
+      #9: golang.org/x/text/language.Tag.IsRoot
+      #10: golang.org/x/text/language.Tag.Parent
+      #11: golang.org/x/text/language.Tag.Region
+      #12: golang.org/x/text/language.Tag.String
 
 Vulnerability #2: GO-2020-0015
     Infinite loop when decoding some inputs in golang.org/x/text
@@ -82,12 +70,9 @@ Vulnerability #2: GO-2020-0015
     Found in: golang.org/x/text@v0.3.0
     Fixed in: golang.org/x/text@v0.3.3
     Vulnerable symbols found:
-      #1: for function golang.org/x/text/transform.String
-        String
-      #2: for function golang.org/x/text/encoding/unicode.bomOverride.Transform
-        bomOverride.Transform
-      #3: for function golang.org/x/text/encoding/unicode.utf16Decoder.Transform
-        utf16Decoder.Transform
+      #1: golang.org/x/text/transform.String
+      #2: golang.org/x/text/encoding/unicode.bomOverride.Transform
+      #3: golang.org/x/text/encoding/unicode.utf16Decoder.Transform
 
 Your code is affected by 2 vulnerabilities from 1 module.
 This scan found no other vulnerabilities in packages you import or modules you

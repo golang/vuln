@@ -312,9 +312,10 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 	// as users cannot act on them and they can hence
 	// spam users.
 	const binLimit = 5
+	binary := h.scanMode == govulncheck.ScanModeBinary
 	for i, entry := range compacts {
 		if i == 0 {
-			if h.scanMode == govulncheck.ScanModeBinary {
+			if binary {
 				h.style(keyStyle, "    Vulnerable symbols found:\n")
 			} else {
 				h.style(keyStyle, "    Example traces found:\n")
@@ -322,14 +323,22 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 		}
 
 		// skip showing all symbols in binary mode unless '-show traces' is on.
-		if h.scanMode == govulncheck.ScanModeBinary && (i+1) > binLimit && !h.showTraces {
+		if binary && (i+1) > binLimit && !h.showTraces {
 			h.print("      Use '-show traces' to see the other ", len(compacts)-binLimit, " found symbols\n")
 			break
 		}
 
 		h.print("      #", i+1, ": ")
-		if !h.showTraces {
+
+		if !h.showTraces { // show summarized traces
 			h.print(entry.Compact, "\n")
+			continue
+		}
+
+		if binary {
+			// There are no call stacks in binary mode
+			// so just show the full symbol name.
+			h.print(symbol(entry.Trace[0], false), "\n")
 		} else {
 			h.print("for function ", symbol(entry.Trace[0], false), "\n")
 			for i := len(entry.Trace) - 1; i >= 0; i-- {
