@@ -47,6 +47,8 @@ func Binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 // It does not compute call graphs so the corresponding
 // info in Result will be empty.
 func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *govulncheck.Config, client *client.Client) (*Result, error) {
+	// TODO: Pass SBOM to handler
+
 	graph := NewPackageGraph(bin.GoVersion)
 	mods := append(bin.Modules, graph.GetModule(internal.GoStdModulePath))
 	if bin.Main != nil {

@@ -115,6 +115,11 @@ func (h *TextHandler) Config(config *govulncheck.Config) error {
 	return h.err
 }
 
+func (h *TextHandler) SBOM(info *govulncheck.SBOM) error {
+	// TODO: implement sbom in text mode
+	return nil
+}
+
 // Progress writes progress updates during govulncheck execution.
 func (h *TextHandler) Progress(progress *govulncheck.Progress) error {
 	if h.showVerbose {

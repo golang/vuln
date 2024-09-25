@@ -33,6 +33,11 @@ func (h *jsonHandler) Progress(progress *Progress) error {
 	return h.enc.Encode(Message{Progress: progress})
 }
 
+// SBOM writes the SBOM block in JSON to the underlying writer.
+func (h *jsonHandler) SBOM(sbom *SBOM) error {
+	return h.enc.Encode(Message{SBOM: sbom})
+}
+
 // OSV writes an osv entry in JSON to the underlying writer.
 func (h *jsonHandler) OSV(entry *osv.Entry) error {
 	return h.enc.Encode(Message{OSV: entry})

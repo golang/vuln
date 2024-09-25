@@ -17,6 +17,7 @@ import (
 // For use in tests.
 type MockHandler struct {
 	ConfigMessages   []*govulncheck.Config
+	SBOMMessages     []*govulncheck.SBOM
 	ProgressMessages []*govulncheck.Progress
 	OSVMessages      []*osv.Entry
 	FindingMessages  []*govulncheck.Finding
@@ -28,6 +29,11 @@ func NewMockHandler() *MockHandler {
 
 func (h *MockHandler) Config(config *govulncheck.Config) error {
 	h.ConfigMessages = append(h.ConfigMessages, config)
+	return nil
+}
+
+func (h *MockHandler) SBOM(sbom *govulncheck.SBOM) error {
+	h.SBOMMessages = append(h.SBOMMessages, sbom)
 	return nil
 }
 
@@ -88,6 +94,11 @@ func (h *MockHandler) Write(to govulncheck.Handler) error {
 	}
 	for _, progress := range h.ProgressMessages {
 		if err := to.Progress(progress); err != nil {
+			return err
+		}
+	}
+	for _, sbom := range h.SBOMMessages {
+		if err := to.SBOM(sbom); err != nil {
 			return err
 		}
 	}

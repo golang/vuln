@@ -57,6 +57,8 @@ func source(ctx context.Context, handler govulncheck.Handler, cfg *govulncheck.C
 		}()
 	}
 
+	// TODO: pass SBOM to handler
+
 	if err := handler.Progress(&govulncheck.Progress{Message: fetchingVulnsMessage}); err != nil {
 		return nil, err
 	}

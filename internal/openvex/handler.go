@@ -28,6 +28,7 @@ const (
 type handler struct {
 	w    io.Writer
 	cfg  *govulncheck.Config
+	sbom *govulncheck.SBOM
 	osvs map[string]*osv.Entry
 	// findings contains same-level findings for an
 	// OSV at the most precise level of granularity
@@ -51,6 +52,11 @@ func (h *handler) Config(cfg *govulncheck.Config) error {
 }
 
 func (h *handler) Progress(progress *govulncheck.Progress) error {
+	return nil
+}
+
+func (h *handler) SBOM(s *govulncheck.SBOM) error {
+	h.sbom = s
 	return nil
 }
 

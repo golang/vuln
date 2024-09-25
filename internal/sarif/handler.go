@@ -37,12 +37,17 @@ func NewHandler(w io.Writer) *handler {
 		findings: make(map[string][]*govulncheck.Finding),
 	}
 }
+
 func (h *handler) Config(c *govulncheck.Config) error {
 	h.cfg = c
 	return nil
 }
 
 func (h *handler) Progress(p *govulncheck.Progress) error {
+	return nil // not needed by sarif
+}
+
+func (h *handler) SBOM(s *govulncheck.SBOM) error {
 	return nil // not needed by sarif
 }
 

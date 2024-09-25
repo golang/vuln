@@ -17,6 +17,9 @@ type Handler interface {
 	// Config communicates introductory message to the user.
 	Config(config *Config) error
 
+	// SBOM shows information about what govulncheck is scanning.
+	SBOM(sbom *SBOM) error
+
 	// Progress is called to display a progress message.
 	Progress(progress *Progress) error
 
@@ -44,6 +47,9 @@ func HandleJSON(from io.Reader, to Handler) error {
 		}
 		if msg.Progress != nil {
 			err = to.Progress(msg.Progress)
+		}
+		if msg.SBOM != nil {
+			err = to.SBOM(msg.SBOM)
 		}
 		if msg.OSV != nil {
 			err = to.OSV(msg.OSV)
