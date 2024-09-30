@@ -28,6 +28,36 @@ $ govulncheck -format json -mode binary ${common_vendored_binary}
   }
 }
 {
+  "SBOM": {
+    "go_version": "go1.18",
+    "modules": [
+      {
+        "path": "golang.org/vendored",
+        "version": "(devel)"
+      },
+      {
+        "path": "github.com/tidwall/gjson",
+        "version": "v1.6.5"
+      },
+      {
+        "path": "golang.org/x/text",
+        "version": "v0.3.0"
+      },
+      {
+        "path": "private.com/privateuser/fakemod",
+        "version": "v1.0.0"
+      },
+      {
+        "path": "stdlib",
+        "version": "v1.18.0"
+      }
+    ],
+    "roots": [
+      "golang.org/vendored"
+    ]
+  }
+}
+{
   "osv": {
     "schema_version": "1.3.1",
     "id": "GO-2021-0265",

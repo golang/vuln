@@ -28,6 +28,40 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
   }
 }
 {
+  "SBOM": {
+    "go_version": "go1.18",
+    "modules": [
+      {
+        "path": "golang.org/vuln"
+      },
+      {
+        "path": "github.com/tidwall/gjson",
+        "version": "v1.6.5"
+      },
+      {
+        "path": "github.com/tidwall/match",
+        "version": "v1.1.0"
+      },
+      {
+        "path": "github.com/tidwall/pretty",
+        "version": "v1.2.0"
+      },
+      {
+        "path": "golang.org/x/text",
+        "version": "v0.3.0"
+      },
+      {
+        "path": "stdlib",
+        "version": "v1.18.0"
+      }
+    ],
+    "roots": [
+      "golang.org/vuln",
+      "golang.org/vuln/subdir"
+    ]
+  }
+}
+{
   "osv": {
     "schema_version": "1.3.1",
     "id": "GO-2021-0265",

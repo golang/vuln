@@ -47,14 +47,18 @@ func Binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *gov
 // It does not compute call graphs so the corresponding
 // info in Result will be empty.
 func binary(ctx context.Context, handler govulncheck.Handler, bin *Bin, cfg *govulncheck.Config, client *client.Client) (*Result, error) {
-	// TODO: Pass SBOM to handler
-
 	graph := NewPackageGraph(bin.GoVersion)
 	mods := append(bin.Modules, graph.GetModule(internal.GoStdModulePath))
+
 	if bin.Main != nil {
 		mods = append(mods, bin.Main)
 	}
+
 	graph.AddModules(mods...)
+
+	if err := handler.SBOM(bin.SBOM()); err != nil {
+		return nil, err
+	}
 
 	if err := handler.Progress(&govulncheck.Progress{Message: fetchingVulnsMessage}); err != nil {
 		return nil, err
@@ -200,4 +204,34 @@ func allKnownVulnerableSymbols(affVulns affectingVulns) map[string][]string {
 		}
 	}
 	return pkgSymbols
+}
+
+func (bin *Bin) SBOM() (sbom *govulncheck.SBOM) {
+	sbom = &govulncheck.SBOM{}
+	if bin.Main != nil {
+		sbom.Roots = []string{bin.Main.Path}
+		sbom.Modules = append(sbom.Modules, &govulncheck.Module{
+			Path:    bin.Main.Path,
+			Version: bin.Main.Version,
+		})
+	}
+
+	sbom.GoVersion = bin.GoVersion
+	for _, mod := range bin.Modules {
+		if mod.Replace != nil {
+			mod = mod.Replace
+		}
+		sbom.Modules = append(sbom.Modules, &govulncheck.Module{
+			Path:    mod.Path,
+			Version: mod.Version,
+		})
+	}
+
+	// add stdlib to mirror source mode output
+	sbom.Modules = append(sbom.Modules, &govulncheck.Module{
+		Path:    internal.GoStdModulePath,
+		Version: bin.GoVersion,
+	})
+
+	return sbom
 }
