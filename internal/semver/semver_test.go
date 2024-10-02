@@ -39,6 +39,27 @@ func TestGoTagToSemver(t *testing.T) {
 	}
 }
 
+func TestSemverToGoTag(t *testing.T) {
+	for _, test := range []struct {
+		v    string
+		want string
+	}{
+		{"v1.19.0", "go1.19"},
+		{"v1.20.0-pre.4", "go1.20-pre4"},
+		{"v1.0.0", "go1"},
+		{"v1.20.0-rc.1", "go1.20-rc1"},
+		{"v1.20.0-beta.1", "go1.20-beta1"},
+		{"v1.20.0-alpha.1", "go1.20-alpha1"},
+		{"v1.20.0-alpha.1+incompatible", "go1.20-alpha1"},
+		{"v1.20.0-alpha.1-0.20220101230456-1234abcd", "go1.20-alpha.1-0.20220101230456-1234abcd"},
+	} {
+		got := SemverToGoTag(test.v)
+		if got != test.want {
+			t.Errorf("want %s; got %s", test.want, got)
+		}
+	}
+}
+
 func TestLess(t *testing.T) {
 	for _, test := range []struct {
 		v1   string

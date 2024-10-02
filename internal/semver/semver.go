@@ -7,6 +7,7 @@
 package semver
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -92,4 +93,48 @@ func GoTagToSemver(tag string) string {
 		version += m[4] + "." + m[5]
 	}
 	return version
+}
+
+// This is a modified copy of pkgsite/internal/stlib:TagForVersion
+func SemverToGoTag(v string) string {
+	// Special case: v1.0.0 => go1.
+	if v == "v1.0.0" {
+		return "go1"
+	}
+
+	goVersion := semver.Canonical(v)
+	prerelease := semver.Prerelease(goVersion)
+	versionWithoutPrerelease := strings.TrimSuffix(goVersion, prerelease)
+	patch := strings.TrimPrefix(versionWithoutPrerelease, semver.MajorMinor(goVersion)+".")
+	if patch == "0" && (semver.Compare(v, "v1.21.0") < 0 || prerelease != "") {
+		// Starting with go1.21.0, the first patch version includes .0.
+		// Prereleases do not include .0 (we don't do prereleases for other patch releases).
+		versionWithoutPrerelease = strings.TrimSuffix(versionWithoutPrerelease, ".0")
+	}
+	goVersion = fmt.Sprintf("go%s", strings.TrimPrefix(versionWithoutPrerelease, "v"))
+	if prerelease != "" {
+		i := finalDigitsIndex(prerelease)
+		if i >= 1 {
+			// Remove the dot.
+			prerelease = prerelease[:i-1] + prerelease[i:]
+		}
+		goVersion += prerelease
+	}
+	return goVersion
+}
+
+// finalDigitsIndex returns the index of the first digit in the sequence of digits ending s.
+// If s doesn't end in digits, it returns -1.
+func finalDigitsIndex(s string) int {
+	// Assume ASCII (since the semver package does anyway).
+	var i int
+	for i = len(s) - 1; i >= 0; i-- {
+		if s[i] < '0' || s[i] > '9' {
+			break
+		}
+	}
+	if i == len(s)-1 {
+		return -1
+	}
+	return i + 1
 }
