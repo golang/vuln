@@ -35,6 +35,7 @@ func NewTextHandler(w io.Writer) *TextHandler {
 
 type TextHandler struct {
 	w         io.Writer
+	sbom      *govulncheck.SBOM
 	osvs      []*osv.Entry
 	findings  []*findingSummary
 	scanLevel govulncheck.ScanLevel
@@ -63,6 +64,9 @@ const (
 )
 
 func (h *TextHandler) Flush() error {
+	if h.showVerbose {
+		h.printSBOM()
+	}
 	if len(h.findings) == 0 {
 		h.print(noVulnsMessage + "\n")
 	} else {
@@ -115,8 +119,45 @@ func (h *TextHandler) Config(config *govulncheck.Config) error {
 	return h.err
 }
 
-func (h *TextHandler) SBOM(info *govulncheck.SBOM) error {
-	// TODO: implement sbom in text mode
+func (h *TextHandler) SBOM(sbom *govulncheck.SBOM) error {
+	h.sbom = sbom
+	return nil
+}
+
+func (h *TextHandler) printSBOM() error {
+	if h.sbom == nil {
+		return nil
+	}
+
+	printed := false
+
+	for i, root := range h.sbom.Roots {
+		if i == 0 {
+			h.print("The package pattern matched the following root packages:\n")
+		}
+
+		h.print("  ", root, "\n")
+		printed = true
+	}
+	for i, mod := range h.sbom.Modules {
+		if i == 0 && mod.Path != "stdlib" {
+			h.print("Govulncheck scanned the following modules and the ", h.sbom.GoVersion, " standard library:\n")
+		}
+
+		if mod.Path == "stdlib" {
+			continue
+		}
+
+		h.print("  ", mod.Path)
+		if mod.Version != "" {
+			h.print("@", mod.Version)
+		}
+		h.print("\n")
+		printed = true
+	}
+	if printed {
+		h.print("\n")
+	}
 	return nil
 }
 

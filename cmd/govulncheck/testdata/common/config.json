@@ -43,6 +43,10 @@
     {
       "pattern": "path\": \"stdlib\",\n *\"version\": \"[^\\s]*\"",
       "replace": "path\": \"stdlib\",\n        \"version\": \"v1.18.0\""
+    },
+    {
+      "pattern": "library @ go[^\\s]*:",
+      "replace": "library @ go1.18:"
     }
   ]
 }
