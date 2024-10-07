@@ -14,11 +14,6 @@ $ govulncheck -C ${moddir}/vuln -format json ./...
 }
 {
   "progress": {
-    "message": "Scanning your code and P packages across M dependent modules for known vulnerabilities..."
-  }
-}
-{
-  "progress": {
     "message": "Fetching vulnerabilities from the database..."
   }
 }

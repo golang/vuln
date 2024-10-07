@@ -1,4 +1,5 @@
 #####
 # Test message when there are no packages matching the provided pattern (#59623).
-$ govulncheck -C ${moddir}/vuln pkg/no-govulncheck/...
+$ govulncheck -show verbose -C ${moddir}/vuln pkg/no-govulncheck/...
+No packages matched the provided pattern.
 No vulnerabilities found.

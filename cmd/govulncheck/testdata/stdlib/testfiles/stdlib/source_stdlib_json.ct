@@ -15,11 +15,6 @@ $ govulncheck -C ${moddir}/stdlib -format json .
 }
 {
   "progress": {
-    "message": "Scanning your code and P packages across M dependent module for known vulnerabilities..."
-  }
-}
-{
-  "progress": {
     "message": "Fetching vulnerabilities from the database..."
   }
 }

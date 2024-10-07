@@ -15,11 +15,6 @@ $ govulncheck -format json -scan module -C ${moddir}/multientry
 }
 {
   "progress": {
-    "message": "Scanning your code across 2 dependent modules for known vulnerabilities..."
-  }
-}
-{
-  "progress": {
     "message": "Fetching vulnerabilities from the database..."
   }
 }

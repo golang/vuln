@@ -126,6 +126,7 @@ func (h *TextHandler) SBOM(sbom *govulncheck.SBOM) error {
 
 func (h *TextHandler) printSBOM() error {
 	if h.sbom == nil {
+		h.print("No packages matched the provided pattern.\n")
 		return nil
 	}
 
