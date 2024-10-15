@@ -134,7 +134,11 @@ func (h *TextHandler) printSBOM() error {
 
 	for i, root := range h.sbom.Roots {
 		if i == 0 {
-			h.print("The package pattern matched the following root packages:\n")
+			if len(h.sbom.Roots) > 1 {
+				h.print("The package pattern matched the following ", len(h.sbom.Roots), " root packages:\n")
+			} else {
+				h.print("The package pattern matched the following root package:\n")
+			}
 		}
 
 		h.print("  ", root, "\n")
@@ -142,7 +146,7 @@ func (h *TextHandler) printSBOM() error {
 	}
 	for i, mod := range h.sbom.Modules {
 		if i == 0 && mod.Path != "stdlib" {
-			h.print("Govulncheck scanned the following modules and the ", h.sbom.GoVersion, " standard library:\n")
+			h.print("Govulncheck scanned the following ", len(h.sbom.Modules)-1, " modules and the ", h.sbom.GoVersion, " standard library:\n")
 		}
 
 		if mod.Path == "stdlib" {

@@ -25,9 +25,9 @@ Fetching vulnerabilities from the database...
 
 Checking the code against the vulnerabilities...
 
-The package pattern matched the following root packages:
+The package pattern matched the following root package:
   golang.org/multientry
-Govulncheck scanned the following modules and the go1.18 standard library:
+Govulncheck scanned the following 2 modules and the go1.18 standard library:
   golang.org/multientry
   golang.org/x/text@v0.3.5
 

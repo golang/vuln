@@ -5,10 +5,10 @@ Fetching vulnerabilities from the database...
 
 Checking the code against the vulnerabilities...
 
-The package pattern matched the following root packages:
+The package pattern matched the following 2 root packages:
   golang.org/vendored
   golang.org/vendored/subdir
-Govulncheck scanned the following modules and the go1.18 standard library:
+Govulncheck scanned the following 4 modules and the go1.18 standard library:
   golang.org/vendored
   github.com/tidwall/gjson@v1.6.5
   golang.org/x/text@v0.3.0
