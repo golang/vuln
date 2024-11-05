@@ -66,7 +66,7 @@ type Run struct {
 	Tool Tool `json:"tool,omitempty"`
 	// Results contain govulncheck findings. There should be exactly one
 	// Result per a detected use of an OSV.
-	Results []Result `json:"results,omitempty"`
+	Results []Result `json:"results"`
 }
 
 // Tool captures information about govulncheck analysis that was run.
@@ -85,7 +85,7 @@ type Driver struct {
 	// Properties are govulncheck run metadata, such as vuln db, Go version, etc.
 	Properties govulncheck.Config `json:"properties,omitempty"`
 
-	Rules []Rule `json:"rules,omitempty"`
+	Rules []Rule `json:"rules"`
 }
 
 // Rule corresponds to the static analysis rule/analyzer that
@@ -105,7 +105,7 @@ type Rule struct {
 
 // RuleTags defines properties.tags.
 type RuleTags struct {
-	Tags []string `json:"tags,omitempty"`
+	Tags []string `json:"tags"`
 }
 
 // Description is a text in its raw or markdown form.
@@ -143,7 +143,7 @@ type Result struct {
 // for, say, a particular symbol or package.
 type CodeFlow struct {
 	// ThreadFlows is effectively a set of related information flows.
-	ThreadFlows []ThreadFlow `json:"threadFlows,omitempty"`
+	ThreadFlows []ThreadFlow `json:"threadFlows"`
 	Message     Description  `json:"message,omitempty"`
 }
 
@@ -165,7 +165,7 @@ type ThreadFlowLocation struct {
 // Stack is a sequence of frames and can encode a govulncheck call stack.
 type Stack struct {
 	Message Description `json:"message,omitempty"`
-	Frames  []Frame     `json:"frames,omitempty"`
+	Frames  []Frame     `json:"frames"`
 }
 
 // Frame is effectively a module location. It can also contain thread and

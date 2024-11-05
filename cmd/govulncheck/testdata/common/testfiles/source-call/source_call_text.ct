@@ -135,3 +135,7 @@ Your code is affected by 2 vulnerabilities from 1 module.
 This scan also found 1 vulnerability in packages you import and 1 vulnerability
 in modules you require, but your code doesn't appear to call these
 vulnerabilities.
+
+# Test no vulnerabilities in source mode
+$ govulncheck -C ${moddir}/novuln ./...
+No vulnerabilities found.

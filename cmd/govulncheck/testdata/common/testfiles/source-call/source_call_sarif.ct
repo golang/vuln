@@ -496,3 +496,33 @@ $ govulncheck -C ${moddir}/vuln -format sarif ./...
     }
   ]
 }
+
+# Test sarif json output for no vulnerabilities
+$ govulncheck -C ${moddir}/novuln -format sarif ./...
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "govulncheck",
+          "semanticVersion": "v0.0.0",
+          "informationUri": "https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck",
+          "properties": {
+            "protocol_version": "v1.0.0",
+            "scanner_name": "govulncheck",
+            "scanner_version": "v0.0.0-00000000000-20000101010101",
+            "db": "testdata/vulndb-v1",
+            "db_last_modified": "2023-04-03T15:57:51Z",
+            "go_version": "go1.18",
+            "scan_level": "symbol",
+            "scan_mode": "source"
+          },
+          "rules": []
+        }
+      },
+      "results": []
+    }
+  ]
+}

@@ -142,7 +142,7 @@ func toSarif(h *handler) Log {
 }
 
 func rules(h *handler) []Rule {
-	var rs []Rule
+	rs := make([]Rule, 0, len(h.findings)) // must not be nil
 	for id := range h.findings {
 		osv := h.osvs[id]
 		// s is either summary if it exists, or details
@@ -157,15 +157,24 @@ func rules(h *handler) []Rule {
 			FullDescription:  Description{Text: s},
 			HelpURI:          fmt.Sprintf("https://pkg.go.dev/vuln/%s", osv.ID),
 			Help:             Description{Text: osv.Details},
-			Properties:       RuleTags{Tags: osv.Aliases},
+			Properties:       RuleTags{Tags: tags(osv)},
 		})
 	}
 	sort.SliceStable(rs, func(i, j int) bool { return rs[i].ID < rs[j].ID })
 	return rs
 }
 
+// tags returns an slice of zero or
+// more aliases of o.
+func tags(o *osv.Entry) []string {
+	if len(o.Aliases) > 0 {
+		return o.Aliases
+	}
+	return []string{} // must not be nil
+}
+
 func results(h *handler) []Result {
-	var results []Result
+	results := make([]Result, 0, len(h.findings)) // must not be nil
 	for osv, fs := range h.findings {
 		var locs []Location
 		if h.cfg.ScanMode != govulncheck.ScanModeBinary {
@@ -283,7 +292,7 @@ func stack(h *handler, f *govulncheck.Finding) Stack {
 	trace := f.Trace
 	top := trace[len(trace)-1] // belongs to top level module
 
-	var frames []Frame
+	frames := make([]Frame, 0, len(trace)) // must not be nil
 	for i := len(trace) - 1; i >= 0; i-- { // vulnerable symbol is at the top frame
 		frame := trace[i]
 		pos := govulncheck.Position{Line: 1, Column: 1}
@@ -350,7 +359,7 @@ func codeFlows(h *handler, fs []*govulncheck.Finding) []CodeFlow {
 }
 
 func threadFlows(h *handler, fs []*govulncheck.Finding) []ThreadFlow {
-	var tfs []ThreadFlow
+	tfs := make([]ThreadFlow, 0, len(fs)) // must not be nil
 	for _, f := range fs {
 		trace := traces.Compact(f)
 		top := trace[len(trace)-1] // belongs to top level module
