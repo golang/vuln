@@ -165,7 +165,7 @@ func rules(h *handler) []Rule {
 }
 
 func results(h *handler) []Result {
-	var results []Result
+	results := make([]Result, 0, len(h.findings))
 	for osv, fs := range h.findings {
 		var locs []Location
 		if h.cfg.ScanMode != govulncheck.ScanModeBinary {
