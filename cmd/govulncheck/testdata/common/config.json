@@ -33,7 +33,7 @@
       "replace": "Go: go1.18"
     },
     {
-      "pattern": "\"go_version\": \"go[^\\s\"]*\"",
+      "pattern": "\"go_version\": \"go(.*)\"",
       "replace": "\"go_version\": \"go1.18\""
     },
     {
@@ -41,7 +41,7 @@
       "replace": "\"timestamp\": \"2024-01-01T00:00:00\","
     },
     {
-      "pattern": "path\": \"stdlib\",\n *\"version\": \"[^\\s]*\"",
+      "pattern": "path\": \"stdlib\",\n *\"version\": \"(.*)\"",
       "replace": "path\": \"stdlib\",\n        \"version\": \"v1.18.0\""
     }
   ]

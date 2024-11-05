@@ -41,7 +41,7 @@
       "replace": "modified 01 Jan 21 00:00 UTC)"
     },
     {
-      "pattern": "\"go_version\": \"go[^\\s\"]*\"",
+      "pattern": "\"go_version\": \"go(.*)\"",
       "replace": "\"go_version\": \"go1.18\""
     }
   ]
