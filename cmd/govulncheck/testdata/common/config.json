@@ -29,11 +29,11 @@
       "replace": "modified 01 Jan 21 00:00 UTC)"
     },
     {
-      "pattern": "Go: (go1.[\\.\\d]*|devel).*",
+      "pattern": "Go: (go1.[\\.\\d]*|devel(.*)).*",
       "replace": "Go: go1.18"
     },
     {
-      "pattern": "\"go_version\": \"go(.*)\"",
+      "pattern": "\"go_version\": \"(go(.*)|devel(.*))\"",
       "replace": "\"go_version\": \"go1.18\""
     },
     {
@@ -43,6 +43,10 @@
     {
       "pattern": "path\": \"stdlib\",\n *\"version\": \"(.*)\"",
       "replace": "path\": \"stdlib\",\n        \"version\": \"v1.18.0\""
+    },
+    {
+      "pattern": "\"version\": \"(.*)dirty\"",
+      "replace": "\"version\": \"(devel)\""
     }
   ]
 }
