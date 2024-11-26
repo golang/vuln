@@ -93,7 +93,7 @@ func runTestCase(t *testing.T, tcName, testDir string) {
 
 	os.Setenv("moddir", modulesDir)
 	os.Setenv("testdir", testfilesDir)
-	runTestSuite(t, testfilesDir, govulndbURI.String(), cfg.Fixups, *update)
+	runTestSuite(t, testfilesDir, govulndbURI.String(), cfg, *update)
 }
 
 // Limit the number of concurrent scans. Scanning is implemented using
@@ -117,7 +117,7 @@ var (
 // testSuite creates a cmdtest suite from testfilesDir. It also defines
 // a govulncheck command on the suite that runs govulncheck against
 // vulnerability database available at vulndbDir.
-func runTestSuite(t *testing.T, testfilesDir string, vulndbDir string, fixups []fixup, update bool) {
+func runTestSuite(t *testing.T, testfilesDir string, vulndbDir string, cfg *config, update bool) {
 	parallelLimiterInit.Do(func() {
 		limit := (runtime.GOMAXPROCS(0) + 3) / 4
 		if limit > 2 && unsafe.Sizeof(uintptr(0)) < 8 {
@@ -173,6 +173,9 @@ func runTestSuite(t *testing.T, testfilesDir string, vulndbDir string, fixups []
 			if err := govulncheck.HandleJSON(buf, gather); err != nil {
 				return nil, err
 			}
+			if !cfg.EnableSBOM {
+				gather.SBOMMessages = nil
+			}
 			sorted = &bytes.Buffer{}
 			h := govulncheck.NewJSONHandler(sorted)
 			if err := gather.Write(h); err != nil {
@@ -180,7 +183,7 @@ func runTestSuite(t *testing.T, testfilesDir string, vulndbDir string, fixups []
 			}
 		}
 		out := sorted.Bytes()
-		for _, fix := range fixups {
+		for _, fix := range cfg.Fixups {
 			out = fix.apply(out)
 		}
 		return out, err

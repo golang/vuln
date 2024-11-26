@@ -3,7 +3,6 @@
 $ govulncheck -mode=binary ${moddir}/vuln/vuln_main_devel
 No vulnerabilities found.
 
-
 # Test vulnerabilities in main module with v0.3.1 version.
 $ govulncheck -mode=binary ${moddir}/vuln/vuln_main_v0.3.1 --> FAIL 3
 === Symbol Results ===

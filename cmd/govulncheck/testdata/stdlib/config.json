@@ -1,4 +1,5 @@
 {
+  "sbom": false,
   "fixups": [
     {
       "pattern": "\\.go:(\\d+):(\\d+)",

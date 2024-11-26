@@ -1,4 +1,5 @@
 {
+  "sbom": false,
   "strip": true,
   "skipGOOS": ["darwin"]
 }

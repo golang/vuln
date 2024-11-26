@@ -24,27 +24,6 @@ $ govulncheck -C ${moddir}/replace -format json ./...
   }
 }
 {
-  "SBOM": {
-    "go_version": "go1.18",
-    "modules": [
-      {
-        "path": "golang.org/replace"
-      },
-      {
-        "path": "golang.org/x/text",
-        "version": "v0.3.0"
-      },
-      {
-        "path": "stdlib",
-        "version": "v1.18.0"
-      }
-    ],
-    "roots": [
-      "golang.org/replace"
-    ]
-  }
-}
-{
   "osv": {
     "schema_version": "1.3.1",
     "id": "GO-2021-0113",

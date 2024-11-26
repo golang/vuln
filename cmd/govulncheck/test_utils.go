@@ -77,6 +77,9 @@ type config struct {
 	SkipBuild bool `json:"skipBuild,omitempty"`
 	// Strip indicates if binaries should be stripped
 	Strip bool `json:"strip,omitempty"`
+	// EnableSBOM indicates if sbom should be
+	// printed in JSON.
+	EnableSBOM bool `json:"sbom,omitempty"`
 
 	Fixups []fixup `json:"fixups,omitempty"`
 }
