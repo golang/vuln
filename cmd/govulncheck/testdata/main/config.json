@@ -10,10 +10,6 @@
       "replace": "testdata/vulndb"
     },
     {
-      "pattern": "modified (.*)\\)",
-      "replace": "modified 01 Jan 21 00:00 UTC)"
-    },
-    {
       "pattern": "\"go_version\": \"(go(.*)|devel(.*))\"",
       "replace": "\"go_version\": \"go1.18\""
     },
