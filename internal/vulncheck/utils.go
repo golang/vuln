@@ -93,7 +93,7 @@ func callGraph(ctx context.Context, prog *ssa.Program, entries []*ssa.Function) 
 //   - pointer designation * is skipped
 //   - full path prefix is skipped as well
 func dbTypeFormat(t types.Type) string {
-	switch tt := t.(type) {
+	switch tt := types.Unalias(t).(type) {
 	case *types.Pointer:
 		return dbTypeFormat(tt.Elem())
 	case *types.Named:
