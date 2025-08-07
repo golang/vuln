@@ -24,8 +24,9 @@ import (
 func testAll(t *testing.T, gooss, goarchs []string, ft func(*testing.T, string, string)) {
 	// unsupported platforms for building Go binaries.
 	var unsupported = map[string]bool{
-		"darwin/386": true,
-		"darwin/arm": true,
+		"darwin/386":  true,
+		"darwin/arm":  true,
+		"windows/arm": true, // go.dev/issue/71671
 	}
 
 	for _, g := range gooss {
