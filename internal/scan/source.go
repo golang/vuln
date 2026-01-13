@@ -24,7 +24,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	defer derrors.Wrap(&err, "govulncheck")
 
 	if cfg.ScanLevel.WantPackages() && len(cfg.patterns) == 0 {
-		return nil // don't throw an error here
+		return errNoPatterns
 	}
 	if !gomodExists(dir) {
 		return errNoGoMod
@@ -43,7 +43,7 @@ func runSource(ctx context.Context, handler govulncheck.Handler, cfg *config, cl
 	}
 
 	if cfg.ScanLevel.WantPackages() && len(graph.TopPkgs()) == 0 {
-		return nil // early exit
+		return errNoPackagesMatched
 	}
 	return vulncheck.Source(ctx, handler, &cfg.Config, client, graph)
 }

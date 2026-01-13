@@ -11,7 +11,7 @@ import (
 
 //lint:file-ignore ST1005 Ignore staticcheck message about error formatting
 var (
-	// ErrVulnerabilitiesFound indicates that vulnerabilities were detected
+	// errVulnerabilitiesFound indicates that vulnerabilities were detected
 	// when running govulncheck. This returns exit status 3 when running
 	// without the -json flag.
 	errVulnerabilitiesFound = &exitCodeError{message: "vulnerabilities found", code: 3}
@@ -24,6 +24,18 @@ var (
 	// In this case, we assume that the user does not know how to run
 	// govulncheck and exit with status 2.
 	errUsage = &exitCodeError{message: "invalid usage", code: 2}
+
+	// errNoPatterns indicates that no package patterns were provided if the scan level is WantPackages.
+	errNoPatterns = &exitCodeError{
+		message: "no package patterns provided\n\nTo scan the current module, run: govulncheck ./...",
+		code:    2,
+	}
+
+	// errNoPackagesMatched indicates that the provided patterns matched no packages if scan level is WantPackages.
+	errNoPackagesMatched = &exitCodeError{
+		message: "no packages matched the provided patterns",
+		code:    2,
+	}
 
 	// errGoVersionMismatch is used to indicate that there is a mismatch between
 	// the Go version used to build govulncheck and the one currently on PATH.
