@@ -1,6 +1,6 @@
 module golang.org/x/vuln
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/google/go-cmdtest v0.4.1-0.20220921163831-55ab3332a786
