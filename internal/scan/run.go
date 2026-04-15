@@ -55,6 +55,12 @@ func RunGovulncheck(ctx context.Context, env []string, r io.Reader, stdout io.Wr
 		return err
 	}
 
+	if cfg.version {
+		// If the -version flag is passed, exit before doing anything else. This is different than
+		// passing -show which includes "version".
+		return nil
+	}
+
 	incTelemetryFlagCounters(cfg)
 
 	switch cfg.ScanMode {

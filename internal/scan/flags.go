@@ -25,6 +25,7 @@ type config struct {
 	test     bool
 	show     ShowFlag
 	format   FormatFlag
+	version  bool
 	env      []string
 }
 
@@ -72,6 +73,7 @@ Usage:
 	cfg.patterns = flags.Args()
 	if version {
 		cfg.show = append(cfg.show, "version")
+		cfg.version = true
 	}
 	cfg.ScanLevel = govulncheck.ScanLevel(scanFlag)
 	cfg.ScanMode = govulncheck.ScanMode(modeFlag)
