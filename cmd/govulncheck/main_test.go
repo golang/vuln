@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -155,16 +156,27 @@ func runTestSuite(t *testing.T, testfilesDir string, vulndbDir string, cfg *conf
 			return nil, err
 		}
 		err := cmd.Wait()
-		switch e := err.(type) {
-		case nil:
-		case interface{ ExitCode() int }:
-			err = &cmdtest.ExitCodeErr{Msg: err.Error(), Code: e.ExitCode()}
-			if e.ExitCode() == 0 {
-				err = nil
+		if err != nil {
+			var e interface{ ExitCode() int }
+			if errors.As(err, &e) {
+				code := e.ExitCode()
+				printErrorToStderr := true
+				if _, ok := err.(interface{ ExitCode() int }); ok {
+					// Avoid printing the error to stderr if the exit code error wasn't
+					// wrapped with another error providing context.
+					printErrorToStderr = false
+				}
+				if printErrorToStderr {
+					fmt.Fprintln(buf, err)
+				}
+				err = &cmdtest.ExitCodeErr{Msg: err.Error(), Code: code}
+				if code == 0 {
+					err = nil
+				}
+			} else {
+				fmt.Fprintln(buf, err)
+				err = &cmdtest.ExitCodeErr{Msg: err.Error(), Code: 1}
 			}
-		default:
-			fmt.Fprintln(buf, err)
-			err = &cmdtest.ExitCodeErr{Msg: err.Error(), Code: 1}
 		}
 		sorted := buf
 		if err == nil && isJSONMode(args) {

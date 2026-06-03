@@ -35,8 +35,10 @@ For details, see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck.
 
 #####
 # Not scanning anything.
-$ govulncheck
-No vulnerabilities found.
+$ govulncheck --> FAIL 2
+govulncheck: no package patterns provided
+
+To scan the current module, run: govulncheck ./...
 
 #####
 # Reporting version without scanning anything.
@@ -45,5 +47,3 @@ Go: go1.18
 Scanner: govulncheck@v1.0.0
 DB: testdata/vulndb-v1
 DB updated: 2023-04-03 15:57:51 +0000 UTC
-
-No vulnerabilities found.
