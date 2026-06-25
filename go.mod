@@ -7,8 +7,8 @@ require (
 	github.com/google/go-cmp v0.6.0
 	golang.org/x/mod v0.37.0
 	golang.org/x/sync v0.21.0
-	golang.org/x/telemetry v0.0.0-20260615203432-72dfd249d08a
-	golang.org/x/tools v0.46.1-0.20260624220507-0602b30930e3
+	golang.org/x/telemetry v0.0.0-20260625142307-59b4966ccb57
+	golang.org/x/tools v0.47.0
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated
 )
 
