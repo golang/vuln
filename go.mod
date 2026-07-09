@@ -5,15 +5,15 @@ go 1.25.0
 require (
 	github.com/google/go-cmdtest v0.4.1-0.20220921163831-55ab3332a786
 	github.com/google/go-cmp v0.6.0
-	golang.org/x/mod v0.37.0
-	golang.org/x/sync v0.21.0
-	golang.org/x/telemetry v0.0.0-20260625142307-59b4966ccb57
-	golang.org/x/tools v0.47.0
+	golang.org/x/mod v0.38.0
+	golang.org/x/sync v0.22.0
+	golang.org/x/telemetry v0.0.0-20260708182218-49f421fb7959
+	golang.org/x/tools v0.48.0
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated
 )
 
 require (
 	github.com/google/renameio v0.1.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 )
