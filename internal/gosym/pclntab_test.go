@@ -103,7 +103,7 @@ func TestLineFromAline(t *testing.T) {
 	// source line monotonically
 	lastline := make(map[string]int)
 	final := -1
-	for i := 0; i < 10000; i++ {
+	for i := range 10000 {
 		path, line := pkg.lineFromAline(i)
 		// Check for end of object
 		if path == "" {
@@ -147,7 +147,7 @@ func TestLineAline(t *testing.T) {
 		// object.  alineFromLine will always return alines in
 		// the first file, so track which lines we've seen.
 		found := make(map[string]int)
-		for i := 0; i < 1000; i++ {
+		for i := range 1000 {
 			path, line := o.lineFromAline(i)
 			if path == "" {
 				break

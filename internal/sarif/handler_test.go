@@ -299,7 +299,6 @@ func TestMoreSpecific(t *testing.T) {
 				frame("m2", "", "")},
 		},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			f1 := &govulncheck.Finding{Trace: tc.trace1}
 			f2 := &govulncheck.Finding{Trace: tc.trace2}

@@ -7,6 +7,7 @@ package scan
 import (
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strings"
 
@@ -392,8 +393,7 @@ func (h *TextHandler) traces(traces []*findingSummary) {
 			h.print(symbol(entry.Trace[0], false), "\n")
 		} else {
 			h.print("for function ", symbol(entry.Trace[0], false), "\n")
-			for i := len(entry.Trace) - 1; i >= 0; i-- {
-				t := entry.Trace[i]
+			for _, t := range slices.Backward(entry.Trace) {
 				h.print("        ")
 				h.print(symbolName(t))
 				if t.Position != nil {
@@ -540,7 +540,7 @@ func (h *TextHandler) print(values ...any) int {
 // single word is longer than maxWidth, it is retained as its own line.
 func (h *TextHandler) wrap(indent string, s string, maxWidth int) {
 	w := 0
-	for _, f := range strings.Fields(s) {
+	for f := range strings.FieldsSeq(s) {
 		if w > 0 && w+len(f)+1 > maxWidth {
 			// line would be too long with this word
 			h.print("\n")

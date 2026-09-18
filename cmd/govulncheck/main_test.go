@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"sync"
 	"testing"
 	"unsafe"
@@ -239,10 +240,5 @@ func runTestSuite(t *testing.T, testfilesDir string, vulndbDir string, cfg *conf
 }
 
 func isJSONMode(args []string) bool {
-	for _, arg := range args {
-		if arg == "json" {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(args, "json")
 }

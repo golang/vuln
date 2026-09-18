@@ -63,7 +63,7 @@ type Log struct {
 // Run summarizes results of a single invocation of a static analysis tool,
 // in this case govulncheck.
 type Run struct {
-	Tool Tool `json:"tool,omitempty"`
+	Tool Tool `json:"tool"`
 	// Results contain govulncheck findings. There should be exactly one
 	// Result per a detected use of an OSV.
 	Results []Result `json:"results"`
@@ -71,7 +71,7 @@ type Run struct {
 
 // Tool captures information about govulncheck analysis that was run.
 type Tool struct {
-	Driver Driver `json:"driver,omitempty"`
+	Driver Driver `json:"driver"`
 }
 
 // Driver provides details about the govulncheck binary being executed.
@@ -83,7 +83,7 @@ type Driver struct {
 	// InformationURI points to the description of govulncheck tool
 	InformationURI string `json:"informationUri,omitempty"`
 	// Properties are govulncheck run metadata, such as vuln db, Go version, etc.
-	Properties govulncheck.Config `json:"properties,omitempty"`
+	Properties govulncheck.Config `json:"properties"`
 
 	Rules []Rule `json:"rules"`
 }
@@ -93,14 +93,14 @@ type Driver struct {
 type Rule struct {
 	// ID is OSV.ID
 	ID               string      `json:"id,omitempty"`
-	ShortDescription Description `json:"shortDescription,omitempty"`
-	FullDescription  Description `json:"fullDescription,omitempty"`
-	Help             Description `json:"help,omitempty"`
+	ShortDescription Description `json:"shortDescription"`
+	FullDescription  Description `json:"fullDescription"`
+	Help             Description `json:"help"`
 	HelpURI          string      `json:"helpUri,omitempty"`
 	// Properties contain OSV.Aliases (CVEs and GHSAs) as tags.
 	// Consumers of govulncheck SARIF can use these tags to filter
 	// results.
-	Properties RuleTags `json:"properties,omitempty"`
+	Properties RuleTags `json:"properties"`
 }
 
 // RuleTags defines properties.tags.
@@ -126,7 +126,7 @@ type Result struct {
 	// Level is one of "error", "warning", and "note".
 	Level string `json:"level,omitempty"`
 	// Message explains the overall findings.
-	Message Description `json:"message,omitempty"`
+	Message Description `json:"message"`
 	// Locations to which the findings are associated. Always
 	// a single location pointing to the first line of the go.mod
 	// file. The path to the file is "go.mod".
@@ -144,7 +144,7 @@ type Result struct {
 type CodeFlow struct {
 	// ThreadFlows is effectively a set of related information flows.
 	ThreadFlows []ThreadFlow `json:"threadFlows"`
-	Message     Description  `json:"message,omitempty"`
+	Message     Description  `json:"message"`
 }
 
 // ThreadFlow encodes an information flow as a sequence of locations.
@@ -159,12 +159,12 @@ type ThreadFlowLocation struct {
 	// with, say, the source module analyzed.
 	Module string `json:"module,omitempty"`
 	// Location also contains a Message field.
-	Location Location `json:"location,omitempty"`
+	Location Location `json:"location"`
 }
 
 // Stack is a sequence of frames and can encode a govulncheck call stack.
 type Stack struct {
-	Message Description `json:"message,omitempty"`
+	Message Description `json:"message"`
 	Frames  []Frame     `json:"frames"`
 }
 
@@ -175,18 +175,18 @@ type Frame struct {
 	// <version> can be empty when the module version is not known as
 	// with, say, the source module analyzed.
 	Module   string   `json:"module,omitempty"`
-	Location Location `json:"location,omitempty"`
+	Location Location `json:"location"`
 }
 
 // Location is currently a physical location annotated with a message.
 type Location struct {
-	PhysicalLocation PhysicalLocation `json:"physicalLocation,omitempty"`
-	Message          Description      `json:"message,omitempty"`
+	PhysicalLocation PhysicalLocation `json:"physicalLocation"`
+	Message          Description      `json:"message"`
 }
 
 type PhysicalLocation struct {
-	ArtifactLocation ArtifactLocation `json:"artifactLocation,omitempty"`
-	Region           Region           `json:"region,omitempty"`
+	ArtifactLocation ArtifactLocation `json:"artifactLocation"`
+	Region           Region           `json:"region"`
 }
 
 const (

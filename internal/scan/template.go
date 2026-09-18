@@ -285,6 +285,6 @@ func addSymbolName(w io.Writer, frame *govulncheck.Frame) {
 		}
 		io.WriteString(w, ".")
 	}
-	funcname := strings.Split(frame.Function, "$")[0]
+	funcname, _, _ := strings.Cut(frame.Function, "$")
 	io.WriteString(w, funcname)
 }
