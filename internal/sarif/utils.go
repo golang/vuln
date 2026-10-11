@@ -35,7 +35,7 @@ func symbol(fr *govulncheck.Frame) string {
 	if fr.Function == "" {
 		return ""
 	}
-	sym := strings.Split(fr.Function, "$")[0]
+	sym, _, _ := strings.Cut(fr.Function, "$")
 	if fr.Receiver != "" {
 		sym = fr.Receiver + "." + sym
 	}

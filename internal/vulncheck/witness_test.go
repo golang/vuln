@@ -134,7 +134,7 @@ func TestInits(t *testing.T) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name: "golang.org/entry",
-			Files: map[string]interface{}{
+			Files: map[string]any{
 				"x/x.go": `
 			package x
 
@@ -147,7 +147,7 @@ func TestInits(t *testing.T) {
 		},
 		{
 			Name: "golang.org/amod@v0.5.0",
-			Files: map[string]interface{}{"avuln/avuln.go": `
+			Files: map[string]any{"avuln/avuln.go": `
 			package avuln
 
 			func init() {
@@ -159,7 +159,7 @@ func TestInits(t *testing.T) {
 		},
 		{
 			Name: "golang.org/bmod@v0.5.0",
-			Files: map[string]interface{}{"b/b.go": `
+			Files: map[string]any{"b/b.go": `
 			package b
 
 			import _ "golang.org/cmod/cvuln"
@@ -167,7 +167,7 @@ func TestInits(t *testing.T) {
 		},
 		{
 			Name: "golang.org/cmod@v0.5.0",
-			Files: map[string]interface{}{"cvuln/cvuln.go": `
+			Files: map[string]any{"cvuln/cvuln.go": `
 			package cvuln
 
 			var x int = C()
@@ -256,7 +256,6 @@ func TestIsExported(t *testing.T) {
 		{"x.Foo", true},
 		{"X.Foo", true},
 	} {
-		tc := tc
 		t.Run(tc.symbol, func(t *testing.T) {
 			if got := isExported(tc.symbol); tc.want != got {
 				t.Errorf("want %t; got %t", tc.want, got)

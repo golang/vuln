@@ -87,7 +87,7 @@ func prepareConfig(ctx context.Context, cfg *config, client *client.Client) {
 	if cfg.ScanMode == govulncheck.ScanModeSource && cfg.GoVersion == "" {
 		const goverPrefix = "GOVERSION="
 		for _, env := range cfg.env {
-			if val := strings.TrimPrefix(env, goverPrefix); val != env {
+			if val, ok := strings.CutPrefix(env, goverPrefix); ok {
 				cfg.GoVersion = val
 			}
 		}

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"testing"
 )
 
@@ -85,12 +86,7 @@ type config struct {
 }
 
 func (c *config) skip() bool {
-	for _, sg := range c.SkipGOOS {
-		if runtime.GOOS == sg {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(c.SkipGOOS, runtime.GOOS)
 }
 
 type fixup struct {

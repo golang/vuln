@@ -193,7 +193,7 @@ func TestDbSymbolName(t *testing.T) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name: "golang.org/package",
-			Files: map[string]interface{}{
+			Files: map[string]any{
 				"x/x.go": `
 			package x
 

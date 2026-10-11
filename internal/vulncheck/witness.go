@@ -51,15 +51,12 @@ func sourceCallstacks(res *Result) map[*Vuln]CallStack {
 	)
 	stackPerVuln := make(map[*Vuln]CallStack)
 	for _, vuln := range res.Vulns {
-		vuln := vuln
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			cs := sourceCallstack(vuln, res)
 			mu.Lock()
 			stackPerVuln[vuln] = cs
 			mu.Unlock()
-			wg.Done()
-		}()
+		})
 	}
 	wg.Wait()
 

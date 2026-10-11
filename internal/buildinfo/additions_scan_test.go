@@ -125,7 +125,7 @@ func Vuln() {
 			e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 				{
 					Name: "golang.org/entry",
-					Files: map[string]interface{}{
+					Files: map[string]any{
 						"main.go": `
 			package main
 
@@ -140,7 +140,7 @@ func Vuln() {
 					}},
 				{
 					Name:  "golang.org/bmod@v0.5.0",
-					Files: map[string]interface{}{"bvuln/bvuln.go": fmt.Sprintf(vulnLib, tc.gl)},
+					Files: map[string]any{"bvuln/bvuln.go": fmt.Sprintf(vulnLib, tc.gl)},
 				},
 			})
 			defer e.Cleanup()
