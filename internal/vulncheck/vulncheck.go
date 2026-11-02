@@ -245,10 +245,9 @@ func (aff affectingVulns) moduleVulns(module, importPath string) *ModVulns {
 				// return its vulnerabilities.
 				return md
 			}
-		} else if strings.HasPrefix(importPath, md.Module.Path) {
+		} else if importPath == md.Module.Path || strings.HasPrefix(importPath, md.Module.Path+"/") {
 			// If module is unknown, we try to figure it out from importPath.
 			// We take the module whose path has the longest match to importPath.
-			// TODO: do matching based on path components.
 			if mostSpecificMod == nil || len(mostSpecificMod.Module.Path) < len(md.Module.Path) {
 				mostSpecificMod = md
 			}
