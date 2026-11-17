@@ -204,7 +204,7 @@ func (v *ShowFlag) Set(s string) error {
 	if s == "" {
 		return nil
 	}
-	for _, show := range strings.Split(s, ",") {
+	for show := range strings.SplitSeq(s, ",") {
 		sh := strings.TrimSpace(show)
 		if _, ok := supportedShows[sh]; !ok {
 			return errFlagParse
@@ -214,8 +214,8 @@ func (v *ShowFlag) Set(s string) error {
 	return nil
 }
 
-func (v *ShowFlag) Get() interface{} { return *v }
-func (v *ShowFlag) String() string   { return "" }
+func (v *ShowFlag) Get() any       { return *v }
+func (v *ShowFlag) String() string { return "" }
 
 // Update the text handler h with values of the flag.
 func (v ShowFlag) Update(h *TextHandler) {
@@ -252,7 +252,7 @@ var supportedFormats = map[string]bool{
 	formatOpenVEX: true,
 }
 
-func (f *FormatFlag) Get() interface{} { return *f }
+func (f *FormatFlag) Get() any { return *f }
 func (f *FormatFlag) Set(s string) error {
 	if _, ok := supportedFormats[s]; !ok {
 		return errFlagParse
@@ -274,7 +274,7 @@ var supportedModes = map[string]bool{
 	govulncheck.ScanModeExtract: true,
 }
 
-func (f *ModeFlag) Get() interface{} { return *f }
+func (f *ModeFlag) Get() any { return *f }
 func (f *ModeFlag) Set(s string) error {
 	if _, ok := supportedModes[s]; !ok {
 		return errFlagParse
@@ -294,7 +294,7 @@ var supportedLevels = map[string]bool{
 	govulncheck.ScanLevelSymbol:  true,
 }
 
-func (f *ScanFlag) Get() interface{} { return *f }
+func (f *ScanFlag) Get() any { return *f }
 func (f *ScanFlag) Set(s string) error {
 	if _, ok := supportedLevels[s]; !ok {
 		return errFlagParse

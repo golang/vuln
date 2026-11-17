@@ -46,7 +46,7 @@ type Document struct {
 	Author string `json:"author,omitempty"`
 
 	// Timestamp defines the time at which the document was issued.
-	Timestamp time.Time `json:"timestamp,omitempty"`
+	Timestamp time.Time `json:"timestamp"`
 
 	// Version is the document version. For govulncheck's output, this will always be 1.
 	Version int `json:"version,omitempty"`
@@ -64,7 +64,7 @@ type Document struct {
 // Statement conveys a single status for a single vulnerability for one or more products.
 type Statement struct {
 	// Vulnerability is the vuln being referenced by the statement.
-	Vulnerability Vulnerability `json:"vulnerability,omitempty"`
+	Vulnerability Vulnerability `json:"vulnerability"`
 
 	// Products are the products associated with the given vulnerability in the statement.
 	Products []Product `json:"products,omitempty"`

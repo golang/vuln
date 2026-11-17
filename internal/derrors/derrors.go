@@ -16,7 +16,7 @@ import (
 // Example:
 //
 //	defer derrors.Wrap(&err, "copy(%s, %s)", dst, src)
-func Wrap(errp *error, format string, args ...interface{}) {
+func Wrap(errp *error, format string, args ...any) {
 	if *errp != nil {
 		*errp = fmt.Errorf("%s: %w", fmt.Sprintf(format, args...), *errp)
 	}

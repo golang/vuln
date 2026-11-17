@@ -51,7 +51,6 @@ func TestCompactTrace(t *testing.T) {
 			"U calls I, which eventually calls V",
 		},
 	} {
-		tc := tc
 		t.Run(tc.want, func(t *testing.T) {
 			f := &govulncheck.Finding{Trace: tc.trace}
 			got := compactTrace(f)

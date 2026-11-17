@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"slices"
 	"sort"
 
 	"golang.org/x/vuln/internal"
@@ -292,9 +293,8 @@ func stack(h *handler, f *govulncheck.Finding) Stack {
 	trace := f.Trace
 	top := trace[len(trace)-1] // belongs to top level module
 
-	frames := make([]Frame, 0, len(trace)) // must not be nil
-	for i := len(trace) - 1; i >= 0; i-- { // vulnerable symbol is at the top frame
-		frame := trace[i]
+	frames := make([]Frame, 0, len(trace))         // must not be nil
+	for _, frame := range slices.Backward(trace) { // vulnerable symbol is at the top frame
 		pos := govulncheck.Position{Line: 1, Column: 1}
 		if frame.Position != nil {
 			pos = *frame.Position
@@ -365,10 +365,9 @@ func threadFlows(h *handler, fs []*govulncheck.Finding) []ThreadFlow {
 		top := trace[len(trace)-1] // belongs to top level module
 
 		var tf []ThreadFlowLocation
-		for i := len(trace) - 1; i >= 0; i-- { // vulnerable symbol is at the top frame
+		for _, frame := range slices.Backward(trace) { // vulnerable symbol is at the top frame
 			// TODO: should we, similar to govulncheck text output, only
 			// mention three elements of the compact trace?
-			frame := trace[i]
 			pos := govulncheck.Position{Line: 1, Column: 1}
 			if frame.Position != nil {
 				pos = *frame.Position

@@ -86,7 +86,7 @@ func Do(i I, input string) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name:  "some/module",
-			Files: map[string]interface{}{"slice/slice.go": p},
+			Files: map[string]any{"slice/slice.go": p},
 		},
 	})
 

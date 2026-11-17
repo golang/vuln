@@ -205,7 +205,7 @@ func TestFilterVulns(t *testing.T) {
 
 	got := affectingVulnerabilities(mv, "linux", "amd64")
 	if diff := cmp.Diff(want, got, cmp.Exporter(func(t reflect.Type) bool {
-		return reflect.TypeOf(affectingVulns{}) == t || reflect.TypeOf(ModVulns{}) == t
+		return reflect.TypeFor[affectingVulns]() == t || reflect.TypeFor[ModVulns]() == t
 	})); diff != "" {
 		t.Errorf("(-want,+got):\n%s", diff)
 	}

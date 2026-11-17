@@ -88,13 +88,13 @@ func GoBuild(t *testing.T, dir, tags string, strip bool, envVarVals ...string) (
 // the value if name is found, and defaultValue if it is not.
 func lookupEnv(name string, env []string, defaultValue string) string {
 	for _, vv := range env {
-		i := strings.IndexByte(vv, '=')
-		if i < 0 {
+		before, after, ok := strings.Cut(vv, "=")
+		if !ok {
 			// malformed env entry; just ignore it
 			continue
 		}
-		if name == vv[:i] {
-			return vv[i+1:]
+		if name == before {
+			return after
 		}
 	}
 	return defaultValue

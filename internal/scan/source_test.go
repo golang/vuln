@@ -5,6 +5,7 @@
 package scan
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -62,8 +63,7 @@ func TestSummarizeCallStack(t *testing.T) {
 func stringToFinding(s string) *govulncheck.Finding {
 	f := &govulncheck.Finding{}
 	entries := strings.Fields(s)
-	for i := len(entries) - 1; i >= 0; i-- {
-		e := entries[i]
+	for _, e := range slices.Backward(entries) {
 		firstDot := strings.Index(e, ".")
 		lastDot := strings.LastIndex(e, ".")
 		f.Trace = append(f.Trace, &govulncheck.Frame{

@@ -48,13 +48,11 @@ func source(ctx context.Context, handler govulncheck.Handler, cfg *govulncheck.C
 	)
 	if cfg.ScanLevel.WantSymbols() {
 		fset := graph.TopPkgs()[0].Fset
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			prog, ssaPkgs := buildSSA(graph.TopPkgs(), fset)
 			entries = entryPoints(ssaPkgs)
 			cg, buildErr = callGraph(ctx, prog, entries)
-		}()
+		})
 	}
 
 	if err := handler.SBOM(graph.SBOM()); err != nil {

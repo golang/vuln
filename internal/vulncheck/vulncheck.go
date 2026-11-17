@@ -7,6 +7,7 @@ package vulncheck
 import (
 	"fmt"
 	"go/token"
+	"slices"
 	"strings"
 	"time"
 
@@ -215,12 +216,7 @@ func matchesPlatformComponent(s string, ps []string) bool {
 	if s == "" || len(ps) == 0 {
 		return true
 	}
-	for _, p := range ps {
-		if s == p {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ps, s)
 }
 
 // moduleVulns return vulnerabilities for module. If module is unknown,
@@ -327,10 +323,5 @@ vulnLoop:
 }
 
 func contains(symbols []string, target string) bool {
-	for _, s := range symbols {
-		if s == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(symbols, target)
 }

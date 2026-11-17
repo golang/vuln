@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -86,8 +87,7 @@ func emitCallFindings(handler govulncheck.Handler, callstacks map[*Vuln]CallStac
 // call position of the corresponding stack entry.
 func traceFromEntries(vcs CallStack) []*govulncheck.Frame {
 	var frames []*govulncheck.Frame
-	for i := len(vcs) - 1; i >= 0; i-- {
-		e := vcs[i]
+	for i, e := range slices.Backward(vcs) {
 		fr := frameFromPackage(e.Function.Package)
 		fr.Function = e.Function.Name
 		fr.Receiver = e.Function.Receiver()
@@ -162,11 +162,11 @@ func modDirWithVendor(modDir, path, module string) string {
 
 	sep := string(os.PathSeparator)
 	vendor := sep + "vendor" + sep
-	vendorIndex := strings.Index(path, vendor)
-	if vendorIndex == -1 {
+	before, _, ok := strings.Cut(path, vendor)
+	if !ok {
 		return ""
 	}
-	return filepath.Join(path[:vendorIndex], "vendor", filepath.FromSlash(module))
+	return filepath.Join(before, "vendor", filepath.FromSlash(module))
 }
 
 func frameFromPackage(pkg *packages.Package) *govulncheck.Frame {

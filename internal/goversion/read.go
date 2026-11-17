@@ -163,10 +163,7 @@ func findCryptoSigs(v *Version, f exe) error {
 	const maxSigLen = 1 << 10
 	start, end := f.TextRange()
 	for addr := start; addr < end; {
-		size := uint64(1 << 20)
-		if end-addr < size {
-			size = end - addr
-		}
+		size := min(end-addr, uint64(1<<20))
 		data, err := f.ReadData(addr, size)
 		if err != nil {
 			return fmt.Errorf("reading text: %v", err)
@@ -208,10 +205,7 @@ func findModuleInfo(v *Version, f exe) error {
 	const maxModInfo = 128 << 10
 	start, end := f.RODataRange()
 	for addr := start; addr < end; {
-		size := uint64(4 << 20)
-		if end-addr < size {
-			size = end - addr
-		}
+		size := min(end-addr, uint64(4<<20))
 		data, err := f.ReadData(addr, size)
 		if err != nil {
 			return fmt.Errorf("reading text: %v", err)

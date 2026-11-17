@@ -57,7 +57,7 @@ func TestCalls(t *testing.T) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name: "golang.org/entry",
-			Files: map[string]interface{}{
+			Files: map[string]any{
 				"x/x.go": `
 			package x
 
@@ -95,7 +95,7 @@ func TestCalls(t *testing.T) {
 		`}},
 		{
 			Name: "golang.org/cmod@v1.1.3",
-			Files: map[string]interface{}{"c/c.go": `
+			Files: map[string]any{"c/c.go": `
 			package c
 
 			import (
@@ -133,7 +133,7 @@ func TestCalls(t *testing.T) {
 		},
 		{
 			Name: "golang.org/dmod@v0.5.0",
-			Files: map[string]interface{}{"d/d.go": `
+			Files: map[string]any{"d/d.go": `
 			package d
 
 			import (
@@ -154,7 +154,7 @@ func TestCalls(t *testing.T) {
 		},
 		{
 			Name: "golang.org/amod@v1.1.3",
-			Files: map[string]interface{}{"avuln/avuln.go": `
+			Files: map[string]any{"avuln/avuln.go": `
 			package avuln
 
 			type VulnData struct {}
@@ -164,7 +164,7 @@ func TestCalls(t *testing.T) {
 		},
 		{
 			Name: "golang.org/bmod@v0.5.0",
-			Files: map[string]interface{}{"bvuln/bvuln.go": `
+			Files: map[string]any{"bvuln/bvuln.go": `
 			package bvuln
 
 			import (
@@ -178,7 +178,7 @@ func TestCalls(t *testing.T) {
 		},
 		{
 			Name: "golang.org/emod@v1.5.0",
-			Files: map[string]interface{}{"e/e.go": `
+			Files: map[string]any{"e/e.go": `
 			package e
 
 			func E(f func()) {
@@ -248,7 +248,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name: "golang.org/entry",
-			Files: map[string]interface{}{
+			Files: map[string]any{
 				"x/x.go": `
 			package x
 
@@ -261,7 +261,7 @@ func TestAllSymbolsVulnerable(t *testing.T) {
 		},
 		{
 			Name: "golang.org/vmod@v1.2.3",
-			Files: map[string]interface{}{"vuln/vuln.go": `
+			Files: map[string]any{"vuln/vuln.go": `
 			package vuln
 
 			func V1() {}
@@ -329,7 +329,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name: "golang.org/entry",
-			Files: map[string]interface{}{
+			Files: map[string]any{
 				"x/x.go": `
 			package x
 
@@ -348,7 +348,7 @@ func TestNoSyntheticNodes(t *testing.T) {
 		},
 		{
 			Name: "golang.org/amod@v1.1.3",
-			Files: map[string]interface{}{"avuln/avuln.go": `
+			Files: map[string]any{"avuln/avuln.go": `
 			package avuln
 
 			type VulnData struct {}
@@ -401,7 +401,7 @@ func TestRecursion(t *testing.T) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name: "golang.org/entry",
-			Files: map[string]interface{}{
+			Files: map[string]any{
 				"x/x.go": `
 			package x
 
@@ -424,7 +424,7 @@ func TestRecursion(t *testing.T) {
 		},
 		{
 			Name: "golang.org/bmod@v0.5.0",
-			Files: map[string]interface{}{"bvuln/bvuln.go": `
+			Files: map[string]any{"bvuln/bvuln.go": `
 			package bvuln
 
 			func Vuln() {}
@@ -468,7 +468,7 @@ func TestIssue57174(t *testing.T) {
 	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
 		{
 			Name: "golang.org/entry",
-			Files: map[string]interface{}{
+			Files: map[string]any{
 				"x/x.go": `
 			package x
 
@@ -489,7 +489,7 @@ func TestIssue57174(t *testing.T) {
 		},
 		{
 			Name: "golang.org/bmod@v0.5.0",
-			Files: map[string]interface{}{"bvuln/bvuln.go": `
+			Files: map[string]any{"bvuln/bvuln.go": `
 			package bvuln
 
 			func Vuln() {}

@@ -77,10 +77,7 @@ type elfExe struct {
 func (x *elfExe) ReadData(addr, size uint64) ([]byte, error) {
 	for _, prog := range x.f.Progs {
 		if prog.Vaddr <= addr && addr <= prog.Vaddr+prog.Filesz-1 {
-			n := prog.Vaddr + prog.Filesz - addr
-			if n > size {
-				n = size
-			}
+			n := min(prog.Vaddr+prog.Filesz-addr, size)
 			data := make([]byte, n)
 			_, err := prog.ReadAt(data, int64(addr-prog.Vaddr))
 			if err != nil {
@@ -130,10 +127,7 @@ func (x *peExe) ReadData(addr, size uint64) ([]byte, error) {
 	addr -= x.imageBase()
 	for _, sect := range x.f.Sections {
 		if uint64(sect.VirtualAddress) <= addr && addr <= uint64(sect.VirtualAddress+sect.Size-1) {
-			n := uint64(sect.VirtualAddress+sect.Size) - addr
-			if n > size {
-				n = size
-			}
+			n := min(uint64(sect.VirtualAddress+sect.Size)-addr, size)
 			data := make([]byte, n)
 			_, err := sect.ReadAt(data, int64(addr-uint64(sect.VirtualAddress)))
 			if err != nil {
@@ -186,10 +180,7 @@ func (x *machoExe) ReadData(addr, size uint64) ([]byte, error) {
 			if seg.Name == "__PAGEZERO" {
 				continue
 			}
-			n := seg.Addr + seg.Filesz - addr
-			if n > size {
-				n = size
-			}
+			n := min(seg.Addr+seg.Filesz-addr, size)
 			data := make([]byte, n)
 			_, err := seg.ReadAt(data, int64(addr-seg.Addr))
 			if err != nil {

@@ -182,7 +182,6 @@ func (c *Client) ByModules(ctx context.Context, reqs []*ModuleRequest) (_ []*Mod
 	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(10)
 	for i, req := range reqs {
-		i, req := i, req
 		g.Go(func() error {
 			entries, err := c.byModule(gctx, req, metas[i])
 			if err != nil {
@@ -297,7 +296,6 @@ func (c *Client) byIDs(ctx context.Context, ids []string) (_ []*osv.Entry, err e
 	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(10)
 	for i, id := range ids {
-		i, id := i, id
 		g.Go(func() error {
 			e, err := c.byID(gctx, id)
 			if err != nil {
