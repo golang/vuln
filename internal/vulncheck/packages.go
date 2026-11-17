@@ -19,18 +19,25 @@ import (
 // PackageGraph holds a complete module and package graph.
 // Its primary purpose is to allow fast access to the nodes
 // by path and make sure all(stdlib)  packages have a module.
+//
+// A package path does not identify a package uniquely: when tests are
+// loaded, a package and its test variant (for example "p" and
+// "p [p.test]") have the same path. The graph holds every package,
+// keyed by its ID, and looks packages up by path for reporting.
 type PackageGraph struct {
 	// topPkgs are top-level packages specified by the user.
 	// Empty in binary mode.
 	topPkgs  []*packages.Package
 	modules  map[string]*packages.Module  // all modules (even replacing ones)
-	packages map[string]*packages.Package // all packages (even dependencies)
+	packages map[string]*packages.Package // all packages (even dependencies), by ID
+	byPath   map[string]*packages.Package // the first package added for each path
 }
 
 func NewPackageGraph(goVersion string) *PackageGraph {
 	graph := &PackageGraph{
 		modules:  map[string]*packages.Module{},
 		packages: map[string]*packages.Package{},
+		byPath:   map[string]*packages.Package{},
 	}
 
 	goRoot := ""
@@ -138,14 +145,17 @@ func (g *PackageGraph) GetModule(path string) *packages.Module {
 
 // AddPackages adds the packages and their full graph of imported packages.
 // It also adds the modules of the added packages. It will ignore packages
-// that have duplicate paths to ones the graph already holds.
+// that have the same ID as ones the graph already holds.
 func (g *PackageGraph) AddPackages(pkgs ...*packages.Package) {
 	for _, pkg := range pkgs {
-		if _, found := g.packages[pkg.PkgPath]; found {
-			//TODO: check duplicates are okay?
+		id := packageID(pkg)
+		if _, found := g.packages[id]; found {
 			continue
 		}
-		g.packages[pkg.PkgPath] = pkg
+		g.packages[id] = pkg
+		if _, found := g.byPath[pkg.PkgPath]; !found {
+			g.byPath[pkg.PkgPath] = pkg
+		}
 		g.fixupPackage(pkg)
 		for _, child := range pkg.Imports {
 			g.AddPackages(child)
@@ -181,10 +191,22 @@ func (g *PackageGraph) findModule(pkgPath string) *packages.Module {
 	return g.GetModule(internal.UnknownModulePath)
 }
 
-// GetPackage returns the package matching the path.
+// packageID returns the key of pkg in PackageGraph.packages. Packages
+// that the graph creates itself, and those read from binaries, have no
+// ID; their path identifies them.
+func packageID(pkg *packages.Package) string {
+	if pkg.ID != "" {
+		return pkg.ID
+	}
+	return pkg.PkgPath
+}
+
+// GetPackage returns a package matching the path. If the graph holds
+// more than one, such as a package and its test variant, it returns the
+// one added first.
 // If the graph does not already know about the package, a new one is added.
 func (g *PackageGraph) GetPackage(path string) *packages.Package {
-	if pkg, ok := g.packages[path]; ok {
+	if pkg, ok := g.byPath[path]; ok {
 		return pkg
 	}
 	pkg := &packages.Package{
@@ -219,10 +241,10 @@ func (g *PackageGraph) LoadPackagesAndMods(cfg *packages.Config, tags []string, 
 	// This will also add their respective modules.
 	g.AddPackages(pkgs...)
 
-	// save top-level packages
-	for _, p := range pkgs {
-		g.topPkgs = append(g.topPkgs, g.GetPackage(p.PkgPath))
-	}
+	// Save the top-level packages themselves rather than looking
+	// them up by path, which would replace a test variant with the
+	// package it is a variant of.
+	g.topPkgs = append(g.topPkgs, pkgs...)
 	return err
 }
 

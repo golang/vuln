@@ -8,8 +8,10 @@ import (
 	"context"
 	"path"
 	"reflect"
+	"slices"
 	"testing"
 
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/packages/packagestest"
 	"golang.org/x/vuln/internal/client"
 	"golang.org/x/vuln/internal/govulncheck"
@@ -517,5 +519,88 @@ func TestIssue57174(t *testing.T) {
 	_, err = source(context.Background(), test.NewMockHandler(), cfg, c, graph)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+// TestInternalTestFiles checks that vulnerable calls made from test files
+// in the package under test (package x, not package x_test) are found.
+// Loading with tests yields two packages with path golang.org/entry/x:
+// x itself and its test variant "x [x.test]". Only the variant contains
+// the test files.
+func TestInternalTestFiles(t *testing.T) {
+	e := packagestest.Export(t, packagestest.Modules, []packagestest.Module{
+		{
+			Name: "golang.org/entry",
+			Files: map[string]interface{}{
+				"x/x.go": `
+			package x
+
+			func X() {}
+			`,
+				"x/x_test.go": `
+			package x
+
+			import (
+				"testing"
+
+				"golang.org/bmod/bvuln"
+			)
+
+			func TestX(t *testing.T) {
+				bvuln.Vuln()
+			}
+			`,
+			},
+		},
+		{
+			Name: "golang.org/bmod@v0.5.0",
+			Files: map[string]interface{}{"bvuln/bvuln.go": `
+			package bvuln
+
+			func Vuln() {}
+			`},
+		},
+	})
+	defer e.Cleanup()
+
+	e.Config.Tests = true
+	graph := NewPackageGraph("go1.18")
+	err := graph.LoadPackagesAndMods(e.Config, nil, []string{path.Join(e.Temp(), "entry/x")}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var ids []string
+	for _, p := range graph.TopPkgs() {
+		ids = append(ids, p.ID)
+	}
+	if !slices.ContainsFunc(graph.TopPkgs(), func(p *packages.Package) bool {
+		return p.PkgPath == "golang.org/entry/x" && p.ID != p.PkgPath
+	}) {
+		t.Fatalf("top packages %v do not include the test variant of x", ids)
+	}
+	if !slices.ContainsFunc(graph.Modules(), func(m *packages.Module) bool {
+		return m.Path == "golang.org/bmod"
+	}) {
+		t.Errorf("module golang.org/bmod, imported only by x's test file, is missing from the graph")
+	}
+
+	c, err := newTestClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &govulncheck.Config{ScanLevel: "symbol"}
+	result, err := source(context.Background(), test.NewMockHandler(), cfg, c, graph)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The call graph also holds the path from the generated test main
+	// through package testing to TestX; only the last edge matters here.
+	want := []string{"golang.org/bmod/bvuln.Vuln"}
+	callStrMap := callGraphToStrMap(result)
+	if got := callStrMap["golang.org/entry/x.TestX"]; !reflect.DeepEqual(got, want) {
+		t.Errorf("golang.org/entry/x.TestX calls %v, want %v; call graph: %v", got, want, callStrMap)
 	}
 }
